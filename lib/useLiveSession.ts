@@ -8,9 +8,10 @@ export type LiveSession = {
   narrator_typing: boolean;
   current_narration: string;
   title: string;
+  target: string | null; // null/'all' = todos; o id de jugador = visión individual
 };
 
-const EMPTY: LiveSession = { epic_mode: false, narrator_typing: false, current_narration: "", title: "" };
+const EMPTY: LiveSession = { epic_mode: false, narrator_typing: false, current_narration: "", title: "", target: null };
 
 // Suscribe a la fila única live_session (id=1) por Realtime.
 export function useLiveSession() {
@@ -24,7 +25,7 @@ export function useLiveSession() {
 
     supabase
       .from("live_session")
-      .select("epic_mode, narrator_typing, current_narration, title")
+      .select("epic_mode, narrator_typing, current_narration, title, target")
       .eq("id", 1)
       .single()
       .then(({ data }) => {

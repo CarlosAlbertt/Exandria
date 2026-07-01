@@ -4,6 +4,7 @@ import { useState } from "react";
 import { REGIONS } from "@/data/taldorei";
 import { useRegions, setRegion } from "@/lib/useRegions";
 import { useLiveSession, updateLiveSession } from "@/lib/useLiveSession";
+import { useGroupAction } from "@/lib/useGroupAction";
 import { narrar } from "@/lib/narrador";
 
 type Tab = "narracion" | "regiones" | "usuarios";
@@ -37,32 +38,42 @@ export default function DmDashboard() {
 /* ---------------------------- NARRACIÓN ---------------------------- */
 function NarracionPanel() {
   const { session } = useLiveSession();
+  const { action, players } = useGroupAction();
   const [title, setTitle] = useState("");
   const [prompt, setPrompt] = useState("");
   const [text, setText] = useState("");
+  const [target, setTarget] = useState<string>("all"); // 'all' o id de jugador
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   async function generate() {
     if (!prompt.trim() || busy) return;
     setBusy(true); setErr(null);
-    await updateLiveSession({ epic_mode: true, narrator_typing: true, title: title || "Narración", current_narration: "" });
+    await updateLiveSession({ epic_mode: true, narrator_typing: true, title: title || "Narración", current_narration: "", target });
     const r = await narrar({ messages: [{ role: "user", content: prompt }] });
     if (!r.ok) { setErr(r.error); await updateLiveSession({ narrator_typing: false }); }
-    else { setText(r.reply); await updateLiveSession({ current_narration: r.reply, narrator_typing: false, title: title || "Narración" }); }
+    else { setText(r.reply); await updateLiveSession({ current_narration: r.reply, narrator_typing: false, title: title || "Narración", target }); }
     setBusy(false);
   }
 
   async function broadcastManual() {
     if (!text.trim()) return;
-    await updateLiveSession({ epic_mode: true, narrator_typing: false, title: title || "Narración", current_narration: text });
+    await updateLiveSession({ epic_mode: true, narrator_typing: false, title: title || "Narración", current_narration: text, target });
   }
   async function stop() { await updateLiveSession({ epic_mode: false, narrator_typing: false }); }
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
       <section className="panel p-6">
-        <h2 className="font-display text-lg font-bold mb-4" style={{ color: "var(--color-parch)" }}>Narrar para todos</h2>
+        <h2 className="font-display text-lg font-bold mb-4" style={{ color: "var(--color-parch)" }}>Narrar</h2>
+
+        <label className="eyebrow block mb-1.5">Destino</label>
+        <select value={target} onChange={(e) => setTarget(e.target.value)}
+          className="w-full mb-4 bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]" style={{ color: "var(--color-warm)" }}>
+          <option value="all">Todo el grupo (con consenso)</option>
+          {players.map((p) => <option key={p.id} value={p.id}>Visión individual · {p.username}</option>)}
+        </select>
+
         <label className="eyebrow block mb-1.5">Título de la escena</label>
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej.: La taberna del Cuerno Astado"
           className="w-full mb-4 bg-[var(--color-night)] rounded-lg px-3 py-2 font-body text-[15px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]" style={{ color: "var(--color-warm)" }} />
@@ -92,10 +103,21 @@ function NarracionPanel() {
           </span>
         </div>
         {session.title && <p className="font-display font-bold mb-2 gold-text">{session.title}</p>}
-        <div className="panel-raised p-4 min-h-[200px]">
+        <div className="panel-raised p-4 min-h-[160px]">
           <p className="font-body text-[15px] leading-relaxed whitespace-pre-wrap" style={{ color: "var(--color-warm)" }}>
             {session.current_narration || <span style={{ color: "var(--color-dim)" }} className="italic">Lo que emitas aparecerá aquí y en la pantalla de todos los jugadores.</span>}
           </p>
+        </div>
+
+        <div className="mt-4">
+          <p className="eyebrow mb-2"><i className="fas fa-users mr-1.5" style={{ color: "var(--color-bronze)" }} />Acción acordada del grupo</p>
+          <div className="panel-raised p-4">
+            {action.submitted ? (
+              <p className="font-body text-[15px]" style={{ color: "var(--color-arcane-bright)" }}>“{action.submitted}”</p>
+            ) : (
+              <p className="font-body text-[14px] italic" style={{ color: "var(--color-dim)" }}>El grupo aún no ha enviado su respuesta.</p>
+            )}
+          </div>
         </div>
       </section>
     </div>

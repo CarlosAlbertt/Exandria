@@ -38,7 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <SiteNav role={profile.role} username={profile.username} />
             <div className="flex-1">{children}</div>
             <SiteFooter />
-            <EpicOverlay role={profile.role} />
+            <EpicOverlay />
           </SessionProvider>
         ) : (
           <div className="flex-1">{children}</div>
