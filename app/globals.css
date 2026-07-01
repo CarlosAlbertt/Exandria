@@ -1,0 +1,231 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* =====================================================================
+   TAL'DOREI — Compañero de campaña
+   Estética: medianoche arcana · bronce antiguo · teal de Exandria.
+   Tailwind v4: tokens en @theme generan utilidades reales.
+   ===================================================================== */
+
+@theme {
+  /* Bases */
+  --color-ink: #090c11;
+  --color-night: #0d121a;
+  --color-panel: #131b25;
+  --color-raised: #1b2532;
+  --color-line: #2a3848;
+
+  /* Metales */
+  --color-bronze: #c9a35c;
+  --color-bronze-bright: #f0d79a;
+  --color-bronze-deep: #7a5e2c;
+
+  /* Arcano */
+  --color-arcane: #45c7bd;
+  --color-arcane-bright: #7df0e6;
+  --color-arcane-deep: #1f6f69;
+  --color-violet: #9d8cf0;
+  --color-ember: #ef6a3d;
+
+  /* Texto */
+  --color-parch: #ece3cf;
+  --color-warm: #d8cdb4;
+  --color-muted: #94a0ad;
+  --color-dim: #6b7785;
+
+  /* Estados de clase (acentos) */
+  --color-marcial: #e0843c;
+  --color-arcano: #6aa9f0;
+  --color-divino: #f0d066;
+  --color-primitivo: #6cc24a;
+
+  /* Tipografías */
+  --font-display: "Cinzel", serif;
+  --font-body: "EB Garamond", Georgia, serif;
+  --font-ui: "Manrope", system-ui, sans-serif;
+}
+
+/* Alias legacy cortos para SVG/inline */
+:root {
+  --gold: var(--color-bronze);
+  --teal: var(--color-arcane);
+}
+
+@layer base {
+  * { border-color: var(--color-line); }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-warm);
+    font-family: var(--font-body);
+    background-image:
+      radial-gradient(ellipse at 50% -15%, #16242c 0%, #0d121a 45%, #070a0e 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: rgba(69, 199, 189, 0.28); color: var(--color-arcane-bright); }
+
+  h1, h2, h3 { text-wrap: balance; }
+
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.35); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-bronze-deep);
+    border-radius: 8px;
+    border: 2px solid rgba(0, 0, 0, 0.35);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-bronze); }
+}
+
+/* --------------------------- Utilidades ------------------------------ */
+@utility font-display { font-family: var(--font-display); }
+@utility font-ui { font-family: var(--font-ui); }
+
+.eyebrow {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.gold-text {
+  background: linear-gradient(180deg, #fbe6bf 0%, #e7c578 40%, #c9a35c 70%, #8a6a30 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
+.arcane-text {
+  background: linear-gradient(180deg, #c4fff9 0%, #7df0e6 40%, #45c7bd 75%, #1f6f69 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --------------------------- Superficies ----------------------------- */
+.panel {
+  background: linear-gradient(165deg, var(--color-panel) 0%, var(--color-night) 100%);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 14px 30px -22px rgba(0, 0, 0, 0.9);
+}
+.panel-raised {
+  background: linear-gradient(165deg, var(--color-raised) 0%, var(--color-panel) 100%);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+}
+
+/* Tarjeta seleccionable (especie/clase/trasfondo) */
+.pick-card {
+  position: relative;
+  background: linear-gradient(165deg, var(--color-panel) 0%, var(--color-night) 100%);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.2s, border-color 0.2s;
+}
+.pick-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent, var(--color-bronze));
+  box-shadow: 0 0 26px -4px var(--glow, rgba(201, 163, 92, 0.35)), 0 12px 28px -16px rgba(0, 0, 0, 0.9);
+}
+.pick-card[data-selected="true"] {
+  border-color: var(--accent, var(--color-bronze));
+  box-shadow: 0 0 0 1px var(--accent, var(--color-bronze)), 0 0 30px -6px var(--glow, rgba(201, 163, 92, 0.5));
+}
+.pick-card[data-selected="true"]::after {
+  content: "✓";
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-family: var(--font-ui);
+  font-weight: 800;
+  color: var(--accent, var(--color-bronze));
+}
+
+/* --------------------------- Controles ------------------------------- */
+.btn-gold {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1a130a;
+  background: linear-gradient(180deg, #f0d79a, #c9a35c 60%, #a8853f);
+  border: 1px solid var(--color-bronze-bright);
+  border-radius: 8px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: all 0.18s;
+  box-shadow: 0 6px 18px -8px rgba(201, 163, 92, 0.6);
+}
+.btn-gold:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; }
+
+.btn-ghost {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-warm);
+  background: transparent;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.btn-ghost:hover { border-color: var(--color-bronze); color: var(--color-bronze-bright); }
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Stepper de aptitudes */
+.stat-btn {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--color-line);
+  background: var(--color-raised);
+  color: var(--color-warm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.stat-btn:hover:not(:disabled) { border-color: var(--color-arcane); color: var(--color-arcane-bright); }
+.stat-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Chip de pericia / etiqueta */
+.chip {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+  transition: all 0.15s;
+}
+.chip[data-on="true"] {
+  border-color: var(--color-arcane);
+  color: var(--color-arcane-bright);
+  background: rgba(69, 199, 189, 0.08);
+}
+
+/* --------------------------- Lore / prosa ---------------------------- */
+.prose-lore { color: var(--color-warm); line-height: 1.85; font-size: 17px; }
+.prose-lore p { margin-bottom: 1.1rem; }
+.prose-lore strong { color: var(--color-bronze-bright); font-weight: 600; }
+.lead { font-size: 20px; font-style: italic; color: var(--color-parch); }
+
+/* --------------------------- Animación ------------------------------- */
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.reveal { animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+.pulse { animation: pulse 3s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .pulse { animation: none; opacity: 1; transform: none; }
+}
