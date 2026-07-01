@@ -1,12 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_URL, SUPABASE_PUBLIC_KEY } from "@/lib/supabase/env";
 
 // Refresca la sesión de Supabase en cada request y protege rutas privadas.
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = SUPABASE_URL;
+  const key = SUPABASE_PUBLIC_KEY;
   // Sin credenciales: no hacemos nada (la app degrada con avisos).
   if (!url || !key) return response;
 

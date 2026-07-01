@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { SUPABASE_CONFIGURED } from "@/lib/supabase/env";
 
 export type Role = "dm" | "player";
 export type SessionProfile = { id: string; username: string; role: Role };
 
-export const isConfigured =
-  !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export const isConfigured = SUPABASE_CONFIGURED;
 
 // Perfil + rol del usuario autenticado, o null. Seguro si falta config.
 export async function getSessionProfile(): Promise<SessionProfile | null> {
