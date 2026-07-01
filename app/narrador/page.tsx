@@ -11,10 +11,10 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const MODELS = [
   { id: "llama3.1:8b", label: "Llama 3.1 8B — equilibrado (recomendado)" },
-  { id: "qwen2.5:7b", label: "Qwen 2.5 7B — buen español" },
-  { id: "gemma2:9b", label: "Gemma 2 9B — coherente" },
   { id: "mistral-nemo", label: "Mistral Nemo 12B — narrativo" },
-  { id: "llama3.2:3b", label: "Llama 3.2 3B — rápido, menos coherente" },
+  { id: "gpt-oss:20b", label: "GPT-OSS 20B — el más potente (lento)" },
+  { id: "mistral", label: "Mistral 7B — alternativo" },
+  { id: "llama3.2", label: "Llama 3.2 — rápido, menos coherente" },
 ];
 
 export default function NarradorPage() {
