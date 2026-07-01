@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { SPECIES, getSpecies } from "@/data/species";
 import { CLASSES, getClass, GROUP_ACCENT, GROUP_LABEL } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
@@ -444,8 +445,9 @@ function StepSummary({ b, finalScores, hp, allSkills, onCopy, onReset }:
           {allSkills.length ? allSkills.map((s) => <span key={s} className="chip" data-on>{s}</span>) : <span className="text-sm" style={{ color: "var(--color-dim)" }}>—</span>}
         </div>
       </div>
-      <div className="flex gap-3 mt-5">
+      <div className="flex flex-wrap gap-3 mt-5">
         <button className="btn-gold" onClick={onCopy}><i className="fas fa-copy mr-2" />Copiar hoja</button>
+        <Link href="/inventario" className="btn-ghost inline-block"><i className="fas fa-bag-shopping mr-2" />Ir al inventario</Link>
         <button className="btn-ghost" onClick={onReset}><i className="fas fa-rotate-left mr-2" />Empezar de nuevo</button>
       </div>
     </div>

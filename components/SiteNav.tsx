@@ -7,9 +7,11 @@ import Emblem from "@/components/Emblem";
 
 const LINKS = [
   { href: "/", label: "Inicio" },
-  { href: "/reino", label: "El Reino" },
-  { href: "/crear", label: "Crear Personaje" },
+  { href: "/reino", label: "Reino" },
+  { href: "/crear", label: "Crear" },
+  { href: "/inventario", label: "Inventario" },
   { href: "/mapa", label: "Mapa" },
+  { href: "/narrador", label: "Narrador" },
 ];
 
 export default function SiteNav() {

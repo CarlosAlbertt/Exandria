@@ -12,7 +12,9 @@ export default function SiteFooter() {
           {[
             { href: "/reino", label: "El Reino" },
             { href: "/crear", label: "Crear Personaje" },
+            { href: "/inventario", label: "Inventario" },
             { href: "/mapa", label: "Mapa" },
+            { href: "/narrador", label: "Narrador" },
           ].map((l) => (
             <Link key={l.href} href={l.href}
               className="font-ui text-[12px] font-semibold tracking-wide transition-colors"

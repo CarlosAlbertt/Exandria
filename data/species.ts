@@ -65,7 +65,16 @@ export const SPECIES: Species[] = [
     blurb: "Herederos de la estirpe dracónica, llevan en la sangre el elemento de su linaje y un orgullo de escamas relucientes.",
     traits: ["Arma de Aliento según linaje", "Resistencia al daño del tipo de linaje", "Visión en la oscuridad 18 m", "Vuelo Dracónico a nivel 5"],
     lineages: [
-      { name: "Crómatico / Metálico", perk: "Elige el tipo de daño: fuego, frío, ácido, veneno o rayo." },
+      { name: "Negro", perk: "Linaje crómatico · daño de ácido." },
+      { name: "Azul", perk: "Linaje crómatico · daño de rayo." },
+      { name: "Verde", perk: "Linaje crómatico · daño de veneno." },
+      { name: "Rojo", perk: "Linaje crómatico · daño de fuego." },
+      { name: "Blanco", perk: "Linaje crómatico · daño de frío." },
+      { name: "Latón", perk: "Linaje metálico · daño de fuego." },
+      { name: "Bronce", perk: "Linaje metálico · daño de rayo." },
+      { name: "Cobre", perk: "Linaje metálico · daño de ácido." },
+      { name: "Oro", perk: "Linaje metálico · daño de fuego." },
+      { name: "Plata", perk: "Linaje metálico · daño de frío." },
     ],
   },
   {
@@ -103,6 +112,11 @@ export const SPECIES: Species[] = [
     tagline: "Una chispa celestial en mortal.",
     blurb: "Tocados por lo divino, los aasimar irradian una luz interior. En la hora oscura, esa luz se vuelve revelación.",
     traits: ["Visión en la oscuridad 18 m", "Resistencia celestial: necrótico y radiante", "Manos Sanadoras: cura igual a tu nivel", "Revelación Celestial a nivel 3"],
+    lineages: [
+      { name: "Alas Celestiales", perk: "Revelación: alas de luz para volar." },
+      { name: "Resplandor Interior", perk: "Revelación: luz radiante que daña a los cercanos." },
+      { name: "Sudario Necrótico", perk: "Revelación: aura de muerte que asusta y daña." },
+    ],
   },
   {
     slug: "goliat",
@@ -111,7 +125,15 @@ export const SPECIES: Species[] = [
     speed: 10.5,
     tagline: "Sangre de gigante, corazón de cumbre.",
     blurb: "Descendientes de gigantes, los goliat miden el valor por las hazañas. Sus dones reflejan el linaje gigante que portan.",
-    traits: ["Constitución Gigante: ventaja vs. estado derribado", "Don de Linaje Gigante (fuego, escarcha, piedra, etc.)", "Poderoso: cuentas como una talla mayor al cargar"],
+    traits: ["Constitución Gigante: ventaja vs. estado derribado", "Don de Linaje Gigante según ascendencia", "Poderoso: cuentas como una talla mayor al cargar"],
+    lineages: [
+      { name: "Gigante de las Nubes", perk: "Andares de Nube: teletransporte corto tras descanso." },
+      { name: "Gigante de Fuego", perk: "Pisada Ardiente: daño de fuego en área al moverte." },
+      { name: "Gigante de Escarcha", perk: "Aliento Gélido: reduce la velocidad de un enemigo." },
+      { name: "Gigante de las Colinas", perk: "Pisotón Tambaleante: derriba a quien golpeas." },
+      { name: "Gigante de Piedra", perk: "Resistencia Pétrea: reduce el daño recibido." },
+      { name: "Gigante de las Tormentas", perk: "Trueno Vengativo: daño de trueno al ser herido." },
+    ],
   },
   {
     slug: "orco",
