@@ -43,6 +43,13 @@ export const HISTORY: Era[] = [
   },
 ];
 
+// Mapas del continente (imágenes optimizadas en public/maps).
+export const MAPS = {
+  world: "/maps/world.jpg",
+  taldorei: "/maps/taldorei.jpg",
+  wildemount: "/maps/wildemount.jpg",
+};
+
 export type Region = {
   slug: string;
   name: string;
@@ -50,19 +57,21 @@ export type Region = {
   accent: string;
   feature: string;
   blurb: string;
-  /** posición relativa en el mapa (%) — provisional hasta tener la imagen */
+  /** mapa detallado de la región (public/maps/regions) */
+  image: string;
+  /** posición relativa del pin sobre el mapa de Tal'Dorei (%) — ajustable */
   map: { x: number; y: number };
 };
 
 export const REGIONS: Region[] = [
-  { slug: "costa-lucidiana", name: "Costa Lucidiana", capital: "Emon", accent: "var(--color-arcane)", feature: "Capital y corazón político", blurb: "El litoral más poblado del continente. Aquí se alza Emon, sede del Consejo de Tal'Dorei, junto a puertos prósperos y campos fértiles.", map: { x: 24, y: 52 } },
-  { slug: "sierras-alabastro", name: "Sierras de Alabastro", capital: "Westruun", accent: "var(--color-bronze)", feature: "Mesetas y rutas comerciales", blurb: "Colinas pálidas y pasos de montaña que conectan el oeste con el interior. Tierra de caravanas, minas y la ciudad de Westruun.", map: { x: 40, y: 44 } },
-  { slug: "llanuras-divisorias", name: "Llanuras Divisorias", capital: "Kymal", accent: "var(--color-divino)", feature: "Praderas y juego", blurb: "Vastas llanuras que parten el continente en dos. Hogar de la ciudad del vicio de Kymal y de tribus nómadas.", map: { x: 52, y: 56 } },
-  { slug: "montanas-torrerrisco", name: "Montañas Torrerrisco", capital: "Riscomartillo", accent: "var(--color-marcial)", feature: "Forjas enanas", blurb: "Picos escarpados donde las casas enanas de Riscomartillo dominan la forja, la runa y el comercio de metales.", map: { x: 64, y: 40 } },
-  { slug: "montanas-crestormentas", name: "Montañas Crestormentas", capital: "—", accent: "var(--color-violet)", feature: "Cumbres salvajes", blurb: "Una cordillera azotada por tormentas perpetuas, refugio de gigantes, dragones y peligros que pocos osan cruzar.", map: { x: 76, y: 30 } },
-  { slug: "peninsula-pleabruma", name: "Península de Pleabruma", capital: "Puerto Sombrío", accent: "var(--color-arcane-deep)", feature: "Brumas y secretos", blurb: "Una península envuelta en niebla y leyenda, con puertos sombríos donde florece todo lo que prefiere no ser visto.", map: { x: 14, y: 70 } },
-  { slug: "expansion-verdante", name: "Expansión Verdante", capital: "Syngorn", accent: "var(--color-primitivo)", feature: "Bosque élfico", blurb: "Un inmenso bosque primigenio que alberga Syngorn, la ciudad élfica que se desliza entre planos para protegerse.", map: { x: 60, y: 70 } },
-  { slug: "litoral-filofulgor", name: "Litoral de Filofulgor", capital: "Bys", accent: "var(--color-ember)", feature: "Costa oriental ardiente", blurb: "La costa más lejana y agreste, de acantilados cortantes y asentamientos fronterizos que miran al mar abierto.", map: { x: 86, y: 58 } },
+  { slug: "costa-lucidiana", name: "Costa Lucidiana", capital: "Emon", accent: "var(--color-arcane)", feature: "Capital y corazón político", blurb: "El litoral más poblado del continente. Aquí se alza Emon, sede del Consejo de Tal'Dorei, junto a puertos prósperos y campos fértiles.", image: "/maps/regions/costa-lucidiana.jpg", map: { x: 63, y: 49 } },
+  { slug: "sierras-alabastro", name: "Sierras de Alabastro", capital: "Westruun", accent: "var(--color-bronze)", feature: "Mesetas y rutas comerciales", blurb: "Colinas pálidas y pasos de montaña que conectan el oeste con el interior. Tierra de caravanas, minas y la ciudad de Westruun.", image: "/maps/regions/sierras-alabastro.jpg", map: { x: 50, y: 45 } },
+  { slug: "llanuras-divisorias", name: "Llanuras Divisorias", capital: "Kymal", accent: "var(--color-divino)", feature: "Praderas y juego", blurb: "Vastas llanuras que parten el continente en dos. Hogar de la ciudad del vicio de Kymal y de tribus nómadas.", image: "/maps/regions/llanuras-divisorias.jpg", map: { x: 53, y: 58 } },
+  { slug: "montanas-torrerrisco", name: "Montañas Torrerrisco", capital: "Riscomartillo", accent: "var(--color-marcial)", feature: "Forjas enanas", blurb: "Picos escarpados donde las casas enanas de Riscomartillo dominan la forja, la runa y el comercio de metales.", image: "/maps/regions/montanas-torrerrisco.jpg", map: { x: 47, y: 27 } },
+  { slug: "montanas-crestormentas", name: "Montañas Crestormentas", capital: "—", accent: "var(--color-violet)", feature: "Cumbres salvajes", blurb: "Una cordillera azotada por tormentas perpetuas, refugio de gigantes, dragones y peligros que pocos osan cruzar.", image: "/maps/regions/montanas-crestormentas.jpg", map: { x: 69, y: 31 } },
+  { slug: "peninsula-pleabruma", name: "Península de Pleabruma", capital: "Puerto Sombrío", accent: "var(--color-arcane-deep)", feature: "Brumas y secretos", blurb: "Una península envuelta en niebla y leyenda, con puertos sombríos donde florece todo lo que prefiere no ser visto.", image: "/maps/regions/peninsula-pleabruma.jpg", map: { x: 45, y: 85 } },
+  { slug: "expansion-verdante", name: "Expansión Verdante", capital: "Syngorn", accent: "var(--color-primitivo)", feature: "Bosque élfico", blurb: "Un inmenso bosque primigenio que alberga Syngorn, la ciudad élfica que se desliza entre planos para protegerse.", image: "/maps/regions/expansion-verdante.jpg", map: { x: 33, y: 63 } },
+  { slug: "litoral-filofulgor", name: "Litoral de Filofulgor", capital: "Bys", accent: "var(--color-ember)", feature: "Costa oriental ardiente", blurb: "La costa más lejana y agreste, de acantilados cortantes y asentamientos fronterizos que miran al mar abierto.", image: "/maps/regions/litoral-filofulgor.jpg", map: { x: 27, y: 74 } },
 ];
 
 export type Deity = { name: string; domain: string; side: "Primaria" | "Traidor" };

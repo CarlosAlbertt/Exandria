@@ -33,7 +33,10 @@ export async function POST(req: Request) {
     const res = await fetch(`${HOST}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages, stream: false, options: { temperature: 0.8 } }),
+      body: JSON.stringify({
+        model, messages, stream: false,
+        options: { temperature: 0.8, top_p: 0.9, repeat_penalty: 1.12, num_predict: 340 },
+      }),
       signal: AbortSignal.timeout(180000),
     });
     if (!res.ok) {
