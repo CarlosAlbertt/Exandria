@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
+import EpicOverlay from "@/components/EpicOverlay";
+import { SessionProvider } from "@/components/SessionProvider";
+import { getSessionProfile, isConfigured } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: {
@@ -9,10 +12,12 @@ export const metadata: Metadata = {
     template: "%s · Tal'Dorei",
   },
   description:
-    "Crea tu personaje de D&D 2024, explora el lore del continente de Tal'Dorei y recorre su mapa interactivo.",
+    "Compañero de campaña multijugador para D&D en Tal'Dorei: creador de personaje, lore, mapa y narración en vivo.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const profile = await getSessionProfile();
+
   return (
     <html lang="es" className="h-full">
       <head>
@@ -22,9 +27,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <SiteNav />
-        <div className="flex-1">{children}</div>
-        <SiteFooter />
+        {!isConfigured && (
+          <div className="w-full text-center py-2 px-4 font-ui text-[12px] font-semibold"
+            style={{ background: "rgba(239,106,61,0.12)", color: "var(--color-ember)", borderBottom: "1px solid color-mix(in srgb, var(--color-ember) 40%, var(--color-line))" }}>
+            <i className="fas fa-triangle-exclamation mr-1.5" />Supabase sin configurar — añade las credenciales en <code>.env.local</code> (ver <code>.env.example</code>).
+          </div>
+        )}
+        {profile ? (
+          <SessionProvider value={profile}>
+            <SiteNav role={profile.role} username={profile.username} />
+            <div className="flex-1">{children}</div>
+            <SiteFooter />
+            <EpicOverlay role={profile.role} />
+          </SessionProvider>
+        ) : (
+          <div className="flex-1">{children}</div>
+        )}
       </body>
     </html>
   );

@@ -18,6 +18,29 @@ Coloca tu imagen del mapa de Tal'Dorei en `public/mapa.jpg`. Aparecerá de fondo
 en `/mapa`. Las posiciones de los pines se ajustan en `data/taldorei.ts`
 (campo `map: { x, y }`, en % sobre la imagen).
 
+## Multijugador (Supabase) — puesta en marcha
+
+La app es ahora una herramienta multiusuario en tiempo real con roles **DM**
+(admin) y **jugador**.
+
+1. Crea un proyecto en [supabase.com](https://supabase.com).
+2. **SQL Editor** → pega y ejecuta `supabase/schema.sql` (tablas, RLS, Realtime).
+3. Copia `.env.example` a `.env.local` y rellena:
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Settings > API)
+   - `SUPABASE_SERVICE_ROLE_KEY` (solo servidor; para crear usuarios)
+4. Crea el primer DM: **Authentication > Users > Add user** con email
+   `admin@taldorei.local` y una contraseña. Luego en SQL:
+   `update public.profiles set role='dm' where username='admin';`
+5. `npm run dev`, entra como `admin`, y crea al resto desde **Panel DM > Usuarios**.
+
+### Qué hace en tiempo real (Supabase Realtime = WebSocket)
+- **Roles:** el DM ve el Panel DM y todas las regiones; el jugador solo lo
+  conocido/explorado.
+- **Exploración:** el DM marca regiones como conocidas/exploradas y el mapa y el
+  lore se actualizan al instante para todos.
+- **Narración épica:** el DM genera/escribe una narración y se proyecta a la vez
+  en la pantalla de todos los jugadores (`live_session` + Realtime).
+
 ## Narrador IA (Ollama)
 
 `/narrador` habla con una IA **local** vía [Ollama](https://ollama.com) — sin

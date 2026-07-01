@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CONTINENT, HISTORY, REGIONS, PANTHEON, FACTIONS } from "@/data/taldorei";
+import { CONTINENT, HISTORY, PANTHEON, FACTIONS } from "@/data/taldorei";
+import ReinoRegions from "@/components/ReinoRegions";
 
 export const metadata: Metadata = {
   title: "El Reino",
@@ -36,29 +36,8 @@ export default function ReinoPage() {
         </ol>
       </section>
 
-      {/* REGIONES */}
-      <section className="mb-20">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display text-2xl font-bold flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-            <i className="fas fa-compass text-[var(--color-bronze)]" /> Las ocho regiones
-          </h2>
-          <Link href="/mapa" className="btn-ghost !py-2 !px-4 text-[12px]">Ver en el mapa →</Link>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {REGIONS.map((r) => (
-            <div key={r.slug} className="panel p-6" style={{ borderColor: "var(--color-line)" }}>
-              <div className="flex items-center gap-3 mb-2">
-                <span className="w-3 h-3 rounded-full shrink-0" style={{ background: r.accent, boxShadow: `0 0 10px ${r.accent}` }} />
-                <h3 className="font-display text-lg font-bold" style={{ color: r.accent }}>{r.name}</h3>
-              </div>
-              <p className="font-ui text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: "var(--color-dim)" }}>
-                <i className="fas fa-chess-rook mr-1.5" />{r.capital} · {r.feature}
-              </p>
-              <p className="prose-lore !text-[15px] !mb-0">{r.blurb}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* REGIONES (filtradas por exploración) */}
+      <ReinoRegions />
 
       {/* PANTEON */}
       <section className="mb-20">
