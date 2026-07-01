@@ -43,15 +43,35 @@ La app es ahora una herramienta multiusuario en tiempo real con roles **DM**
 
 ## Narrador IA (Ollama)
 
-`/narrador` habla con una IA **local** vía [Ollama](https://ollama.com) — sin
-claves ni servicios externos. Elige el modelo en la propia página (por defecto
-`llama3.1:8b`; modelos pequeños como `llama3.2:3b` son rápidos pero menos
-coherentes) y descárgalo con `ollama pull <modelo>`.
+El narrador habla con una IA **local** vía [Ollama](https://ollama.com) — sin
+claves ni servicios externos. La llamada se hace **desde el navegador** de quien
+narra, así que funciona también con la app desplegada en Vercel (la IA corre en
+tu propia máquina, no en el servidor). Elige el modelo en la página (por defecto
+`llama3.1:8b`) y descárgalo con `ollama pull <modelo>`.
 
-El DM recibe como contexto la guía de narración y el lore de Tal'Dorei desde
-`lore/*.md`, seleccionando las secciones relevantes a cada escena. Edita esos
-`.md` para ajustar el estilo o ampliar el mundo. Variables: `OLLAMA_MODEL`,
-`OLLAMA_HOST`.
+La guía de narración y el lore viven en `data/loreText.ts`; el cliente
+selecciona las secciones relevantes a cada escena y las inyecta en el prompt.
+
+Para que el navegador pueda llamar a Ollama, permite el origen al arrancarlo:
+
+```bash
+# macOS/Linux
+OLLAMA_ORIGINS=* ollama serve
+# Windows (PowerShell)
+$env:OLLAMA_ORIGINS="*"; ollama serve
+```
+
+(En producción, restringe `OLLAMA_ORIGINS` a tu dominio de Vercel.)
+
+## Desplegar en Vercel
+
+1. Sube el repo a GitHub (ya está) e impórtalo en [vercel.com](https://vercel.com).
+2. En **Settings > Environment Variables** añade:
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y
+   `SUPABASE_SERVICE_ROLE_KEY` (esta última solo en Vercel, nunca en el cliente).
+3. Deploy. Login, roles, exploración y narración (manual y por IA local) funcionan.
+4. Para la IA: arranca Ollama en tu equipo con `OLLAMA_ORIGINS` apuntando a tu
+   dominio de Vercel (o `*` para pruebas).
 
 ## Datos del juego
 

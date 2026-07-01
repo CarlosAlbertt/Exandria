@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { narrar } from "@/lib/narrador";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 
@@ -49,27 +50,15 @@ export default function NarradorPage() {
     setInput("");
     setLoading(true);
     setHint(null);
-    try {
-      const res = await fetch("/api/narrador", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, character, model }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setHint(data.error ?? "Error desconocido.");
-        setMessages((m) => m.slice(0, -1));
-        setInput(text);
-      } else {
-        setMessages((m) => [...m, { role: "assistant", content: data.reply || "…" }]);
-      }
-    } catch {
-      setHint("No se pudo conectar con el servidor.");
+    const r = await narrar({ messages: next, character, model });
+    if (!r.ok) {
+      setHint(r.error);
       setMessages((m) => m.slice(0, -1));
       setInput(text);
-    } finally {
-      setLoading(false);
+    } else {
+      setMessages((m) => [...m, { role: "assistant", content: r.reply || "…" }]);
     }
+    setLoading(false);
   }
 
   return (

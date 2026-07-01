@@ -4,6 +4,7 @@ import { useState } from "react";
 import { REGIONS } from "@/data/taldorei";
 import { useRegions, setRegion } from "@/lib/useRegions";
 import { useLiveSession, updateLiveSession } from "@/lib/useLiveSession";
+import { narrar } from "@/lib/narrador";
 
 type Tab = "narracion" | "regiones" | "usuarios";
 
@@ -46,16 +47,10 @@ function NarracionPanel() {
     if (!prompt.trim() || busy) return;
     setBusy(true); setErr(null);
     await updateLiveSession({ epic_mode: true, narrator_typing: true, title: title || "Narración", current_narration: "" });
-    try {
-      const res = await fetch("/api/narrador", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setErr(data.error ?? "Error"); await updateLiveSession({ narrator_typing: false }); }
-      else { setText(data.reply || ""); await updateLiveSession({ current_narration: data.reply || "", narrator_typing: false, title: title || "Narración" }); }
-    } catch { setErr("No se pudo generar."); await updateLiveSession({ narrator_typing: false }); }
-    finally { setBusy(false); }
+    const r = await narrar({ messages: [{ role: "user", content: prompt }] });
+    if (!r.ok) { setErr(r.error); await updateLiveSession({ narrator_typing: false }); }
+    else { setText(r.reply); await updateLiveSession({ current_narration: r.reply, narrator_typing: false, title: title || "Narración" }); }
+    setBusy(false);
   }
 
   async function broadcastManual() {
