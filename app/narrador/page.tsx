@@ -5,7 +5,16 @@ import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 
 const BUILD_KEY = "taldorei.build.v1";
+const MODEL_KEY = "taldorei.model";
 type Msg = { role: "user" | "assistant"; content: string };
+
+const MODELS = [
+  { id: "llama3.1:8b", label: "Llama 3.1 8B — equilibrado (recomendado)" },
+  { id: "qwen2.5:7b", label: "Qwen 2.5 7B — buen español" },
+  { id: "gemma2:9b", label: "Gemma 2 9B — coherente" },
+  { id: "mistral-nemo", label: "Mistral Nemo 12B — narrativo" },
+  { id: "llama3.2:3b", label: "Llama 3.2 3B — rápido, menos coherente" },
+];
 
 export default function NarradorPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -13,10 +22,13 @@ export default function NarradorPage() {
   const [loading, setLoading] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [character, setCharacter] = useState<string>("");
+  const [model, setModel] = useState<string>(MODELS[0].id);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
+      const savedModel = localStorage.getItem(MODEL_KEY);
+      if (savedModel) setModel(savedModel);
       const raw = localStorage.getItem(BUILD_KEY);
       if (raw) {
         const b = JSON.parse(raw);
@@ -41,7 +53,7 @@ export default function NarradorPage() {
       const res = await fetch("/api/narrador", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, character }),
+        body: JSON.stringify({ messages: next, character, model }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -68,6 +80,18 @@ export default function NarradorPage() {
         <p className="font-ui text-[13px] mt-3" style={{ color: "var(--color-muted)" }}>
           Un DM con IA para narrar escenas e interpretar NPCs. {character ? <>Hablando como <span style={{ color: "var(--color-bronze)" }}>{character}</span>.</> : "Crea un personaje para dar contexto."}
         </p>
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <label className="eyebrow !text-[9px]" htmlFor="modelo">Modelo</label>
+          <select
+            id="modelo"
+            value={model}
+            onChange={(e) => { setModel(e.target.value); localStorage.setItem(MODEL_KEY, e.target.value); }}
+            className="bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-ui text-[12px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
+            style={{ color: "var(--color-warm)" }}
+          >
+            {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+          </select>
+        </div>
       </header>
 
       <div className="panel p-4 sm:p-6">
@@ -119,7 +143,7 @@ export default function NarradorPage() {
       </div>
 
       <p className="text-center text-[12px] mt-4" style={{ color: "var(--color-dim)" }}>
-        Requiere <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--color-muted)" }}>Ollama</a> en local: <code className="font-ui">ollama run llama3.2</code>. Configurable con <code className="font-ui">OLLAMA_MODEL</code>.
+        Requiere <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--color-muted)" }}>Ollama</a> en local. Descarga el modelo elegido: <code className="font-ui">ollama pull {model}</code>. El narrador usa la guía y el lore de <code className="font-ui">lore/*.md</code>.
       </p>
     </main>
   );
