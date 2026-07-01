@@ -31,7 +31,7 @@ export function useGroupAction() {
     load();
 
     const ch = supabase
-      .channel("group_rt")
+      .channel(`group_rt_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "group_action", filter: "id=eq.1" }, (p) => { if (p.new) setAction(p.new as GroupAction); })
       .on("postgres_changes", { event: "*", schema: "public", table: "action_ready" }, (p) => {
         const r = p.new as { user_id: string; ready: boolean };

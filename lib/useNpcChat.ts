@@ -19,7 +19,7 @@ export function useNpcChat(scene = "taberna") {
       .then(({ data }) => { if (mounted) { if (data) setMessages(data as NpcMsg[]); setReady(true); } });
 
     const ch = supabase
-      .channel(`npc_${scene}`)
+      .channel(`npc_${scene}_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "npc_chat", filter: `scene=eq.${scene}` }, (p) => {
         const m = p.new as NpcMsg;
         setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));

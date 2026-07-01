@@ -34,7 +34,7 @@ export function useLiveSession() {
       });
 
     const channel = supabase
-      .channel("live_session_rt")
+      .channel(`live_session_rt_${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "live_session", filter: "id=eq.1" },

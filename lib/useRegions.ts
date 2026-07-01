@@ -27,7 +27,7 @@ export function useRegions() {
     load();
 
     const channel = supabase
-      .channel("region_state_rt")
+      .channel(`region_state_rt_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "region_state" }, (payload) => {
         const r = payload.new as RegionState;
         if (r?.slug) setStates((prev) => ({ ...prev, [r.slug]: r }));

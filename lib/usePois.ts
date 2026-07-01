@@ -28,7 +28,7 @@ export function usePois() {
     });
 
     const ch = supabase
-      .channel("poi_state_rt")
+      .channel(`poi_state_rt_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "poi_state" }, (p) => {
         const r = p.new as PoiStateRow;
         if (r?.region) setStates((prev) => ({ ...prev, [key(r.region, r.name)]: r }));
