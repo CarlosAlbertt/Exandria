@@ -10,11 +10,11 @@ const MODEL_KEY = "taldorei.model";
 type Msg = { role: "user" | "assistant"; content: string };
 
 const MODELS = [
-  { id: "llama3.1:8b", label: "Llama 3.1 8B — equilibrado (recomendado)" },
+  { id: "qwen2.5:14b", label: "Qwen 2.5 14B — mejor español (recomendado)" },
+  { id: "gpt-oss:20b", label: "GPT-OSS 20B — el más potente (más lento)" },
   { id: "mistral-nemo", label: "Mistral Nemo 12B — narrativo" },
-  { id: "gpt-oss:20b", label: "GPT-OSS 20B — el más potente (lento)" },
-  { id: "mistral", label: "Mistral 7B — alternativo" },
-  { id: "llama3.2", label: "Llama 3.2 — rápido, menos coherente" },
+  { id: "llama3.1:8b", label: "Llama 3.1 8B — rápido y ligero" },
+  { id: "llama3.2", label: "Llama 3.2 — el más rápido" },
 ];
 
 export default function NarradorPage() {

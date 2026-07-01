@@ -6,7 +6,7 @@ import { NARRACION, pickLore } from "@/data/loreText";
 export const runtime = "nodejs";
 
 const HOST = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
-const MODEL = process.env.OLLAMA_MODEL ?? "llama3.1:8b";
+const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:14b";
 
 type Msg = { role: "system" | "user" | "assistant"; content: string };
 
