@@ -24,7 +24,9 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const email = `${username.trim().toLowerCase()}${DOMAIN}`;
+    // Si escriben un email completo se usa tal cual; si no, se mapea a u@taldorei.local.
+    const id = username.trim().toLowerCase();
+    const email = id.includes("@") ? id : `${id}${DOMAIN}`;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
@@ -47,13 +49,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="eyebrow block mb-1.5">Usuario</label>
+            <label className="eyebrow block mb-1.5">Usuario o email</label>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               required
-              placeholder="tu nombre de usuario"
+              placeholder="usuario o tu@email.com"
               className="w-full bg-[var(--color-night)] rounded-lg px-4 py-2.5 font-body text-[15px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
               style={{ color: "var(--color-warm)" }}
             />
