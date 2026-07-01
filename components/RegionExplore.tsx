@@ -3,14 +3,25 @@
 import { useState } from "react";
 import { REGION_RATIO } from "@/data/taldorei";
 import { poisFor, POI_ICON, POI_COLOR, type Poi } from "@/data/pois";
+import { usePois } from "@/lib/usePois";
+import { useRole } from "@/components/SessionProvider";
 
 // Visor a pantalla completa del mapa de una región con sus puntos de interés.
 export default function RegionExplore({
   slug, name, image, accent, onClose,
 }: { slug: string; name: string; image: string; accent: string; onClose: () => void }) {
-  const pois = poisFor(slug);
+  const isDM = useRole() === "dm";
+  const { states, keyOf } = usePois();
   const [sel, setSel] = useState<Poi | null>(null);
   const ratio = REGION_RATIO[slug] ?? "3300 / 2550";
+
+  // POIs con posición guardada; jugadores solo ven los revelados.
+  const pois = poisFor(slug)
+    .map((p) => {
+      const st = states[keyOf(slug, p.name)];
+      return { ...p, x: st?.x ?? p.x, y: st?.y ?? p.y, revealed: isDM || !!st?.revealed };
+    })
+    .filter((p) => p.revealed);
 
   return (
     <div className="fixed inset-0 z-[130] flex flex-col bg-black/90">

@@ -43,7 +43,7 @@ export default function MapaPage() {
             const explored = isDM ? !!st?.explored : !!st?.explored;
             const on = active === r.slug;
             return (
-              <button key={r.slug} onClick={() => setActive(r.slug)} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${r.map.x}%`, top: `${r.map.y}%` }} aria-label={r.name}>
+              <button key={r.slug} onClick={() => setActive(r.slug)} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${st?.pin_x ?? r.map.x}%`, top: `${st?.pin_y ?? r.map.y}%` }} aria-label={r.name}>
                 <span className="block rounded-full transition-all" style={{
                   width: on ? 22 : 15, height: on ? 22 : 15,
                   background: explored ? r.accent : "rgba(20,25,32,0.9)",
