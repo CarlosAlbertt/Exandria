@@ -3,6 +3,7 @@ import "./globals.css";
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
 import EpicOverlay from "@/components/EpicOverlay";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { SessionProvider } from "@/components/SessionProvider";
 import { getSessionProfile, isConfigured } from "@/lib/auth";
 
@@ -38,7 +39,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <SiteNav role={profile.role} username={profile.username} />
             <div className="flex-1">{children}</div>
             <SiteFooter />
-            <EpicOverlay />
+            <ErrorBoundary>
+              <EpicOverlay />
+            </ErrorBoundary>
           </SessionProvider>
         ) : (
           <div className="flex-1">{children}</div>
