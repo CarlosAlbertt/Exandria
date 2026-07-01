@@ -5,6 +5,7 @@ import Link from "next/link";
 import { REGIONS, MAPS } from "@/data/taldorei";
 import { useRegions } from "@/lib/useRegions";
 import { useRole } from "@/components/SessionProvider";
+import RegionExplore from "@/components/RegionExplore";
 
 // Aspecto del mapa de Tal'Dorei (2550x3300) para que los pines cuadren.
 const MAP_RATIO = "2550 / 3300";
@@ -13,7 +14,7 @@ export default function MapaPage() {
   const role = useRole();
   const { states, ready } = useRegions();
   const isDM = role === "dm";
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [exploreSlug, setExploreSlug] = useState<string | null>(null);
 
   const visible = REGIONS.filter((r) => isDM || states[r.slug]?.known);
   const [active, setActive] = useState<string>(REGIONS[0].slug);
@@ -70,10 +71,10 @@ export default function MapaPage() {
             <>
               {/* Miniatura del mapa de la región (si explorada / DM) */}
               {activeExplored ? (
-                <button onClick={() => setLightbox(region.image)} className="block w-full mb-4 rounded-lg overflow-hidden group relative" style={{ aspectRatio: "4 / 3", border: "1px solid var(--color-line)" }}>
+                <button onClick={() => setExploreSlug(region.slug)} className="block w-full mb-4 rounded-lg overflow-hidden group relative" style={{ aspectRatio: "4 / 3", border: "1px solid var(--color-line)" }}>
                   <img src={region.image} alt={`Mapa de ${region.name}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                  <span className="absolute bottom-2 right-2 font-ui text-[10px] font-bold px-2 py-1 rounded" style={{ background: "rgba(7,10,14,0.8)", color: "var(--color-bronze-bright)" }}>
-                    <i className="fas fa-expand mr-1" />Ampliar
+                  <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "rgba(7,10,14,0.55)" }}>
+                    <span className="btn-gold !py-2 !px-4 text-[12px]"><i className="fas fa-map-location-dot mr-2" />Explorar la zona</span>
                   </span>
                 </button>
               ) : (
@@ -109,13 +110,11 @@ export default function MapaPage() {
         </aside>
       </div>
 
-      {/* LIGHTBOX mapa región */}
-      {lightbox && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85" onClick={() => setLightbox(null)}>
-          <img src={lightbox} alt="Mapa de región" className="max-w-full max-h-full rounded-lg" style={{ border: "1px solid var(--color-gold-line)" }} />
-          <button className="fixed top-5 right-5 btn-ghost !py-2 !px-4 text-[12px]" onClick={() => setLightbox(null)}><i className="fas fa-xmark mr-1.5" />Cerrar</button>
-        </div>
-      )}
+      {/* VISOR de región con puntos de interés */}
+      {exploreSlug && (() => {
+        const r = REGIONS.find((x) => x.slug === exploreSlug)!;
+        return <RegionExplore slug={r.slug} name={r.name} image={r.image} accent={r.accent} onClose={() => setExploreSlug(null)} />;
+      })()}
     </main>
   );
 }

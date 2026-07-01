@@ -50,6 +50,18 @@ export const MAPS = {
   wildemount: "/maps/wildemount.jpg",
 };
 
+// Aspecto (ancho/alto) del mapa de cada región, para alinear los POIs.
+export const REGION_RATIO: Record<string, string> = {
+  "costa-lucidiana": "2550 / 3300",
+  "sierras-alabastro": "3300 / 2550",
+  "llanuras-divisorias": "3300 / 2500",
+  "montanas-torrerrisco": "5100 / 3300",
+  "montanas-crestormentas": "3300 / 2550",
+  "peninsula-pleabruma": "5100 / 3300",
+  "expansion-verdante": "3300 / 2550",
+  "litoral-filofulgor": "3300 / 5100",
+};
+
 export type Region = {
   slug: string;
   name: string;
