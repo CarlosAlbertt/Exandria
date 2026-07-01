@@ -58,7 +58,7 @@ export const CLASSES: CharClass[] = [
       { name: "El Celestial", blurb: "Pacto de luz; curación y fuego radiante." },
       { name: "El Feérico", blurb: "Magia de la corte feérica; teletransporte y encanto." },
       { name: "El Infernal", blurb: "Pacto abisal; resistencia y maldiciones." },
-      { name: "El Genio", blurb: "Don elemental de un genio y un recipiente místico." },
+      { name: "El Gran Antiguo", blurb: "Susurros de una mente alienígena; poder psíquico." },
     ],
     tagline: "Poder a cambio de un pacto.",
     blurb: "Lanzadores que arrancan magia a un patrón de otro plano. Cada don tiene su precio.",

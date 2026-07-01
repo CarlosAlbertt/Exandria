@@ -66,7 +66,6 @@ export default function CrearPage() {
   const hp = cls ? cls.hitDie + conMod : 0;
 
   const set = (patch: Partial<Build>) => setB((p) => ({ ...p, ...patch }));
-  const go = (step: number) => set({ step: Math.max(0, Math.min(STEPS.length - 1, step)) });
 
   // pericias del trasfondo (fijas) + de clase (elegidas)
   const bgSkills = bg?.skills ?? [];
@@ -91,13 +90,44 @@ export default function CrearPage() {
     navigator.clipboard?.writeText(lines.join("\n"));
   }
 
-  const canNext =
-    (b.step === 0 && !!species && (!species.lineages || !!b.lineage)) ||
-    (b.step === 1 && !!cls && !!b.subclass) ||
-    (b.step === 2 && !!bg) ||
-    (b.step === 3 && pointsSpent <= POINT_BUY_BUDGET && bonusTotal(b.bonus) === 3) ||
-    (b.step === 4 && classSkills.length === (cls?.skillCount ?? 0)) ||
-    b.step === 5;
+  // Cada paso debe completarse antes de poder avanzar (o saltar) más allá.
+  const stepDone = [
+    !!b.name.trim() && !!species && (!species.lineages || !!b.lineage),
+    !!cls && !!b.subclass,
+    !!bg,
+    pointsSpent <= POINT_BUY_BUDGET && bonusTotal(b.bonus) === 3,
+    !!cls && classSkills.length === cls.skillCount,
+    true,
+  ];
+  const firstIncomplete = stepDone.findIndex((d) => !d);
+  const maxStep = firstIncomplete === -1 ? STEPS.length - 1 : firstIncomplete;
+  const canNext = stepDone[b.step];
+
+  // Solo se puede navegar a pasos ya alcanzables (todos los anteriores completos).
+  const go = (step: number) => {
+    const target = Math.max(0, Math.min(STEPS.length - 1, step));
+    if (target > maxStep) return;
+    set({ step: target });
+  };
+
+  // Qué falta en el paso actual (aviso junto al botón Siguiente).
+  const missing =
+    b.step === 0
+      ? (!b.name.trim() ? "Ponle un nombre a tu héroe" : !species ? "Elige una especie" : species.lineages && !b.lineage ? "Elige un linaje" : null)
+      : b.step === 1
+      ? (!cls ? "Elige una clase" : !b.subclass ? `Elige ${cls.subclassLabel.toLowerCase()}` : null)
+      : b.step === 2
+      ? (!bg ? "Elige un trasfondo" : null)
+      : b.step === 3
+      ? (bonusTotal(b.bonus) !== 3 ? "Reparte los +3 del trasfondo" : null)
+      : b.step === 4
+      ? (cls && classSkills.length !== cls.skillCount ? `Elige tus pericias (${classSkills.length}/${cls.skillCount})` : null)
+      : null;
+
+  // Si el estado guardado apunta a un paso aún no alcanzable, retrocede.
+  useEffect(() => {
+    if (loaded && b.step > maxStep) setB((p) => ({ ...p, step: maxStep }));
+  }, [loaded, b.step, maxStep]);
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
@@ -109,19 +139,24 @@ export default function CrearPage() {
       {/* PROGRESO */}
       <ol className="flex items-center justify-center gap-1 sm:gap-2 mb-10 flex-wrap">
         {STEPS.map((s, i) => {
-          const done = i < b.step, cur = i === b.step;
+          const done = stepDone[i] && i < b.step;
+          const cur = i === b.step;
+          const locked = i > maxStep;
           return (
             <li key={s} className="flex items-center">
               <button
                 onClick={() => go(i)}
-                className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg font-ui text-[12px] font-bold transition-colors"
+                disabled={locked}
+                title={locked ? "Completa los pasos anteriores" : undefined}
+                className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg font-ui text-[12px] font-bold transition-colors disabled:cursor-not-allowed"
                 style={{
                   color: cur ? "var(--color-ink)" : done ? "var(--color-bronze-bright)" : "var(--color-dim)",
                   background: cur ? "var(--color-bronze)" : "transparent",
                   border: `1px solid ${cur || done ? "var(--color-bronze)" : "var(--color-line)"}`,
+                  opacity: locked ? 0.45 : 1,
                 }}
               >
-                <span className="hidden sm:inline">{i + 1}.</span> {s}
+                {locked ? <i className="fas fa-lock text-[9px]" /> : done ? <i className="fas fa-check text-[10px]" /> : <span className="hidden sm:inline">{i + 1}.</span>} {s}
               </button>
               {i < STEPS.length - 1 && <span className="w-3 sm:w-5 h-px" style={{ background: "var(--color-line)" }} />}
             </li>
@@ -140,17 +175,24 @@ export default function CrearPage() {
           {b.step === 5 && <StepSummary b={b} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} />}
 
           {/* NAV */}
-          <div className="flex items-center justify-between mt-8">
+          <div className="flex items-center justify-between gap-3 mt-8 flex-wrap">
             <button className="btn-ghost" onClick={() => go(b.step - 1)} disabled={b.step === 0}>
               <i className="fas fa-arrow-left mr-2" />Atrás
             </button>
-            {b.step < STEPS.length - 1 ? (
-              <button className="btn-gold" onClick={() => go(b.step + 1)} disabled={!canNext}>
-                Siguiente<i className="fas fa-arrow-right ml-2" />
-              </button>
-            ) : (
-              <button className="btn-gold" onClick={copySheet}><i className="fas fa-copy mr-2" />Copiar hoja</button>
-            )}
+            <div className="flex items-center gap-3">
+              {missing && (
+                <span className="font-ui text-[12px] font-semibold" style={{ color: "var(--color-ember)" }}>
+                  <i className="fas fa-circle-exclamation mr-1.5" />{missing}
+                </span>
+              )}
+              {b.step < STEPS.length - 1 ? (
+                <button className="btn-gold" onClick={() => go(b.step + 1)} disabled={!canNext}>
+                  Siguiente<i className="fas fa-arrow-right ml-2" />
+                </button>
+              ) : (
+                <button className="btn-gold" onClick={copySheet}><i className="fas fa-copy mr-2" />Copiar hoja</button>
+              )}
+            </div>
           </div>
         </section>
 
@@ -170,8 +212,25 @@ function bonusTotal(bonus: Record<AbilityKey, number>) {
 /* ============================ PASO 1: ESPECIE ============================ */
 function StepSpecies({ b, set }: { b: Build; set: (p: Partial<Build>) => void }) {
   const species = b.species ? getSpecies(b.species) : undefined;
+  const needsLineage = !!species?.lineages && !b.lineage;
   return (
     <div>
+      {/* Nombre del héroe (obligatorio) */}
+      <div className="panel-raised p-5 mb-6" style={{ borderColor: !b.name.trim() ? "color-mix(in srgb, var(--color-ember) 45%, var(--color-line))" : "var(--color-line)" }}>
+        <label className="eyebrow block mb-2" htmlFor="hero-name">
+          <i className="fas fa-signature mr-1.5" style={{ color: "var(--color-bronze)" }} />Nombre de tu héroe <span style={{ color: "var(--color-ember)" }}>*</span>
+        </label>
+        <input
+          id="hero-name"
+          value={b.name}
+          onChange={(e) => set({ name: e.target.value })}
+          placeholder="Ej.: Vex'ahlia, Grog, Percival…"
+          maxLength={40}
+          className="w-full bg-[var(--color-night)] rounded-lg px-4 py-2.5 font-display text-lg font-bold outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
+          style={{ color: "var(--color-parch)" }}
+        />
+      </div>
+
       <h2 className="font-display text-xl font-bold mb-1" style={{ color: "var(--color-parch)" }}>Elige tu especie</h2>
       <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>Define tu herencia, tamaño y rasgos innatos.</p>
       <div className="grid sm:grid-cols-2 gap-4">
@@ -179,7 +238,13 @@ function StepSpecies({ b, set }: { b: Build; set: (p: Partial<Build>) => void })
           <button key={s.slug} className="pick-card p-5 text-left" data-selected={b.species === s.slug}
             style={{ ["--accent" as string]: "var(--color-arcane)", ["--glow" as string]: "rgba(69,199,189,0.3)" }}
             onClick={() => set({ species: s.slug, lineage: null })}>
-            <h3 className="font-display text-lg font-bold mb-1" style={{ color: "var(--color-parch)" }}>{s.name}</h3>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h3 className="font-display text-lg font-bold" style={{ color: "var(--color-parch)" }}>{s.name}</h3>
+              <span className="font-ui text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                style={{ color: s.lineages ? "var(--color-bronze)" : "var(--color-dim)", border: `1px solid ${s.lineages ? "var(--color-bronze)" : "var(--color-line)"}55` }}>
+                {s.lineages ? `${s.lineages.length} linajes` : "linaje único"}
+              </span>
+            </div>
             <p className="font-ui text-[11px] font-semibold tracking-wide mb-2" style={{ color: "var(--color-arcane)" }}>
               {s.size} · {s.speed} m · {s.tagline}
             </p>
@@ -198,22 +263,26 @@ function StepSpecies({ b, set }: { b: Build; set: (p: Partial<Build>) => void })
               </li>
             ))}
           </ul>
-          {species.lineages && (
-            <>
-              <p className="eyebrow mb-2">Elige un linaje</p>
-              <div className="flex flex-wrap gap-2">
-                {species.lineages.map((l) => (
-                  <button key={l.name} className="chip" data-on={b.lineage === l.name}
-                    title={l.perk} onClick={() => set({ lineage: l.name })}>{l.name}</button>
-                ))}
-              </div>
-              {b.lineage && (
-                <p className="text-[13px] mt-3 italic" style={{ color: "var(--color-muted)" }}>
-                  {species.lineages.find((l) => l.name === b.lineage)?.perk}
-                </p>
-              )}
-            </>
-          )}
+        </div>
+      )}
+
+      {/* Subraza / linaje: panel propio y obligatorio */}
+      {species?.lineages && (
+        <div className="panel-raised p-5 mt-4" style={{ borderColor: needsLineage ? "color-mix(in srgb, var(--color-ember) 45%, var(--color-line))" : "color-mix(in srgb, var(--color-primitivo) 40%, var(--color-line))" }}>
+          <p className="eyebrow mb-3">
+            <i className={`fas ${needsLineage ? "fa-circle-exclamation" : "fa-check"} mr-1.5`} style={{ color: needsLineage ? "var(--color-ember)" : "var(--color-primitivo)" }} />
+            Elige el linaje de tu {species.name.toLowerCase()} <span style={{ color: "var(--color-ember)" }}>*</span>
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {species.lineages.map((l) => (
+              <button key={l.name} className="pick-card p-4 text-left" data-selected={b.lineage === l.name}
+                style={{ ["--accent" as string]: "var(--color-bronze)", ["--glow" as string]: "rgba(201,163,92,0.3)" }}
+                onClick={() => set({ lineage: l.name })}>
+                <p className="font-display font-bold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{l.name}</p>
+                <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.45 }}>{l.perk}</p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
