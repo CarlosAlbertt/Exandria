@@ -12,32 +12,32 @@ export type Era = { year: string; title: string; text: string };
 
 export const HISTORY: Era[] = [
   {
+    year: "La Fundación",
+    title: "La llegada de los dioses",
+    text: "Los dioses llegaron a Exandria y conocieron a los titanes en el Puente Ascendente de Issylra. Poblaron el mundo de criaturas y, en la guerra contra los Titanes Primordiales, se dividieron en dos bandos: las Deidades Primarias y los Dioses Traidores. La era terminó con la derrota de los Primordiales y el destierro de los Traidores.",
+  },
+  {
     year: "Era de los Arcanos",
-    title: "El Mito de Exandria",
-    text: "Los dioses dieron forma al mundo y lo poblaron de maravillas. Mortales y deidades convivieron en una edad de prodigios mágicos sin igual.",
+    title: "El apogeo de la magia mortal",
+    text: "Durante miles de años, los mortales llevaron el poder arcano hasta sus límites: ciudades voladoras, prodigios imposibles… y la soberbia de desafiar a sus creadores. Al final, algunos liberaron a los Dioses Traidores encadenados.",
   },
   {
     year: "La Calamidad",
     title: "La caída de los cielos",
-    text: "Los Dioses Traidores se rebelaron y desataron una guerra que estuvo a punto de destruir Exandria. Ciudades enteras ardieron y el continente quedó marcado para siempre.",
+    text: "Los Traidores desataron la segunda gran guerra. La civilización quedó devastada, la geografía del mundo se reescribió (el continente de Domunas se hizo añicos en los Dientes Rotos) y solo sobrevivió un tercio de la población. Terminó con la derrota del Olvido Encadenado y la construcción de la Puerta Divina.",
   },
   {
-    year: "La Divergencia",
+    year: "La Divergencia · año 0 PD",
     title: "El sello de los dioses",
-    text: "Para salvar el mundo, las deidades sellaron las puertas de los planos divinos. Desde entonces los dioses solo tocan Exandria de forma indirecta, a través de sus fieles.",
+    text: "Para salvar el mundo, las Deidades Primarias se impusieron el exilio tras la Puerta Divina. Desde entonces los dioses solo tocan Exandria a través de sus fieles. Los monjes del Alma de Cobalto cuentan los años como 'PD' (Post-Divergencia) desde este punto.",
   },
   {
-    year: "Orígenes",
-    title: "Orígenes de Tal'Dorei",
-    text: "Sobre las ruinas del Imperio de Ghor Dranas y la tiranía dracónica, los pueblos libres de Tal'Dorei comenzaron a levantar reinos y ciudades-estado.",
+    year: "Era de la Reclamación",
+    title: "El mundo se reconstruye",
+    text: "Sobre las ruinas del Imperio de Ghor Dranas y la tiranía dracónica, los pueblos libres levantaron reinos y ciudades-estado. Héroes legendarios derrocaron tiranos y forjaron las alianzas que darían origen a la Tal'Dorei moderna y a su capital, Emon.",
   },
   {
-    year: "El Ascenso",
-    title: "El ascenso de Tal'Dorei",
-    text: "Héroes legendarios derrocaron a tiranos y forjaron alianzas. De aquellas gestas nació la base de la Tal'Dorei moderna y su capital, Emon.",
-  },
-  {
-    year: "Actualidad",
+    year: "Actualidad · ~836 PD",
     title: "Una república en ciernes",
     text: "Hoy el Consejo de Tal'Dorei gobierna desde Emon una frágil república. La paz es real, pero las viejas amenazas de la Calamidad nunca duermen del todo.",
   },
