@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { REGIONS, MAPS } from "@/data/taldorei";
 import { WORLD_POIS, WORLD_SLUG, WORLD_ICON, WORLD_COLOR } from "@/data/world";
@@ -17,6 +17,14 @@ export default function MapaPage() {
   const { states, ready } = useRegions();
   const { states: poiStates, keyOf } = usePois();
   const isDM = role === "dm";
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullscreen]);
   const [exploreSlug, setExploreSlug] = useState<string | null>(null);
 
   const visible = REGIONS.filter((r) => isDM || states[r.slug]?.known);
@@ -36,9 +44,21 @@ export default function MapaPage() {
         </p>
       </header>
 
+      {fullscreen && (
+        <div className="fixed inset-0 z-[80]" style={{ background: "rgba(7,10,14,0.96)" }} onClick={() => setFullscreen(false)} />
+      )}
+
       <div className="grid lg:grid-cols-[1fr_340px] gap-6">
         {/* MAPA */}
-        <div className="panel relative overflow-hidden rounded-xl" style={{ aspectRatio: MAP_RATIO, backgroundImage: `url('${MAPS.taldorei}')`, backgroundSize: "cover", backgroundPosition: "center" }}>
+        <div
+          className={fullscreen
+            ? "panel fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[90] overflow-hidden rounded-xl"
+            : "panel relative overflow-hidden rounded-xl"}
+          style={{
+            aspectRatio: MAP_RATIO,
+            backgroundImage: `url('${MAPS.taldorei}')`, backgroundSize: "cover", backgroundPosition: "center",
+            ...(fullscreen ? { width: "min(98vw, calc(95vh * 2560 / 1707))", maxHeight: "95vh" } : {}),
+          }}>
           <div className="absolute inset-0" style={{ boxShadow: "inset 0 0 90px 20px rgba(7,10,14,0.55)" }} />
 
           {visible.map((r) => {
@@ -86,6 +106,10 @@ export default function MapaPage() {
               <p className="prose-lore !text-[15px] px-6 py-4 rounded-lg" style={{ color: "var(--color-warm)", background: "rgba(7,10,14,0.7)" }}>El mapa aún está por descubrir. Tu DM revelará las tierras a medida que avancéis.</p>
             </div>
           )}
+
+          <button onClick={() => setFullscreen((f) => !f)} className="absolute top-3 right-3 z-20 btn-ghost !py-1.5 !px-3 text-[12px]" title={fullscreen ? "Salir (Esc)" : "Pantalla completa"}>
+            <i className={`fas ${fullscreen ? "fa-compress" : "fa-expand"} mr-1.5`} />{fullscreen ? "Salir" : "Pantalla completa"}
+          </button>
         </div>
 
         {/* PANEL */}
