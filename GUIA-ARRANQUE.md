@@ -9,7 +9,7 @@ el túnel gratis **cambia de URL**. La app web (Vercel) y la base de datos
 
 ---
 
-## Arranque rápido (para usar la IA)
+## Arranque rápido (para usar la IA) — flujo NUEVO, sin Vercel
 
 ### 1. Arranca Ollama + el túnel
 Doble clic en **`iniciar-tunel-ia.bat`** (en el Escritorio).
@@ -23,21 +23,16 @@ Doble clic en **`iniciar-tunel-ia.bat`** (en el Escritorio).
 & "$env:USERPROFILE\cloudflared.exe" tunnel --url http://127.0.0.1:11434 --http-host-header localhost
 ```
 
-### 2. Pon la URL en Vercel
-1. [vercel.com](https://vercel.com) → proyecto **Exandria** → **Settings → Environment Variables**
-2. Edita **`OLLAMA_HOST`** → pega la URL nueva (sin barra `/` al final)
-3. Guarda
+### 2. Pega la URL en el Panel DM
+1. Entra en la app como **admin (DM)** → **Panel DM → Narración**
+2. Arriba, en **"Servidor de IA (túnel)"**, pega la URL → **Guardar** → **Probar**
+3. Listo — lo usan todos al instante. **No hay que tocar Vercel ni redeploy.**
 
-### 3. Redeploy
-**Deployments** → el de arriba → **⋯ → Redeploy**. Espera ~1-2 min.
+> Solo la primera vez: ejecuta `supabase/schema_v5.sql` en Supabase y haz un
+> último Redeploy en Vercel para tener el código de esta función.
 
-### 4. Comprueba que funciona
-En PowerShell:
-```powershell
-curl https://exandria.vercel.app/api/version
-```
-- El `commit` debe ser reciente.
-- Luego abre la app, entra, y prueba la **Taberna** o **Narración**. Si responde, listo.
+*(Modo antiguo, por si acaso: editar `OLLAMA_HOST` en Vercel + Redeploy también
+funciona; el valor del Panel DM tiene prioridad sobre la variable de entorno.)*
 
 ---
 
