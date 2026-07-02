@@ -48,6 +48,17 @@ export const WORLD_COLOR: Record<WorldType, string> = {
 
 export const CONTINENTS = ["Tal'Dorei", "Issylra", "Wildemount", "Marquet", "Dientes Rotos", "Mares"] as const;
 
+// Encuadre de cada continente sobre el mapa mundial (para el zoom al clicar) y
+// caja aproximada de su masa de tierra (para la niebla de lo no descubierto).
+export type ContinentView = { cx: number; cy: number; scale: number; box: { x: number; y: number; w: number; h: number } };
+export const CONTINENT_VIEW: Record<string, ContinentView> = {
+  "Tal'Dorei": { cx: 49, cy: 38, scale: 2.0, box: { x: 37, y: 14, w: 24, h: 50 } },
+  "Issylra": { cx: 21, cy: 22, scale: 2.3, box: { x: 8, y: 3, w: 27, h: 40 } },
+  "Wildemount": { cx: 83, cy: 31, scale: 2.0, box: { x: 66, y: 6, w: 34, h: 52 } },
+  "Marquet": { cx: 20, cy: 75, scale: 2.1, box: { x: 6, y: 54, w: 29, h: 44 } },
+  "Dientes Rotos": { cx: 75, cy: 77, scale: 2.4, box: { x: 61, y: 60, w: 30, h: 34 } },
+};
+
 export const WORLD_POIS: WorldPoi[] = [
   // ---------------- CONTINENTES (etiquetas) ----------------
   { name: "Tal'Dorei", type: "continente", continent: "Tal'Dorei", x: 48, y: 12, blurb: "Continente central de la campaña, joven y bullicioso. Reúne la República de Tal'Dorei (desde Emon), el reino élfico de Syngorn, la fortaleza enana de Riscomartillo y la ciudad-estado de Piedrablanca. Levantado sobre las ruinas de la Calamidad; gestiona sus regiones en el mapa de continente." },
