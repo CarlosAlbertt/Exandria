@@ -80,3 +80,9 @@ export async function closeRound() {
   if (!supabaseConfigured) return;
   await sb().from("group_action").update({ open: false, updated_at: new Date().toISOString() }).eq("id", 1);
 }
+// Limpia por completo la ronda de grupo (nueva narración o al terminar).
+export async function resetGroup() {
+  if (!supabaseConfigured) return;
+  await sb().from("group_action").update({ open: false, draft: "", submitted: "", speaker: null, updated_at: new Date().toISOString() }).eq("id", 1);
+  await sb().from("action_ready").update({ ready: false, updated_at: new Date().toISOString() }).neq("user_id", "00000000-0000-0000-0000-000000000000");
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
 import { useGroupAction, setDraft, setMyReady, submitAction, claimSpeaker, releaseSpeaker } from "@/lib/useGroupAction";
 
@@ -13,6 +13,17 @@ export default function GroupConsensus() {
   const myName = session?.username ?? "Tú";
   const { action, ready, players } = useGroupAction();
   const [sending, setSending] = useState(false);
+
+  // Borrador local del portavoz: escribe al instante y sincroniza con retardo
+  // (antes cada tecla iba y volvía de Supabase → se sentía lento).
+  const [localDraft, setLocalDraft] = useState("");
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { setLocalDraft(action.draft); }, [action.speaker, action.submitted]);
+  const onDraftChange = (v: string) => {
+    setLocalDraft(v);
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => setDraft(v), 300);
+  };
 
   const speaker = action.speaker;
   const iAmSpeaker = speaker === myId;
@@ -54,7 +65,7 @@ export default function GroupConsensus() {
           <p className="eyebrow"><i className="fas fa-microphone mr-1.5" style={{ color: "var(--color-bronze)" }} />Tienes la palabra</p>
           <button className="font-ui text-[11px] font-bold" style={{ color: "var(--color-dim)" }} onClick={releaseSpeaker}>Soltar la palabra</button>
         </div>
-        <textarea value={action.draft} onChange={(e) => setDraft(e.target.value)} rows={3}
+        <textarea value={localDraft} onChange={(e) => onDraftChange(e.target.value)} rows={3}
           placeholder="Escribe la acción del grupo…"
           className="w-full mb-3 bg-[var(--color-night)] rounded-lg px-3 py-2 font-body text-[15px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] resize-none"
           style={{ color: "var(--color-warm)" }} />
@@ -67,8 +78,8 @@ export default function GroupConsensus() {
           ))}
           {others.length === 0 && <span className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>Sin más jugadores.</span>}
         </div>
-        <button disabled={!allReady || !action.draft.trim() || sending}
-          onClick={async () => { setSending(true); await submitAction(action.draft.trim()); setSending(false); }}
+        <button disabled={!allReady || !localDraft.trim() || sending}
+          onClick={async () => { setSending(true); await submitAction(localDraft.trim()); setSending(false); }}
           className="btn-gold w-full">
           <i className="fas fa-paper-plane mr-2" />Enviar al DM ({readyCount}/{others.length} de acuerdo)
         </button>

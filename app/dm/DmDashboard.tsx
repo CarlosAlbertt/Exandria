@@ -4,7 +4,7 @@ import { useState } from "react";
 import { REGIONS } from "@/data/taldorei";
 import { useRegions, setRegion } from "@/lib/useRegions";
 import { useLiveSession, updateLiveSession } from "@/lib/useLiveSession";
-import { useGroupAction } from "@/lib/useGroupAction";
+import { useGroupAction, resetGroup } from "@/lib/useGroupAction";
 import { narrar } from "@/lib/narrador";
 import MapaPanel from "./MapaPanel";
 import GrupoPanel from "./GrupoPanel";
@@ -54,6 +54,7 @@ function NarracionPanel() {
   async function generate() {
     if (!prompt.trim() || busy) return;
     setBusy(true); setErr(null);
+    await resetGroup();
     await updateLiveSession({ epic_mode: true, narrator_typing: true, title: title || "Narración", current_narration: "", target });
     const r = await narrar({ messages: [{ role: "user", content: prompt }] });
     if (!r.ok) { setErr(r.error); await updateLiveSession({ narrator_typing: false }); }
@@ -63,9 +64,13 @@ function NarracionPanel() {
 
   async function broadcastManual() {
     if (!text.trim()) return;
+    await resetGroup();
     await updateLiveSession({ epic_mode: true, narrator_typing: false, title: title || "Narración", current_narration: text, target });
   }
-  async function stop() { await updateLiveSession({ epic_mode: false, narrator_typing: false }); }
+  async function stop() {
+    await updateLiveSession({ epic_mode: false, narrator_typing: false });
+    await resetGroup();
+  }
 
   return (
     <div>
