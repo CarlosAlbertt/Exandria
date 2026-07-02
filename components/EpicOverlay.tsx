@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLiveSession, updateLiveSession } from "@/lib/useLiveSession";
+import { resetGroup } from "@/lib/useGroupAction";
 import { useSession } from "@/components/SessionProvider";
 import GroupConsensus from "@/components/GroupConsensus";
 import Emblem from "@/components/Emblem";
@@ -24,10 +25,10 @@ export default function EpicOverlay() {
     setShown("");
     let i = 0;
     const id = setInterval(() => {
-      i += 2;
+      i += 3;
       setShown(full.slice(0, i));
-      if (i >= full.length) clearInterval(id);
-    }, 18);
+      if (i >= full.length) { setShown(full); clearInterval(id); }
+    }, 12);
     return () => clearInterval(id);
   }, [live.current_narration, live.epic_mode]);
 
@@ -75,9 +76,9 @@ export default function EpicOverlay() {
       </div>
 
       {role === "dm" && (
-        <button onClick={() => updateLiveSession({ epic_mode: false })}
+        <button onClick={async () => { await updateLiveSession({ epic_mode: false, narrator_typing: false }); await resetGroup(); }}
           className="fixed top-5 right-5 btn-ghost !py-2 !px-4 text-[12px]">
-          <i className="fas fa-xmark mr-1.5" />Cerrar para todos
+          <i className="fas fa-xmark mr-1.5" />Terminar escena
         </button>
       )}
     </div>

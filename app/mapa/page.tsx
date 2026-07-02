@@ -7,8 +7,8 @@ import { useRegions } from "@/lib/useRegions";
 import { useRole } from "@/components/SessionProvider";
 import RegionExplore from "@/components/RegionExplore";
 
-// Aspecto del mapa de Tal'Dorei (2550x3300) para que los pines cuadren.
-const MAP_RATIO = "2550 / 3300";
+// Aspecto del mapa de Exandria (2560x1707) para que los pines cuadren.
+const MAP_RATIO = "2560 / 1707";
 
 export default function MapaPage() {
   const role = useRole();

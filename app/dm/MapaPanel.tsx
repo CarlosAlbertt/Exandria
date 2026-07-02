@@ -41,8 +41,8 @@ export default function MapaPanel() {
       {mode === "continente" ? (
         <>
           <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>Arrastra cada región a su lugar exacto sobre el mapa. Se guarda al soltar y se aplica para todos.</p>
-          <div className="max-w-md mx-auto">
-            <PinDragMap image={MAPS.taldorei} ratio="2550 / 3300" markers={regionMarkers} onMove={(id, x, y) => setRegionPin(id, x, y)} />
+          <div className="max-w-2xl mx-auto">
+            <PinDragMap image={MAPS.taldorei} ratio="2560 / 1707" markers={regionMarkers} onMove={(id, x, y) => setRegionPin(id, x, y)} />
           </div>
         </>
       ) : (
