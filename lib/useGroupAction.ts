@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 
-export type GroupAction = { open: boolean; prompt: string; draft: string; submitted: string };
-const EMPTY: GroupAction = { open: false, prompt: "", draft: "", submitted: "" };
+export type GroupAction = { open: boolean; prompt: string; draft: string; submitted: string; speaker: string | null };
+const EMPTY: GroupAction = { open: false, prompt: "", draft: "", submitted: "", speaker: null };
 
 // Acción de grupo con consenso: borrador compartido + "listos" por jugador.
 export function useGroupAction() {
@@ -19,7 +19,7 @@ export function useGroupAction() {
 
     const load = async () => {
       const [ga, ar, pl] = await Promise.all([
-        supabase.from("group_action").select("open, prompt, draft, submitted").eq("id", 1).single(),
+        supabase.from("group_action").select("open, prompt, draft, submitted, speaker").eq("id", 1).single(),
         supabase.from("action_ready").select("user_id, ready"),
         supabase.from("profiles").select("id, username").eq("role", "player"),
       ]);
@@ -52,18 +52,28 @@ export async function setDraft(draft: string) {
   if (!supabaseConfigured) return;
   await sb().from("group_action").update({ draft, updated_at: new Date().toISOString() }).eq("id", 1);
 }
+// Tomar / soltar la palabra (portavoz). Al reclamar se limpian los "listos".
+export async function claimSpeaker(userId: string) {
+  if (!supabaseConfigured) return;
+  await sb().from("group_action").update({ speaker: userId, updated_at: new Date().toISOString() }).eq("id", 1);
+  await sb().from("action_ready").update({ ready: false, updated_at: new Date().toISOString() }).neq("user_id", "00000000-0000-0000-0000-000000000000");
+}
+export async function releaseSpeaker() {
+  if (!supabaseConfigured) return;
+  await sb().from("group_action").update({ speaker: null, updated_at: new Date().toISOString() }).eq("id", 1);
+}
 export async function setMyReady(userId: string, value: boolean) {
   if (!supabaseConfigured) return;
   await sb().from("action_ready").upsert({ user_id: userId, ready: value, updated_at: new Date().toISOString() });
 }
 export async function openRound(prompt: string) {
   if (!supabaseConfigured) return;
-  await sb().from("group_action").update({ open: true, prompt, draft: "", submitted: "", updated_at: new Date().toISOString() }).eq("id", 1);
+  await sb().from("group_action").update({ open: true, prompt, draft: "", submitted: "", speaker: null, updated_at: new Date().toISOString() }).eq("id", 1);
   await sb().from("action_ready").update({ ready: false, updated_at: new Date().toISOString() }).neq("user_id", "00000000-0000-0000-0000-000000000000");
 }
 export async function submitAction(text: string) {
   if (!supabaseConfigured) return;
-  await sb().from("group_action").update({ submitted: text, open: false, updated_at: new Date().toISOString() }).eq("id", 1);
+  await sb().from("group_action").update({ submitted: text, open: false, speaker: null, updated_at: new Date().toISOString() }).eq("id", 1);
   await sb().from("action_ready").update({ ready: false, updated_at: new Date().toISOString() }).neq("user_id", "00000000-0000-0000-0000-000000000000");
 }
 export async function closeRound() {
