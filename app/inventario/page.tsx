@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSession } from "@/components/SessionProvider";
+import { loadCharacter, saveCharacter } from "@/lib/character";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { abilityMod, fmtMod } from "@/data/rules";
@@ -25,18 +27,44 @@ export default function InventarioPage() {
   const [cat, setCat] = useState<ItemCat>("Aventura");
   const [custom, setCustom] = useState("");
 
+  const session = useSession();
+  const userId = session?.id;
+  const cloud = useRef(false);
+
+  // Carga: nube si hay sesión, si no localStorage.
   useEffect(() => {
-    try {
-      const b = localStorage.getItem(BUILD_KEY);
-      if (b) setBuild(JSON.parse(b));
-      const i = localStorage.getItem(INV_KEY);
-      if (i) setItems(JSON.parse(i));
-    } catch {}
-    setLoaded(true);
-  }, []);
+    let done = false;
+    (async () => {
+      if (userId) {
+        const row = await loadCharacter(userId);
+        if (!done && row) {
+          cloud.current = true;
+          setBuild({ name: row.name, species: row.species, lineage: row.lineage, cls: row.cls, subclass: row.subclass, base: row.base, bonus: row.bonus });
+          if (Array.isArray(row.inventory)) setItems(row.inventory);
+        }
+      }
+      if (!done && !cloud.current) {
+        try {
+          const b = localStorage.getItem(BUILD_KEY);
+          if (b) setBuild(JSON.parse(b));
+          const i = localStorage.getItem(INV_KEY);
+          if (i) setItems(JSON.parse(i));
+        } catch {}
+      }
+      if (!done) setLoaded(true);
+    })();
+    return () => { done = true; };
+  }, [userId]);
+
+  // Guardado del inventario: nube si hay sesión, si no localStorage.
   useEffect(() => {
-    if (loaded) localStorage.setItem(INV_KEY, JSON.stringify(items));
-  }, [items, loaded]);
+    if (!loaded) return;
+    if (userId && cloud.current) {
+      const t = setTimeout(() => saveCharacter(userId, { inventory: items }), 700);
+      return () => clearTimeout(t);
+    }
+    localStorage.setItem(INV_KEY, JSON.stringify(items));
+  }, [items, loaded, userId]);
 
   const strScore = (build?.base?.fue ?? 10) + (build?.bonus?.fue ?? 0);
   const strMod = abilityMod(strScore);

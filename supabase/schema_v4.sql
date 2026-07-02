@@ -15,8 +15,12 @@ create table if not exists public.characters (
   bonus jsonb not null default '{}'::jsonb,      -- bonus de trasfondo
   skills jsonb not null default '[]'::jsonb,      -- pericias de clase elegidas
   inventory jsonb not null default '[]'::jsonb,   -- objetos del inventario
+  lore text not null default '',                   -- historia/trasfondo del personaje
   updated_at timestamptz not null default now()
 );
+
+-- Si ya creaste la tabla antes de esta versión, añade la columna:
+alter table public.characters add column if not exists lore text not null default '';
 
 alter table public.characters enable row level security;
 

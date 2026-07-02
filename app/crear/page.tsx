@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSession } from "@/components/SessionProvider";
+import { loadCharacter, saveCharacter } from "@/lib/character";
 import { SPECIES, getSpecies } from "@/data/species";
 import { CLASSES, getClass, GROUP_ACCENT, GROUP_LABEL } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
@@ -48,6 +50,43 @@ export default function CrearPage() {
   useEffect(() => {
     if (loaded) localStorage.setItem(KEY, JSON.stringify(b));
   }, [b, loaded]);
+
+  // Sincronización con Supabase (si hay sesión): la ficha vive en la nube.
+  const session = useSession();
+  const userId = session?.id;
+  const cloudLoaded = useRef(false);
+
+  useEffect(() => {
+    if (!loaded || !userId || cloudLoaded.current) return;
+    cloudLoaded.current = true;
+    loadCharacter(userId).then((row) => {
+      if (!row) return;
+      setB((p) => ({
+        ...p,
+        name: row.name ?? p.name,
+        species: row.species ?? p.species,
+        lineage: row.lineage ?? p.lineage,
+        cls: row.cls ?? p.cls,
+        subclass: row.subclass ?? p.subclass,
+        background: row.background ?? p.background,
+        base: row.base && Object.keys(row.base).length ? row.base : p.base,
+        bonus: row.bonus && Object.keys(row.bonus).length ? row.bonus : p.bonus,
+        skills: Array.isArray(row.skills) ? row.skills : p.skills,
+        lore: row.lore ?? p.lore,
+      }));
+    });
+  }, [loaded, userId]);
+
+  useEffect(() => {
+    if (!loaded || !userId || !cloudLoaded.current) return;
+    const t = setTimeout(() => {
+      saveCharacter(userId, {
+        name: b.name, species: b.species, lineage: b.lineage, cls: b.cls, subclass: b.subclass,
+        background: b.background, base: b.base, bonus: b.bonus, skills: b.skills, lore: b.lore,
+      });
+    }, 900);
+    return () => clearTimeout(t);
+  }, [loaded, userId, b.name, b.species, b.lineage, b.cls, b.subclass, b.background, b.base, b.bonus, b.skills, b.lore]);
 
   const species = b.species ? getSpecies(b.species) : undefined;
   const cls = b.cls ? getClass(b.cls) : undefined;
@@ -525,13 +564,13 @@ function StepSummary({ b, set, finalScores, hp, allSkills, onCopy, onReset }:
           id="hero-lore"
           value={b.lore}
           onChange={(e) => set({ lore: e.target.value })}
-          rows={7}
-          maxLength={4000}
+          rows={10}
+          maxLength={12000}
           placeholder="Nacido en las brumas de Pleabruma, juré no volver a…"
           className="w-full bg-[var(--color-night)] rounded-lg px-4 py-3 font-body text-[15px] leading-relaxed outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] resize-y"
-          style={{ color: "var(--color-warm)" }}
+          style={{ color: "var(--color-warm)", minHeight: "180px" }}
         />
-        <p className="text-right text-[11px] mt-1" style={{ color: "var(--color-dim)" }}>{b.lore.length}/4000</p>
+        <p className="text-right text-[11px] mt-1" style={{ color: "var(--color-dim)" }}>{b.lore.length}/12000</p>
       </div>
 
       <div className="flex flex-wrap gap-3 mt-5">
