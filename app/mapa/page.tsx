@@ -38,7 +38,8 @@ export default function MapaPage() {
   // --- helpers de descubrimiento ---
   const continentPins = WORLD_POIS.filter((p) => p.type === "continente");
   const pinForField = (field: string) => continentPins.find((p) => p.continent === field);
-  const isRevealed = (name: string) => isDM || !!poiStates[keyOf(WORLD_SLUG, name)]?.revealed;
+  const revealedByPlayers = (name: string) => !!poiStates[keyOf(WORLD_SLUG, name)]?.revealed;
+  const isRevealed = (name: string) => isDM || revealedByPlayers(name);
   const continentDiscovered = (field: string) => { const cp = pinForField(field); return cp ? isRevealed(cp.name) : true; };
 
   // --- zoom ---
@@ -122,15 +123,22 @@ export default function MapaPage() {
             style={{ backgroundImage: `url('${MAPS.taldorei}')`, backgroundSize: "cover", backgroundPosition: "center", transform: layerTransform, transformOrigin: "0 0" }}>
             <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: "inset 0 0 90px 20px rgba(7,10,14,0.55)" }} />
 
-            {/* NIEBLA: continentes no descubiertos (solo jugadores, en el mundo) */}
-            {!isDM && !focus && Object.entries(CONTINENT_VIEW).map(([field, v]) => {
-              if (continentDiscovered(field)) return null;
+            {/* NIEBLA sobre continentes no revelados a los jugadores. Los jugadores
+                la ven opaca; el DM la ve translúcida ("oculto") y clic-a-través. */}
+            {!focus && Object.entries(CONTINENT_VIEW).map(([field, v]) => {
+              const cp = pinForField(field);
+              if (!cp || revealedByPlayers(cp.name)) return null;
               return (
-                <div key={`fog-${field}`} className="absolute flex items-center justify-center"
+                <div key={`fog-${field}`} className={`absolute flex items-center justify-center ${isDM ? "pointer-events-none" : ""}`}
                   style={{ left: `${v.box.x}%`, top: `${v.box.y}%`, width: `${v.box.w}%`, height: `${v.box.h}%`,
-                    background: "radial-gradient(ellipse at center, rgba(30,36,46,0.92), rgba(12,15,20,0.75) 70%)",
-                    backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", borderRadius: "40%" }}>
-                  <span className="font-display font-bold" style={{ color: "var(--color-dim)", fontSize: 22, letterSpacing: "0.3em" }}>?</span>
+                    background: isDM
+                      ? "radial-gradient(ellipse at center, rgba(30,36,46,0.5), rgba(12,15,20,0.35) 70%)"
+                      : "radial-gradient(ellipse at center, rgba(30,36,46,0.94), rgba(12,15,20,0.8) 70%)",
+                    backdropFilter: `blur(${isDM ? 2 : 6}px)`, WebkitBackdropFilter: `blur(${isDM ? 2 : 6}px)`,
+                    borderRadius: "40%", border: isDM ? "1px dashed rgba(255,255,255,0.15)" : "none" }}>
+                  <span className="font-display font-bold flex flex-col items-center" style={{ color: "var(--color-dim)", fontSize: isDM ? 12 : 22, letterSpacing: "0.2em", transform: `scale(${invScale})` }}>
+                    {isDM ? <><i className="fas fa-eye-slash mb-1" />oculto</> : "?"}
+                  </span>
                 </div>
               );
             })}
