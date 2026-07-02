@@ -20,6 +20,7 @@ type Build = {
   base: Record<AbilityKey, number>;
   bonus: Record<AbilityKey, number>;
   skills: string[];
+  lore: string;
   step: number;
 };
 
@@ -32,7 +33,7 @@ const KEY = "taldorei.build.v1";
 export default function CrearPage() {
   const [b, setB] = useState<Build>({
     name: "", species: null, lineage: null, cls: null, subclass: null,
-    background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], step: 0,
+    background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0,
   });
   const [loaded, setLoaded] = useState(false);
 
@@ -74,7 +75,7 @@ export default function CrearPage() {
   const allSkills = useMemo(() => Array.from(new Set([...bgSkills, ...classSkills])), [bgSkills, classSkills]);
 
   function reset() {
-    setB({ name: "", species: null, lineage: null, cls: null, subclass: null, background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], step: 0 });
+    setB({ name: "", species: null, lineage: null, cls: null, subclass: null, background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0 });
   }
 
   function copySheet() {
@@ -86,6 +87,7 @@ export default function CrearPage() {
       ABILITIES.map((a) => `${a.abbr} ${finalScores[a.key]} (${fmtMod(abilityMod(finalScores[a.key]))})`).join("   "),
       ``,
       `Pericias: ${allSkills.join(", ") || "—"}`,
+      ...(b.lore.trim() ? [``, `Historia:`, b.lore.trim()] : []),
     ];
     navigator.clipboard?.writeText(lines.join("\n"));
   }
@@ -172,7 +174,7 @@ export default function CrearPage() {
           {b.step === 2 && <StepBackground b={b} set={set} />}
           {b.step === 3 && <StepAbilities b={b} set={set} pointsSpent={pointsSpent} finalScores={finalScores} />}
           {b.step === 4 && <StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} />}
-          {b.step === 5 && <StepSummary b={b} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} />}
+          {b.step === 5 && <StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} />}
 
           {/* NAV */}
           <div className="flex items-center justify-between gap-3 mt-8 flex-wrap">
@@ -481,8 +483,8 @@ function StepSkills({ b, set, cls, bgSkills, classPool }:
 }
 
 /* ============================ PASO 6: RESUMEN ============================ */
-function StepSummary({ b, finalScores, hp, allSkills, onCopy, onReset }:
-  { b: Build; finalScores: Record<AbilityKey, number>; hp: number; allSkills: string[]; onCopy: () => void; onReset: () => void }) {
+function StepSummary({ b, set, finalScores, hp, allSkills, onCopy, onReset }:
+  { b: Build; set: (p: Partial<Build>) => void; finalScores: Record<AbilityKey, number>; hp: number; allSkills: string[]; onCopy: () => void; onReset: () => void }) {
   const species = b.species ? getSpecies(b.species) : undefined;
   const cls = b.cls ? getClass(b.cls) : undefined;
   const bg = b.background ? getBackground(b.background) : undefined;
@@ -514,6 +516,24 @@ function StepSummary({ b, finalScores, hp, allSkills, onCopy, onReset }:
           {allSkills.length ? allSkills.map((s) => <span key={s} className="chip" data-on>{s}</span>) : <span className="text-sm" style={{ color: "var(--color-dim)" }}>—</span>}
         </div>
       </div>
+      <div className="panel p-6 mt-5">
+        <label className="eyebrow block mb-1.5" htmlFor="hero-lore">
+          <i className="fas fa-feather-pointed mr-1.5" style={{ color: "var(--color-bronze)" }} />Historia del personaje
+        </label>
+        <p className="text-[13px] mb-3" style={{ color: "var(--color-muted)" }}>Su pasado, motivaciones, secretos… (opcional). Lo verá el DM en las fichas del grupo.</p>
+        <textarea
+          id="hero-lore"
+          value={b.lore}
+          onChange={(e) => set({ lore: e.target.value })}
+          rows={7}
+          maxLength={4000}
+          placeholder="Nacido en las brumas de Pleabruma, juré no volver a…"
+          className="w-full bg-[var(--color-night)] rounded-lg px-4 py-3 font-body text-[15px] leading-relaxed outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] resize-y"
+          style={{ color: "var(--color-warm)" }}
+        />
+        <p className="text-right text-[11px] mt-1" style={{ color: "var(--color-dim)" }}>{b.lore.length}/4000</p>
+      </div>
+
       <div className="flex flex-wrap gap-3 mt-5">
         <button className="btn-gold" onClick={onCopy}><i className="fas fa-copy mr-2" />Copiar hoja</button>
         <Link href="/inventario" className="btn-ghost inline-block"><i className="fas fa-bag-shopping mr-2" />Ir al inventario</Link>
