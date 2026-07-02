@@ -46,6 +46,10 @@ export const SPECIES: Species[] = [
     tagline: "Roca, forja y memoria de piedra.",
     blurb: "Tenaces como la montaña, los enanos de las Crestormentas guardan tradiciones de runa y acero. Su resistencia es legendaria.",
     traits: ["Visión en la oscuridad 18 m", "Resistencia Enana: ventaja vs. veneno y resistencia al daño", "Conocimiento de la Piedra: detectar trampas de piedra", "Tenacidad Enana: +1 PG por nivel"],
+    lineages: [
+      { name: "Enano de las Colinas", perk: "Aguante férreo: salud y puntos de golpe adicionales (variante clásica)." },
+      { name: "Enano de las Montañas", perk: "Adiestramiento marcial: competencia con armadura ligera y media (variante clásica)." },
+    ],
   },
   {
     slug: "mediano",
