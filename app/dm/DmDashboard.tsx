@@ -8,6 +8,7 @@ import { useGroupAction } from "@/lib/useGroupAction";
 import { narrar } from "@/lib/narrador";
 import MapaPanel from "./MapaPanel";
 import GrupoPanel from "./GrupoPanel";
+import AiConfigPanel from "./AiConfigPanel";
 
 type Tab = "narracion" | "grupo" | "regiones" | "mapa" | "usuarios";
 
@@ -67,6 +68,8 @@ function NarracionPanel() {
   async function stop() { await updateLiveSession({ epic_mode: false, narrator_typing: false }); }
 
   return (
+    <div>
+    <AiConfigPanel />
     <div className="grid lg:grid-cols-2 gap-6">
       <section className="panel p-6">
         <h2 className="font-display text-lg font-bold mb-4" style={{ color: "var(--color-parch)" }}>Narrar</h2>
@@ -124,6 +127,7 @@ function NarracionPanel() {
           </div>
         </div>
       </section>
+    </div>
     </div>
   );
 }

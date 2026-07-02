@@ -2,13 +2,26 @@
 // En local, OLLAMA_HOST = localhost. En Vercel, OLLAMA_HOST = túnel https
 // (p. ej. cloudflared). Los navegadores llaman aquí (mismo origen), sin CORS.
 import { NARRACION, pickLore } from "@/data/loreText";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-const HOST = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
+const ENV_HOST = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
 const MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:14b";
 
 type Msg = { role: "system" | "user" | "assistant"; content: string };
+
+// La URL del túnel la fija el DM desde el Panel (app_config.ollama_host).
+// Si no hay valor en la DB, se usa la variable de entorno / localhost.
+async function resolveHost(): Promise<string> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("app_config").select("value").eq("key", "ollama_host").maybeSingle();
+    const v = (data?.value ?? "").trim().replace(/\/+$/, "");
+    if (v) return v;
+  } catch {}
+  return ENV_HOST;
+}
 
 export async function POST(req: Request) {
   let body: { messages?: Msg[]; character?: string; persona?: string; model?: string };
@@ -29,6 +42,7 @@ export async function POST(req: Request) {
   };
   const messages = [system, ...(body.messages ?? [])].slice(-21);
 
+  const HOST = await resolveHost();
   try {
     const res = await fetch(`${HOST}/api/chat`, {
       method: "POST",
