@@ -23,6 +23,10 @@ export const SPECIES: Species[] = [
     tagline: "Ambición y adaptabilidad.",
     blurb: "Versátiles y resueltos, los humanos pueblan cada rincón de Tal'Dorei. Su ambición los lleva tan lejos como su ingenio.",
     traits: ["Hábil: competencia en una pericia a elección", "Versátil: una dote de origen", "Ingenioso: Inspiración Heroica tras descanso largo"],
+    lineages: [
+      { name: "Humano Estándar", perk: "+1 a todas las características (variante clásica)." },
+      { name: "Humano Variante", perk: "+1 a dos características, una pericia y una dote (variante clásica)." },
+    ],
   },
   {
     slug: "elfo",
@@ -59,6 +63,10 @@ export const SPECIES: Species[] = [
     tagline: "Suerte, valor y buen corazón.",
     blurb: "Pequeños pero indomables, los medianos afrontan el peligro con una sonrisa y una suerte que raya en lo sobrenatural.",
     traits: ["Suerte: repite un 1 en d20", "Valiente: ventaja contra el estado asustado", "Agilidad Mediana: moverse a través de criaturas mayores", "Sigilo Natural: esconderse tras criaturas grandes"],
+    lineages: [
+      { name: "Piesligeros", perk: "Sigilo natural y don social; puedes esconderte con facilidad (variante clásica)." },
+      { name: "Fornido", perk: "Sangre robusta: ventaja vs. veneno y resistencia al daño venenoso (variante clásica)." },
+    ],
   },
   {
     slug: "draconido",
