@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { REGIONS, MAPS } from "@/data/taldorei";
+import { WORLD_POIS, WORLD_SLUG, WORLD_ICON, WORLD_COLOR } from "@/data/world";
 import { useRegions } from "@/lib/useRegions";
+import { usePois } from "@/lib/usePois";
 import { useRole } from "@/components/SessionProvider";
 import RegionExplore from "@/components/RegionExplore";
 
@@ -13,6 +15,7 @@ const MAP_RATIO = "2560 / 1707";
 export default function MapaPage() {
   const role = useRole();
   const { states, ready } = useRegions();
+  const { states: poiStates, keyOf } = usePois();
   const isDM = role === "dm";
   const [exploreSlug, setExploreSlug] = useState<string | null>(null);
 
@@ -55,6 +58,26 @@ export default function MapaPage() {
                   {r.name}{!explored && " · sin explorar"}
                 </span>
               </button>
+            );
+          })}
+
+          {/* Pines del mundo: continentes, regiones y ciudades de toda Exandria.
+              El DM ve todos; los jugadores solo los revelados. */}
+          {WORLD_POIS.filter((p) => isDM || poiStates[keyOf(WORLD_SLUG, p.name)]?.revealed).map((p) => {
+            const st = poiStates[keyOf(WORLD_SLUG, p.name)];
+            const big = p.type === "continente";
+            const alwaysLabel = p.type === "continente" || p.type === "region" || p.type === "capital";
+            const color = WORLD_COLOR[p.type];
+            return (
+              <div key={p.name} title={p.blurb} className="absolute -translate-x-1/2 -translate-y-1/2 group z-10" style={{ left: `${st?.x ?? p.x}%`, top: `${st?.y ?? p.y}%` }}>
+                <span className="flex items-center justify-center rounded-full" style={{ width: big ? 24 : 15, height: big ? 24 : 15, background: "rgba(7,10,14,0.82)", border: `2px solid ${color}`, boxShadow: `0 0 8px ${color}` }}>
+                  <i className={`fas ${WORLD_ICON[p.type]}`} style={{ color, fontSize: big ? 12 : 9 }} />
+                </span>
+                <span className={`absolute left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap font-ui font-bold px-1.5 py-0.5 rounded transition-opacity ${alwaysLabel ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                  style={{ fontSize: big ? 12 : 10, background: "rgba(7,10,14,0.9)", color: alwaysLabel ? "var(--color-bronze-bright)" : "var(--color-warm)" }}>
+                  {p.name}
+                </span>
+              </div>
             );
           })}
 
