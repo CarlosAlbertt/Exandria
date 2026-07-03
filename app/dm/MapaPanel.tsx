@@ -41,11 +41,15 @@ export default function MapaPanel() {
   const continentPins = worldPois.filter((p) => p.type === "continente");
   const pinNameOf = (field: string) => continentPins.find((p) => p.continent === field)?.name ?? field;
   const worldLevel = worldPois.filter((p) => p.type === "continente" || p.continent === "Mares");
-  const mundoPois = worldFocus ? worldPois.filter((p) => p.continent === worldFocus && p.type !== "continente") : worldLevel;
+  const mundoPois = worldFocus === "__all__"
+    ? worldPois
+    : worldFocus
+      ? worldPois.filter((p) => p.continent === worldFocus && p.type !== "continente")
+      : worldLevel;
   const worldMarkers: DragMarker[] = mundoPois.map((p) => ({ id: p.id, x: p.x, y: p.y, label: p.name, color: WORLD_COLOR[p.type], icon: p.icon || WORLD_ICON[p.type] }));
   const worldRevealed = mundoPois.filter((p) => p.revealed).length;
 
-  const openNew = () => { setForm({ ...EMPTY_FORM, continent: worldFocus ?? "Tal'Dorei" }); setEditing("new"); };
+  const openNew = () => { setForm({ ...EMPTY_FORM, continent: worldFocus && worldFocus !== "__all__" ? worldFocus : "Tal'Dorei" }); setEditing("new"); };
   const openEdit = (p: WorldPoiRow) => { setForm({ name: p.name, type: p.type, continent: p.continent, icon: p.icon ?? "", blurb: p.blurb }); setEditing(p); };
   const saveForm = async () => {
     if (!form.name.trim()) return;
@@ -128,6 +132,7 @@ export default function MapaPanel() {
           {/* Breadcrumb de la jerarquía */}
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <button onClick={() => setWorldFocus(null)} className="chip" data-on={!worldFocus}><i className="fas fa-earth-americas mr-1.5" />Exandria</button>
+            <button onClick={() => setWorldFocus("__all__")} className="chip" data-on={worldFocus === "__all__"}><i className="fas fa-list mr-1.5" />Todos</button>
             <span style={{ color: "var(--color-dim)" }}>›</span>
             {continentPins.map((cp) => (
               <button key={cp.continent} onClick={() => setWorldFocus(cp.continent)} className="chip" data-on={worldFocus === cp.continent}>{cp.name}</button>
@@ -135,9 +140,11 @@ export default function MapaPanel() {
           </div>
 
           <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-            {worldFocus
-              ? `Regiones y lugares de ${pinNameOf(worldFocus)}. Arrastra cada pin a su sitio, edítalo o revélalo. Usa «Ampliar» para más precisión.`
-              : "Nivel mundial: solo continentes y mares/océanos. Entra en un continente (arriba) para gestionar sus regiones y ciudades."}
+            {worldFocus === "__all__"
+              ? "Todos los pines de Exandria: continentes, regiones, ciudades y pueblos. Añade, edita, borra, mueve o revela cualquiera."
+              : worldFocus
+                ? `Regiones y lugares de ${pinNameOf(worldFocus)}. Arrastra cada pin a su sitio, edítalo o revélalo. Usa «Ampliar» para más precisión.`
+                : "Nivel mundial: solo continentes y mares/océanos. Entra en un continente (arriba) o pulsa «Todos» para editar cualquier pin."}
           </p>
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-5">
@@ -192,6 +199,7 @@ export default function MapaPanel() {
                       <div className="flex items-center gap-2 min-w-0">
                         <i className={`fas ${p.icon || WORLD_ICON[p.type]} shrink-0`} style={{ color: WORLD_COLOR[p.type], fontSize: 12 }} />
                         <span className="font-ui text-[13px] font-semibold truncate" style={{ color: "var(--color-warm)" }}>{p.name}</span>
+                        {worldFocus === "__all__" && <span className="font-ui text-[10px] shrink-0" style={{ color: "var(--color-dim)" }}>· {p.continent}</span>}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <button onClick={() => seeded && updateWorldPoi(p.id, { revealed: !p.revealed })} disabled={!seeded} title={p.revealed ? "Visible" : "Oculto"}

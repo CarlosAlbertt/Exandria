@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { REGIONS, MAPS } from "@/data/taldorei";
 import { WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW } from "@/data/world";
+import { townMap } from "@/data/townMaps";
 import { useWorldPois, type WorldPoiRow } from "@/lib/useWorldPois";
 import { useRegions } from "@/lib/useRegions";
 import { useRole } from "@/components/SessionProvider";
@@ -24,6 +25,7 @@ export default function MapaPage() {
   const [sel, setSel] = useState<Sel>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [exploreSlug, setExploreSlug] = useState<string | null>(null);
+  const [townOpen, setTownOpen] = useState<{ name: string; image: string } | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -206,6 +208,11 @@ export default function MapaPage() {
               </p>
               <h2 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>{sel.poi.name}</h2>
               <p className="prose-lore !text-[15px]">{sel.poi.blurb}</p>
+              {townMap(sel.poi.name) && (
+                <button className="btn-gold w-full !py-2 text-[12px] mt-4" onClick={() => setTownOpen({ name: sel.poi.name, image: townMap(sel.poi.name)! })}>
+                  <i className="fas fa-map-location-dot mr-2" />Ver mapa del pueblo
+                </button>
+              )}
             </>
           ) : focus ? (
             <>
@@ -246,6 +253,19 @@ export default function MapaPage() {
         const r = REGIONS.find((x) => x.slug === exploreSlug)!;
         return <RegionExplore slug={r.slug} name={r.name} image={r.image} accent={r.accent} onClose={() => setExploreSlug(null)} />;
       })()}
+
+      {/* Visor del mapa del pueblo */}
+      {townOpen && (
+        <div className="fixed inset-0 z-[140] flex flex-col bg-black/95" onClick={() => setTownOpen(null)}>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-line)]">
+            <h2 className="font-display text-xl font-bold" style={{ color: "var(--color-bronze-bright)" }}><i className="fas fa-map-location-dot mr-2" />{townOpen.name}</h2>
+            <button className="btn-ghost !py-2 !px-4 text-[12px]" onClick={() => setTownOpen(null)}><i className="fas fa-xmark mr-1.5" />Cerrar</button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4 overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <img src={townOpen.image} alt={`Mapa de ${townOpen.name}`} className="max-w-full max-h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-gold-line)" }} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

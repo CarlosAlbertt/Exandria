@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { REGION_RATIO } from "@/data/taldorei";
 import { poisFor, POI_ICON, POI_COLOR, type Poi } from "@/data/pois";
+import { townMap } from "@/data/townMaps";
 import { usePois } from "@/lib/usePois";
 import { useRole } from "@/components/SessionProvider";
 
@@ -13,6 +14,7 @@ export default function RegionExplore({
   const isDM = useRole() === "dm";
   const { states, keyOf } = usePois();
   const [sel, setSel] = useState<Poi | null>(null);
+  const [townOpen, setTownOpen] = useState<{ name: string; image: string } | null>(null);
   const ratio = REGION_RATIO[slug] ?? "3300 / 2550";
 
   // POIs con posición guardada; jugadores solo ven los revelados.
@@ -73,6 +75,11 @@ export default function RegionExplore({
                 <span className="eyebrow !text-[9px]" style={{ color: POI_COLOR[sel.type] }}>{sel.type}</span>
               </div>
               <p className="font-body text-[15px]" style={{ color: "var(--color-warm)" }}>{sel.blurb}</p>
+              {townMap(sel.name) && (
+                <button className="btn-gold !py-1.5 !px-3 text-[12px] mt-2" onClick={() => setTownOpen({ name: sel.name, image: townMap(sel.name)! })}>
+                  <i className="fas fa-map-location-dot mr-1.5" />Ver mapa del pueblo
+                </button>
+              )}
             </div>
             <button className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }} onClick={() => setSel(null)}><i className="fas fa-xmark" /></button>
           </div>
@@ -81,6 +88,19 @@ export default function RegionExplore({
       {!sel && pois.length > 0 && (
         <div className="border-t border-[var(--color-line)] px-5 py-2 text-center">
           <span className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>Pulsa un punto para ver el detalle.</span>
+        </div>
+      )}
+
+      {/* Visor del mapa del pueblo */}
+      {townOpen && (
+        <div className="fixed inset-0 z-[140] flex flex-col bg-black/95" onClick={() => setTownOpen(null)}>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-line)]">
+            <h2 className="font-display text-xl font-bold" style={{ color: "var(--color-bronze-bright)" }}><i className="fas fa-map-location-dot mr-2" />{townOpen.name}</h2>
+            <button className="btn-ghost !py-2 !px-4 text-[12px]" onClick={() => setTownOpen(null)}><i className="fas fa-xmark mr-1.5" />Cerrar</button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4 overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <img src={townOpen.image} alt={`Mapa de ${townOpen.name}`} className="max-w-full max-h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-gold-line)" }} />
+          </div>
         </div>
       )}
     </div>
