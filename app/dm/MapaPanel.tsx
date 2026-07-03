@@ -6,7 +6,7 @@ import { poisFor, POI_ICON, POI_COLOR } from "@/data/pois";
 import { WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW, CONTINENTS, REGIONS_BY_CONTINENT, type WorldType } from "@/data/world";
 import { useRegions, setRegionPin } from "@/lib/useRegions";
 import { usePois, setPoiPos, setPoiRevealed } from "@/lib/usePois";
-import { useWorldPois, saveWorldPois, newWorldPoi, type WorldPoiRow } from "@/lib/useWorldPois";
+import { useWorldPois, newWorldPoi, type WorldPoiRow } from "@/lib/useWorldPois";
 import PinDragMap, { type DragMarker } from "@/components/PinDragMap";
 
 const WORLD_TYPES = Object.keys(WORLD_ICON) as WorldType[];
@@ -21,7 +21,7 @@ export default function MapaPanel() {
   const [form, setForm] = useState<EditForm>(EMPTY_FORM);
   const { states: regionStates } = useRegions();
   const { states: poiStates, keyOf } = usePois();
-  const { pois: worldPois } = useWorldPois();
+  const { pois: worldPois, save } = useWorldPois();
 
   // --- Continente: pines de región de Tal'Dorei ---
   const regionMarkers: DragMarker[] = REGIONS.map((r) => {
@@ -57,15 +57,15 @@ export default function MapaPanel() {
     const base = { name: form.name.trim(), type: form.type, continent: form.continent, region: form.region.trim(), icon: form.icon.trim() || null, blurb: form.blurb.trim() };
     if (editing === "new") {
       const v = CONTINENT_VIEW[form.continent];
-      await saveWorldPois([...worldPois, newWorldPoi({ ...base, x: v?.cx ?? 50, y: v?.cy ?? 50, revealed: false })]);
+      save([...worldPois, newWorldPoi({ ...base, x: v?.cx ?? 50, y: v?.cy ?? 50, revealed: false })]);
     } else if (editing) {
-      await saveWorldPois(worldPois.map((p) => (p.id === editing.id ? { ...p, ...base } : p)));
+      save(worldPois.map((p) => (p.id === editing.id ? { ...p, ...base } : p)));
     }
     setEditing(null);
   };
-  const moveWorld = (id: string, x: number, y: number) => saveWorldPois(worldPois.map((p) => (p.id === id ? { ...p, x, y } : p)));
-  const toggleReveal = (id: string) => saveWorldPois(worldPois.map((p) => (p.id === id ? { ...p, revealed: !p.revealed } : p)));
-  const removeWorld = (id: string) => saveWorldPois(worldPois.filter((p) => p.id !== id));
+  const moveWorld = (id: string, x: number, y: number) => save(worldPois.map((p) => (p.id === id ? { ...p, x, y } : p)));
+  const toggleReveal = (id: string) => save(worldPois.map((p) => (p.id === id ? { ...p, revealed: !p.revealed } : p)));
+  const removeWorld = (id: string) => save(worldPois.filter((p) => p.id !== id));
 
   return (
     <div className="panel p-6">

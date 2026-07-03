@@ -27,6 +27,14 @@ const defaults = (): WorldPoiRow[] =>
 // Rellena la región si falta (pines guardados antes de existir el campo).
 const withRegion = (r: WorldPoiRow): WorldPoiRow => ({ ...r, region: r.region || REGION_OF[r.name] || "" });
 
+const round = (n: number) => Math.round(n * 10) / 10;
+
+export async function saveWorldPois(rows: WorldPoiRow[]) {
+  if (!supabaseConfigured) return;
+  const clean = rows.map((r) => ({ ...r, x: round(r.x), y: round(r.y) }));
+  await createClient().from("app_config").upsert({ key: KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() });
+}
+
 export function useWorldPois() {
   const [pois, setPois] = useState<WorldPoiRow[]>(defaults);
   const [ready, setReady] = useState(false);
@@ -57,15 +65,11 @@ export function useWorldPois() {
     return () => { mounted = false; supabase.removeChannel(ch); };
   }, []);
 
-  return { pois, ready };
-}
+  // Guardado optimista: actualiza el estado local YA (app_config no tiene
+  // Realtime, así que sin esto el pin arrastrado "volvía" a su sitio) y persiste.
+  const save = (rows: WorldPoiRow[]) => { setPois(rows); void saveWorldPois(rows); };
 
-const round = (n: number) => Math.round(n * 10) / 10;
-
-export async function saveWorldPois(rows: WorldPoiRow[]) {
-  if (!supabaseConfigured) return;
-  const clean = rows.map((r) => ({ ...r, x: round(r.x), y: round(r.y) }));
-  await createClient().from("app_config").upsert({ key: KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() });
+  return { pois, ready, save };
 }
 
 export function newWorldPoi(p: Omit<WorldPoiRow, "id">): WorldPoiRow {
