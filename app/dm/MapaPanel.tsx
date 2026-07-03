@@ -134,8 +134,8 @@ export default function MapaPanel() {
             <button onClick={() => setWorldFocus(null)} className="chip" data-on={!worldFocus}><i className="fas fa-earth-americas mr-1.5" />Exandria</button>
             <button onClick={() => setWorldFocus("__all__")} className="chip" data-on={worldFocus === "__all__"}><i className="fas fa-list mr-1.5" />Todos</button>
             <span style={{ color: "var(--color-dim)" }}>›</span>
-            {continentPins.map((cp) => (
-              <button key={cp.continent} onClick={() => setWorldFocus(cp.continent)} className="chip" data-on={worldFocus === cp.continent}>{cp.name}</button>
+            {CONTINENTS.map((c) => (
+              <button key={c} onClick={() => setWorldFocus(c)} className="chip" data-on={worldFocus === c}>{pinNameOf(c)}</button>
             ))}
           </div>
 
