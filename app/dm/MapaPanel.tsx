@@ -14,9 +14,9 @@ type EditForm = { name: string; type: WorldType; continent: string; icon: string
 const EMPTY_FORM: EditForm = { name: "", type: "ciudad", continent: "Tal'Dorei", icon: "", blurb: "" };
 
 export default function MapaPanel() {
-  const [mode, setMode] = useState<"continente" | "region" | "mundo">("continente");
+  const [mode, setMode] = useState<"continente" | "region" | "mundo">("mundo");
   const [regionSlug, setRegionSlug] = useState(REGIONS[0].slug);
-  const [worldFocus, setWorldFocus] = useState<string | null>(null);
+  const [worldFocus, setWorldFocus] = useState<string | null>("__all__");
   const [editing, setEditing] = useState<WorldPoiRow | "new" | null>(null);
   const [form, setForm] = useState<EditForm>(EMPTY_FORM);
   const { states: regionStates } = useRegions();
@@ -65,14 +65,25 @@ export default function MapaPanel() {
 
   return (
     <div className="panel p-6">
-      <div className="flex gap-2 mb-5">
-        {(["continente", "region", "mundo"] as const).map((m) => (
-          <button key={m} onClick={() => setMode(m)} className="px-4 py-2 rounded-lg font-ui text-[13px] font-bold transition-colors"
-            style={{ color: mode === m ? "var(--color-ink)" : "var(--color-muted)", background: mode === m ? "var(--color-bronze)" : "transparent", border: `1px solid ${mode === m ? "var(--color-bronze)" : "var(--color-line)"}` }}>
-            {m === "continente" ? "Pines de Tal'Dorei" : m === "region" ? "POIs por región" : "Mundo (Exandria)"}
-          </button>
-        ))}
-      </div>
+      {(() => {
+        const tabStyle = (on: boolean) => ({ color: on ? "var(--color-ink)" : "var(--color-muted)", background: on ? "var(--color-bronze)" : "transparent", border: `1px solid ${on ? "var(--color-bronze)" : "var(--color-line)"}` });
+        const cls = "px-3 py-1.5 rounded-lg font-ui text-[12px] font-bold transition-colors";
+        return (
+          <div className="flex gap-2 mb-5 flex-wrap items-center">
+            {(["__all__", ...CONTINENTS] as const).map((t) => {
+              const on = mode === "mundo" && worldFocus === t;
+              return (
+                <button key={t} onClick={() => { setMode("mundo"); setWorldFocus(t); setEditing(null); }} className={cls} style={tabStyle(on)}>
+                  {t === "__all__" ? <><i className="fas fa-list mr-1.5" />Todos</> : pinNameOf(t)}
+                </button>
+              );
+            })}
+            <span className="mx-1" style={{ color: "var(--color-line)" }}>|</span>
+            <button onClick={() => setMode("continente")} className={cls} style={tabStyle(mode === "continente")}>Regiones Tal'Dorei</button>
+            <button onClick={() => setMode("region")} className={cls} style={tabStyle(mode === "region")}>POIs por región</button>
+          </div>
+        );
+      })()}
 
       {mode === "continente" && (
         <>
@@ -128,16 +139,6 @@ export default function MapaPanel() {
               <button className="btn-gold !py-2 !px-4 text-[13px]" onClick={() => seedWorldPois()}><i className="fas fa-seedling mr-2" />Sembrar pines por defecto</button>
             </div>
           )}
-
-          {/* Breadcrumb de la jerarquía */}
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <button onClick={() => setWorldFocus(null)} className="chip" data-on={!worldFocus}><i className="fas fa-earth-americas mr-1.5" />Exandria</button>
-            <button onClick={() => setWorldFocus("__all__")} className="chip" data-on={worldFocus === "__all__"}><i className="fas fa-list mr-1.5" />Todos</button>
-            <span style={{ color: "var(--color-dim)" }}>›</span>
-            {CONTINENTS.map((c) => (
-              <button key={c} onClick={() => setWorldFocus(c)} className="chip" data-on={worldFocus === c}>{pinNameOf(c)}</button>
-            ))}
-          </div>
 
           <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
             {worldFocus === "__all__"
