@@ -3,15 +3,15 @@
 import { useState } from "react";
 import { REGIONS, MAPS, REGION_RATIO } from "@/data/taldorei";
 import { poisFor, POI_ICON, POI_COLOR } from "@/data/pois";
-import { WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW, CONTINENTS, type WorldType } from "@/data/world";
+import { WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW, CONTINENTS, REGIONS_BY_CONTINENT, type WorldType } from "@/data/world";
 import { useRegions, setRegionPin } from "@/lib/useRegions";
 import { usePois, setPoiPos, setPoiRevealed } from "@/lib/usePois";
-import { useWorldPois, addWorldPoi, updateWorldPoi, deleteWorldPoi, seedWorldPois, type WorldPoiRow } from "@/lib/useWorldPois";
+import { useWorldPois, saveWorldPois, newWorldPoi, type WorldPoiRow } from "@/lib/useWorldPois";
 import PinDragMap, { type DragMarker } from "@/components/PinDragMap";
 
 const WORLD_TYPES = Object.keys(WORLD_ICON) as WorldType[];
-type EditForm = { name: string; type: WorldType; continent: string; icon: string; blurb: string };
-const EMPTY_FORM: EditForm = { name: "", type: "ciudad", continent: "Tal'Dorei", icon: "", blurb: "" };
+type EditForm = { name: string; type: WorldType; continent: string; region: string; icon: string; blurb: string };
+const EMPTY_FORM: EditForm = { name: "", type: "ciudad", continent: "Tal'Dorei", region: "", icon: "", blurb: "" };
 
 export default function MapaPanel() {
   const [mode, setMode] = useState<"continente" | "region" | "mundo">("mundo");
@@ -21,7 +21,7 @@ export default function MapaPanel() {
   const [form, setForm] = useState<EditForm>(EMPTY_FORM);
   const { states: regionStates } = useRegions();
   const { states: poiStates, keyOf } = usePois();
-  const { pois: worldPois, seeded } = useWorldPois();
+  const { pois: worldPois } = useWorldPois();
 
   // --- Continente: pines de región de Tal'Dorei ---
   const regionMarkers: DragMarker[] = REGIONS.map((r) => {
@@ -49,19 +49,23 @@ export default function MapaPanel() {
   const worldMarkers: DragMarker[] = mundoPois.map((p) => ({ id: p.id, x: p.x, y: p.y, label: p.name, color: WORLD_COLOR[p.type], icon: p.icon || WORLD_ICON[p.type] }));
   const worldRevealed = mundoPois.filter((p) => p.revealed).length;
 
-  const openNew = () => { setForm({ ...EMPTY_FORM, continent: worldFocus && worldFocus !== "__all__" ? worldFocus : "Tal'Dorei" }); setEditing("new"); };
-  const openEdit = (p: WorldPoiRow) => { setForm({ name: p.name, type: p.type, continent: p.continent, icon: p.icon ?? "", blurb: p.blurb }); setEditing(p); };
+  const focusCont = worldFocus && worldFocus !== "__all__" ? worldFocus : "Tal'Dorei";
+  const openNew = () => { setForm({ ...EMPTY_FORM, continent: focusCont }); setEditing("new"); };
+  const openEdit = (p: WorldPoiRow) => { setForm({ name: p.name, type: p.type, continent: p.continent, region: p.region ?? "", icon: p.icon ?? "", blurb: p.blurb }); setEditing(p); };
   const saveForm = async () => {
     if (!form.name.trim()) return;
-    const base = { name: form.name.trim(), type: form.type, continent: form.continent, icon: form.icon.trim() || null, blurb: form.blurb.trim() };
+    const base = { name: form.name.trim(), type: form.type, continent: form.continent, region: form.region.trim(), icon: form.icon.trim() || null, blurb: form.blurb.trim() };
     if (editing === "new") {
       const v = CONTINENT_VIEW[form.continent];
-      await addWorldPoi({ ...base, x: v?.cx ?? 50, y: v?.cy ?? 50, revealed: false });
+      await saveWorldPois([...worldPois, newWorldPoi({ ...base, x: v?.cx ?? 50, y: v?.cy ?? 50, revealed: false })]);
     } else if (editing) {
-      await updateWorldPoi(editing.id, base);
+      await saveWorldPois(worldPois.map((p) => (p.id === editing.id ? { ...p, ...base } : p)));
     }
     setEditing(null);
   };
+  const moveWorld = (id: string, x: number, y: number) => saveWorldPois(worldPois.map((p) => (p.id === id ? { ...p, x, y } : p)));
+  const toggleReveal = (id: string) => saveWorldPois(worldPois.map((p) => (p.id === id ? { ...p, revealed: !p.revealed } : p)));
+  const removeWorld = (id: string) => saveWorldPois(worldPois.filter((p) => p.id !== id));
 
   return (
     <div className="panel p-6">
@@ -130,16 +134,6 @@ export default function MapaPanel() {
 
       {mode === "mundo" && (
         <>
-          {!seeded && (
-            <div className="panel-raised p-4 mb-4" style={{ borderColor: "color-mix(in srgb, var(--color-ember) 40%, var(--color-line))" }}>
-              <p className="font-ui text-[13px] mb-3" style={{ color: "var(--color-warm)" }}>
-                <i className="fas fa-triangle-exclamation mr-1.5" style={{ color: "var(--color-ember)" }} />
-                No hay pines en la base de datos. Ejecuta primero <code>supabase/schema_v7.sql</code> y luego siembra los pines por defecto para poder editarlos.
-              </p>
-              <button className="btn-gold !py-2 !px-4 text-[13px]" onClick={() => seedWorldPois()}><i className="fas fa-seedling mr-2" />Sembrar pines por defecto</button>
-            </div>
-          )}
-
           <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
             {worldFocus === "__all__"
               ? "Todos los pines de Exandria: continentes, regiones, ciudades y pueblos. Añade, edita, borra, mueve o revela cualquiera."
@@ -149,11 +143,11 @@ export default function MapaPanel() {
           </p>
 
           <div className="grid lg:grid-cols-[1fr_340px] gap-5">
-            <PinDragMap image={MAPS.taldorei} ratio="2560 / 1707" markers={worldMarkers} onMove={(id, x, y) => seeded && updateWorldPoi(id, { x, y })} />
+            <PinDragMap image={MAPS.taldorei} ratio="2560 / 1707" markers={worldMarkers} onMove={moveWorld} />
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="eyebrow">Lugares ({worldRevealed}/{mundoPois.length} visibles)</p>
-                <button onClick={openNew} disabled={!seeded} className="btn-gold !py-1.5 !px-3 text-[12px] disabled:opacity-40"><i className="fas fa-plus mr-1.5" />Añadir</button>
+                <button onClick={openNew} className="btn-gold !py-1.5 !px-3 text-[12px]"><i className="fas fa-plus mr-1.5" />Añadir</button>
               </div>
 
               {/* Formulario de añadir/editar */}
@@ -172,6 +166,11 @@ export default function MapaPanel() {
                       {WORLD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
+                  <input value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} placeholder="Región (dentro del continente)" list="mapa-regiones"
+                    className="w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]" style={{ color: "var(--color-warm)" }} />
+                  <datalist id="mapa-regiones">
+                    {(REGIONS_BY_CONTINENT[form.continent] ?? []).map((r) => <option key={r} value={r} />)}
+                  </datalist>
                   <div className="flex gap-2 items-center">
                     <i className={`fas ${form.icon.trim() || WORLD_ICON[form.type]}`} style={{ color: WORLD_COLOR[form.type], width: 18, textAlign: "center" }} />
                     <input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="Icono opcional (p. ej. fa-dragon)"
@@ -188,28 +187,35 @@ export default function MapaPanel() {
               )}
 
               {worldFocus === "Tal'Dorei" ? (
-                <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>Las regiones de Tal'Dorei se gestionan en las pestañas «Pines de Tal'Dorei» y «POIs por región». Aquí puedes añadir lugares extra de Tal'Dorei.</p>
+                <p className="text-sm italic mb-2" style={{ color: "var(--color-dim)" }}>Los mapas de región y sus POIs de Tal'Dorei están en las pestañas «Regiones Tal'Dorei» y «POIs por región». Aquí puedes añadir ciudades/pueblos de Tal'Dorei como pines del mundo.</p>
               ) : null}
 
               {mundoPois.length === 0 ? (
-                <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>Sin lugares en este nivel todavía.</p>
+                <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>Sin lugares en este nivel todavía. Pulsa «Añadir».</p>
               ) : (
-                <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-                  {mundoPois.map((p) => (
-                    <div key={p.id} className="panel-raised p-2.5 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <i className={`fas ${p.icon || WORLD_ICON[p.type]} shrink-0`} style={{ color: WORLD_COLOR[p.type], fontSize: 12 }} />
-                        <span className="font-ui text-[13px] font-semibold truncate" style={{ color: "var(--color-warm)" }}>{p.name}</span>
-                        {worldFocus === "__all__" && <span className="font-ui text-[10px] shrink-0" style={{ color: "var(--color-dim)" }}>· {p.continent}</span>}
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={() => seeded && updateWorldPoi(p.id, { revealed: !p.revealed })} disabled={!seeded} title={p.revealed ? "Visible" : "Oculto"}
-                          className="font-ui text-[11px] font-bold px-2 py-1 rounded-lg transition-colors disabled:opacity-40"
-                          style={{ color: p.revealed ? "var(--color-ink)" : "var(--color-muted)", background: p.revealed ? "var(--color-primitivo)" : "transparent", border: `1px solid ${p.revealed ? "var(--color-primitivo)" : "var(--color-line)"}` }}>
-                          <i className={`fas ${p.revealed ? "fa-eye" : "fa-eye-slash"}`} />
-                        </button>
-                        <button onClick={() => openEdit(p)} disabled={!seeded} title="Editar" className="btn-ghost !p-0 w-7 h-7 text-[11px] disabled:opacity-40"><i className="fas fa-pen" /></button>
-                        <button onClick={() => seeded && confirm(`¿Borrar "${p.name}"?`) && deleteWorldPoi(p.id)} disabled={!seeded} title="Borrar" className="btn-ghost !p-0 w-7 h-7 text-[11px] disabled:opacity-40" style={{ color: "var(--color-ember)" }}><i className="fas fa-trash" /></button>
+                <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+                  {Array.from(new Set(mundoPois.map((p) => p.region || "—"))).map((reg) => (
+                    <div key={reg}>
+                      <p className="font-ui text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: "var(--color-dim)" }}>{reg}{worldFocus === "__all__" ? "" : ""}</p>
+                      <div className="space-y-2">
+                        {mundoPois.filter((p) => (p.region || "—") === reg).map((p) => (
+                          <div key={p.id} className="panel-raised p-2.5 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <i className={`fas ${p.icon || WORLD_ICON[p.type]} shrink-0`} style={{ color: WORLD_COLOR[p.type], fontSize: 12 }} />
+                              <span className="font-ui text-[13px] font-semibold truncate" style={{ color: "var(--color-warm)" }}>{p.name}</span>
+                              {worldFocus === "__all__" && <span className="font-ui text-[10px] shrink-0" style={{ color: "var(--color-dim)" }}>· {p.continent}</span>}
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button onClick={() => toggleReveal(p.id)} title={p.revealed ? "Visible" : "Oculto"}
+                                className="font-ui text-[11px] font-bold px-2 py-1 rounded-lg transition-colors"
+                                style={{ color: p.revealed ? "var(--color-ink)" : "var(--color-muted)", background: p.revealed ? "var(--color-primitivo)" : "transparent", border: `1px solid ${p.revealed ? "var(--color-primitivo)" : "var(--color-line)"}` }}>
+                                <i className={`fas ${p.revealed ? "fa-eye" : "fa-eye-slash"}`} />
+                              </button>
+                              <button onClick={() => openEdit(p)} title="Editar" className="btn-ghost !p-0 w-7 h-7 text-[11px]"><i className="fas fa-pen" /></button>
+                              <button onClick={() => { if (confirm(`¿Borrar "${p.name}"?`)) removeWorld(p.id); }} title="Borrar" className="btn-ghost !p-0 w-7 h-7 text-[11px]" style={{ color: "var(--color-ember)" }}><i className="fas fa-trash" /></button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}

@@ -204,7 +204,7 @@ export default function MapaPage() {
           ) : sel?.kind === "poi" ? (
             <>
               <p className="eyebrow mb-2" style={{ color: WORLD_COLOR[sel.poi.type] }}>
-                <i className={`fas ${sel.poi.icon || WORLD_ICON[sel.poi.type]} mr-1.5`} />{sel.poi.type}
+                <i className={`fas ${sel.poi.icon || WORLD_ICON[sel.poi.type]} mr-1.5`} />{sel.poi.type}{sel.poi.region ? ` · ${sel.poi.region}` : ""}
               </p>
               <h2 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>{sel.poi.name}</h2>
               <p className="prose-lore !text-[15px]">{sel.poi.blurb}</p>
@@ -219,16 +219,27 @@ export default function MapaPage() {
               <p className="eyebrow mb-2" style={{ color: "var(--color-gold)" }}><i className="fas fa-earth-americas mr-1.5" />Continente</p>
               <h2 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>{focusLabel}</h2>
               <p className="prose-lore !text-[15px] mb-4">{pinForField(focus)?.blurb}</p>
-              <p className="eyebrow mb-3">{focus === "Tal'Dorei" ? "Regiones" : "Lugares"}</p>
-              <div className="flex flex-wrap gap-2">
-                {focus === "Tal'Dorei"
-                  ? (taldoreiRegions.length ? taldoreiRegions.map((r) => (
-                      <button key={r.slug} onClick={() => setSel({ kind: "region", slug: r.slug })} className="chip" data-on={selRegionSlug === r.slug}>{r.name}</button>
-                    )) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>)
-                  : (continentPois.length ? continentPois.map((p) => (
-                      <button key={p.id} onClick={() => setSel({ kind: "poi", poi: p })} className="chip"><i className={`fas ${p.icon || WORLD_ICON[p.type]} mr-1.5`} style={{ color: WORLD_COLOR[p.type] }} />{p.name}</button>
-                    )) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>)}
-              </div>
+              <p className="eyebrow mb-3">{focus === "Tal'Dorei" ? "Regiones" : "Lugares por región"}</p>
+              {focus === "Tal'Dorei" ? (
+                <div className="flex flex-wrap gap-2">
+                  {taldoreiRegions.length ? taldoreiRegions.map((r) => (
+                    <button key={r.slug} onClick={() => setSel({ kind: "region", slug: r.slug })} className="chip" data-on={selRegionSlug === r.slug}>{r.name}</button>
+                  )) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>}
+                </div>
+              ) : continentPois.length ? (
+                <div className="space-y-3">
+                  {Array.from(new Set(continentPois.map((p) => p.region || "—"))).map((reg) => (
+                    <div key={reg}>
+                      <p className="font-ui text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--color-dim)" }}>{reg}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {continentPois.filter((p) => (p.region || "—") === reg).map((p) => (
+                          <button key={p.id} onClick={() => setSel({ kind: "poi", poi: p })} className="chip"><i className={`fas ${p.icon || WORLD_ICON[p.type]} mr-1.5`} style={{ color: WORLD_COLOR[p.type] }} />{p.name}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>}
             </>
           ) : (
             <>

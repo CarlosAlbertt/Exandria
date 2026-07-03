@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
-import { WORLD_POIS, type WorldType } from "@/data/world";
+import { WORLD_POIS, REGION_OF, type WorldType } from "@/data/world";
 
 export type WorldPoiRow = {
   id: string;
   name: string;
   type: WorldType;
   continent: string;
+  region: string;
   icon: string | null; // override; si null se usa el icono del tipo
   x: number;
   y: number;
@@ -16,14 +17,18 @@ export type WorldPoiRow = {
   revealed: boolean;
 };
 
-const FIELDS = "id, name, type, continent, icon, x, y, blurb, revealed";
+// Todos los pines del mundo se guardan como JSON en app_config (ya existe, sin
+// migración). El DM edita y se guarda el array entero.
+const KEY = "world_pois";
 
-// Pines del mundo desde Supabase (tabla world_poi), sincronizados por Realtime.
-// Si la tabla aún no se ha "sembrado", devuelve los valores por defecto del
-// código (solo lectura) para que el mapa no quede vacío.
+const defaults = (): WorldPoiRow[] =>
+  WORLD_POIS.map((p, i) => ({ id: `default-${i}`, name: p.name, type: p.type, continent: p.continent, region: p.region, icon: null, x: p.x, y: p.y, blurb: p.blurb, revealed: false }));
+
+// Rellena la región si falta (pines guardados antes de existir el campo).
+const withRegion = (r: WorldPoiRow): WorldPoiRow => ({ ...r, region: r.region || REGION_OF[r.name] || "" });
+
 export function useWorldPois() {
-  const [rows, setRows] = useState<WorldPoiRow[]>([]);
-  const [seeded, setSeeded] = useState(false);
+  const [pois, setPois] = useState<WorldPoiRow[]>(defaults);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -32,54 +37,38 @@ export function useWorldPois() {
     let mounted = true;
 
     const load = async () => {
-      const { data } = await supabase.from("world_poi").select(FIELDS);
+      const { data } = await supabase.from("app_config").select("value").eq("key", KEY).maybeSingle();
       if (!mounted) return;
-      const rs = (data ?? []) as WorldPoiRow[];
-      setRows(rs);
-      setSeeded(rs.length > 0);
+      if (data?.value) {
+        try {
+          const arr = JSON.parse(data.value);
+          if (Array.isArray(arr) && arr.length) setPois((arr as WorldPoiRow[]).map(withRegion));
+        } catch { /* JSON inválido: dejamos los defaults */ }
+      }
       setReady(true);
     };
     load();
 
     const ch = supabase
-      .channel(`world_poi_rt_${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "world_poi" }, () => load())
+      .channel(`world_pois_rt_${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "app_config", filter: `key=eq.${KEY}` }, () => load())
       .subscribe();
 
     return () => { mounted = false; supabase.removeChannel(ch); };
   }, []);
 
-  const fallback: WorldPoiRow[] = WORLD_POIS.map((p, i) => ({
-    id: `default-${i}`, name: p.name, type: p.type, continent: p.continent,
-    icon: null, x: p.x, y: p.y, blurb: p.blurb, revealed: false,
-  }));
-
-  return { pois: seeded ? rows : fallback, rows, seeded, ready };
+  return { pois, ready };
 }
 
-const sb = () => createClient();
 const round = (n: number) => Math.round(n * 10) / 10;
 
-export async function addWorldPoi(p: Omit<WorldPoiRow, "id">) {
+export async function saveWorldPois(rows: WorldPoiRow[]) {
   if (!supabaseConfigured) return;
-  await sb().from("world_poi").insert({ ...p, x: round(p.x), y: round(p.y), updated_at: new Date().toISOString() });
+  const clean = rows.map((r) => ({ ...r, x: round(r.x), y: round(r.y) }));
+  await createClient().from("app_config").upsert({ key: KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() });
 }
-export async function updateWorldPoi(id: string, patch: Partial<Omit<WorldPoiRow, "id">>) {
-  if (!supabaseConfigured) return;
-  const p = { ...patch } as Record<string, unknown>;
-  if (typeof patch.x === "number") p.x = round(patch.x);
-  if (typeof patch.y === "number") p.y = round(patch.y);
-  await sb().from("world_poi").update({ ...p, updated_at: new Date().toISOString() }).eq("id", id);
-}
-export async function deleteWorldPoi(id: string) {
-  if (!supabaseConfigured) return;
-  await sb().from("world_poi").delete().eq("id", id);
-}
-// Inserta los pines por defecto del código si la tabla está vacía.
-export async function seedWorldPois() {
-  if (!supabaseConfigured) return;
-  const { count } = await sb().from("world_poi").select("id", { count: "exact", head: true });
-  if (count && count > 0) return;
-  const rows = WORLD_POIS.map((p) => ({ name: p.name, type: p.type, continent: p.continent, icon: null, x: p.x, y: p.y, blurb: p.blurb, revealed: false }));
-  await sb().from("world_poi").insert(rows);
+
+export function newWorldPoi(p: Omit<WorldPoiRow, "id">): WorldPoiRow {
+  const id = globalThis.crypto?.randomUUID?.() ?? `p-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return { ...p, id };
 }
