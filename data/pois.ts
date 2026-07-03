@@ -49,6 +49,7 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Ruinas de Torthil", type: "ruina", blurb: "Restos de una era olvidada bajo la hierba alta.", x: 62, y: 55 },
     { name: "Tumulosombrío", type: "peligro", blurb: "Túmulos malditos donde los muertos no descansan.", x: 68, y: 70 },
     { name: "Bosque de las Zarzas", type: "natural", blurb: "Espesura de zarzas casi impenetrable.", x: 55, y: 30 },
+    { name: "Deastok", type: "ciudad", blurb: "Ciudad comercial de las Llanuras, nudo de caravanas y almacenes entre Emon y el interior.", x: 40, y: 48 },
   ],
   "montanas-torrerrisco": [
     { name: "Riscomartillo", type: "ciudad", blurb: "Gran ciudad enana bajo la montaña; forjas y política de clanes.", x: 42, y: 48 },
@@ -57,6 +58,7 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Yug'Voril", type: "ruina", blurb: "Antigua ciudad hundida en las profundidades.", x: 50, y: 62 },
     { name: "Aldea de Jorenn", type: "ciudad", blurb: "Aldea minera acosada por males subterráneos.", x: 68, y: 55 },
     { name: "Grietasombría", type: "peligro", blurb: "Sima oscura de peligros insondables.", x: 25, y: 60 },
+    { name: "Terrah", type: "ciudad", blurb: "Hogar de los Ashari de la Tierra, en un valle en cuenco al norte de Riscomartillo; custodian un desgarrón al Plano de la Tierra.", x: 38, y: 30 },
   ],
   "montanas-crestormentas": [
     { name: "Lyrengorn", type: "ciudad", blurb: "Los Picos Élficos; guardianes de auroras y dracoformes.", x: 50, y: 30 },
@@ -64,6 +66,7 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Ruhn-Shak", type: "ruina", blurb: "Ruinas azotadas por tormentas eternas.", x: 62, y: 60 },
     { name: "Marismas de Filtrasueño", type: "peligro", blurb: "Pantano brumoso donde el sueño y la vigilia se confunden.", x: 30, y: 72 },
     { name: "Caverna del Axioma", type: "ruina", blurb: "Gruta de secretos arcanos.", x: 70, y: 40 },
+    { name: "Zephrah", type: "ciudad", blurb: "Hogar de los Ashari del Aire, en un altiplano de las cumbres; custodian un desgarrón al Plano del Aire.", x: 45, y: 22 },
   ],
   "peninsula-pleabruma": [
     { name: "Byroden", type: "ciudad", blurb: "Pueblo humilde, cuna de héroes legendarios.", x: 45, y: 35 },

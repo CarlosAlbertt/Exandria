@@ -112,6 +112,7 @@ export const WORLD_POIS: WorldPoi[] = [
   { name: "Othe", type: "pueblo", continent: "Wildemount", region: "Costa del Serrallo", x: 74, y: 47, blurb: "Ciudad-estado insular del Cónclave de Clovis, entre las Islas Swavain." },
   { name: "Puerto Zoon", type: "pueblo", continent: "Wildemount", region: "Costa del Serrallo", x: 77, y: 47, blurb: "Ciudad-estado portuaria del Cónclave de Clovis." },
   { name: "Tussoa", type: "pueblo", continent: "Wildemount", region: "Costa del Serrallo", x: 71, y: 49, blurb: "Ciudad-estado del Cónclave de Clovis, en la cálida costa." },
+  { name: "Vesrah", type: "pueblo", continent: "Wildemount", region: "Costa del Serrallo", x: 69, y: 46, blurb: "Hogar de los Ashari del Agua, en una isla frente a la Costa del Serrallo; custodian un desgarrón al Plano del Agua." },
 
   // ---------------- MARQUET ----------------
   { name: "Desierto Rumedam", type: "region", continent: "Marquet", region: "Desierto Rumedam", x: 23, y: 72, blurb: "Vasto desierto que cubre un tercio del continente; en su centro, Ank'Harel." },
