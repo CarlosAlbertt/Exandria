@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { REGION_RATIO } from "@/data/taldorei";
-import { poisFor, POI_ICON, POI_COLOR, type Poi } from "@/data/pois";
+import { POI_ICON, POI_COLOR, type Poi } from "@/data/pois";
 import { townMap } from "@/data/townMaps";
 import { usePois } from "@/lib/usePois";
 import { useRole } from "@/components/SessionProvider";
 
 // Visor a pantalla completa del mapa de una región con sus puntos de interés.
 export default function RegionExplore({
-  slug, name, image, accent, onClose,
-}: { slug: string; name: string; image: string; accent: string; onClose: () => void }) {
+  slug, name, image, accent, pois: basePois, onClose,
+}: { slug: string; name: string; image: string; accent: string; pois: Poi[]; onClose: () => void }) {
   const isDM = useRole() === "dm";
   const { states, keyOf } = usePois();
   const [sel, setSel] = useState<Poi | null>(null);
@@ -18,7 +18,7 @@ export default function RegionExplore({
   const ratio = REGION_RATIO[slug] ?? "3300 / 2550";
 
   // POIs con posición guardada; jugadores solo ven los revelados.
-  const pois = poisFor(slug)
+  const pois = basePois
     .map((p) => {
       const st = states[keyOf(slug, p.name)];
       return { ...p, x: st?.x ?? p.x, y: st?.y ?? p.y, revealed: isDM || !!st?.revealed };
@@ -40,7 +40,13 @@ export default function RegionExplore({
       {/* Mapa + pins */}
       <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
         <div className="relative" style={{ aspectRatio: ratio, maxWidth: "100%", maxHeight: "100%", width: "min(100%, 1200px)" }}>
-          <img src={image} alt={`Mapa de ${name}`} className="absolute inset-0 w-full h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-gold-line)" }} />
+          {image ? (
+            <img src={image} alt={`Mapa de ${name}`} className="absolute inset-0 w-full h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-gold-line)" }} />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg" style={{ border: "1px dashed var(--color-line)", background: "rgba(0,0,0,0.3)" }}>
+              <span className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}><i className="fas fa-image mr-1.5" />Región sin mapa propio</span>
+            </div>
+          )}
           {pois.map((p) => {
             const on = sel?.name === p.name;
             const color = POI_COLOR[p.type];

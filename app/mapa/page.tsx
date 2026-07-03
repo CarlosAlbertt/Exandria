@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { REGIONS, MAPS } from "@/data/taldorei";
+import { MAPS } from "@/data/taldorei";
 import { WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW } from "@/data/world";
 import { townMap } from "@/data/townMaps";
 import { useWorldPois, type WorldPoiRow } from "@/lib/useWorldPois";
+import { useTaldorei } from "@/lib/useTaldorei";
 import { useRegions } from "@/lib/useRegions";
 import { useRole } from "@/components/SessionProvider";
 import RegionExplore from "@/components/RegionExplore";
@@ -19,6 +20,7 @@ export default function MapaPage() {
   const role = useRole();
   const { states } = useRegions();
   const { pois } = useWorldPois();
+  const { regions: talRegions, poisByRegion } = useTaldorei();
   const isDM = role === "dm";
 
   const [focus, setFocus] = useState<string | null>(null); // continente enfocado (null = mundo)
@@ -62,9 +64,9 @@ export default function MapaPage() {
   const continentPois = focus && focus !== "Tal'Dorei"
     ? pois.filter((p) => p.continent === focus && p.type !== "continente" && (isDM || p.revealed))
     : [];
-  const taldoreiRegions = REGIONS.filter((r) => isDM || states[r.slug]?.known);
+  const taldoreiRegions = talRegions.filter((r) => isDM || states[r.slug]?.known);
 
-  const selRegion = REGIONS.find((r) => r.slug === selRegionSlug) ?? null;
+  const selRegion = talRegions.find((r) => r.slug === selRegionSlug) ?? null;
   const selRegionState = selRegion ? states[selRegion.slug] : undefined;
   const selRegionExplored = isDM || !!selRegionState?.explored;
 
@@ -184,7 +186,9 @@ export default function MapaPage() {
             <>
               {selRegionExplored ? (
                 <button onClick={() => setExploreSlug(selRegion.slug)} className="block w-full mb-4 rounded-lg overflow-hidden group relative" style={{ aspectRatio: "4 / 3", border: "1px solid var(--color-line)" }}>
-                  <img src={selRegion.image} alt={`Mapa de ${selRegion.name}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                  {selRegion.image
+                    ? <img src={selRegion.image} alt={`Mapa de ${selRegion.name}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    : <span className="w-full h-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.3)", color: "var(--color-dim)", fontSize: 12 }}><i className="fas fa-map-location-dot mr-1.5" />Explorar</span>}
                   <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "rgba(7,10,14,0.55)" }}>
                     <span className="btn-gold !py-2 !px-4 text-[12px]"><i className="fas fa-map-location-dot mr-2" />Explorar la zona</span>
                   </span>
@@ -261,8 +265,9 @@ export default function MapaPage() {
 
       {/* VISOR de región de Tal'Dorei con puntos de interés */}
       {exploreSlug && (() => {
-        const r = REGIONS.find((x) => x.slug === exploreSlug)!;
-        return <RegionExplore slug={r.slug} name={r.name} image={r.image} accent={r.accent} onClose={() => setExploreSlug(null)} />;
+        const r = talRegions.find((x) => x.slug === exploreSlug);
+        if (!r) return null;
+        return <RegionExplore slug={r.slug} name={r.name} image={r.image} accent={r.accent} pois={poisByRegion[r.slug] ?? []} onClose={() => setExploreSlug(null)} />;
       })()}
 
       {/* Visor del mapa del pueblo */}
