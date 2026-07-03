@@ -1,19 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { WORLD_POIS, WORLD_SLUG } from "@/data/world";
-import { usePois } from "@/lib/usePois";
+import { useWorldPois } from "@/lib/useWorldPois";
 import { useRole } from "@/components/SessionProvider";
 
 // Lista de continentes de Exandria, filtrada por lo que el grupo ha descubierto.
 export default function ReinoRegions() {
   const role = useRole();
-  const { states: poiStates, keyOf } = usePois();
+  const { pois } = useWorldPois();
   const isDM = role === "dm";
 
-  const continents = WORLD_POIS.filter((p) => p.type === "continente");
-  const discovered = (name: string) => isDM || !!poiStates[keyOf(WORLD_SLUG, name)]?.revealed;
-  const visible = continents.filter((c) => discovered(c.name));
+  const continents = pois.filter((p) => p.type === "continente");
+  const visible = continents.filter((c) => isDM || c.revealed);
 
   return (
     <section className="mb-20">
@@ -33,7 +31,7 @@ export default function ReinoRegions() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {visible.map((c) => (
-            <div key={c.name} className="panel p-6" style={{ borderColor: "var(--color-line)" }}>
+            <div key={c.id} className="panel p-6" style={{ borderColor: "var(--color-line)" }}>
               <div className="flex items-center gap-3 mb-3">
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: "var(--color-gold)", boxShadow: "0 0 10px var(--color-gold)" }} />
                 <h3 className="font-display text-lg font-bold" style={{ color: "var(--color-bronze-bright)" }}>{c.name}</h3>

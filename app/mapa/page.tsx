@@ -3,21 +3,21 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { REGIONS, MAPS } from "@/data/taldorei";
-import { WORLD_POIS, WORLD_SLUG, WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW, type WorldPoi } from "@/data/world";
+import { WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW } from "@/data/world";
+import { useWorldPois, type WorldPoiRow } from "@/lib/useWorldPois";
 import { useRegions } from "@/lib/useRegions";
-import { usePois } from "@/lib/usePois";
 import { useRole } from "@/components/SessionProvider";
 import RegionExplore from "@/components/RegionExplore";
 
 // Aspecto del mapa de Exandria (2560x1707) para que los pines cuadren.
 const MAP_RATIO = "2560 / 1707";
 
-type Sel = { kind: "poi"; poi: WorldPoi } | { kind: "region"; slug: string } | null;
+type Sel = { kind: "poi"; poi: WorldPoiRow } | { kind: "region"; slug: string } | null;
 
 export default function MapaPage() {
   const role = useRole();
   const { states } = useRegions();
-  const { states: poiStates, keyOf } = usePois();
+  const { pois } = useWorldPois();
   const isDM = role === "dm";
 
   const [focus, setFocus] = useState<string | null>(null); // continente enfocado (null = mundo)
@@ -36,13 +36,11 @@ export default function MapaPage() {
   }, [fullscreen, focus]);
 
   // --- helpers de descubrimiento ---
-  const continentPins = WORLD_POIS.filter((p) => p.type === "continente");
+  const continentPins = pois.filter((p) => p.type === "continente");
   const pinForField = (field: string) => continentPins.find((p) => p.continent === field);
-  const revealedByPlayers = (name: string) => !!poiStates[keyOf(WORLD_SLUG, name)]?.revealed;
-  const isRevealed = (name: string) => isDM || revealedByPlayers(name);
-  const continentDiscovered = (field: string) => { const cp = pinForField(field); return cp ? isRevealed(cp.name) : true; };
+  const continentDiscovered = (field: string) => { const cp = pinForField(field); return cp ? (isDM || cp.revealed) : true; };
 
-  // --- zoom ---
+  // --- zoom por continente ---
   const view = focus ? CONTINENT_VIEW[focus] : null;
   const S = view ? view.scale : 1;
   const invScale = 1 / S;
@@ -54,36 +52,35 @@ export default function MapaPage() {
   const openContinent = (field: string) => { setFocus(field); setSel(null); };
   const backToWorld = () => { setFocus(null); setSel(null); };
 
-  // --- pines a dibujar según el nivel ---
+  // --- pines por nivel ---
   const worldPins = [
-    ...continentPins.filter((cp) => continentDiscovered(cp.continent)),
-    ...WORLD_POIS.filter((p) => p.continent === "Mares"),
+    ...continentPins.filter((cp) => isDM || cp.revealed),
+    ...pois.filter((p) => p.continent === "Mares"),
   ];
   const continentPois = focus && focus !== "Tal'Dorei"
-    ? WORLD_POIS.filter((p) => p.continent === focus && p.type !== "continente" && isRevealed(p.name))
+    ? pois.filter((p) => p.continent === focus && p.type !== "continente" && (isDM || p.revealed))
     : [];
   const taldoreiRegions = REGIONS.filter((r) => isDM || states[r.slug]?.known);
 
-  // Info de la región de Tal'Dorei seleccionada
   const selRegion = REGIONS.find((r) => r.slug === selRegionSlug) ?? null;
   const selRegionState = selRegion ? states[selRegion.slug] : undefined;
   const selRegionExplored = isDM || !!selRegionState?.explored;
 
-  function renderWorldPoi(p: WorldPoi) {
+  function renderWorldPoi(p: WorldPoiRow) {
     const isCont = p.type === "continente";
     const big = isCont;
     const alwaysLabel = isCont || p.type === "region" || p.type === "capital";
     const color = WORLD_COLOR[p.type];
-    const st = poiStates[keyOf(WORLD_SLUG, p.name)];
-    const selected = sel?.kind === "poi" && sel.poi.name === p.name;
+    const icon = p.icon || WORLD_ICON[p.type];
+    const selected = sel?.kind === "poi" && sel.poi.id === p.id;
     const onClick = isCont ? () => openContinent(p.continent) : () => setSel({ kind: "poi", poi: p });
     return (
-      <button key={p.name} onClick={onClick} className="absolute -translate-x-1/2 -translate-y-1/2 group z-10"
-        style={{ left: `${st?.x ?? p.x}%`, top: `${st?.y ?? p.y}%` }} title={isCont ? `Abrir ${p.name}` : p.name}>
+      <button key={p.id} onClick={onClick} className="absolute -translate-x-1/2 -translate-y-1/2 group z-10"
+        style={{ left: `${p.x}%`, top: `${p.y}%` }} title={isCont ? `Abrir ${p.name}` : p.name}>
         <span className="flex flex-col items-center" style={{ transform: `scale(${invScale})` }}>
           <span className="flex items-center justify-center rounded-full transition-transform group-hover:scale-110"
             style={{ width: big ? 24 : 15, height: big ? 24 : 15, background: "rgba(7,10,14,0.82)", border: `2px solid ${color}`, boxShadow: `0 0 ${selected ? 16 : 8}px ${color}` }}>
-            <i className={`fas ${WORLD_ICON[p.type]}`} style={{ color, fontSize: big ? 12 : 9 }} />
+            <i className={`fas ${icon}`} style={{ color, fontSize: big ? 12 : 9 }} />
           </span>
           <span className={`mt-1 whitespace-nowrap font-ui font-bold px-1.5 py-0.5 rounded transition-opacity ${alwaysLabel || selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
             style={{ fontSize: big ? 12 : 10, background: "rgba(7,10,14,0.9)", color: alwaysLabel ? "var(--color-bronze-bright)" : "var(--color-warm)" }}>
@@ -102,7 +99,7 @@ export default function MapaPage() {
         <p className="prose-lore !text-[15px] max-w-xl mx-auto mt-4" style={{ color: "var(--color-muted)" }}>
           {focus
             ? "Clic en una región o ciudad para ver su información. Pulsa «Volver a Exandria» para alejar."
-            : isDM ? "Ves todo el mundo. Clic en un continente para explorarlo. Revela tierras en el Panel DM." : "Clic en un continente descubierto para adentrarte. La niebla oculta lo que aún no habéis hallado."}
+            : isDM ? "Ves todo el mundo. Clic en un continente para explorarlo. Gestiona y edita pines en el Panel DM." : "Clic en un continente descubierto para adentrarte. La niebla oculta lo que aún no habéis hallado."}
         </p>
       </header>
 
@@ -118,16 +115,15 @@ export default function MapaPage() {
             : "panel relative overflow-hidden rounded-xl"}
           style={{ aspectRatio: MAP_RATIO, ...(fullscreen ? { width: "min(98vw, calc(95vh * 2560 / 1707))", maxHeight: "95vh" } : {}) }}>
 
-          {/* Capa transformable: imagen + niebla + pines (zoom conjunto) */}
+          {/* Capa transformable: imagen + niebla + pines */}
           <div className="absolute inset-0 transition-transform duration-500 ease-out"
             style={{ backgroundImage: `url('${MAPS.taldorei}')`, backgroundSize: "cover", backgroundPosition: "center", transform: layerTransform, transformOrigin: "0 0" }}>
             <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: "inset 0 0 90px 20px rgba(7,10,14,0.55)" }} />
 
-            {/* NIEBLA sobre continentes no revelados a los jugadores. Los jugadores
-                la ven opaca; el DM la ve translúcida ("oculto") y clic-a-través. */}
+            {/* NIEBLA sobre continentes no revelados. Jugador: opaca. DM: translúcida y clic-a-través. */}
             {!focus && Object.entries(CONTINENT_VIEW).map(([field, v]) => {
               const cp = pinForField(field);
-              if (!cp || revealedByPlayers(cp.name)) return null;
+              if (!cp || cp.revealed) return null;
               return (
                 <div key={`fog-${field}`} className={`absolute flex items-center justify-center ${isDM ? "pointer-events-none" : ""}`}
                   style={{ left: `${v.box.x}%`, top: `${v.box.y}%`, width: `${v.box.w}%`, height: `${v.box.h}%`,
@@ -143,13 +139,9 @@ export default function MapaPage() {
               );
             })}
 
-            {/* Pines del MUNDO (continentes + océanos) */}
             {!focus && worldPins.map(renderWorldPoi)}
-
-            {/* Pines del CONTINENTE enfocado */}
             {focus && focus !== "Tal'Dorei" && continentPois.map(renderWorldPoi)}
 
-            {/* Tal'Dorei enfocado: sus 8 regiones */}
             {focus === "Tal'Dorei" && taldoreiRegions.map((r) => {
               const st = states[r.slug];
               const explored = !!st?.explored;
@@ -174,7 +166,6 @@ export default function MapaPage() {
             })}
           </div>
 
-          {/* Controles (fuera de la capa transformada) */}
           {focus && (
             <button onClick={backToWorld} className="absolute top-3 left-3 z-20 btn-ghost !py-1.5 !px-3 text-[12px]">
               <i className="fas fa-arrow-left mr-1.5" />Volver a Exandria
@@ -211,7 +202,7 @@ export default function MapaPage() {
           ) : sel?.kind === "poi" ? (
             <>
               <p className="eyebrow mb-2" style={{ color: WORLD_COLOR[sel.poi.type] }}>
-                <i className={`fas ${WORLD_ICON[sel.poi.type]} mr-1.5`} />{sel.poi.type}
+                <i className={`fas ${sel.poi.icon || WORLD_ICON[sel.poi.type]} mr-1.5`} />{sel.poi.type}
               </p>
               <h2 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>{sel.poi.name}</h2>
               <p className="prose-lore !text-[15px]">{sel.poi.blurb}</p>
@@ -228,7 +219,7 @@ export default function MapaPage() {
                       <button key={r.slug} onClick={() => setSel({ kind: "region", slug: r.slug })} className="chip" data-on={selRegionSlug === r.slug}>{r.name}</button>
                     )) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>)
                   : (continentPois.length ? continentPois.map((p) => (
-                      <button key={p.name} onClick={() => setSel({ kind: "poi", poi: p })} className="chip"><i className={`fas ${WORLD_ICON[p.type]} mr-1.5`} style={{ color: WORLD_COLOR[p.type] }} />{p.name}</button>
+                      <button key={p.id} onClick={() => setSel({ kind: "poi", poi: p })} className="chip"><i className={`fas ${p.icon || WORLD_ICON[p.type]} mr-1.5`} style={{ color: WORLD_COLOR[p.type] }} />{p.name}</button>
                     )) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>)}
               </div>
             </>
@@ -239,14 +230,14 @@ export default function MapaPage() {
               <p className="prose-lore !text-[15px] mb-4">Cinco masas de tierra bajo dos lunas. Clic en un continente para adentrarte en sus regiones y ciudades.</p>
               <p className="eyebrow mb-3">Continentes {isDM ? "" : "descubiertos"}</p>
               <div className="flex flex-wrap gap-2">
-                {continentPins.filter((cp) => continentDiscovered(cp.continent)).map((cp) => (
-                  <button key={cp.name} onClick={() => openContinent(cp.continent)} className="chip">{cp.name}</button>
+                {continentPins.filter((cp) => isDM || cp.revealed).map((cp) => (
+                  <button key={cp.id} onClick={() => openContinent(cp.continent)} className="chip">{cp.name}</button>
                 ))}
-                {continentPins.every((cp) => !continentDiscovered(cp.continent)) && <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Ninguno todavía.</span>}
+                {continentPins.filter((cp) => isDM || cp.revealed).length === 0 && <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Ninguno todavía.</span>}
               </div>
             </>
           )}
-          {isDM && <Link href="/dm" className="btn-ghost w-full !py-2 text-[12px] mt-6 inline-block text-center"><i className="fas fa-sliders mr-2" />Gestionar exploración</Link>}
+          {isDM && <Link href="/dm" className="btn-ghost w-full !py-2 text-[12px] mt-6 inline-block text-center"><i className="fas fa-sliders mr-2" />Gestionar y editar pines</Link>}
         </aside>
       </div>
 
