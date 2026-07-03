@@ -112,15 +112,15 @@ export default function PinDragMap({
                 key={m.id}
                 onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setDragId(m.id); onSelect?.(m.id); }}
                 className="absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing"
-                style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                style={{ left: `${p.x}%`, top: `${p.y}%`, zIndex: on ? 50 : 10 }}
               >
                 <span className="flex items-center justify-center rounded-full transition-transform" style={{
-                  width: on ? 28 : 22, height: on ? 28 : 22, background: "rgba(7,10,14,0.85)",
-                  border: `2px solid ${m.color}`, boxShadow: `0 0 ${on ? 16 : 8}px ${m.color}`,
+                  width: on ? 30 : 22, height: on ? 30 : 22, background: "rgba(7,10,14,0.85)",
+                  border: `2px solid ${on ? "var(--color-bronze-bright)" : m.color}`, boxShadow: `0 0 ${on ? 18 : 8}px ${m.color}`,
                 }}>
                   {m.icon ? <i className={`fas ${m.icon}`} style={{ color: m.color, fontSize: 11 }} /> : <span className="w-2 h-2 rounded-full" style={{ background: m.color }} />}
                 </span>
-                <span className="absolute left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap font-ui text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(7,10,14,0.9)", color: on ? "var(--color-bronze-bright)" : "var(--color-warm)" }}>
+                <span className="absolute left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap font-ui text-[10px] font-bold px-1.5 py-0.5 rounded pointer-events-none" style={{ background: "rgba(7,10,14,0.9)", color: on ? "var(--color-bronze-bright)" : "var(--color-warm)", zIndex: on ? 51 : 1 }}>
                   {m.label}
                 </span>
               </button>

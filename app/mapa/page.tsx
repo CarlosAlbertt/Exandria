@@ -73,7 +73,6 @@ export default function MapaPage() {
   function renderWorldPoi(p: WorldPoiRow) {
     const isCont = p.type === "continente";
     const big = isCont;
-    const alwaysLabel = isCont || p.type === "region" || p.type === "capital";
     const color = WORLD_COLOR[p.type];
     const icon = p.icon || WORLD_ICON[p.type];
     const selected = sel?.kind === "poi" && sel.poi.id === p.id;
@@ -82,14 +81,16 @@ export default function MapaPage() {
       <button key={p.id} onClick={onClick} className="absolute -translate-x-1/2 -translate-y-1/2 group z-10"
         style={{ left: `${p.x}%`, top: `${p.y}%` }} title={isCont ? `Abrir ${p.name}` : p.name}>
         <span className="flex flex-col items-center" style={{ transform: `scale(${invScale})` }}>
-          <span className="flex items-center justify-center rounded-full transition-transform group-hover:scale-110"
-            style={{ width: big ? 24 : 15, height: big ? 24 : 15, background: "rgba(7,10,14,0.82)", border: `2px solid ${color}`, boxShadow: `0 0 ${selected ? 16 : 8}px ${color}` }}>
+          <span className="flex items-center justify-center rounded-full transition-transform group-hover:scale-125"
+            style={{ width: big ? 24 : 16, height: big ? 24 : 16, background: "rgba(7,10,14,0.82)", border: `2px solid ${selected ? "var(--color-bronze-bright)" : color}`, boxShadow: `0 0 ${selected ? 16 : 8}px ${color}` }}>
             <i className={`fas ${icon}`} style={{ color, fontSize: big ? 12 : 9 }} />
           </span>
-          <span className={`mt-1 whitespace-nowrap font-ui font-bold px-1.5 py-0.5 rounded transition-opacity ${alwaysLabel || selected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-            style={{ fontSize: big ? 12 : 10, background: "rgba(7,10,14,0.9)", color: alwaysLabel ? "var(--color-bronze-bright)" : "var(--color-warm)" }}>
-            {p.name}{isCont ? " ›" : ""}
-          </span>
+          {/* Solo los continentes muestran etiqueta (son la navegación). El resto: clic para ver detalle. */}
+          {isCont && (
+            <span className="mt-1 whitespace-nowrap font-ui font-bold px-1.5 py-0.5 rounded pointer-events-none" style={{ fontSize: 12, background: "rgba(7,10,14,0.9)", color: "var(--color-bronze-bright)" }}>
+              {p.name} ›
+            </span>
+          )}
         </span>
       </button>
     );
@@ -154,16 +155,12 @@ export default function MapaPage() {
                 <button key={r.slug} onClick={() => setSel({ kind: "region", slug: r.slug })}
                   className="absolute -translate-x-1/2 -translate-y-1/2 group z-10" style={{ left: `${st?.pin_x ?? r.map.x}%`, top: `${st?.pin_y ?? r.map.y}%` }} aria-label={r.name}>
                   <span className="flex flex-col items-center" style={{ transform: `scale(${invScale})` }}>
-                    <span className="block rounded-full transition-all group-hover:scale-110" style={{
-                      width: on ? 20 : 14, height: on ? 20 : 14,
+                    <span className="block rounded-full transition-all group-hover:scale-125" style={{
+                      width: on ? 20 : 15, height: on ? 20 : 15,
                       background: explored ? r.accent : "rgba(20,25,32,0.9)",
                       boxShadow: `0 0 0 3px rgba(0,0,0,0.55), 0 0 ${on ? 20 : 10}px ${explored ? r.accent : "rgba(0,0,0,0.4)"}`,
-                      border: `2px solid ${explored ? "rgba(255,255,255,0.7)" : "var(--color-dim)"}`,
+                      border: `2px solid ${on ? "var(--color-bronze-bright)" : explored ? "rgba(255,255,255,0.7)" : "var(--color-dim)"}`,
                     }} />
-                    <span className="mt-1 whitespace-nowrap font-ui text-[10px] font-bold px-1.5 py-0.5 rounded"
-                      style={{ background: "rgba(7,10,14,0.9)", color: on ? "var(--color-bronze-bright)" : "var(--color-warm)", borderBottom: `2px solid ${r.accent}` }}>
-                      {r.name}{!explored && " · sin explorar"}
-                    </span>
                   </span>
                 </button>
               );

@@ -13,6 +13,13 @@ import PinDragMap, { type DragMarker } from "@/components/PinDragMap";
 const WORLD_TYPES = Object.keys(WORLD_ICON) as WorldType[];
 const POI_TYPES = Object.keys(POI_ICON) as PoiType[];
 const ACCENTS = ["--color-bronze", "--color-arcane", "--color-divino", "--color-marcial", "--color-violet", "--color-primitivo", "--color-ember", "--color-arcane-deep"];
+// Iconos frecuentes para elegir (Font Awesome free solid). Se puede escribir otro a mano.
+const ICON_CHOICES = [
+  "fa-city", "fa-crown", "fa-house-chimney", "fa-chess-rook", "fa-fort-awesome", "fa-dungeon", "fa-tower-observation",
+  "fa-mountain-sun", "fa-volcano", "fa-tree", "fa-wheat-awn", "fa-water", "fa-fire", "fa-snowflake", "fa-umbrella-beach",
+  "fa-anchor", "fa-ship", "fa-skull", "fa-dragon", "fa-hat-wizard", "fa-gem", "fa-scroll", "fa-shield-halved",
+  "fa-place-of-worship", "fa-cross", "fa-monument", "fa-archway", "fa-campground", "fa-earth-americas", "fa-draw-polygon",
+];
 
 type EditForm = { name: string; type: WorldType; continent: string; region: string; icon: string; blurb: string };
 const EMPTY_FORM: EditForm = { name: "", type: "ciudad", continent: "Tal'Dorei", region: "", icon: "", blurb: "" };
@@ -33,6 +40,8 @@ export default function MapaPanel() {
   const [rForm, setRForm] = useState<RForm>(EMPTY_R);
   const [pEditing, setPEditing] = useState<Poi | "new" | null>(null);
   const [pForm, setPForm] = useState<PForm>(EMPTY_P);
+  const [activeId, setActiveId] = useState<string | null>(null); // pin resaltado (para separarlo de otros)
+  const spread = () => ({ x: 44 + Math.random() * 12, y: 44 + Math.random() * 12 });
 
   const { states: regionStates } = useRegions();
   const { states: poiStates, keyOf } = usePois();
@@ -60,7 +69,7 @@ export default function MapaPanel() {
     let regions: Region[];
     if (rEditing === "new") {
       const slug = slugify(rForm.name);
-      regions = [...talRegions, { slug, image: "", map: { x: 50, y: 50 }, ...base }];
+      regions = [...talRegions, { slug, image: "", map: spread(), ...base }];
       saveTal({ regions, pois: { ...poisByRegion, [slug]: [] } });
     } else if (rEditing) {
       regions = talRegions.map((r) => (r.slug === rEditing.slug ? { ...r, ...base } : r));
@@ -83,7 +92,7 @@ export default function MapaPanel() {
     const cur = poisByRegion[region.slug] ?? [];
     let arr: Poi[];
     if (pEditing === "new") {
-      arr = [...cur, { name: pForm.name.trim(), type: pForm.type, blurb: pForm.blurb.trim(), x: 50, y: 50 }];
+      arr = [...cur, { name: pForm.name.trim(), type: pForm.type, blurb: pForm.blurb.trim(), ...spread() }];
     } else if (pEditing) {
       arr = cur.map((p) => (p.name === pEditing.name ? { ...p, name: pForm.name.trim(), type: pForm.type, blurb: pForm.blurb.trim() } : p));
     } else return;
@@ -138,7 +147,7 @@ export default function MapaPanel() {
         <>
           <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>Arrastra cada región a su lugar sobre el mapa. Añade, edita o borra regiones con el panel derecho.</p>
           <div className="grid lg:grid-cols-[1fr_320px] gap-5">
-            <PinDragMap image={MAPS.taldorei} ratio="2560 / 1707" markers={regionMarkers} onMove={(id, x, y) => setRegionPin(id, x, y)} />
+            <PinDragMap image={MAPS.taldorei} ratio="2560 / 1707" markers={regionMarkers} onMove={(id, x, y) => setRegionPin(id, x, y)} activeId={activeId} onSelect={setActiveId} />
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="eyebrow">Regiones ({talRegions.length})</p>
@@ -164,7 +173,7 @@ export default function MapaPanel() {
               )}
               <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                 {talRegions.map((r) => (
-                  <div key={r.slug} className="panel-raised p-2.5 flex items-center justify-between gap-2">
+                  <div key={r.slug} onClick={() => setActiveId(r.slug)} className="panel-raised p-2.5 flex items-center justify-between gap-2 cursor-pointer" style={{ borderColor: activeId === r.slug ? "var(--color-bronze)" : undefined }}>
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ background: r.accent }} />
                       <span className="font-ui text-[13px] font-semibold truncate" style={{ color: "var(--color-warm)" }}>{r.name}</span>
@@ -191,7 +200,7 @@ export default function MapaPanel() {
             ))}
           </div>
           <div className="grid lg:grid-cols-[1fr_320px] gap-5">
-            <PinDragMap image={region.image || MAPS.taldorei} ratio={REGION_RATIO[region.slug] ?? "3300 / 2550"} markers={poiMarkers} onMove={(id, x, y) => setPoiPos(region.slug, id, x, y)} />
+            <PinDragMap image={region.image || MAPS.taldorei} ratio={REGION_RATIO[region.slug] ?? "3300 / 2550"} markers={poiMarkers} onMove={(id, x, y) => setPoiPos(region.slug, id, x, y)} activeId={activeId} onSelect={setActiveId} />
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="eyebrow">POIs de {region.name} ({pois.filter((p) => poiStates[keyOf(region.slug, p.name)]?.revealed).length}/{pois.length})</p>
@@ -216,7 +225,7 @@ export default function MapaPanel() {
                 {pois.map((p) => {
                   const on = !!poiStates[keyOf(region.slug, p.name)]?.revealed;
                   return (
-                    <div key={p.name} className="panel-raised p-2.5 flex items-center justify-between gap-2">
+                    <div key={p.name} onClick={() => setActiveId(p.name)} className="panel-raised p-2.5 flex items-center justify-between gap-2 cursor-pointer" style={{ borderColor: activeId === p.name ? "var(--color-bronze)" : undefined }}>
                       <div className="flex items-center gap-2 min-w-0">
                         <i className={`fas ${POI_ICON[p.type]} shrink-0`} style={{ color: POI_COLOR[p.type], fontSize: 12 }} />
                         <span className="font-ui text-[13px] font-semibold truncate" style={{ color: "var(--color-warm)" }}>{p.name}</span>
@@ -248,7 +257,7 @@ export default function MapaPanel() {
               : `Lugares de ${pinNameOf(worldFocus || "")}. Arrastra, edita o revela. Usa «Ampliar» para más precisión.`}
           </p>
           <div className="grid lg:grid-cols-[1fr_340px] gap-5">
-            <PinDragMap image={MAPS.taldorei} ratio="2560 / 1707" markers={worldMarkers} onMove={moveWorld} />
+            <PinDragMap image={MAPS.taldorei} ratio="2560 / 1707" markers={worldMarkers} onMove={moveWorld} activeId={activeId} onSelect={setActiveId} />
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="eyebrow">Lugares ({worldRevealed}/{mundoPois.length} visibles)</p>
@@ -272,6 +281,15 @@ export default function MapaPanel() {
                     <i className={`fas ${form.icon.trim() || WORLD_ICON[form.type]}`} style={{ color: WORLD_COLOR[form.type], width: 18, textAlign: "center" }} />
                     <input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="Icono opcional (fa-dragon)" className={inputCls} style={{ color: "var(--color-warm)" }} />
                   </div>
+                  <div className="flex flex-wrap gap-1">
+                    {ICON_CHOICES.map((ic) => (
+                      <button key={ic} type="button" onClick={() => setForm({ ...form, icon: form.icon === ic ? "" : ic })} title={ic}
+                        className="w-7 h-7 rounded flex items-center justify-center transition-colors"
+                        style={{ border: `1px solid ${form.icon === ic ? "var(--color-bronze)" : "var(--color-line)"}`, background: form.icon === ic ? "rgba(196,154,74,0.15)" : "transparent" }}>
+                        <i className={`fas ${ic}`} style={{ color: WORLD_COLOR[form.type], fontSize: 12 }} />
+                      </button>
+                    ))}
+                  </div>
                   <textarea value={form.blurb} onChange={(e) => setForm({ ...form, blurb: e.target.value })} rows={3} placeholder="Descripción" className={`${inputCls} resize-none`} style={{ color: "var(--color-warm)" }} />
                   <div className="flex gap-2">
                     <button onClick={saveForm} disabled={!form.name.trim()} className="btn-gold flex-1 !py-1.5 text-[13px] disabled:opacity-40"><i className="fas fa-check mr-1.5" />Guardar</button>
@@ -288,7 +306,7 @@ export default function MapaPanel() {
                       <p className="font-ui text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: "var(--color-dim)" }}>{reg}</p>
                       <div className="space-y-2">
                         {mundoPois.filter((p) => (p.region || "—") === reg).map((p) => (
-                          <div key={p.id} className="panel-raised p-2.5 flex items-center justify-between gap-2">
+                          <div key={p.id} onClick={() => setActiveId(p.id)} className="panel-raised p-2.5 flex items-center justify-between gap-2 cursor-pointer" style={{ borderColor: activeId === p.id ? "var(--color-bronze)" : undefined }}>
                             <div className="flex items-center gap-2 min-w-0">
                               <i className={`fas ${p.icon || WORLD_ICON[p.type]} shrink-0`} style={{ color: WORLD_COLOR[p.type], fontSize: 12 }} />
                               <span className="font-ui text-[13px] font-semibold truncate" style={{ color: "var(--color-warm)" }}>{p.name}</span>
