@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import type * as React from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { REGIONS, MAPS } from "@/data/taldorei";
 import { WORLD_POIS, WORLD_SLUG, WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW, type WorldPoi } from "@/data/world";
@@ -25,10 +26,37 @@ export default function MapaPage() {
   const [fullscreen, setFullscreen] = useState(false);
   const [exploreSlug, setExploreSlug] = useState<string | null>(null);
 
+  // Zoom manual (solo DM en pantalla completa): acercar/alejar + arrastrar.
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const dmZoom = isDM && fullscreen;
+
+  const clampPan = (x: number, y: number, z: number) => { const m = (z - 1) * 50; return { x: Math.max(-m, Math.min(m, x)), y: Math.max(-m, Math.min(m, y)) }; };
+  const zoomIn = () => setZoom((z) => Math.min(6, +(z * 1.3).toFixed(2)));
+  const zoomOut = () => setZoom((z) => { const n = Math.max(1, +(z / 1.3).toFixed(2)); setPan((p) => clampPan(p.x, p.y, n)); return n; });
+  const resetZoom = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+  const closeFull = () => { setFullscreen(false); resetZoom(); };
+  const toggleFull = () => { if (fullscreen) closeFull(); else setFullscreen(true); };
+  const onPointerDownPan = (e: React.PointerEvent) => {
+    if (!dmZoom || zoom <= 1 || (e.target as HTMLElement).closest("button")) return;
+    drag.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
+  };
+  const onPointerMovePan = (e: React.PointerEvent) => {
+    if (!drag.current || !viewportRef.current) return;
+    const r = viewportRef.current.getBoundingClientRect();
+    const dx = ((e.clientX - drag.current.x) / r.width) * 100;
+    const dy = ((e.clientY - drag.current.y) / r.height) * 100;
+    setPan(clampPan(drag.current.px + dx, drag.current.py + dy, zoom));
+  };
+  const onPointerUpPan = () => { drag.current = null; };
+  const onWheelZoom = (e: React.WheelEvent) => { if (!dmZoom) return; if (e.deltaY < 0) zoomIn(); else zoomOut(); };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (fullscreen) setFullscreen(false);
+      if (fullscreen) closeFull();
       else if (focus) { setFocus(null); setSel(null); }
     };
     window.addEventListener("keydown", onKey);
@@ -107,16 +135,21 @@ export default function MapaPage() {
       </header>
 
       {fullscreen && (
-        <div className="fixed inset-0 z-[80]" style={{ background: "rgba(7,10,14,0.96)" }} onClick={() => setFullscreen(false)} />
+        <div className="fixed inset-0 z-[80]" style={{ background: "rgba(7,10,14,0.96)" }} onClick={closeFull} />
       )}
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-6">
         {/* MAPA */}
         <div
-          className={fullscreen
+          ref={viewportRef}
+          onPointerDown={onPointerDownPan} onPointerMove={onPointerMovePan} onPointerUp={onPointerUpPan} onPointerLeave={onPointerUpPan} onWheel={onWheelZoom}
+          className={`${fullscreen
             ? "panel fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[90] overflow-hidden rounded-xl"
-            : "panel relative overflow-hidden rounded-xl"}
+            : "panel relative overflow-hidden rounded-xl"} ${dmZoom && zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
           style={{ aspectRatio: MAP_RATIO, ...(fullscreen ? { width: "min(98vw, calc(95vh * 2560 / 1707))", maxHeight: "95vh" } : {}) }}>
+
+          {/* Zoom manual del DM (envuelve la capa; centrado) */}
+          <div className="absolute inset-0" style={{ transform: dmZoom ? `translate(${pan.x}%, ${pan.y}%) scale(${zoom})` : "none", transformOrigin: "center", transition: drag.current ? "none" : "transform 0.15s ease-out" }}>
 
           {/* Capa transformable: imagen + niebla + pines (zoom conjunto) */}
           <div className="absolute inset-0 transition-transform duration-500 ease-out"
@@ -173,6 +206,7 @@ export default function MapaPage() {
               );
             })}
           </div>
+          </div>{/* /zoom manual DM */}
 
           {/* Controles (fuera de la capa transformada) */}
           {focus && (
@@ -180,9 +214,19 @@ export default function MapaPage() {
               <i className="fas fa-arrow-left mr-1.5" />Volver a Exandria
             </button>
           )}
-          <button onClick={() => setFullscreen((f) => !f)} className="absolute top-3 right-3 z-20 btn-ghost !py-1.5 !px-3 text-[12px]" title={fullscreen ? "Salir (Esc)" : "Pantalla completa"}>
+          <button onClick={toggleFull} className="absolute top-3 right-3 z-20 btn-ghost !py-1.5 !px-3 text-[12px]" title={fullscreen ? "Salir (Esc)" : "Pantalla completa"}>
             <i className={`fas ${fullscreen ? "fa-compress" : "fa-expand"} mr-1.5`} />{fullscreen ? "Salir" : "Pantalla completa"}
           </button>
+
+          {/* Zoom manual: solo el DM y solo en pantalla completa */}
+          {dmZoom && (
+            <div className="absolute bottom-3 right-3 z-20 flex flex-col items-center gap-1">
+              <button onClick={zoomIn} className="btn-ghost !p-0 w-9 h-9" title="Acercar"><i className="fas fa-plus" /></button>
+              <button onClick={zoomOut} disabled={zoom <= 1} className="btn-ghost !p-0 w-9 h-9 disabled:opacity-40" title="Alejar"><i className="fas fa-minus" /></button>
+              <button onClick={resetZoom} disabled={zoom <= 1} className="btn-ghost !p-0 w-9 h-9 disabled:opacity-40" title="Restablecer"><i className="fas fa-expand" /></button>
+              <span className="font-ui text-[10px] font-bold mt-0.5" style={{ color: "var(--color-muted)" }}>{Math.round(zoom * 100)}%</span>
+            </div>
+          )}
         </div>
 
         {/* PANEL LATERAL */}
