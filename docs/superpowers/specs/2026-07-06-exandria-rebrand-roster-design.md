@@ -15,6 +15,8 @@ Ejecutar el "siguiente pendiente pactado" del `HANDOFF.md`:
 4. **Huecos de imagen** para cada especie, linaje y clase en `/crear`
    (placeholders; las imágenes reales se añaden después, como los mapas de
    pueblo).
+5. **Rediseñar `/crear` como un tomo** (libro abierto de doble página) con
+   giro de página 3D e índices de capítulo.
 
 ## Decisiones tomadas (brainstorming)
 
@@ -29,7 +31,13 @@ Ejecutar el "siguiente pendiente pactado" del `HANDOFF.md`:
 - **Huecos de imagen:** en la **tarjeta del grid** (miniatura) **y** en el
   **panel de detalle** (retrato grande), tanto para especies/linajes como para
   clases.
-- **UI del roster:** secciones **plegables por región** con cabecera.
+- **`/crear` como tomo (libro):** libro abierto de doble página con **giro de
+  página 3D** al cambiar de capítulo. **Índices de capítulo** al canto
+  (Razas · Clases · Trasfondos · Aptitudes · Pericias · Ficha = los pasos
+  actuales). Dentro de cada capítulo, **todas las opciones a la izquierda**
+  (Razas agrupadas por región) y, al seleccionar, **imagen + descripción a la
+  derecha** (hueco reservado). NO hay hoja de personaje fija a la derecha: la
+  hoja es el capítulo final "Ficha".
 - **Origen como dato, campaña abierta:** cada especie lleva su región de origen
   (tag + blurb), pero la app no fuerza un único origen para el grupo; el DM
   decide en mesa.
@@ -198,27 +206,57 @@ redactar en implementación desde fuente oficial.
   - Marcar en `blurb` que es clase de Matt Mercer (Exandria).
 - `GROUP_ACCENT`/`GROUP_LABEL` sin cambios (reutiliza `marcial`).
 
-## 5. UI `/crear` (`app/crear/page.tsx`)
+## 5. UI `/crear` — el tomo (rediseño completo)
 
-### Componente nuevo: `components/PortraitFrame.tsx`
-- Props: `src?`, `alt`, `size` (`sm` tarjeta / `lg` detalle), `icon?`.
-- Si `src` existe y carga → `<img>` enmarcada (estilo pergamino/bronce del tema).
-- Si no → placeholder estilizado: marco + icono/inicial + `alt`. Sin romper layout.
-- Fallback en `onError` para archivos que aún no existen.
+Metáfora: **libro abierto de doble página** con **giro de página 3D**. Solo
+cambia la presentación; toda la lógica de estado (`Build`, validación por paso,
+point-buy, pericias, guardado local/Supabase) se **conserva**.
 
-### `StepSpecies`
-- Grid actual → **secciones plegables por región** (`REGIONS` da orden/label);
-  cabecera con label + blurb de región; contador de especies.
-- Cada tarjeta: `PortraitFrame` `sm` + nombre + tag de región + tagline + blurb;
-  badge de nº de linajes; badge **"A criterio del DM"** si `homebrew`.
-- Panel de detalle (al seleccionar): `PortraitFrame` `lg` + `origin` + rasgos +
-  linajes (cada linaje con su `PortraitFrame` `sm` + `perk`; badge homebrew).
-- El estado guardado (`species`, `lineage`) y la validación no cambian.
+### Arquitectura
+- **Capítulos = pasos actuales**, en este orden: **Razas · Clases · Trasfondos ·
+  Aptitudes · Pericias · Ficha**. Pestañas/marcapáginas al canto derecho del
+  tomo. Se mantiene el **bloqueo de pasos**: un capítulo aún no alcanzable
+  (pasos previos incompletos) aparece bloqueado; el aviso de "qué falta" sigue.
+- **Página izquierda = índice del capítulo**: todas las opciones. En **Razas**
+  agrupadas por región (`REGIONS` da orden/label; cabecera de región + contador);
+  cada entrada con `PortraitFrame` `sm` + nombre + tagline; selección resaltada;
+  badge **"A criterio del DM"** si `homebrew`. Clases/Trasfondos: lista análoga.
+- **Página derecha = detalle de la selección**: `PortraitFrame` `lg` (hueco de
+  imagen) + nombre + tag de región/grupo + descripción (`blurb`/`origin`) +
+  **Rasgos** + **Linajes/Subclases** (cada uno con su `PortraitFrame` `sm` +
+  `perk`/`blurb`; badge homebrew donde aplique).
+- **Paginado dentro del capítulo**: si las opciones no caben en una página, se
+  pasa página dentro del mismo capítulo (indicador «pág. N/M»); el canto de
+  capítulos no cambia.
+- **Capítulos sin selección**: **Aptitudes** (point-buy), **Pericias** (chips) y
+  **Ficha** (hoja para copiar + historia del personaje) usan la doble página con
+  su layout propio; conservan su lógica actual. "Ficha" sustituye a la antigua
+  hoja lateral fija y al paso "Resumen".
 
-### `StepClass`
-- Tarjeta: `PortraitFrame` `sm` + datos actuales.
-- Detalle: `PortraitFrame` `lg` + facts + subclases.
-- Cazador de Sangre aparece como una clase más.
+### Animación (giro 3D)
+- `transform: rotateY()` de la página sobre el lomo (`transform-origin` en el
+  lomo, `perspective` en el contenedor). ~500 ms `ease-in-out`. Sonido de papel
+  opcional y silenciable.
+- `prefers-reduced-motion` → sin giro (cambio directo/fundido).
+
+### Responsive
+- Escritorio/tablet ancho: **doble página**.
+- Móvil (estrecho): cae a **una sola página** (la doble no cabe); se alterna
+  lista ↔ detalle y hay marcapáginas para ir a la Ficha; se conserva el gesto de
+  paso. (Decidido en brainstorming: diseño "libro abierto" con degradación a
+  página única en móvil.)
+
+### Componentes
+- **`components/PortraitFrame.tsx`** (nuevo): props `src?`, `alt`, `size`
+  (`sm`/`lg`), `icon?`. Si `src` carga → `<img>` enmarcada (pergamino/bronce del
+  tema); si no o `onError` → placeholder estilizado (marco + icono/inicial +
+  `alt`). No rompe layout con archivos ausentes.
+- **`components/CharacterBook.tsx`** (nuevo): carcasa del tomo — perspectiva,
+  lomo, pestañas de capítulo, estado de capítulo activo, giro 3D, paginado
+  interno y responsive. Recibe los capítulos como contenido de página izq/der.
+- Los `Step*` de `app/crear/page.tsx` se **refactorizan a capítulos** que
+  rellenan las páginas del tomo, reutilizando el estado y la validación actuales
+  sin cambios de lógica.
 
 ## 6. Convención de imágenes
 
@@ -232,19 +270,21 @@ redactar en implementación desde fuente oficial.
 
 - `npx tsc --noEmit` limpio.
 - `npm run build` (Next 16 / Turbopack) limpio.
-- Verificación visual con preview: `/crear` (secciones plegables, placeholders,
-  selección de especie/linaje/clase, validación de pasos intacta), `/reino`
-  (encuadre Exandria), navegación y footer.
+- Verificación visual con preview: `/crear` como tomo (giro de página entre
+  capítulos, índice a la izquierda, detalle con placeholder de imagen a la
+  derecha, paginado interno, validación/bloqueo de pasos intacto, degradación a
+  página única en móvil), `/reino` (encuadre Exandria), navegación y footer.
 - Nota: sin credenciales Supabase no se prueba multijugador en vivo (igual que
   la sesión anterior); se verifica con build + preview + análisis.
 
 ## 8. Fases sugeridas (para el plan)
 
 1. Rebrand de texto (§1) + `/reino` (§2).
-2. `PortraitFrame` + convención de imágenes (§5 componente, §6).
+2. `PortraitFrame` + convención de imágenes (§5 componentes, §6).
 3. Modelo de datos de especies + roster completo (§3).
 4. Clases: enriquecer + Cazador de Sangre + `image` (§4).
-5. `/crear` UI: secciones plegables + retratos en especies y clases (§5).
-6. Verificación (§7) + actualizar `HANDOFF.md`/`README.md`.
-</content>
-</invoke>
+5. `CharacterBook` — carcasa del tomo: doble página, pestañas de capítulo,
+   giro 3D, paginado interno, responsive (§5).
+6. Migrar `/crear` a capítulos dentro del tomo: Razas/Clases/Trasfondos con
+   índice + detalle e imágenes; Aptitudes/Pericias/Ficha a doble página (§5).
+7. Verificación (§7) + actualizar `HANDOFF.md`/`README.md`.
