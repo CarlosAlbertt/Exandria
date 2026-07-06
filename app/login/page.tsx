@@ -42,7 +42,7 @@ export default function LoginPage() {
       <div className="panel w-full max-w-md p-9">
         <div className="flex justify-center mb-3"><Emblem size={64} /></div>
         <p className="eyebrow text-center mb-2">Compañero de campaña</p>
-        <h1 className="font-display text-3xl font-extrabold text-center gold-text mb-1">Tal'Dorei</h1>
+        <h1 className="font-display text-3xl font-extrabold text-center gold-text mb-1">Exandria</h1>
         <p className="text-center text-sm italic mb-7" style={{ color: "var(--color-muted)" }}>
           Identifícate para cruzar al continente.
         </p>

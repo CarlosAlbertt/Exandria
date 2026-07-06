@@ -9,11 +9,11 @@ import { getSessionProfile, isConfigured } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: {
-    default: "Tal'Dorei — Compañero de Campaña",
-    template: "%s · Tal'Dorei",
+    default: "Exandria — Compañero de Campaña",
+    template: "%s · Exandria",
   },
   description:
-    "Compañero de campaña multijugador para D&D en Tal'Dorei: creador de personaje, lore, mapa y narración en vivo.",
+    "Compañero de campaña multijugador para D&D en el mundo de Exandria: creador de personaje, lore, mapa y narración en vivo. Campaña ambientada en Tal'Dorei.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

@@ -6,7 +6,7 @@ export default function SiteFooter() {
     <footer className="mt-24 border-t border-[var(--color-line)]">
       <div className="max-w-6xl mx-auto px-6 py-12 text-center">
         <div className="flex justify-center mb-3"><Emblem size={40} /></div>
-        <p className="font-display text-xl font-bold gold-text mb-1">Tal'Dorei</p>
+        <p className="font-display text-xl font-bold gold-text mb-1">Exandria</p>
         <p className="eyebrow mb-6">Compañero de Campaña · Exandria</p>
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-6">
           {[

@@ -13,7 +13,7 @@ export default function HomePage() {
           <div className="flex justify-center mb-6"><Emblem size={92} /></div>
           <p className="eyebrow mb-5">Escenario de campaña · Exandria</p>
           <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-extrabold gold-text leading-[0.95] mb-6">
-            Tal'Dorei
+            Exandria
           </h1>
           <p className="prose-lore lead max-w-2xl mx-auto !mb-8">
             Forja tu héroe, descubre el lore del continente y prepárate para la

@@ -36,7 +36,7 @@ export default function SiteNav({ role, username }: { role: Role; username: stri
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-3 shrink-0" onClick={() => setOpen(false)}>
           <Emblem size={36} />
-          <span className="font-display text-lg font-bold gold-text leading-none tracking-wide hidden sm:inline">Tal'Dorei</span>
+          <span className="font-display text-lg font-bold gold-text leading-none tracking-wide hidden sm:inline">Exandria</span>
         </Link>
 
         <ul className="hidden md:flex items-center gap-0.5">
