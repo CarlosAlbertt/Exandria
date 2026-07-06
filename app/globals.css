@@ -308,11 +308,11 @@
 .tome-detail-name { font: 800 20px/1.1 inherit; color: var(--paper-ink); margin: 10px 0 4px; }
 
 @media (max-width: 860px) {
-  .tome { perspective: none; }
+  .tome { perspective: none; flex-direction: column; }
   .tome-spine { display: none; }
   .tome-page.left.mobile-hidden, .tome-page.right.mobile-hidden { display: none; }
-  .tome-tabs { position: static; flex-direction: row; flex-wrap: wrap; margin-bottom: 10px; }
-  .tome-tab { border-radius: 7px; }
+  .tome-tabs { position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; align-self: stretch; }
+  .tome-tab { border-radius: 7px; flex: 0 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .tome-page.right.turning { animation: none; }
