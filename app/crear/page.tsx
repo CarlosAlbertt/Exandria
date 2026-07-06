@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
 import { loadCharacter, saveCharacter } from "@/lib/character";
 import { getSpecies, REGIONS, regionSpecies } from "@/data/species";
@@ -71,6 +72,7 @@ export default function CrearPage() {
   // Sincronización con Supabase (si hay sesión): la ficha vive en la nube.
   const session = useSession();
   const userId = session?.id;
+  const router = useRouter();
   const cloudLoaded = useRef(false);
 
   useEffect(() => {
@@ -148,6 +150,20 @@ export default function CrearPage() {
     navigator.clipboard?.writeText(lines.join("\n"));
   }
 
+  // Finaliza el personaje: asegura nivel 1 y abre la hoja interactiva.
+  function onCreate() {
+    if (userId) saveCharacter(userId, { level: 1 });
+    else {
+      try {
+        const prev = JSON.parse(localStorage.getItem("taldorei.sheet.v1") ?? "{}");
+        localStorage.setItem("taldorei.sheet.v1", JSON.stringify({ ...prev, level: prev.level ?? 1 }));
+      } catch {
+        localStorage.setItem("taldorei.sheet.v1", JSON.stringify({ level: 1 }));
+      }
+    }
+    router.push("/personaje");
+  }
+
   // Cada paso debe completarse antes de poder avanzar (o saltar) más allá.
   const stepDone = [
     !!b.name.trim() && !!species && (!species.lineages || !!b.lineage),
@@ -201,7 +217,7 @@ export default function CrearPage() {
     { key: "trasfondos", label: "Trasfondos", left: <TrasfondosIndex b={b} onPickBackground={pickBackground} />, right: <TrasfondoDetalle b={b} /> },
     { key: "aptitudes", label: "Aptitudes", left: <div className="tome-dark-inset"><StepAbilities b={b} set={set} pointsSpent={pointsSpent} finalScores={finalScores} /></div> },
     { key: "pericias", label: "Pericias", left: <div className="tome-dark-inset"><StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} /></div> },
-    { key: "ficha", label: "Ficha", left: <div className="tome-dark-inset"><StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} /></div> },
+    { key: "ficha", label: "Ficha", left: <div className="tome-dark-inset"><StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} /></div> },
   ];
 
   return (
@@ -509,8 +525,8 @@ function StepSkills({ b, set, cls, bgSkills, classPool }:
 }
 
 /* ============================ PASO 6: RESUMEN ============================ */
-function StepSummary({ b, set, finalScores, hp, allSkills, onCopy, onReset }:
-  { b: Build; set: (p: Partial<Build>) => void; finalScores: Record<AbilityKey, number>; hp: number; allSkills: string[]; onCopy: () => void; onReset: () => void }) {
+function StepSummary({ b, set, finalScores, hp, allSkills, onCopy, onReset, onCreate }:
+  { b: Build; set: (p: Partial<Build>) => void; finalScores: Record<AbilityKey, number>; hp: number; allSkills: string[]; onCopy: () => void; onReset: () => void; onCreate: () => void }) {
   const species = b.species ? getSpecies(b.species) : undefined;
   const cls = b.cls ? getClass(b.cls) : undefined;
   const bg = b.background ? getBackground(b.background) : undefined;
@@ -561,8 +577,9 @@ function StepSummary({ b, set, finalScores, hp, allSkills, onCopy, onReset }:
       </div>
 
       <div className="flex flex-wrap gap-3 mt-5">
-        <button className="btn-gold" onClick={onCopy}><i className="fas fa-copy mr-2" />Copiar hoja</button>
-        <Link href="/inventario" className="btn-ghost inline-block"><i className="fas fa-bag-shopping mr-2" />Ir al inventario</Link>
+        <button className="btn-gold" onClick={onCreate}><i className="fas fa-user-plus mr-2" />Crear personaje</button>
+        <button className="btn-ghost" onClick={onCopy}><i className="fas fa-copy mr-2" />Copiar hoja</button>
+        <Link href="/personaje" className="btn-ghost inline-block"><i className="fas fa-scroll mr-2" />Ir a la ficha</Link>
         <button className="btn-ghost" onClick={onReset}><i className="fas fa-rotate-left mr-2" />Empezar de nuevo</button>
       </div>
     </div>
