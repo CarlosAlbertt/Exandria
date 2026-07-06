@@ -1,4 +1,4 @@
-# Guía de arranque — Tal'Dorei (tras apagar el PC)
+# Guía de arranque — Exandria (tras apagar el PC)
 
 Cada vez que **reinicias el ordenador**, la IA (Ollama) y el túnel se apagan, y
 el túnel gratis **cambia de URL**. La app web (Vercel) y la base de datos

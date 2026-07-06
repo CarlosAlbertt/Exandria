@@ -1,10 +1,11 @@
-# HANDOFF — Tal'Dorei, compañero de campaña D&D
+# HANDOFF — Exandria, compañero de campaña D&D
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## Qué es
-App web multijugador en tiempo real para una campaña de **D&D 2024** en el
-continente de **Tal'Dorei** (Exandria). Roles **DM** (admin) y **jugador**.
+App web multijugador en tiempo real para una campaña de **D&D 2024** en el mundo
+de **Exandria**, ambientada en el continente de **Tal'Dorei**. Roles **DM**
+(admin) y **jugador**.
 
 - Repo: https://github.com/CarlosAlbertt/Exandria (privado, rama `master`)
 - Carpeta local: `C:\Users\carlo\Downloads\dnd-campaign-app`

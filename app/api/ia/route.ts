@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     role: "system",
     content:
       base +
-      (lore ? `\n\n# Lore relevante de Tal'Dorei\n\n${lore}` : "") +
+      (lore ? `\n\n# Lore relevante de Exandria (campaña en Tal'Dorei)\n\n${lore}` : "") +
       (body.character ? `\n\n# Personaje del jugador\n${body.character}` : ""),
   };
   const messages = [system, ...(body.messages ?? [])].slice(-21);

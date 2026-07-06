@@ -1,4 +1,5 @@
-// Guía de narración + lore de Tal'Dorei como texto (fuente editable para la IA).
+// Guía de narración + lore de Exandria (mundo) con la campaña en Tal'Dorei,
+// como texto (fuente editable para la IA).
 // Antes vivía en lore/*.md leído por fs; ahora se importa para poder llamar a
 // Ollama desde el navegador (necesario al desplegar en Vercel).
 
@@ -27,8 +28,9 @@ NPCs:
   que no coinciden necesariamente con los del grupo. Marca quién habla.
 
 COHERENCIA:
-- Ajústate al lore de Tal'Dorei que se te proporciona más abajo. Si falta un
-  dato menor, invéntalo de forma plausible y mantenlo constante.
+- Ajústate al lore de Exandria y de Tal'Dorei (la región donde transcurre la
+  campaña) que se te proporciona más abajo. Si falta un dato menor, invéntalo de
+  forma plausible y mantenlo constante.
 
 EJEMPLO de tono (no lo copies literal):
 "La puerta cede con un gemido de madera húmeda. Dentro, el aire huele a cera

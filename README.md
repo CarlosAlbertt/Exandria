@@ -1,7 +1,8 @@
-# Tal'Dorei — Compañero de Campaña
+# Exandria — Compañero de Campaña
 
-App web para la próxima campaña de **Dungeons & Dragons** ambientada en el
-continente de **Tal'Dorei** (Exandria), con reglas de la edición **2024**.
+App web para la próxima campaña de **Dungeons & Dragons** en el mundo de
+**Exandria**, ambientada en el continente de **Tal'Dorei**, con reglas de la
+edición **2024**.
 
 ## Qué incluye
 
