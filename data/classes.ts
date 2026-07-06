@@ -18,6 +18,7 @@ export type CharClass = {
   subclasses: { name: string; blurb: string }[];
   tagline: string;
   blurb: string;
+  image?: string;   // /classes/<slug>.jpg
 };
 
 export const CLASSES: CharClass[] = [
@@ -188,6 +189,20 @@ export const CLASSES: CharClass[] = [
     ],
     tagline: "El golpe certero desde las sombras.",
     blurb: "Expertos del sigilo y la precisión. Su Ataque Furtivo convierte una apertura en una herida mortal.",
+  },
+  {
+    slug: "cazador-de-sangre", name: "Cazador de Sangre", group: "marcial", hitDie: 10,
+    primary: ["fue", "des"], saves: ["fue", "int"], skillCount: 3,
+    skillList: ["Acrobacias", "Arcanos", "Atletismo", "Historia", "Investigación", "Intimidación", "Perspicacia", "Religión", "Supervivencia"],
+    subclassLabel: "Orden sanguínea",
+    subclasses: [
+      { name: "Orden del Cuervo Sanguíneo", blurb: "Marca a la presa con un vínculo de sangre que la castiga y la persigue." },
+      { name: "Orden del Sabueso Profano", blurb: "Rastreador implacable; ataca la mente, el miedo y la voluntad del enemigo." },
+      { name: "Orden del Jinete Carmesí", blurb: "Alquimia de sangre y mutágenos que potencian el cuerpo a un precio." },
+      { name: "Orden del Alma Lupina", blurb: "Abraza a la bestia interior con una hibridación controlada y feroz." },
+    ],
+    tagline: "Magia de sangre para cazar lo que la teme.",
+    blurb: "Guerreros que sacrifican su propia vitalidad en ritos de hemocratía para dar caza a lo sobrenatural. Clase de Matt Mercer, seña de identidad de Exandria.",
   },
 ];
 
