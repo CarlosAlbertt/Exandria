@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { CONTINENT, HISTORY, PANTHEON, FACTIONS } from "@/data/taldorei";
-import { CALENDAR, SEASONS, HOLIDAYS, MOONS, PLANES } from "@/data/cosmology";
+import { HISTORY, PANTHEON, FACTIONS } from "@/data/taldorei";
+import { CALENDAR, SEASONS, HOLIDAYS, MOONS, PLANES, WORLD_INTRO } from "@/data/cosmology";
 import ReinoRegions from "@/components/ReinoRegions";
 
 export const metadata: Metadata = {
-  title: "El Reino",
-  description: "Historia, regiones, panteón y facciones del continente de Tal'Dorei.",
+  title: "El Mundo",
+  description: "Historia, continentes, panteón, calendario y cosmología de Exandria. La campaña transcurre en Tal'Dorei.",
 };
 
 export default function ReinoPage() {
@@ -15,15 +15,15 @@ export default function ReinoPage() {
   return (
     <main className="max-w-5xl mx-auto px-6 py-16">
       <header className="text-center mb-14 reveal">
-        <p className="eyebrow mb-3">Compendio del continente</p>
-        <h1 className="font-display text-4xl md:text-5xl font-extrabold gold-text">El Reino de Tal'Dorei</h1>
-        <p className="prose-lore lead max-w-2xl mx-auto mt-5">{CONTINENT.intro}</p>
+        <p className="eyebrow mb-3">Compendio del mundo</p>
+        <h1 className="font-display text-4xl md:text-5xl font-extrabold gold-text">El Mundo de Exandria</h1>
+        <p className="prose-lore lead max-w-2xl mx-auto mt-5">{WORLD_INTRO}</p>
       </header>
 
       {/* HISTORIA */}
       <section className="mb-20">
         <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-hourglass-half text-[var(--color-bronze)]" /> Una historia de Tal'Dorei
+          <i className="fas fa-hourglass-half text-[var(--color-bronze)]" /> Una historia de Exandria
         </h2>
         <ol className="relative border-l-2 border-[var(--color-line)] ml-2 space-y-8">
           {HISTORY.map((e, i) => (

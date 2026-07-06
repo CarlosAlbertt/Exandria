@@ -3,6 +3,11 @@
 // mecánicas son hechos; las descripciones son resúmenes propios). Herramienta
 // de fans no oficial.
 
+// --- MUNDO ---
+// Introducción de nivel mundial (Exandria) para la página /reino.
+export const WORLD_INTRO =
+  "Exandria es un mundo forjado y roto muchas veces por dioses, primordiales y mortales. Sus continentes —Tal'Dorei, Wildemount, Issylra, Marquet— y sus mares guardan imperios caídos, magia antigua y heridas que aún no cicatrizan. Vuestra campaña comienza en Tal'Dorei, la tierra salvaje del oeste.";
+
 // --- CALENDARIO ---
 // Un año exandrino dura 328 días repartidos en 11 meses. Semana de 7 días.
 // Los años se cuentan desde la Divergencia: "PD" (Post-Divergencia), año 0 PD.
