@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 import type { AbilityKey } from "@/data/rules";
 
+export type Item = { id: string; name: string; qty: number; notes?: string };
+
+export type Asi = Record<string, Partial<Record<AbilityKey, number>>>;
+
 export type CharacterData = {
   name: string;
   species: string | null;
@@ -14,17 +18,28 @@ export type CharacterData = {
   base: Record<AbilityKey, number>;
   bonus: Record<AbilityKey, number>;
   skills: string[];
-  inventory: string[];
+  inventory: string[];        // legado (text[]); ya no se escribe
+  items: Item[];              // inventario enriquecido
+  equipment: Record<string, Item>;
+  asi: Asi;
+  level: number;
+  gold: number;
   lore: string;
 };
 
-const FIELDS = "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, lore";
+const FIELDS =
+  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, level, gold, lore";
 
 // Carga la ficha del usuario (o null si no hay).
 export async function loadCharacter(userId: string): Promise<Partial<CharacterData> | null> {
   if (!supabaseConfigured || !userId) return null;
   const { data } = await createClient().from("characters").select(FIELDS).eq("user_id", userId).maybeSingle();
-  return (data as Partial<CharacterData>) ?? null;
+  if (!data) return null;
+  const row = data as Partial<CharacterData>;
+  if ((!row.items || row.items.length === 0) && Array.isArray(row.inventory) && row.inventory.length) {
+    row.items = row.inventory.map((name, i) => ({ id: `legacy-${i}`, name, qty: 1 }));
+  }
+  return row;
 }
 
 // Guarda (upsert) la ficha del usuario.
