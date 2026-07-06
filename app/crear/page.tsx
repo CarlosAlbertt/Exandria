@@ -4,9 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/components/SessionProvider";
 import { loadCharacter, saveCharacter } from "@/lib/character";
-import { SPECIES, getSpecies } from "@/data/species";
-import { CLASSES, getClass, GROUP_ACCENT, GROUP_LABEL } from "@/data/classes";
+import { getSpecies, REGIONS, regionSpecies } from "@/data/species";
+import { CLASSES, getClass, GROUP_LABEL } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
+import PortraitFrame from "@/components/PortraitFrame";
+import CharacterBook, { type Chapter } from "@/components/CharacterBook";
 import {
   ABILITIES, SKILLS, AbilityKey, abilityMod, fmtMod,
   POINT_BUY_COST, POINT_BUY_BUDGET, POINT_BUY_MIN, POINT_BUY_MAX,
@@ -32,12 +34,27 @@ const NO_BONUS: Record<AbilityKey, number> = { fue: 0, des: 0, con: 0, int: 0, s
 const STEPS = ["Especie", "Clase", "Trasfondo", "Aptitudes", "Pericias", "Resumen"];
 const KEY = "taldorei.build.v1";
 
+const CHAPTERS = [
+  { key: "razas", label: "Razas", step: 0 },
+  { key: "clases", label: "Clases", step: 1 },
+  { key: "trasfondos", label: "Trasfondos", step: 2 },
+  { key: "aptitudes", label: "Aptitudes", step: 3 },
+  { key: "pericias", label: "Pericias", step: 4 },
+  { key: "ficha", label: "Ficha", step: 5 },
+] as const;
+
+function slugify(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
 export default function CrearPage() {
   const [b, setB] = useState<Build>({
     name: "", species: null, lineage: null, cls: null, subclass: null,
     background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0,
   });
   const [loaded, setLoaded] = useState(false);
+  const [mobileShowRight, setMobileShowRight] = useState(false);
 
   // cargar / guardar
   useEffect(() => {
@@ -170,77 +187,58 @@ export default function CrearPage() {
     if (loaded && b.step > maxStep) setB((p) => ({ ...p, step: maxStep }));
   }, [loaded, b.step, maxStep]);
 
+  const pickSpecies = (slug: string) => { set({ species: slug, lineage: null }); setMobileShowRight(true); };
+  const pickClass = (slug: string) => { set({ cls: slug, subclass: null, skills: [] }); setMobileShowRight(true); };
+  const pickBackground = (slug: string) => { set({ background: slug, bonus: { ...NO_BONUS } }); setMobileShowRight(true); };
+
+  const activeKey = CHAPTERS.find((c) => c.step === b.step)?.key ?? "razas";
+  const unlockedKeys = CHAPTERS.filter((c) => c.step <= maxStep).map((c) => c.key);
+  const onSelectChapter = (key: string) => { const c = CHAPTERS.find((x) => x.key === key); if (c) { go(c.step); setMobileShowRight(false); } };
+
+  const chapters: Chapter[] = [
+    { key: "razas", label: "Razas", left: <RazasIndex b={b} set={set} onPickSpecies={pickSpecies} />, right: <RazaDetalle b={b} set={set} /> },
+    { key: "clases", label: "Clases", left: <ClasesIndex b={b} onPickClass={pickClass} />, right: <ClaseDetalle b={b} set={set} /> },
+    { key: "trasfondos", label: "Trasfondos", left: <TrasfondosIndex b={b} onPickBackground={pickBackground} />, right: <TrasfondoDetalle b={b} /> },
+    { key: "aptitudes", label: "Aptitudes", left: <div className="tome-dark-inset"><StepAbilities b={b} set={set} pointsSpent={pointsSpent} finalScores={finalScores} /></div> },
+    { key: "pericias", label: "Pericias", left: <div className="tome-dark-inset"><StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} /></div> },
+    { key: "ficha", label: "Ficha", left: <div className="tome-dark-inset"><StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} /></div> },
+  ];
+
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      <header className="text-center mb-8">
+      <header className="text-center mb-6">
         <p className="eyebrow mb-3">Forja de héroes · Reglas 2024</p>
         <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text">Crea tu personaje</h1>
       </header>
 
-      {/* PROGRESO */}
-      <ol className="flex items-center justify-center gap-1 sm:gap-2 mb-10 flex-wrap">
-        {STEPS.map((s, i) => {
-          const done = stepDone[i] && i < b.step;
-          const cur = i === b.step;
-          const locked = i > maxStep;
-          return (
-            <li key={s} className="flex items-center">
-              <button
-                onClick={() => go(i)}
-                disabled={locked}
-                title={locked ? "Completa los pasos anteriores" : undefined}
-                className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg font-ui text-[12px] font-bold transition-colors disabled:cursor-not-allowed"
-                style={{
-                  color: cur ? "var(--color-ink)" : done ? "var(--color-bronze-bright)" : "var(--color-dim)",
-                  background: cur ? "var(--color-bronze)" : "transparent",
-                  border: `1px solid ${cur || done ? "var(--color-bronze)" : "var(--color-line)"}`,
-                  opacity: locked ? 0.45 : 1,
-                }}
-              >
-                {locked ? <i className="fas fa-lock text-[9px]" /> : done ? <i className="fas fa-check text-[10px]" /> : <span className="hidden sm:inline">{i + 1}.</span>} {s}
-              </button>
-              {i < STEPS.length - 1 && <span className="w-3 sm:w-5 h-px" style={{ background: "var(--color-line)" }} />}
-            </li>
-          );
-        })}
-      </ol>
+      <div className="only-narrow justify-center mb-3">
+        {activeKey === "razas" || activeKey === "clases" || activeKey === "trasfondos" ? (
+          <button className="btn-ghost" onClick={() => setMobileShowRight((v) => !v)}>
+            <i className={`fas ${mobileShowRight ? "fa-list" : "fa-eye"} mr-2`} />{mobileShowRight ? "Ver lista" : "Ver detalle"}
+          </button>
+        ) : null}
+      </div>
 
-      <div className="grid lg:grid-cols-[1fr_300px] gap-8">
-        {/* CONTENIDO DEL PASO */}
-        <section className="reveal" key={b.step}>
-          {b.step === 0 && <StepSpecies b={b} set={set} />}
-          {b.step === 1 && <StepClass b={b} set={set} />}
-          {b.step === 2 && <StepBackground b={b} set={set} />}
-          {b.step === 3 && <StepAbilities b={b} set={set} pointsSpent={pointsSpent} finalScores={finalScores} />}
-          {b.step === 4 && <StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} />}
-          {b.step === 5 && <StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} />}
+      <CharacterBook chapters={chapters} activeKey={activeKey} unlockedKeys={unlockedKeys} onSelect={onSelectChapter} mobileShowRight={mobileShowRight} />
 
-          {/* NAV */}
-          <div className="flex items-center justify-between gap-3 mt-8 flex-wrap">
-            <button className="btn-ghost" onClick={() => go(b.step - 1)} disabled={b.step === 0}>
-              <i className="fas fa-arrow-left mr-2" />Atrás
+      <div className="flex items-center justify-between gap-3 mt-6 flex-wrap">
+        <button className="btn-ghost" onClick={() => go(b.step - 1)} disabled={b.step === 0}>
+          <i className="fas fa-arrow-left mr-2" />Atrás
+        </button>
+        <div className="flex items-center gap-3">
+          {missing && (
+            <span className="font-ui text-[12px] font-semibold" style={{ color: "var(--color-ember)" }}>
+              <i className="fas fa-circle-exclamation mr-1.5" />{missing}
+            </span>
+          )}
+          {b.step < STEPS.length - 1 ? (
+            <button className="btn-gold" onClick={() => go(b.step + 1)} disabled={!canNext}>
+              Siguiente<i className="fas fa-arrow-right ml-2" />
             </button>
-            <div className="flex items-center gap-3">
-              {missing && (
-                <span className="font-ui text-[12px] font-semibold" style={{ color: "var(--color-ember)" }}>
-                  <i className="fas fa-circle-exclamation mr-1.5" />{missing}
-                </span>
-              )}
-              {b.step < STEPS.length - 1 ? (
-                <button className="btn-gold" onClick={() => go(b.step + 1)} disabled={!canNext}>
-                  Siguiente<i className="fas fa-arrow-right ml-2" />
-                </button>
-              ) : (
-                <button className="btn-gold" onClick={copySheet}><i className="fas fa-copy mr-2" />Copiar hoja</button>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* HOJA EN VIVO */}
-        <aside className="lg:sticky lg:top-24 h-fit">
-          <LiveSheet b={b} set={set} species={species} cls={cls} bg={bg} finalScores={finalScores} hp={hp} allSkills={allSkills} onReset={reset} />
-        </aside>
+          ) : (
+            <button className="btn-gold" onClick={copySheet}><i className="fas fa-copy mr-2" />Copiar hoja</button>
+          )}
+        </div>
       </div>
     </main>
   );
@@ -250,162 +248,151 @@ function bonusTotal(bonus: Record<AbilityKey, number>) {
   return ABILITIES.reduce((s, a) => s + (bonus[a.key] ?? 0), 0);
 }
 
-/* ============================ PASO 1: ESPECIE ============================ */
-function StepSpecies({ b, set }: { b: Build; set: (p: Partial<Build>) => void }) {
-  const species = b.species ? getSpecies(b.species) : undefined;
-  const needsLineage = !!species?.lineages && !b.lineage;
+/* ============================ CAPÍTULO: RAZAS ============================ */
+function RazasIndex({ b, set, onPickSpecies }: { b: Build; set: (p: Partial<Build>) => void; onPickSpecies: (slug: string) => void }) {
   return (
     <div>
-      {/* Nombre del héroe (obligatorio) */}
-      <div className="panel-raised p-5 mb-6" style={{ borderColor: !b.name.trim() ? "color-mix(in srgb, var(--color-ember) 45%, var(--color-line))" : "var(--color-line)" }}>
-        <label className="eyebrow block mb-2" htmlFor="hero-name">
-          <i className="fas fa-signature mr-1.5" style={{ color: "var(--color-bronze)" }} />Nombre de tu héroe <span style={{ color: "var(--color-ember)" }}>*</span>
-        </label>
+      <div className="mb-4">
+        <label className="tome-region" htmlFor="hero-name">Nombre de tu héroe *</label>
         <input
           id="hero-name"
           value={b.name}
           onChange={(e) => set({ name: e.target.value })}
           placeholder="Ej.: Vex'ahlia, Grog, Percival…"
           maxLength={40}
-          className="w-full bg-[var(--color-night)] rounded-lg px-4 py-2.5 font-display text-lg font-bold outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
-          style={{ color: "var(--color-parch)" }}
+          className="w-full rounded-lg px-3 py-2 font-display text-lg font-bold outline-none"
+          style={{ background: "rgba(120,80,35,0.10)", color: "var(--paper-ink)", border: `1px solid ${b.name.trim() ? "var(--paper-line)" : "var(--color-ember)"}` }}
         />
       </div>
+      <h2 className="tome-detail-name" style={{ marginTop: 0 }}>✦ Razas de Exandria</h2>
+      {REGIONS.map((r) => {
+        const list = regionSpecies(r.key);
+        if (!list.length) return null;
+        return (
+          <div key={r.key} className="mb-2">
+            <p className="tome-region">{r.label}</p>
+            {list.map((s) => (
+              <button key={s.slug} className="tome-opt" data-sel={b.species === s.slug} onClick={() => onPickSpecies(s.slug)}>
+                <PortraitFrame src={`/species/${s.slug}.jpg`} alt={s.name} size="sm" icon="fa-dragon" />
+                <span className="tome-opt-txt">
+                  <span className="tome-opt-name">{s.name}{s.homebrew && <span className="tome-dm">DM</span>}</span>
+                  <span className="tome-opt-tag">{s.tagline}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-      <h2 className="font-display text-xl font-bold mb-1" style={{ color: "var(--color-parch)" }}>Elige tu especie</h2>
-      <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>Define tu herencia, tamaño y rasgos innatos.</p>
-      <div className="grid sm:grid-cols-2 gap-4">
-        {SPECIES.map((s) => (
-          <button key={s.slug} className="pick-card p-5 text-left" data-selected={b.species === s.slug}
-            style={{ ["--accent" as string]: "var(--color-arcane)", ["--glow" as string]: "rgba(69,199,189,0.3)" }}
-            onClick={() => set({ species: s.slug, lineage: null })}>
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <h3 className="font-display text-lg font-bold" style={{ color: "var(--color-parch)" }}>{s.name}</h3>
-              <span className="font-ui text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                style={{ color: s.lineages ? "var(--color-bronze)" : "var(--color-dim)", border: `1px solid ${s.lineages ? "var(--color-bronze)" : "var(--color-line)"}55` }}>
-                {s.lineages ? `${s.lineages.length} linajes` : "linaje único"}
+function RazaDetalle({ b, set }: { b: Build; set: (p: Partial<Build>) => void }) {
+  const s = b.species ? getSpecies(b.species) : undefined;
+  if (!s) return <p className="tome-opt-tag">Elige una raza en la página izquierda.</p>;
+  return (
+    <div>
+      <PortraitFrame src={`/species/${s.slug}.jpg`} alt={s.name} size="lg" icon="fa-dragon" />
+      <p className="tome-detail-name">{s.name}</p>
+      <p className="tome-region">{REGIONS.find((r) => r.key === s.region)?.label}{s.homebrew ? " · a criterio del DM" : ""}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--paper-ink)" }}>{s.blurb}</p>
+      <p style={{ fontSize: 13, fontStyle: "italic", color: "var(--paper-ink-soft)", margin: "8px 0" }}>{s.origin}</p>
+      <p className="tome-region">Rasgos</p>
+      <ul>{s.traits.map((t) => <li key={t} style={{ fontSize: 13, color: "var(--paper-ink)", margin: "3px 0" }}>◆ {t}</li>)}</ul>
+      {s.lineages && (
+        <>
+          <p className="tome-region">Linaje *</p>
+          {s.lineages.map((l) => (
+            <button key={l.name} className="tome-opt" data-sel={b.lineage === l.name} onClick={() => set({ lineage: l.name })}>
+              <PortraitFrame src={`/species/lineages/${slugify(l.name)}.jpg`} alt={l.name} size="sm" icon="fa-star" />
+              <span className="tome-opt-txt">
+                <span className="tome-opt-name">{l.name}{l.homebrew && <span className="tome-dm">DM</span>}</span>
+                <span className="tome-opt-tag">{l.perk}</span>
               </span>
-            </div>
-            <p className="font-ui text-[11px] font-semibold tracking-wide mb-2" style={{ color: "var(--color-arcane)" }}>
-              {s.size} · {s.speed} m · {s.tagline}
-            </p>
-            <p style={{ color: "var(--color-muted)", fontSize: "13.5px", lineHeight: 1.5 }}>{s.blurb}</p>
-          </button>
-        ))}
-      </div>
-
-      {species && (
-        <div className="panel-raised p-5 mt-6">
-          <p className="eyebrow mb-3">Rasgos de {species.name}</p>
-          <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 mb-4">
-            {species.traits.map((t) => (
-              <li key={t} className="flex gap-2 text-[14px]" style={{ color: "var(--color-warm)" }}>
-                <i className="fas fa-gem text-[10px] mt-1.5" style={{ color: "var(--color-arcane)" }} />{t}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Subraza / linaje: panel propio y obligatorio */}
-      {species?.lineages && (
-        <div className="panel-raised p-5 mt-4" style={{ borderColor: needsLineage ? "color-mix(in srgb, var(--color-ember) 45%, var(--color-line))" : "color-mix(in srgb, var(--color-primitivo) 40%, var(--color-line))" }}>
-          <p className="eyebrow mb-3">
-            <i className={`fas ${needsLineage ? "fa-circle-exclamation" : "fa-check"} mr-1.5`} style={{ color: needsLineage ? "var(--color-ember)" : "var(--color-primitivo)" }} />
-            Elige el linaje de tu {species.name.toLowerCase()} <span style={{ color: "var(--color-ember)" }}>*</span>
-          </p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {species.lineages.map((l) => (
-              <button key={l.name} className="pick-card p-4 text-left" data-selected={b.lineage === l.name}
-                style={{ ["--accent" as string]: "var(--color-bronze)", ["--glow" as string]: "rgba(201,163,92,0.3)" }}
-                onClick={() => set({ lineage: l.name })}>
-                <p className="font-display font-bold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{l.name}</p>
-                <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.45 }}>{l.perk}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ============================ PASO 2: CLASE ============================ */
-function StepClass({ b, set }: { b: Build; set: (p: Partial<Build>) => void }) {
-  const cls = b.cls ? getClass(b.cls) : undefined;
-  return (
-    <div>
-      <h2 className="font-display text-xl font-bold mb-1" style={{ color: "var(--color-parch)" }}>Elige tu clase</h2>
-      <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>Tu vocación: cómo luchas, lanzas magia y creces.</p>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {CLASSES.map((c) => {
-          const accent = GROUP_ACCENT[c.group];
-          return (
-            <button key={c.slug} className="pick-card p-5 text-left" data-selected={b.cls === c.slug}
-              style={{ ["--accent" as string]: accent, ["--glow" as string]: "rgba(224,132,60,0.25)" }}
-              onClick={() => set({ cls: c.slug, subclass: null, skills: [] })}>
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-display text-lg font-bold" style={{ color: "var(--color-parch)" }}>{c.name}</h3>
-                <span className="font-ui text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: accent, border: `1px solid ${accent}55` }}>{GROUP_LABEL[c.group]}</span>
-              </div>
-              <p className="font-ui text-[11px] font-semibold mb-2" style={{ color: accent }}>d{c.hitDie} · {c.tagline}</p>
-              <p style={{ color: "var(--color-muted)", fontSize: "13.5px", lineHeight: 1.5 }}>{c.blurb}</p>
             </button>
-          );
-        })}
-      </div>
-
-      {cls && (
-        <div className="panel-raised p-5 mt-6" style={{ ["--accent" as string]: GROUP_ACCENT[cls.group] }}>
-          <div className="grid sm:grid-cols-3 gap-3 mb-5">
-            <Fact label="Dado de golpe" value={`d${cls.hitDie}`} />
-            <Fact label="Aptitud principal" value={cls.primary.map((p) => ABILITIES.find((a) => a.key === p)!.abbr).join(" / ")} />
-            <Fact label="Salvaciones" value={cls.saves.map((p) => ABILITIES.find((a) => a.key === p)!.abbr).join(" / ")} />
-          </div>
-          <p className="eyebrow mb-2">{cls.subclassLabel}</p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {cls.subclasses.map((sc) => (
-              <button key={sc.name} className="pick-card p-4 text-left" data-selected={b.subclass === sc.name}
-                style={{ ["--accent" as string]: GROUP_ACCENT[cls.group], ["--glow" as string]: "rgba(106,169,240,0.25)" }}
-                onClick={() => set({ subclass: sc.name })}>
-                <p className="font-display font-bold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{sc.name}</p>
-                <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.45 }}>{sc.blurb}</p>
-              </button>
-            ))}
-          </div>
-        </div>
+          ))}
+        </>
       )}
     </div>
   );
 }
 
-/* ============================ PASO 3: TRASFONDO ============================ */
-function StepBackground({ b, set }: { b: Build; set: (p: Partial<Build>) => void }) {
-  const bg = b.background ? getBackground(b.background) : undefined;
+/* ============================ CAPÍTULO: CLASES ============================ */
+function ClasesIndex({ b, onPickClass }: { b: Build; onPickClass: (slug: string) => void }) {
   return (
     <div>
-      <h2 className="font-display text-xl font-bold mb-1" style={{ color: "var(--color-parch)" }}>Elige tu trasfondo</h2>
-      <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>Tu pasado otorga aptitudes, una dote de origen, pericias y herramientas.</p>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {BACKGROUNDS.map((g) => (
-          <button key={g.slug} className="pick-card p-5 text-left" data-selected={b.background === g.slug}
-            style={{ ["--accent" as string]: "var(--color-bronze)", ["--glow" as string]: "rgba(201,163,92,0.3)" }}
-            onClick={() => set({ background: g.slug, bonus: { ...NO_BONUS } })}>
-            <h3 className="font-display text-lg font-bold mb-1" style={{ color: "var(--color-parch)" }}>{g.name}</h3>
-            <p className="font-ui text-[11px] font-semibold mb-2" style={{ color: "var(--color-bronze)" }}>
-              <i className="fas fa-star mr-1" />{g.feat}
-            </p>
-            <p style={{ color: "var(--color-muted)", fontSize: "13.5px", lineHeight: 1.5 }}>{g.blurb}</p>
-          </button>
-        ))}
-      </div>
-      {bg && (
-        <div className="panel-raised p-5 mt-6 grid sm:grid-cols-3 gap-3">
-          <Fact label="Pericias" value={bg.skills.join(", ")} />
-          <Fact label="Herramienta" value={bg.tool} />
-          <Fact label="Dote de origen" value={bg.feat} />
-        </div>
-      )}
+      <h2 className="tome-detail-name" style={{ marginTop: 0 }}>✦ Clases</h2>
+      {CLASSES.map((c) => (
+        <button key={c.slug} className="tome-opt" data-sel={b.cls === c.slug} onClick={() => onPickClass(c.slug)}>
+          <PortraitFrame src={`/classes/${c.slug}.jpg`} alt={c.name} size="sm" icon="fa-hat-wizard" />
+          <span className="tome-opt-txt">
+            <span className="tome-opt-name">{c.name}</span>
+            <span className="tome-opt-tag">{c.tagline}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ClaseDetalle({ b, set }: { b: Build; set: (p: Partial<Build>) => void }) {
+  const cls = b.cls ? getClass(b.cls) : undefined;
+  if (!cls) return <p className="tome-opt-tag">Elige una clase en la página izquierda.</p>;
+  return (
+    <div>
+      <PortraitFrame src={`/classes/${cls.slug}.jpg`} alt={cls.name} size="lg" icon="fa-hat-wizard" />
+      <p className="tome-detail-name">{cls.name}</p>
+      <p className="tome-region">{GROUP_LABEL[cls.group]}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--paper-ink)" }}>{cls.blurb}</p>
+      <ul style={{ margin: "8px 0" }}>
+        <li style={{ fontSize: 13, color: "var(--paper-ink)", margin: "3px 0" }}>◆ Dado de golpe: d{cls.hitDie}</li>
+        <li style={{ fontSize: 13, color: "var(--paper-ink)", margin: "3px 0" }}>◆ Aptitud principal: {cls.primary.map((p) => ABILITIES.find((a) => a.key === p)!.abbr).join(" / ")}</li>
+        <li style={{ fontSize: 13, color: "var(--paper-ink)", margin: "3px 0" }}>◆ Salvaciones: {cls.saves.map((p) => ABILITIES.find((a) => a.key === p)!.abbr).join(" / ")}</li>
+      </ul>
+      <p className="tome-region">{cls.subclassLabel} *</p>
+      {cls.subclasses.map((sc) => (
+        <button key={sc.name} className="tome-opt" data-sel={b.subclass === sc.name} onClick={() => set({ subclass: sc.name })}>
+          <span className="tome-opt-txt">
+            <span className="tome-opt-name">{sc.name}</span>
+            <span className="tome-opt-tag">{sc.blurb}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ============================ CAPÍTULO: TRASFONDOS ============================ */
+function TrasfondosIndex({ b, onPickBackground }: { b: Build; onPickBackground: (slug: string) => void }) {
+  return (
+    <div>
+      <h2 className="tome-detail-name" style={{ marginTop: 0 }}>✦ Trasfondos</h2>
+      {BACKGROUNDS.map((g) => (
+        <button key={g.slug} className="tome-opt" data-sel={b.background === g.slug} onClick={() => onPickBackground(g.slug)}>
+          <PortraitFrame alt={g.name} size="sm" icon="fa-scroll" />
+          <span className="tome-opt-txt">
+            <span className="tome-opt-name">{g.name}</span>
+            <span className="tome-opt-tag">{g.feat}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TrasfondoDetalle({ b }: { b: Build }) {
+  const bg = b.background ? getBackground(b.background) : undefined;
+  if (!bg) return <p className="tome-opt-tag">Elige un trasfondo en la página izquierda.</p>;
+  return (
+    <div>
+      <p className="tome-detail-name" style={{ marginTop: 0 }}>{bg.name}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--paper-ink)" }}>{bg.blurb}</p>
+      <p className="tome-region">Pericias</p>
+      <p style={{ fontSize: 13, color: "var(--paper-ink)" }}>{bg.skills.join(", ")}</p>
+      <p className="tome-region">Herramienta</p>
+      <p style={{ fontSize: 13, color: "var(--paper-ink)" }}>{bg.tool}</p>
+      <p className="tome-region">Dote</p>
+      <p style={{ fontSize: 13, color: "var(--paper-ink)" }}>{bg.feat}</p>
     </div>
   );
 }
@@ -578,39 +565,6 @@ function StepSummary({ b, set, finalScores, hp, allSkills, onCopy, onReset }:
         <Link href="/inventario" className="btn-ghost inline-block"><i className="fas fa-bag-shopping mr-2" />Ir al inventario</Link>
         <button className="btn-ghost" onClick={onReset}><i className="fas fa-rotate-left mr-2" />Empezar de nuevo</button>
       </div>
-    </div>
-  );
-}
-
-/* ============================ HOJA EN VIVO ============================ */
-function LiveSheet({ b, set, species, cls, bg, finalScores, hp, allSkills, onReset }: any) {
-  return (
-    <div className="panel p-5">
-      <input
-        value={b.name}
-        onChange={(e) => set({ name: e.target.value })}
-        placeholder="Nombre del personaje"
-        className="w-full bg-transparent font-display text-lg font-bold mb-1 outline-none border-b border-[var(--color-line)] focus:border-[var(--color-bronze)] pb-1 transition-colors"
-        style={{ color: "var(--color-parch)" }}
-      />
-      <p className="font-ui text-[12px] font-semibold mb-4" style={{ color: "var(--color-muted)" }}>
-        {species?.name ?? "—"} · {cls?.name ?? "—"} · {bg?.name ?? "—"}
-      </p>
-      <div className="grid grid-cols-3 gap-1.5 mb-4">
-        {ABILITIES.map((a) => (
-          <div key={a.key} className="panel-raised py-2 text-center">
-            <p className="eyebrow !text-[9px] mb-0.5">{a.abbr}</p>
-            <p className="font-display text-lg font-extrabold" style={{ color: "var(--color-warm)" }}>{finalScores[a.key]}</p>
-            <p className="font-ui text-[10px] font-bold" style={{ color: "var(--color-dim)" }}>{fmtMod(abilityMod(finalScores[a.key]))}</p>
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-between text-center mb-4">
-        <div><p className="eyebrow !text-[9px]">PG</p><p className="font-display font-extrabold" style={{ color: "var(--color-ember)" }}>{hp || "—"}</p></div>
-        <div><p className="eyebrow !text-[9px]">Comp.</p><p className="font-display font-extrabold" style={{ color: "var(--color-bronze)" }}>+2</p></div>
-        <div><p className="eyebrow !text-[9px]">Pericias</p><p className="font-display font-extrabold" style={{ color: "var(--color-arcane)" }}>{allSkills.length}</p></div>
-      </div>
-      <button className="btn-ghost w-full !py-2 text-[12px]" onClick={onReset}><i className="fas fa-rotate-left mr-2" />Reiniciar</button>
     </div>
   );
 }

@@ -317,3 +317,16 @@
 @media (prefers-reduced-motion: reduce) {
   .tome-page.right.turning { animation: none; }
 }
+
+/* Capítulos mecánicos: inset oscuro sobre la página de pergamino */
+.tome-dark-inset {
+  background: var(--color-night);
+  color: var(--color-warm);
+  margin: calc(-1 * clamp(14px, 2.2vw, 28px));
+  padding: clamp(14px, 2.2vw, 28px);
+  border-radius: 6px;
+  min-height: 60vh;
+}
+/* Botón visible solo en pantallas estrechas (toggle lista/detalle) */
+.only-narrow { display: none; }
+@media (max-width: 860px) { .only-narrow { display: inline-flex; } }
