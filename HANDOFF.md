@@ -162,6 +162,34 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
+## RESUELTO (2026-07-07): Hoja de personaje interactiva (`/personaje`)
+Rama `personaje-hoja-interactiva`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-07-hoja-personaje-interactiva*`.
+
+- **Página `/personaje`**: hub interactivo de la ficha. Paneles: identidad,
+  **nivel 1-20 + mejoras (ASI 2024 por clase)** con reparto +2 por hito y PG/
+  competencia derivados, aptitudes (base+trasfondo+ASI), estadísticas derivadas
+  (PG, competencia, iniciativa, velocidad, **CA editable** —solo sesión),
+  **oro**, **inventario** de objetos enriquecidos `{nombre, cantidad, notas}`
+  (capacidad 20+2×FUE), y **muñeco de equipo (paperdoll)**.
+- **Muñeco**: armadura (cabeza, torso, antebrazos, manos, piernas, pies, 1 c/u),
+  armas (principal, secundaria) y **accesorios dinámicos**: collar 1 fijo,
+  **anillos = 2×mód INT**, colgantes = mód SAB, amuletos = mód CAR (recalculan al
+  variar atributos). Equipar/retirar mueve objetos entre inventario y huecos.
+- **Botón "Crear personaje"** en el capítulo Ficha de `/crear` → guarda y navega
+  a `/personaje`. **`/inventario` redirige** a `/personaje`.
+- Componentes: `components/LevelPanel.tsx`, `components/Paperdoll.tsx`;
+  reglas en `data/leveling.ts` + `data/equipmentSlots.ts`; tipos ampliados en
+  `lib/character.ts` (`Item`, `Asi`, campos `level/gold/asi/equipment/items`,
+  retrocompat `inventory`→`items`).
+- Verificado: `tsc`/`build`/`lint`(nuevos archivos) limpios + preview en :3100
+  (nivel→ASI→PG, escalado de accesorios con INT, equipar/retirar).
+
+> **PENDIENTE del usuario: ejecutar `supabase/schema_v8.sql`** en Supabase
+> (añade `level, gold, asi, equipment, items`). Sin ella, la nube ignora estos
+> campos; en local funciona con `localStorage`. Falta también **mergear la rama
+> a `master`** y desplegar.
+
 ## RESUELTO (2026-07-06): Rebrand a Exandria + roster + tomo de creación
 Trabajado en la rama `exandria-rebrand-roster` (fuera de `master`).
 Spec y plan en `docs/superpowers/{specs,plans}/2026-07-06-exandria-rebrand-roster*`.
