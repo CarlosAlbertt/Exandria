@@ -229,3 +229,19 @@
 @media (prefers-reduced-motion: reduce) {
   .reveal, .pulse { animation: none; opacity: 1; transform: none; }
 }
+
+/* Marco de retrato (creador de personaje) */
+.portrait-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-bronze) 55%, var(--color-line));
+  background: color-mix(in srgb, var(--color-bronze-deep) 20%, var(--color-night));
+  display: flex; align-items: center; justify-content: center;
+  flex: none;
+}
+.portrait-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.portrait-sm { width: 44px; height: 44px; }
+.portrait-lg { width: 100%; aspect-ratio: 4 / 3; }
+.portrait-ph { color: color-mix(in srgb, var(--color-bronze) 60%, transparent); font-size: 18px; }
+.portrait-lg .portrait-ph { font-size: 34px; }
