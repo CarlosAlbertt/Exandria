@@ -162,27 +162,45 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
-## Siguiente pendiente pactado
-**Rebranding Tal'Dorei → Exandria + remodelar razas/subrazas/clases.** No
-empezado. Alcance:
-1. **Renombrar Tal'Dorei → Exandria** en toda la app: título del sitio, `/reino`
-   (hoy "El Reino de Tal'Dorei"), textos de UI, metadatos, `CONTINENT` en
-   `data/taldorei.ts` (posible rename de archivo/variable), prompts de la IA
-   narradora (`data/loreText.ts`). Ya existe la base de mundo completo
-   (`data/world.ts`, `data/cosmology.ts`) — se trata de que el **encuadre
-   general** de la app hable de Exandria (el mundo) y no solo de Tal'Dorei
-   (un continente), aunque la campaña siga ambientada allí.
-2. **Cambiar el lore mostrado de "Tal'Dorei" a "Exandria"**: la página `/reino`
-   y el lore de la IA deben reflejar el mundo entero (historia por eras,
-   panteón, cosmología — esto último ya está en `data/cosmology.ts`) en vez de
-   solo la historia del continente.
-3. **Remodelar y ampliar razas (especies), subrazas y clases**: revisar
-   `data/species.ts` (10 especies + linajes) y `data/classes.ts` (12 clases ×4
-   subclases) — posible reestructuración de datos y/o contenido añadido.
-4. **Dejar espacio para imágenes** de cada especie, subraza/linaje y clase en
-   el creador de personaje (`/crear`) — de momento sin imágenes reales, solo
-   el hueco/placeholder en el diseño para añadirlas después (el usuario las
-   pasará más adelante, como hizo con los mapas de pueblo).
+## RESUELTO (2026-07-06): Rebrand a Exandria + roster + tomo de creación
+Trabajado en la rama `exandria-rebrand-roster` (fuera de `master`).
+Spec y plan en `docs/superpowers/{specs,plans}/2026-07-06-exandria-rebrand-roster*`.
 
-**Backlog tras esto:** Dados e iniciativa (tiradas compartidas, pedir tiradas
-al grupo, orden de iniciativa en vivo). No empezado.
+1. **Rebrand a Exandria (solo texto visible)**: metadatos (`app/layout.tsx`),
+   marca en Nav/Footer/Emblem/Home/Login, prompts de IA (`data/loreText.ts`,
+   `app/api/ia/route.ts`). **No** se renombró `data/taldorei.ts` ni `CONTINENT`.
+   El encuadre general habla de Exandria (mundo); la campaña sigue en Tal'Dorei.
+2. **`/reino` → mundo**: "El Mundo de Exandria" con `WORLD_INTRO` nuevo en
+   `data/cosmology.ts`; las regiones de Tal'Dorei siguen como sección.
+3. **Roster ampliado a ~36 especies** (`data/species.ts`) agrupadas por región
+   (`REGIONS` + `regionSpecies()`, campos nuevos `region`/`origin`/`image`/
+   `homebrew`). Añadidas 26: Tal'Dorei (centauro, hombre lagarto, hada, sátiro,
+   hobgoblin), Wildemount (goblin, osgo, minotauro, firbolg, kenku), Marquet
+   (aarakocra, replicante, liebrén, tabaxi, yuan-ti), Issylra/Ashari (genasí),
+   Infraoscuridad/planar (duergar, svirfneblin, kobold, **sangre bestial**
+   [homebrew, "a criterio del DM"], eladrin, shadar-kai, gith) y océanos (elfo
+   marino, tritón, tortoga).
+4. **Clases**: añadido **Cazador de Sangre** (Blood Hunter) + campo `image`.
+5. **`/crear` rediseñado como TOMO** (libro doble página, giro 3D, índices de
+   capítulo): `components/CharacterBook.tsx` (carcasa) + `components/PortraitFrame.tsx`
+   (hueco de imagen con placeholder). Capítulos: Razas · Clases · Trasfondos ·
+   Aptitudes · Pericias · Ficha. Índice a la izquierda (Razas por región),
+   detalle con retrato + descripción a la derecha. Cae a página única en móvil.
+   La lógica de estado/validación del creador se conservó intacta.
+   Verificado: `tsc --noEmit` + `next build` limpios, y preview visual
+   (escritorio, giro, detalle, móvil). Sin credenciales Supabase, no probado en
+   vivo multijugador (igual que sesiones previas).
+
+### PENDIENTE de este milestone
+- **Subir los retratos reales** (`.jpg`) a `public/species/<slug>.jpg`,
+  `public/species/lineages/<slug-linaje>.jpg` y `public/classes/<slug>.jpg`.
+  Sin ellos se ve un marco con icono (por diseño). Ver README «Imágenes de
+  personaje». Slugs = campo `slug` en `data/species.ts` / `data/classes.ts`;
+  el slug de linaje se deriva con `slugify(nombre)` en `app/crear/page.tsx`.
+- **Mecánica de especies homebrew** (Sangre Bestial): rasgos resumidos, a
+  afinar con el DM si se juegan.
+- **Mergear la rama** `exandria-rebrand-roster` a `master` y desplegar (Vercel).
+
+## Backlog
+- Dados e iniciativa: tiradas compartidas, pedir tiradas al grupo, orden de
+  iniciativa en vivo. No empezado.
