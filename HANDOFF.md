@@ -37,9 +37,18 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
   `usePois`, `useGroupAction`, `useNpcChat`, `narrador.ts` (cliente `/api/ia`).
 - `components/` — SiteNav/Footer, EpicOverlay, GroupConsensus, RegionExplore,
   PinDragMap, RegionCard, Emblem, SessionProvider, ErrorBoundary.
-- `public/maps/` — mapas oficiales optimizados (world, taldorei, wildemount,
-  `regions/<slug>.jpg`, `wildemount/<region>.jpg`). ~11 MB total.
-- `supabase/schema*.sql` — migraciones (ver abajo).
+- `public/maps/` — `taldorei.jpg` es ahora el **mapa del mundo de Exandria**
+  (2560×1707, horizontal; sustituyó al mapa vertical solo-continente).
+  `public/maps/pueblos/` — mapas de pueblo (emon, oestruun, piedrablanca,
+  riscomartillo, stilben, syngorn), enlazados desde `data/townMaps.ts`.
+- `data/world.ts` — pines del **mundo** (continentes, regiones, ciudades) con
+  jerarquía continente→región→lugar; `data/cosmology.ts` — calendario,
+  estaciones, lunas, planos.
+- `lib/useWorldPois.ts` / `lib/useTaldorei.ts` — pines del mundo y
+  regiones/POIs de Tal'Dorei, editables por el DM y persistidos como **JSON en
+  `app_config`** (sin migración; ver «Editor de mapa» abajo).
+- `supabase/schema*.sql` — migraciones (ver abajo). `schema_v7.sql` (tabla
+  `world_poi`) quedó **sin uso**: se optó por `app_config` en su lugar.
 
 ## Funcionalidades
 - **Auth** por usuario+contraseña (mapeo a email sintético `u@taldorei.local`,
@@ -51,11 +60,27 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
   Goliat6, Tiefling3, Aasimar3, Gnomo2, Enano2·, Humano2·, Mediano2· (·=variante
   clásica 2014 añadida a petición; Orco sin subraza — correcto).
 - **Inventario** por huecos = 20 + 2×(mod Fuerza). En Supabase con sesión.
-- **Mapa** interactivo con el mapa real; pines por región (posición ajustable
-  por el DM arrastrando). Al explorar una región → visor con POIs (revelados
-  uno a uno por el DM).
-- **Lore del reino** (`/reino`): historia, regiones (filtradas por exploración),
-  panteón, facciones.
+- **Mapa** (`/mapa`) jerárquico: **Exandria → continente → regiones/ciudades**.
+  El mapa mundial solo muestra pines de continentes + mares/océanos; clic en
+  un continente hace zoom (CSS) y revela sus regiones/ciudades. Pines **sin
+  etiqueta** (salvo continentes): clic para ver el detalle en el panel
+  lateral. **Niebla** sobre continentes no revelados (opaca para jugadores,
+  translúcida/clic-a-través para el DM). Botón **pantalla completa**.
+  Tal'Dorei conserva sus 8 regiones + visor de zona (`RegionExplore`) con
+  POIs; algunos POIs (Emon, Syngorn…) abren su **mapa de pueblo** a pantalla
+  completa.
+- **Editor de mapa (Panel DM › Mapa)**: pestañas **Todos · Tal'Dorei ·
+  Issylra · Wildemount · Marquet · Los Dientes Rotos · Mares** con CRUD
+  completo (añadir/editar/borrar/mover/revelar/icono/región) sobre los pines
+  del mundo, más **Regiones Tal'Dorei** y **POIs por región** con CRUD propio
+  sobre las regiones y sus POIs. Botón **«Ampliar»** en los mapas de arrastre
+  con zoom manual (+/-, rueda, arrastrar) solo para el DM. Guardado
+  **optimista** (el cambio se ve al instante, luego persiste).
+- **Lore del reino** (`/reino`): historia de Exandria por eras (Fundación →
+  Arcanos → Calamidad → Divergencia 0 PD → Reclamación → ~836 PD), continentes
+  descubiertos, panteón, facciones, **calendario** (328 días/11 meses/semana
+  de 7), **estaciones**, **festividades**, **lunas** (Catha/Ruidus) y
+  **planos de existencia**.
 - **Narración en vivo (Realtime)**: el DM narra (IA o manual) a **todo el grupo**
   o **visión individual** a un jugador → `EpicOverlay` cinemático.
 - **Consenso de grupo (portavoz)**: en narración grupal, un jugador "toma la
@@ -95,17 +120,46 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
-## BUGS ABIERTOS / EN PRUEBAS (verificar en la próxima sesión)
-1. **Botón "Terminar" del DM** (Panel DM › Narración): reportado como que "no
-   funciona bien". Se acaba de añadir `resetGroup()` en `stop()`,
-   `generate()` y `broadcastManual()` para limpiar la ronda de grupo al
-   terminar/narrar. **Falta confirmar** que cierra la pantalla épica para todos
-   y limpia el consenso. Código: `app/dm/DmDashboard.tsx` (fn `stop`),
-   `lib/useGroupAction.ts` (`resetGroup`), `components/EpicOverlay.tsx`.
-2. **Recuadro de votación "lento"** al escribir: se acaba de cambiar el textarea
-   del portavoz a **estado local + escritura con retardo (300 ms)** en
-   `components/GroupConsensus.tsx` (`localDraft` + `onDraftChange`). **Falta
-   probar** con 2 jugadores que ya no lagea y que los demás ven el borrador.
+## RESUELTO ESTA SESIÓN (2026-07-02 → 2026-07-03)
+1. **Botón "Terminar" del DM**: el bug real era que `EpicOverlay` se monta a
+   pantalla completa y tapaba el botón "Terminar" del panel (inalcanzable). El
+   botón que sí se podía pulsar ("Cerrar para todos") no limpiaba nada. Fix:
+   ese botón (renombrado **"Terminar escena"**) ahora hace
+   `epic_mode:false + narrator_typing:false + resetGroup()`.
+2. **Recuadro de votación lento**: era el efecto de máquina de escribir de
+   `EpicOverlay`, no el textarea (el fix de `localDraft` con debounce ya
+   estaba bien). Acelerado el intervalo.
+3. **Mapa "MAPA"**: se sustituyó el mapa vertical (solo Tal'Dorei) por el
+   **mapa del mundo de Exandria** horizontal, con navegación jerárquica,
+   niebla, zoom y pantalla completa.
+4. **Lore ampliada**: calendario, estaciones, festividades, lunas, planos y
+   una historia de Exandria datada por eras (ver `data/cosmology.ts`).
+5. **Editor de mapa completo**: todos los pines del mundo y las regiones/POIs
+   de Tal'Dorei son ahora editables por el DM (CRUD), sin necesidad de
+   migraciones (se guardan como JSON en `app_config`). Se corrigió un bug por
+   el que un pin arrastrado "volvía" a su sitio (faltaba actualización
+   optimista, ya que `app_config` no tiene Realtime).
+6. Añadidos lugares que faltaban en la lore: Hupperdook, Shadycreek Run
+   (Wildemount), Jrusar (Marquet), Deastok, Terrah, Zephrah, Vesrah
+   (los 4 enclaves Ashari: Pyrah=fuego, Terrah=tierra, Zephrah=aire,
+   Vesrah=agua).
+
+## PENDIENTE / A VIGILAR
+- **Posiciones de pines del mundo se reiniciaron**: al mover el almacén de
+  pines del mundo de la tabla `world_poi` (schema_v7, sin uso ahora) a
+  `app_config`, las posiciones/revelados que ya hubieras ajustado en `world_poi`
+  no se migraron. Los pines del mundo parten de los valores por defecto del
+  código; hay que **recolocarlos y revelarlos de nuevo** desde Panel DM ›
+  Mapa (ya persiste bien tras el fix del bug #5).
+- **Sin probar en vivo con 2 jugadores reales** ninguno de los cambios de esta
+  sesión (no había credenciales Supabase en el entorno de desarrollo; todo se
+  verificó con `tsc --noEmit` + `next build` limpios, y análisis de código).
+  Falta la prueba real: Terminar escena, consenso de grupo, mapa jerárquico,
+  editor de pines, niebla.
+- **`data/pois.ts` / `data/taldorei.ts`** siguen existiendo como *valores por
+  defecto* pero la fuente de verdad en producción, una vez editado algo, es
+  `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
+  defaults del código, borrar esa key en `app_config`.
 
 ## Siguiente pendiente pactado
 **Dados e iniciativa** (tiradas compartidas, pedir tiradas al grupo, orden de
