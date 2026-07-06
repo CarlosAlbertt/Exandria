@@ -74,6 +74,15 @@ $env:OLLAMA_ORIGINS="*"; ollama serve
 4. Para la IA: arranca Ollama en tu equipo con `OLLAMA_ORIGINS` apuntando a tu
    dominio de Vercel (o `*` para pruebas).
 
+## Imágenes de personaje
+
+Los retratos son opcionales; sin ellos se ve un marco con icono. Para añadirlos,
+suelta los `.jpg` (o `.png`/`.webp`) en:
+
+- `public/species/<slug>.jpg` — retrato de especie (slug = campo `slug` en `data/species.ts`).
+- `public/species/lineages/<slug-linaje>.jpg` — retrato de linaje.
+- `public/classes/<slug>.jpg` — retrato de clase (slug en `data/classes.ts`).
+
 ## Datos del juego
 
 Las mecánicas (dados de golpe, aptitudes, pericias, listas de subclases, etc.)
