@@ -1,27 +1,39 @@
 // Especies del PHB 2024. Descripciones originales y resumidas; los rasgos
 // reflejan datos mecánicos del juego (factual). No reproducen texto del libro.
 
+export type RegionKey =
+  | "universal" | "taldorei" | "wildemount"
+  | "marquet" | "issylra" | "underdark" | "oceans";
+
+export type Lineage = { name: string; perk: string; image?: string; homebrew?: boolean };
+
 export type Species = {
   slug: string;
   name: string;
+  region: RegionKey;
+  origin: string;
   size: string;
   speed: number;
   /** rasgos clave en una línea cada uno */
   traits: string[];
   /** linajes / subrazas elegibles */
-  lineages?: { name: string; perk: string }[];
+  lineages?: Lineage[];
   tagline: string;
   blurb: string;
+  image?: string;   // /species/<slug>.jpg
+  homebrew?: boolean;
 };
 
 export const SPECIES: Species[] = [
   {
     slug: "humano",
     name: "Humano",
+    region: "universal",
+    origin: "La raza más numerosa: fundaron la República de Tal'Dorei, el Imperio Dwendaliano de Wildemount y Othanzia en Issylra.",
     size: "Mediano",
     speed: 9,
     tagline: "Ambición y adaptabilidad.",
-    blurb: "Versátiles y resueltos, los humanos pueblan cada rincón de Tal'Dorei. Su ambición los lleva tan lejos como su ingenio.",
+    blurb: "Versátiles y resueltos, los humanos pueblan cada rincón de Exandria. Su vida corta los empuja a dejar huella pronto, para bien o para mal.",
     traits: ["Hábil: competencia en una pericia a elección", "Versátil: una dote de origen", "Ingenioso: Inspiración Heroica tras descanso largo"],
     lineages: [
       { name: "Humano Estándar", perk: "+1 a todas las características (variante clásica)." },
@@ -31,6 +43,8 @@ export const SPECIES: Species[] = [
   {
     slug: "elfo",
     name: "Elfo",
+    region: "taldorei",
+    origin: "Tras la Calamidad fundaron la inexpugnable Syngorn en el Bosque Verdeante; protectores, altivos, con la magia en la sangre.",
     size: "Mediano",
     speed: 9,
     tagline: "Gracia inmortal y vínculo arcano.",
@@ -45,6 +59,8 @@ export const SPECIES: Species[] = [
   {
     slug: "enano",
     name: "Enano",
+    region: "taldorei",
+    origin: "Gobiernan Kraghammer, metrópolis subterránea bajo las Montañas Cliffkeep; estoicos maestros forjadores de runa y acero.",
     size: "Mediano",
     speed: 9,
     tagline: "Roca, forja y memoria de piedra.",
@@ -58,6 +74,8 @@ export const SPECIES: Species[] = [
   {
     slug: "mediano",
     name: "Mediano",
+    region: "universal",
+    origin: "Comunes en las llanuras agrícolas y ciudades humanas; en Tal'Dorei, famosos en Byroden y Kymal. Suerte innata y astucia comercial.",
     size: "Pequeño",
     speed: 7.5,
     tagline: "Suerte, valor y buen corazón.",
@@ -71,6 +89,8 @@ export const SPECIES: Species[] = [
   {
     slug: "draconido",
     name: "Dracónido",
+    region: "wildemount",
+    origin: "Originarios de Wildemount; divididos históricamente en castas Draconblood (con cola, antiguos amos de Draconia) y Ravenite (sin cola, feroces).",
     size: "Mediano",
     speed: 9,
     tagline: "Sangre de dragón, aliento de furia.",
@@ -92,6 +112,8 @@ export const SPECIES: Species[] = [
   {
     slug: "gnomo",
     name: "Gnomo",
+    region: "wildemount",
+    origin: "En Hupperdook, ciudad gnoma de humo y chispas del Imperio Dwendaliano; grandes inventores de Exandria.",
     size: "Pequeño",
     speed: 7.5,
     tagline: "Curiosidad inagotable e ingenio arcano.",
@@ -105,6 +127,8 @@ export const SPECIES: Species[] = [
   {
     slug: "tiefling",
     name: "Tiefling",
+    region: "universal",
+    origin: "Descendientes de linajes tocados por los Dioses Traidores; temidos en el Imperio, libres y valorados en la Dinastía Kryn y en Tal'Dorei.",
     size: "Mediano",
     speed: 9,
     tagline: "Un legado infernal que se porta con orgullo.",
@@ -119,6 +143,8 @@ export const SPECIES: Species[] = [
   {
     slug: "aasimar",
     name: "Aasimar",
+    region: "issylra",
+    origin: "Muy comunes en Issylra, el continente sagrado; suelen volverse paladines y clérigos de Vasselheim.",
     size: "Mediano",
     speed: 9,
     tagline: "Una chispa celestial en mortal.",
@@ -133,6 +159,8 @@ export const SPECIES: Species[] = [
   {
     slug: "goliat",
     name: "Goliat",
+    region: "issylra",
+    origin: "Nativos de las cumbres letales de Issylra y los Picos Flotantes; manadas que valoran la fuerza y la gloria en combate.",
     size: "Mediano",
     speed: 10.5,
     tagline: "Sangre de gigante, corazón de cumbre.",
@@ -150,6 +178,8 @@ export const SPECIES: Species[] = [
   {
     slug: "orco",
     name: "Orco",
+    region: "wildemount",
+    origin: "Abundan en los páramos de Xhorhas; lejos de ser salvajes, muchos son ciudadanos, herreros y soldados de la Dinastía Kryn.",
     size: "Mediano",
     speed: 9,
     tagline: "Furia incansable y empuje implacable.",
@@ -157,6 +187,20 @@ export const SPECIES: Species[] = [
     traits: ["Visión en la oscuridad 36 m", "Empuje Adrenalínico: acción adicional para correr", "Resistencia Implacable: caer a 1 PG en vez de 0 una vez por descanso"],
   },
 ];
+
+export const REGIONS: { key: RegionKey; label: string; blurb: string }[] = [
+  { key: "universal", label: "Universales", blurb: "Sus pueblos se extienden por toda Exandria." },
+  { key: "taldorei", label: "Tal'Dorei", blurb: "El continente clásico y salvaje del oeste." },
+  { key: "wildemount", label: "Wildemount", blurb: "El continente dividido entre el Imperio y la Dinastía Kryn." },
+  { key: "marquet", label: "Marquet", blurb: "Contrastes y arena; ciudades verticales y oasis." },
+  { key: "issylra", label: "Issylra y las Ashari", blurb: "El continente sagrado y las fronteras elementales." },
+  { key: "underdark", label: "Infraoscuridad y fronteras planares", blurb: "Culturas de las profundidades y de otros planos." },
+  { key: "oceans", label: "Los océanos", blurb: "Lucidian, Ozmit y Los Dientes Destrozados." },
+];
+
+export function regionSpecies(key: RegionKey) {
+  return SPECIES.filter((s) => s.region === key);
+}
 
 export function getSpecies(slug: string) {
   return SPECIES.find((s) => s.slug === slug);
