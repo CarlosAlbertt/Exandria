@@ -330,3 +330,19 @@
 /* Botón visible solo en pantallas estrechas (toggle lista/detalle) */
 .only-narrow { display: none; }
 @media (max-width: 860px) { .only-narrow { display: inline-flex; } }
+
+/* ===== Muñeco de equipo (paperdoll) ===== */
+.pd-slot {
+  background: var(--color-raised); border: 1px solid var(--color-line);
+  border-radius: 8px; min-height: 54px; padding: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; cursor: pointer; color: var(--color-bronze);
+}
+.pd-slot[data-filled="true"] { border-color: color-mix(in srgb, var(--color-bronze) 45%, var(--color-line)); color: var(--color-warm); }
+.pd-slot[data-over="true"] { border-color: var(--color-ember); color: var(--color-ember); }
+.pd-slot .pd-ic { font-size: 18px; }
+.pd-slot .pd-lb { font-size: 9px; text-transform: uppercase; letter-spacing: .3px; color: var(--color-dim); margin-top: 2px; }
+.pd-slot .pd-nm { font-size: 12px; font-weight: 600; line-height: 1.15; }
+.pd-grid { display: grid; grid-template-columns: 64px 1fr 64px; grid-auto-rows: 54px; gap: 8px; align-items: stretch; }
+.pd-figure { grid-column: 2; grid-row: 1 / 5; border-radius: 10px; overflow: hidden; }
+.pd-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-top: 10px; }
