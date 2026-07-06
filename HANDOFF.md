@@ -162,5 +162,26 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   defaults del código, borrar esa key en `app_config`.
 
 ## Siguiente pendiente pactado
-**Dados e iniciativa** (tiradas compartidas, pedir tiradas al grupo, orden de
-iniciativa en vivo). No empezado.
+**Rebranding Tal'Dorei → Exandria + remodelar razas/subrazas/clases.** No
+empezado. Alcance:
+1. **Renombrar Tal'Dorei → Exandria** en toda la app: título del sitio, `/reino`
+   (hoy "El Reino de Tal'Dorei"), textos de UI, metadatos, `CONTINENT` en
+   `data/taldorei.ts` (posible rename de archivo/variable), prompts de la IA
+   narradora (`data/loreText.ts`). Ya existe la base de mundo completo
+   (`data/world.ts`, `data/cosmology.ts`) — se trata de que el **encuadre
+   general** de la app hable de Exandria (el mundo) y no solo de Tal'Dorei
+   (un continente), aunque la campaña siga ambientada allí.
+2. **Cambiar el lore mostrado de "Tal'Dorei" a "Exandria"**: la página `/reino`
+   y el lore de la IA deben reflejar el mundo entero (historia por eras,
+   panteón, cosmología — esto último ya está en `data/cosmology.ts`) en vez de
+   solo la historia del continente.
+3. **Remodelar y ampliar razas (especies), subrazas y clases**: revisar
+   `data/species.ts` (10 especies + linajes) y `data/classes.ts` (12 clases ×4
+   subclases) — posible reestructuración de datos y/o contenido añadido.
+4. **Dejar espacio para imágenes** de cada especie, subraza/linaje y clase en
+   el creador de personaje (`/crear`) — de momento sin imágenes reales, solo
+   el hueco/placeholder en el diseño para añadirlas después (el usuario las
+   pasará más adelante, como hizo con los mapas de pueblo).
+
+**Backlog tras esto:** Dados e iniciativa (tiradas compartidas, pedir tiradas
+al grupo, orden de iniciativa en vivo). No empezado.
