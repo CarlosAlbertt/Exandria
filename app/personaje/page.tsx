@@ -296,7 +296,7 @@ export default function PersonajePage() {
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-6">
           {/* NIVEL + ASI */}
-          <LevelPanel level={level} onLevel={onLevel} clsSlug={build.cls} hitDie={hitDie} preAsi={preAsi} asi={asi} onAsi={onAsi} />
+          <LevelPanel level={level} onLevel={onLevel} clsSlug={build.cls} hitDie={hitDie} preAsi={preAsi} asi={asi} onAsi={onAsi} hpRolls={{}} onRollHp={() => {}} />
 
           {/* APTITUDES */}
           <section className="panel p-5">
