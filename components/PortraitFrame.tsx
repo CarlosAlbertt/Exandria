@@ -5,7 +5,7 @@ import { useState } from "react";
 type Props = {
   src?: string;
   alt: string;
-  size?: "sm" | "lg";
+  size?: "sm" | "md" | "lg";
   /** icono Font Awesome de fallback, p. ej. "fa-dragon" */
   icon?: string;
 };

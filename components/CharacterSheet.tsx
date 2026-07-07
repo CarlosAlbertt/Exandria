@@ -297,7 +297,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     <>
       {/* HEADER / IDENTIDAD */}
       <header className="panel p-5 mb-6 flex items-center gap-4 flex-wrap">
-        <PortraitFrame src={species ? `/species/${species.slug}.jpg` : undefined} alt={build.name || "Personaje"} size="lg" icon="fa-user" />
+        <PortraitFrame src={species ? `/species/${species.slug}.jpg` : undefined} alt={build.name || "Personaje"} size="md" icon="fa-user" />
         <div className="min-w-0">
           <p className="eyebrow mb-1">Hoja del héroe · Nivel {level}</p>
           <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text">{build.name || "Personaje sin nombre"}</h1>
