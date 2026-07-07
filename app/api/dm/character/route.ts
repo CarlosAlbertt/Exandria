@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { levelFromXp } from "@/data/leveling";
 
 export const runtime = "nodejs";
 
@@ -21,13 +22,19 @@ export async function POST(req: Request) {
   if (!userId) return Response.json({ error: "Falta userId." }, { status: 400 });
 
   const admin = createAdminClient();
-  const { addItems, addGold, ...direct } = patch as { addItems?: Item[]; addGold?: number } & Record<string, unknown>;
+  const { addItems, addGold, setLevel, addXp, ...direct } = patch as {
+    addItems?: Item[]; addGold?: number; setLevel?: number; addXp?: number;
+  } & Record<string, unknown>;
   const update: Record<string, unknown> = { ...direct };
 
-  if (Array.isArray(addItems) || typeof addGold === "number") {
-    const { data: row } = await admin.from("characters").select("items, gold").eq("user_id", userId).maybeSingle();
-    const items: Item[] = Array.isArray(row?.items) ? [...(row!.items as Item[])] : [];
+  if (typeof setLevel === "number") {
+    update.level = Math.max(1, Math.min(20, Math.floor(setLevel)));
+  }
+
+  if (Array.isArray(addItems) || typeof addGold === "number" || typeof addXp === "number") {
+    const { data: row } = await admin.from("characters").select("items, gold, xp, level").eq("user_id", userId).maybeSingle();
     if (Array.isArray(addItems)) {
+      const items: Item[] = Array.isArray(row?.items) ? [...(row!.items as Item[])] : [];
       for (const it of addItems) {
         const ex = items.find((x) => x.name === it.name);
         if (ex) ex.qty += it.qty ?? 1;
@@ -36,6 +43,11 @@ export async function POST(req: Request) {
       update.items = items;
     }
     if (typeof addGold === "number") update.gold = ((row?.gold as number) ?? 0) + addGold;
+    if (typeof addXp === "number") {
+      const newXp = Math.max(0, ((row?.xp as number) ?? 0) + addXp);
+      update.xp = newXp;
+      update.level = Math.max((row?.level as number) ?? 1, levelFromXp(newXp));
+    }
   }
 
   update.updated_at = new Date().toISOString();
