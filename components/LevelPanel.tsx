@@ -83,10 +83,10 @@ export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, as
                 <span className="font-ui text-[12px]" style={{ color: has ? "var(--color-bronze-bright)" : "var(--color-dim)" }}>
                   {has ? `d${hitDie} = ${raw}` : "— media"}
                 </span>
-                {(!readOnly || canRollHp) && (
+                {(!readOnly || (canRollHp && !has)) && (
                   <button className="stat-btn !w-auto !h-7 !px-2 flex items-center gap-1" onClick={() => onRollHp(lv, rollHitDie(hitDie))}>
                     <i className="fa-solid fa-dice-d20" aria-hidden="true"></i>
-                    <span className="font-ui text-[11px] font-bold">Tirar</span>
+                    <span className="font-ui text-[11px] font-bold">{has ? "Re-tirar" : "Tirar"}</span>
                   </button>
                 )}
               </div>
