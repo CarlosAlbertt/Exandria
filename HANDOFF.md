@@ -162,6 +162,34 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
+## RESUELTO (2026-07-07): Control del DM — hoja bloqueada, dados de PG, Baúl
+Rama `dm-control-baul`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-07-dm-control-baul*`.
+
+- **Hoja `/personaje` solo lectura para jugadores**: el jugador ve su ficha sin
+  poder editar (nivel, ASI, oro, objetos, equipo). El **DM edita** la hoja de un
+  jugador vía **`/personaje?user=<id>`** (botón "Editar hoja" en Panel DM › Grupo).
+  La hoja se extrajo a `components/CharacterSheet.tsx` (`readOnly`/`saveMode`).
+- **Escritura del DM sobre hojas ajenas** = API `app/api/dm/character/route.ts`
+  con `service_role` (verifica rol DM; hace patch directo o *append* de
+  objetos/oro). Requiere `SUPABASE_SERVICE_ROLE_KEY` (ya usado por crear usuarios).
+- **Dados de PG**: nivel 1 = dado de clase al máx + CON; cada nivel nuevo, botón
+  "Tirar" (`d<dado> + CON`), tiradas guardadas en `characters.hp_rolls` (jsonb,
+  **schema_v9**). `data/leveling.ts`: `rollHitDie`, `maxHpFromRolls`.
+- **Retrato de identidad más pequeño** (`PortraitFrame size="md"`, 84px).
+- **El Baúl del Dungeon Master** (Panel DM › pestaña "Baúl"): el DM guarda
+  entradas `{ nombre, tipo: mágico|normal|oro, cantidad, notas }` en `app_config`
+  (`dm_stash`), y las **entrega** a uno o varios jugadores (oro→`gold`,
+  objeto→`items`) vía la API; opción de quitar del baúl al entregar. Realtime lo
+  refleja en la hoja del jugador. `lib/useDmStash.ts`, `app/dm/BaulPanel.tsx`.
+- Verificado: `tsc`/`build` limpios + preview del jugador en solo lectura e
+  imagen pequeña. La parte DM (editar por `?user=`, API, entrega, Baúl) no se
+  probó en vivo por falta de sesión DM/credenciales; validada por build + análisis.
+
+> **PENDIENTE del usuario: ejecutar `supabase/schema_v9.sql`** (columna
+> `hp_rolls`). El Baúl y la edición DM necesitan `SUPABASE_SERVICE_ROLE_KEY` en el
+> servidor. Falta **mergear la rama a `master`** y desplegar.
+
 ## RESUELTO (2026-07-07): Hoja de personaje interactiva (`/personaje`)
 Rama `personaje-hoja-interactiva`. Spec/plan en
 `docs/superpowers/{specs,plans}/2026-07-07-hoja-personaje-interactiva*`.
