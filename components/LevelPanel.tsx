@@ -1,7 +1,7 @@
 "use client";
 
 import { ABILITIES, AbilityKey, abilityMod, fmtMod } from "@/data/rules";
-import { reachedAsiLevels, proficiencyBonus, rollHitDie, maxHpFromRolls } from "@/data/leveling";
+import { reachedAsiLevels, proficiencyBonus, rollHitDie, maxHpFromRolls, xpForNext } from "@/data/leveling";
 import type { Asi } from "@/lib/character";
 
 type Props = {
@@ -16,6 +16,8 @@ type Props = {
   hpRolls: Record<string, number>;
   onRollHp: (level: number, value: number) => void;
   readOnly?: boolean;
+  canRollHp?: boolean;
+  xp?: number;
 };
 
 /** Suma del reparto ASI de un hito. */
@@ -33,7 +35,7 @@ export function asiTotals(asi: Asi): Record<AbilityKey, number> {
   return out;
 }
 
-export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, asi, onAsi, hpRolls, onRollHp, readOnly = false }: Props) {
+export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, asi, onAsi, hpRolls, onRollHp, readOnly = false, canRollHp = false, xp = 0 }: Props) {
   const hitos = reachedAsiLevels(clsSlug, level);
   const totals = asiTotals(asi);
   const conTotal = preAsi.con + totals.con;
@@ -56,8 +58,14 @@ export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, as
         <div className="flex gap-5">
           <div className="text-center"><p className="eyebrow !text-[9px]">PG máx</p><p className="font-display font-extrabold" style={{ color: "var(--color-ember)" }}>{hp}</p></div>
           <div className="text-center"><p className="eyebrow !text-[9px]">Comp.</p><p className="font-display font-extrabold" style={{ color: "var(--color-bronze)" }}>{fmtMod(prof)}</p></div>
+          <div className="text-center"><p className="eyebrow !text-[9px]">XP</p><p className="font-display font-extrabold" style={{ color: "var(--color-arcane)" }}>{xp}</p></div>
         </div>
       </div>
+
+      <div className="h-1.5 rounded-full overflow-hidden mt-2" style={{ background: "var(--color-raised)" }}>
+        <div className="h-full rounded-full" style={{ width: `${level >= 20 ? 100 : Math.min(100, (xp / xpForNext(level)) * 100)}%`, background: "linear-gradient(90deg, var(--color-arcane-deep), var(--color-arcane))" }} />
+      </div>
+      <p className="font-ui text-[10px] mt-1" style={{ color: "var(--color-dim)" }}>{level >= 20 ? "Nivel máximo" : `${xp} / ${xpForNext(level)} XP`}</p>
 
       <div className="mb-4">
         <p className="eyebrow mb-2">PG por nivel</p>
@@ -75,7 +83,7 @@ export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, as
                 <span className="font-ui text-[12px]" style={{ color: has ? "var(--color-bronze-bright)" : "var(--color-dim)" }}>
                   {has ? `d${hitDie} = ${raw}` : "— media"}
                 </span>
-                {!readOnly && (
+                {(!readOnly || canRollHp) && (
                   <button className="stat-btn !w-auto !h-7 !px-2 flex items-center gap-1" onClick={() => onRollHp(lv, rollHitDie(hitDie))}>
                     <i className="fa-solid fa-dice-d20" aria-hidden="true"></i>
                     <span className="font-ui text-[11px] font-bold">Tirar</span>
