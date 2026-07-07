@@ -7,10 +7,17 @@ import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { getBackground } from "@/data/backgrounds";
 import { ABILITIES, abilityMod, fmtMod, AbilityKey } from "@/data/rules";
+import { xpForNext } from "@/data/leveling";
+
+async function dmPatch(userId: string, patch: Record<string, unknown>) {
+  await fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, patch }) });
+}
 
 export default function GrupoPanel() {
   const { party, ready } = useParty();
   const [open, setOpen] = useState<string | null>(null);
+  const [xpInput, setXpInput] = useState<Record<string, string>>({});
+  const [allXp, setAllXp] = useState("");
 
   if (ready && party.length === 0) {
     return (
@@ -23,6 +30,35 @@ export default function GrupoPanel() {
 
   return (
     <div className="space-y-4">
+      <div className="panel p-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="eyebrow"><i className="fas fa-users mr-1.5" style={{ color: "var(--color-bronze)" }} />Todo el grupo</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button className="btn-ghost" onClick={() => party.forEach((c) => dmPatch(c.user_id, { setLevel: Math.min(20, (c.level ?? 1) + 1) }))}>
+            <i className="fas fa-arrow-up mr-2" />Subir nivel a todos
+          </button>
+          <input
+            type="number"
+            min={1}
+            value={allXp}
+            onChange={(e) => setAllXp(e.target.value)}
+            placeholder="XP"
+            className="w-20 px-2 py-1.5 rounded-lg font-ui text-[13px] bg-transparent"
+            style={{ border: "1px solid var(--color-line)", color: "var(--color-parch)" }}
+          />
+          <button
+            className="btn-gold"
+            onClick={() => {
+              const n = Number(allXp) || 0;
+              if (n <= 0) return;
+              party.forEach((c) => dmPatch(c.user_id, { addXp: n }));
+              setAllXp("");
+            }}
+          >
+            <i className="fas fa-star mr-2" />Dar XP a todos
+          </button>
+        </div>
+      </div>
+
       {party.map((c) => {
         const sp = c.species ? getSpecies(c.species) : undefined;
         const cls = c.cls ? getClass(c.cls) : undefined;
@@ -54,6 +90,67 @@ export default function GrupoPanel() {
               <Link href={`/personaje?user=${c.user_id}`} className="btn-ghost shrink-0">
                 <i className="fas fa-pen-to-square mr-2" />Editar hoja
               </Link>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <div className="flex items-center gap-2">
+                <p className="eyebrow !text-[9px]">Nivel</p>
+                <button
+                  className="stat-btn"
+                  disabled={(c.level ?? 1) <= 1}
+                  onClick={() => dmPatch(c.user_id, { setLevel: Math.max(1, (c.level ?? 1) - 1) })}
+                  aria-label="Bajar nivel"
+                >
+                  <i className="fas fa-minus" />
+                </button>
+                <span className="font-display text-xl font-extrabold w-7 text-center" style={{ color: "var(--color-arcane-bright)" }}>{c.level ?? 1}</span>
+                <button
+                  className="stat-btn"
+                  disabled={(c.level ?? 1) >= 20}
+                  onClick={() => dmPatch(c.user_id, { setLevel: Math.min(20, (c.level ?? 1) + 1) })}
+                  aria-label="Subir nivel"
+                >
+                  <i className="fas fa-plus" />
+                </button>
+              </div>
+
+              <div className="min-w-[140px]">
+                <p className="eyebrow !text-[9px] mb-1">
+                  XP {c.xp ?? 0} / {(c.level ?? 1) >= 20 ? "Máx" : xpForNext(c.level ?? 1)}
+                </p>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--color-line)" }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${(c.level ?? 1) >= 20 ? 100 : Math.min(100, ((c.xp ?? 0) / (xpForNext(c.level ?? 1) || 1)) * 100)}%`,
+                      background: "var(--color-bronze)",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  value={xpInput[c.user_id] ?? ""}
+                  onChange={(e) => setXpInput((prev) => ({ ...prev, [c.user_id]: e.target.value }))}
+                  placeholder="XP"
+                  className="w-20 px-2 py-1.5 rounded-lg font-ui text-[13px] bg-transparent"
+                  style={{ border: "1px solid var(--color-line)", color: "var(--color-parch)" }}
+                />
+                <button
+                  className="btn-gold"
+                  onClick={() => {
+                    const n = Number(xpInput[c.user_id]) || 0;
+                    if (n <= 0) return;
+                    dmPatch(c.user_id, { addXp: n });
+                    setXpInput((prev) => ({ ...prev, [c.user_id]: "" }));
+                  }}
+                >
+                  <i className="fas fa-star mr-2" />Dar XP
+                </button>
+              </div>
             </div>
 
             {isOpen && (
