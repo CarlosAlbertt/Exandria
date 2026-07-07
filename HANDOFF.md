@@ -162,6 +162,26 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
+## RESUELTO (2026-07-07): Nivel / XP por el DM
+Rama `dm-nivel-xp`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-07-dm-nivel-xp*`.
+
+- **Progresión (ambas)**: `characters.xp` (jsonb→int, **schema_v10**) + `level`.
+  El DM **da XP** (el nivel sube al cruzar umbral de la tabla 2024) o **fuerza
+  nivel** (hito). `data/leveling.ts`: `XP_THRESHOLDS`, `levelFromXp`, `xpForNext`.
+- **Panel DM › Grupo**: por jugador **nivel ±** y **Dar XP**, más acciones de
+  grupo **"Subir nivel a todos"** y **"Dar XP a todos"**. Vía la API
+  `/api/dm/character` (ampliada con `setLevel` y `addXp`, cálculo en servidor).
+- **Excepción al bloqueo**: el jugador puede **tirar su propia vida (PG)** de los
+  niveles alcanzados sin tirada (único control activo en su hoja); una vez tirado
+  **queda fijo** (el DM puede re-tirar para corregir). Persiste solo `hp_rolls`
+  saltando el gate de solo-lectura. Las ASI las sigue repartiendo el DM.
+- **Hoja**: barra de **XP** (`xp / xpForNext`) en el panel de nivel.
+- Verificado: `tsc`/`build`/`lint` limpios + preview del jugador (barra XP, solo
+  botón Tirar, sin steppers; tirar fija el PG). Control DM validado por build.
+
+> **PENDIENTE del usuario: ejecutar `supabase/schema_v10.sql`** (columna `xp`).
+
 ## RESUELTO (2026-07-07): Control del DM — hoja bloqueada, dados de PG, Baúl
 Rama `dm-control-baul`. Spec/plan en
 `docs/superpowers/{specs,plans}/2026-07-07-dm-control-baul*`.
