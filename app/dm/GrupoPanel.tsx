@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useParty } from "@/lib/character";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
@@ -35,20 +36,25 @@ export default function GrupoPanel() {
 
         return (
           <div key={c.user_id} className="panel p-5">
-            <button className="w-full flex items-center justify-between gap-3 text-left" onClick={() => setOpen(isOpen ? null : c.user_id)}>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-ui text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: "var(--color-arcane)", border: "1px solid var(--color-arcane)55" }}>
-                    <i className="fas fa-user mr-1" />{c.username}
-                  </span>
-                  <h3 className="font-display text-xl font-bold gold-text">{c.name || "Sin nombre"}</h3>
+            <div className="flex items-center justify-between gap-3">
+              <button className="flex-1 min-w-0 flex items-center justify-between gap-3 text-left" onClick={() => setOpen(isOpen ? null : c.user_id)}>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-ui text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: "var(--color-arcane)", border: "1px solid var(--color-arcane)55" }}>
+                      <i className="fas fa-user mr-1" />{c.username}
+                    </span>
+                    <h3 className="font-display text-xl font-bold gold-text">{c.name || "Sin nombre"}</h3>
+                  </div>
+                  <p className="font-ui text-[12px] font-semibold mt-1" style={{ color: "var(--color-muted)" }}>
+                    {sp?.name ?? "—"}{c.lineage ? ` · ${c.lineage}` : ""} · {cls?.name ?? "—"}{c.subclass ? ` · ${c.subclass}` : ""} · {bg?.name ?? "—"}
+                  </p>
                 </div>
-                <p className="font-ui text-[12px] font-semibold mt-1" style={{ color: "var(--color-muted)" }}>
-                  {sp?.name ?? "—"}{c.lineage ? ` · ${c.lineage}` : ""} · {cls?.name ?? "—"}{c.subclass ? ` · ${c.subclass}` : ""} · {bg?.name ?? "—"}
-                </p>
-              </div>
-              <i className={`fas fa-chevron-${isOpen ? "up" : "down"}`} style={{ color: "var(--color-dim)" }} />
-            </button>
+                <i className={`fas fa-chevron-${isOpen ? "up" : "down"}`} style={{ color: "var(--color-dim)" }} />
+              </button>
+              <Link href={`/personaje?user=${c.user_id}`} className="btn-ghost shrink-0">
+                <i className="fas fa-pen-to-square mr-2" />Editar hoja
+              </Link>
+            </div>
 
             {isOpen && (
               <div className="mt-5 pt-5 border-t border-[var(--color-line)]">

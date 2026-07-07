@@ -8,9 +8,10 @@ import { useGroupAction, resetGroup } from "@/lib/useGroupAction";
 import { narrar } from "@/lib/narrador";
 import MapaPanel from "./MapaPanel";
 import GrupoPanel from "./GrupoPanel";
+import BaulPanel from "./BaulPanel";
 import AiConfigPanel from "./AiConfigPanel";
 
-type Tab = "narracion" | "grupo" | "regiones" | "mapa" | "usuarios";
+type Tab = "narracion" | "grupo" | "baul" | "regiones" | "mapa" | "usuarios";
 
 export default function DmDashboard() {
   const [tab, setTab] = useState<Tab>("narracion");
@@ -23,7 +24,7 @@ export default function DmDashboard() {
       </header>
 
       <div className="flex justify-center gap-2 mb-8 flex-wrap">
-        {([["narracion", "Narración", "fa-feather-pointed"], ["grupo", "Grupo", "fa-users-line"], ["regiones", "Regiones", "fa-earth-americas"], ["mapa", "Mapa", "fa-map-location-dot"], ["usuarios", "Usuarios", "fa-users"]] as const).map(([id, label, icon]) => (
+        {([["narracion", "Narración", "fa-feather-pointed"], ["grupo", "Grupo", "fa-users-line"], ["baul", "Baúl", "fa-box-archive"], ["regiones", "Regiones", "fa-earth-americas"], ["mapa", "Mapa", "fa-map-location-dot"], ["usuarios", "Usuarios", "fa-users"]] as const).map(([id, label, icon]) => (
           <button key={id} onClick={() => setTab(id)} className="px-4 py-2 rounded-lg font-ui text-[13px] font-bold transition-colors"
             style={{ color: tab === id ? "var(--color-ink)" : "var(--color-muted)", background: tab === id ? "var(--color-bronze)" : "transparent", border: `1px solid ${tab === id ? "var(--color-bronze)" : "var(--color-line)"}` }}>
             <i className={`fas ${icon} mr-2`} />{label}
@@ -33,6 +34,7 @@ export default function DmDashboard() {
 
       {tab === "narracion" && <NarracionPanel />}
       {tab === "grupo" && <GrupoPanel />}
+      {tab === "baul" && <BaulPanel />}
       {tab === "regiones" && <RegionesPanel />}
       {tab === "mapa" && <MapaPanel />}
       {tab === "usuarios" && <UsuariosPanel />}
