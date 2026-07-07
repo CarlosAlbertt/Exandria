@@ -65,6 +65,7 @@ type CharacterSheetProps = {
 export default function CharacterSheet({ targetUserId, readOnly, saveMode }: CharacterSheetProps) {
   const [build, setBuild] = useState<Build>({ ...EMPTY_BUILD });
   const [level, setLevel] = useState(1);
+  const [xp, setXp] = useState(0);
   const [gold, setGold] = useState(0);
   const [asi, setAsi] = useState<Asi>({});
   const [items, setItems] = useState<Item[]>([]);
@@ -95,6 +96,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             bonus: row.bonus && Object.keys(row.bonus).length ? row.bonus : { ...NO_BONUS },
           });
           if (typeof row.level === "number") setLevel(row.level);
+          if (typeof row.xp === "number") setXp(row.xp);
           if (typeof row.gold === "number") setGold(row.gold);
           if (row.asi) setAsi(row.asi);
           if (Array.isArray(row.items)) setItems(row.items);
@@ -216,7 +218,21 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     });
   };
 
-  const onRollHp = (lv: number, val: number) => setHpRolls((r) => ({ ...r, [String(lv)]: val }));
+  // El dueño puede tirar PG aunque la ficha sea de solo lectura (el DM vía ?user= no está en readOnly).
+  const canRollHp = !readOnly || saveMode === "self";
+
+  const onRollHp = (lv: number, val: number) => {
+    setHpRolls((prev) => {
+      const next = { ...prev, [String(lv)]: val };
+      if (targetUserId) {
+        if (saveMode === "self") saveCharacter(targetUserId, { hp_rolls: next });
+        else fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: targetUserId, patch: { hp_rolls: next } }) });
+      } else {
+        try { const s = JSON.parse(localStorage.getItem(SHEET_KEY) ?? "{}"); localStorage.setItem(SHEET_KEY, JSON.stringify({ ...s, hp_rolls: next })); } catch {}
+      }
+      return next;
+    });
+  };
 
   /* --- oro --- */
   const setGoldClamped = (n: number) => setGold(Math.max(0, Math.floor(n) || 0));
@@ -310,7 +326,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-6">
           {/* NIVEL + ASI */}
-          <LevelPanel level={level} onLevel={onLevel} clsSlug={build.cls} hitDie={hitDie} preAsi={preAsi} asi={asi} onAsi={onAsi} hpRolls={hpRolls} onRollHp={readOnly ? () => {} : onRollHp} readOnly={readOnly} />
+          <LevelPanel level={level} onLevel={onLevel} clsSlug={build.cls} hitDie={hitDie} preAsi={preAsi} asi={asi} onAsi={onAsi} hpRolls={hpRolls} onRollHp={canRollHp ? onRollHp : () => {}} readOnly={readOnly} canRollHp={canRollHp} xp={xp} />
 
           {/* APTITUDES */}
           <section className="panel p-5">
