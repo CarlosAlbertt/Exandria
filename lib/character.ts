@@ -24,12 +24,13 @@ export type CharacterData = {
   asi: Asi;
   hp_rolls: Record<string, number>;
   level: number;
+  xp: number;
   gold: number;
   lore: string;
 };
 
 const FIELDS =
-  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, gold, lore";
+  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, xp, gold, lore";
 
 // Carga la ficha del usuario (o null si no hay).
 export async function loadCharacter(userId: string): Promise<Partial<CharacterData> | null> {
