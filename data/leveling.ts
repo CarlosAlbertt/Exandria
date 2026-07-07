@@ -71,3 +71,21 @@ export function maxHpFromRolls(hitDie: number, level: number, conMod: number, ro
   }
   return Math.max(1, hp);
 }
+
+/** XP mínima acumulada para cada nivel (1..20), D&D 2024. Índice = nivel. */
+export const XP_THRESHOLDS = [
+  0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
+  85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000,
+];
+
+/** Nivel (1..20) derivado de la XP acumulada. */
+export function levelFromXp(xp: number): number {
+  let lvl = 1;
+  for (let l = 2; l <= 20; l++) if (xp >= XP_THRESHOLDS[l]) lvl = l;
+  return lvl;
+}
+
+/** XP mínima del siguiente nivel (o la del 20 si ya es 20). Para la barra. */
+export function xpForNext(level: number): number {
+  return XP_THRESHOLDS[Math.min(20, level + 1)];
+}
