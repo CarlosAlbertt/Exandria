@@ -50,3 +50,24 @@ export const FIXED_ACCESSORY = { type: "collar", label: "Collar", count: 1 };
 export function accessoryCount(mult: number, mod: number, min: number): number {
   return Math.max(min, mult * mod);
 }
+
+/** Tira un dado de PG (1..hitDie). */
+export function rollHitDie(hitDie: number): number {
+  return 1 + Math.floor(Math.random() * hitDie);
+}
+
+/**
+ * PG máx a partir de las tiradas guardadas.
+ * Nivel 1 = dado máx + CON. Niveles 2..N: (tirada guardada o media dado/2+1) + CON.
+ * `rolls` = mapa nivel(str)→dado bruto (sin CON).
+ */
+export function maxHpFromRolls(hitDie: number, level: number, conMod: number, rolls: Record<string, number>): number {
+  const l = Math.max(1, Math.min(20, level));
+  let hp = hitDie + conMod;
+  for (let lv = 2; lv <= l; lv++) {
+    const raw = rolls[String(lv)];
+    const base = typeof raw === "number" ? raw : Math.floor(hitDie / 2) + 1;
+    hp += base + conMod;
+  }
+  return Math.max(1, hp);
+}
