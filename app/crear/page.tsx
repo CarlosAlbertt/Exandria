@@ -57,23 +57,27 @@ export default function CrearPage() {
   const [loaded, setLoaded] = useState(false);
   const [mobileShowRight, setMobileShowRight] = useState(false);
 
-  // cargar / guardar
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setB((prev) => ({ ...prev, ...JSON.parse(raw) }));
-    } catch {}
-    setLoaded(true);
-  }, []);
-  useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify(b));
-  }, [b, loaded]);
-
-  // Sincronización con Supabase (si hay sesión): la ficha vive en la nube.
+  // Sesión: si hay usuario, la ficha vive en la NUBE (fuente de verdad).
   const session = useSession();
   const userId = session?.id;
   const router = useRouter();
   const cloudLoaded = useRef(false);
+
+  // cargar / guardar en localStorage SOLO cuando NO hay sesión (modo demo).
+  // Con sesión, localStorage es global del navegador y filtraría el personaje
+  // de una cuenta a otra; la nube (por user_id) manda.
+  useEffect(() => {
+    if (!userId) {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) setB((prev) => ({ ...prev, ...JSON.parse(raw) }));
+      } catch {}
+    }
+    setLoaded(true);
+  }, [userId]);
+  useEffect(() => {
+    if (loaded && !userId) localStorage.setItem(KEY, JSON.stringify(b));
+  }, [b, loaded, userId]);
 
   useEffect(() => {
     if (!loaded || !userId || cloudLoaded.current) return;

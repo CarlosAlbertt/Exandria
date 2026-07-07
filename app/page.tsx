@@ -1,8 +1,11 @@
 import Link from "next/link";
 import Emblem from "@/components/Emblem";
-import { CONTINENT, REGIONS } from "@/data/taldorei";
+import { WORLD_INTRO } from "@/data/cosmology";
+import { WORLD_POIS } from "@/data/world";
 import { CLASSES } from "@/data/classes";
 import { SPECIES } from "@/data/species";
+
+const CONTINENTES = WORLD_POIS.filter((p) => p.type === "continente");
 
 export default function HomePage() {
   return (
@@ -16,7 +19,7 @@ export default function HomePage() {
             Exandria
           </h1>
           <p className="prose-lore lead max-w-2xl mx-auto !mb-8">
-            Forja tu héroe, descubre el lore del continente y prepárate para la
+            Forja tu héroe, descubre el lore del mundo y prepárate para la
             próxima campaña de Dungeons &amp; Dragons.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
@@ -26,9 +29,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* INTRO CONTINENTE */}
+      {/* INTRO MUNDO */}
       <section className="max-w-3xl mx-auto px-6 py-10 text-center">
-        <p className="prose-lore">{CONTINENT.intro}</p>
+        <p className="prose-lore">{WORLD_INTRO}</p>
       </section>
 
       {/* FEATURES */}
@@ -36,8 +39,8 @@ export default function HomePage() {
         <div className="grid md:grid-cols-3 gap-5">
           {[
             { icon: "fa-dice-d20", href: "/crear", title: "Creador de personaje", text: `${SPECIES.length} especies, ${CLASSES.length} clases, trasfondos, aptitudes y pericias del reglamento 2024.`, accent: "var(--color-arcane)" },
-            { icon: "fa-book-open", href: "/reino", title: "Lore del reino", text: "Historia, regiones, panteón y facciones del continente de Tal'Dorei.", accent: "var(--color-bronze)" },
-            { icon: "fa-map-location-dot", href: "/mapa", title: "Mapa interactivo", text: "Recorre las ocho grandes regiones y sus enclaves clave.", accent: "var(--color-primitivo)" },
+            { icon: "fa-book-open", href: "/reino", title: "Lore del mundo", text: "Historia, continentes, panteón y cosmología de Exandria.", accent: "var(--color-bronze)" },
+            { icon: "fa-map-location-dot", href: "/mapa", title: "Mapa interactivo", text: "Recorre los continentes de Exandria y sus enclaves clave.", accent: "var(--color-primitivo)" },
           ].map((c) => (
             <Link key={c.title} href={c.href} className="pick-card p-7 block" style={{ ["--accent" as string]: c.accent, ["--glow" as string]: "rgba(69,199,189,0.3)" }}>
               <i className={`fas ${c.icon} text-3xl mb-4`} style={{ color: c.accent }} />
@@ -51,20 +54,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* REGIONES PREVIEW */}
+      {/* CONTINENTES DE EXANDRIA */}
       <section className="max-w-6xl mx-auto px-6 py-14">
         <div className="text-center mb-10">
           <p className="eyebrow mb-3">El Atlas</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold gold-text">Las tierras de Tal'Dorei</h2>
+          <h2 className="font-display text-3xl md:text-4xl font-bold gold-text">Las tierras de Exandria</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {REGIONS.map((r) => (
-            <Link key={r.slug} href="/mapa" className="panel p-5 hover:border-[var(--color-bronze)] transition-colors group" style={{ borderColor: "var(--color-line)" }}>
-              <span className="inline-block w-2.5 h-2.5 rounded-full mb-3" style={{ background: r.accent, boxShadow: `0 0 10px ${r.accent}` }} />
-              <p className="font-display font-bold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{r.name}</p>
-              <p className="font-ui text-[11px] font-semibold tracking-wide" style={{ color: "var(--color-dim)" }}>
-                <i className="fas fa-location-dot mr-1" />{r.capital}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {CONTINENTES.map((c) => (
+            <Link key={c.name} href="/mapa" className="panel p-5 hover:border-[var(--color-bronze)] transition-colors group" style={{ borderColor: "var(--color-line)" }}>
+              <span className="inline-block w-2.5 h-2.5 rounded-full mb-3" style={{ background: "var(--color-bronze)", boxShadow: "0 0 10px var(--color-bronze)" }} />
+              <p className="font-display font-bold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>
+                <i className="fas fa-earth-americas mr-1.5" style={{ color: "var(--color-bronze)" }} />{c.name}
               </p>
+              <p className="font-ui text-[12px]" style={{ color: "var(--color-muted)", lineHeight: 1.5 }}>{c.blurb}</p>
             </Link>
           ))}
         </div>

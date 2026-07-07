@@ -13,7 +13,6 @@ const BASE_LINKS = [
   { href: "/crear", label: "Crear" },
   { href: "/inventario", label: "Inventario" },
   { href: "/mapa", label: "Mapa" },
-  { href: "/taberna", label: "Taberna" },
   { href: "/narrador", label: "Narrador" },
 ];
 
