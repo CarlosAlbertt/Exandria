@@ -41,7 +41,7 @@ export const CAZADOR_DE_SANGRE: ClassMechanics = {
     },
     {
       level: 3,
-      name: "Orden de Cazador de Sangre",
+      name: "Subclase de Cazador de Sangre",
       blurb: "Elige una orden sanguínea que define su especialidad de caza y le otorga rasgos exclusivos en niveles posteriores.",
       subclass: true,
     },

@@ -39,7 +39,7 @@ export const PALADIN: ClassMechanics = {
     },
     {
       level: 2,
-      name: "Smite del Paladín",
+      name: "Golpe Divino del Paladín",
       blurb: "Al gastar un espacio de conjuro en un ataque cuerpo a cuerpo impactado, el paladín inflige daño radiante extra.",
     },
     {
