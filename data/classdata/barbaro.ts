@@ -81,7 +81,7 @@ export const BARBARO: ClassMechanics = {
     {
       level: 7,
       name: "Arremetida Instintiva",
-      blurb: "Si el bárbaro reduce a un enemigo a 0 puntos de golpe en su turno, puede moverse de inmediato sin gastar su desplazamiento.",
+      blurb: "Al activar la Furia con su acción adicional, el bárbaro puede además moverse hasta la mitad de su velocidad como parte de esa misma acción.",
     },
     {
       level: 8,
