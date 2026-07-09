@@ -46,6 +46,14 @@ for (const f of invalid) {
   check("roll(\"2d6+3\") total en [5,15], 2 dados en [1,6] (200 iteraciones)", ok);
 }
 check('roll("abc") = null', roll("abc") === null);
+{
+  let ok = true;
+  for (let i = 0; i < 200; i++) {
+    const r = roll("1d100");
+    if (!r || r.rolls.length !== 1 || r.total < 1 || r.total > 100) { ok = false; break; }
+  }
+  check('roll("1d100") resultado en [1,100], 1 dado (200 iteraciones)', ok);
+}
 
 // --- d20Check ---
 {
@@ -80,6 +88,10 @@ check('roll("abc") = null', roll("abc") === null);
 {
   const sample = fmtRoll({ formula: "1d20-2", rolls: [7], modifier: -2, total: 5 });
   check('fmtRoll con modificador negativo: "[7] - 2 = 5"', sample === "[7] - 2 = 5");
+}
+{
+  const sample = fmtRoll({ formula: "2d6", rolls: [4, 2], modifier: 0, total: 6 });
+  check('fmtRoll sin modificador: "[4, 2] = 6" (omite "+ 0")', sample === "[4, 2] = 6");
 }
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);

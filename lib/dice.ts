@@ -74,8 +74,9 @@ export function d20Check(mod: number, adv?: "adv" | "dis"): RollResult {
 }
 
 // Formatea el desglose de una tirada: "[14, 3] + 5 = 22".
+// Sin modificador (0) se omite el segmento: "[14, 3] = 17".
 export function fmtRoll(r: RollResult): string {
+  if (r.modifier === 0) return `[${r.rolls.join(", ")}] = ${r.total}`;
   const sign = r.modifier < 0 ? "-" : "+";
-  const abs = Math.abs(r.modifier);
-  return `[${r.rolls.join(", ")}] ${sign} ${abs} = ${r.total}`;
+  return `[${r.rolls.join(", ")}] ${sign} ${Math.abs(r.modifier)} = ${r.total}`;
 }
