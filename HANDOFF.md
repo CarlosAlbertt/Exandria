@@ -99,7 +99,11 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
 trigger de perfil) · `schema_v2.sql` (target de narración, group_action,
 action_ready, npc_chat) · `schema_v3.sql` (pin_x/pin_y, poi_state) ·
 `schema_v4.sql` (characters + lore) · `schema_v5.sql` (app_config) ·
-`schema_v6.sql` (group_action.speaker — **PENDIENTE de ejecutar por el usuario**).
+`schema_v6.sql` (group_action.speaker) · `schema_v7.sql` (world_poi, sin uso) ·
+`schema_v8.sql` (characters: level/gold/asi/equipment/items) · `schema_v9.sql`
+(characters.hp_rolls) · `schema_v10.sql` (characters.xp) · `schema_v11.sql`
+(dice_rolls, roll_requests, initiative — **PENDIENTE de ejecutar por el
+usuario**).
 
 ## IA / túnel (ritual tras apagar el PC)
 Ver **`GUIA-ARRANQUE.md`**. Resumen: doble clic en
