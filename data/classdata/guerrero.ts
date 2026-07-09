@@ -13,7 +13,7 @@ export const GUERRERO: ClassMechanics = {
   armor: ["ligera", "media", "pesada", "escudos"],
   weapons: ["sencillas", "marciales"],
   startingGold: 155,
-  startingEquipment: ["Cota de malla", "Mandoble", "Mangual", "8 jabalinas", "Paquete de mazmorrero", "4 PO"],
+  startingEquipment: ["Cota de mallas", "Mandoble", "Mangual", "8 jabalinas", "Paquete de mazmorrero", "4 PO"],
   caster: "none",
   features: [
     {

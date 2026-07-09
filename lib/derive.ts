@@ -38,6 +38,7 @@ type ArmorKind = "ligera" | "media" | "pesada";
  * define nombres de objetos (sin datos de CA), así que este mapeo traduce
  * los 4 nombres de armadura corporal de CATALOG.Armaduras a sus valores
  * base de D&D 2024. "Escudo" se trata aparte (bono plano, no cuerpo).
+ * Mantener en sincronía con CATALOG.Armaduras en data/equipment.ts.
  */
 const ARMOR_LOOKUP: Record<string, { base: number; kind: ArmorKind }> = {
   "Armadura de cuero": { base: 11, kind: "ligera" },

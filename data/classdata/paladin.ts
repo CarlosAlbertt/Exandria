@@ -13,7 +13,7 @@ export const PALADIN: ClassMechanics = {
   armor: ["ligera", "media", "pesada", "escudos"],
   weapons: ["sencillas", "marciales"],
   startingGold: 150,
-  startingEquipment: ["Cota de malla", "Escudo", "Espada larga", "6 jabalinas", "Símbolo sagrado", "Paquete de sacerdote", "9 PO"],
+  startingEquipment: ["Cota de mallas", "Escudo", "Espada larga", "6 jabalinas", "Símbolo sagrado", "Paquete de sacerdote", "9 PO"],
   caster: "half",
   spellAbility: "car",
   features: [

@@ -99,5 +99,40 @@ function ABILITIES_ALL_TEN(d: ReturnType<typeof derive>): boolean {
   check("Caso4: la tirada cambia el resultado", withRoll.maxHp !== withoutRoll.maxHp);
 }
 
+// --- Casos de CA con armadura equipada ---
+{
+  const base: Partial<CharacterData> = {
+    level: 1,
+    cls: "guerrero",
+    base: { fue: 10, des: 18, con: 10, int: 10, sab: 10, car: 10 }, // DES mod +4
+    bonus: { fue: 0, des: 0, con: 0, int: 0, sab: 0, car: 0 },
+    asi: {},
+    skills: [],
+  };
+
+  // (a) Ligera: base 11 + DES completo
+  const cuero = derive({ ...base, equipment: { torso: { id: "x", name: "Armadura de cuero", qty: 1 } } });
+  check("CA(a): Armadura de cuero + DES 18 → 15 (11+4)", cuero.ac === 15);
+  check("CA(a): acSource menciona la armadura", cuero.acSource.includes("Armadura de cuero"));
+
+  // (b) Media: base 14 + DES limitado a +2
+  const escamas = derive({ ...base, equipment: { torso: { id: "x", name: "Cota de escamas", qty: 1 } } });
+  check("CA(b): Cota de escamas + DES 18 → 16 (14+2 cap)", escamas.ac === 16);
+
+  // (c) Pesada: base 16, sin DES
+  const mallas = derive({ ...base, equipment: { torso: { id: "x", name: "Cota de mallas", qty: 1 } } });
+  check("CA(c): Cota de mallas + DES 18 → 16 (sin DES)", mallas.ac === 16);
+
+  // (d) Monje sin armadura + Escudo: 10 + DES + SAB + 2
+  const monje = derive({
+    ...base,
+    cls: "monje",
+    base: { fue: 10, des: 18, con: 10, int: 10, sab: 14, car: 10 }, // DES +4, SAB +2
+    equipment: { arma_secundaria: { id: "y", name: "Escudo", qty: 1 } },
+  });
+  check("CA(d): monje sin armadura + Escudo → 18 (10+4+2+2)", monje.ac === 18);
+  check("CA(d): acSource menciona monje y escudo", /monje/i.test(monje.acSource) && /Escudo/.test(monje.acSource));
+}
+
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
 process.exit(failures === 0 ? 0 : 1);
