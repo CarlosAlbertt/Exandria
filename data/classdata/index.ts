@@ -8,6 +8,10 @@ import { EXPLORADOR } from "./explorador";
 import { GUERRERO } from "./guerrero";
 import { HECHICERO } from "./hechicero";
 import { MAGO } from "./mago";
+import { MONJE } from "./monje";
+import { PALADIN } from "./paladin";
+import { PICARO } from "./picaro";
+import { CAZADOR_DE_SANGRE } from "./cazador-de-sangre";
 
 export const CLASS_MECHANICS: Partial<Record<string, ClassMechanics>> = {
   barbaro: BARBARO,
@@ -19,6 +23,10 @@ export const CLASS_MECHANICS: Partial<Record<string, ClassMechanics>> = {
   guerrero: GUERRERO,
   hechicero: HECHICERO,
   mago: MAGO,
+  monje: MONJE,
+  paladin: PALADIN,
+  picaro: PICARO,
+  "cazador-de-sangre": CAZADOR_DE_SANGRE,
 };
 export function getMechanics(slug: string | null | undefined): ClassMechanics | null {
   return (slug ? CLASS_MECHANICS[slug] : null) ?? null;
