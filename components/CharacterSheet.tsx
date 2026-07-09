@@ -7,12 +7,14 @@ import type { Asi } from "@/lib/character";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { getBackground } from "@/data/backgrounds";
-import { ABILITIES, AbilityKey, abilityMod, fmtMod } from "@/data/rules";
-import { maxHp, proficiencyBonus, reachedAsiLevels } from "@/data/leveling";
+import { ABILITIES, AbilityKey, fmtMod } from "@/data/rules";
+import { reachedAsiLevels } from "@/data/leveling";
 import { CATALOG, ItemCat } from "@/data/equipment";
-import LevelPanel, { asiTotals } from "@/components/LevelPanel";
+import LevelPanel from "@/components/LevelPanel";
 import Paperdoll from "@/components/Paperdoll";
 import PortraitFrame from "@/components/PortraitFrame";
+import { derive } from "@/lib/derive";
+import { getMechanics, type ClassFeature } from "@/data/classdata";
 
 const BUILD_KEY = "taldorei.build.v1";
 const SHEET_KEY = "taldorei.sheet.v1";
@@ -71,9 +73,11 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const [items, setItems] = useState<Item[]>([]);
   const [equipment, setEquipment] = useState<Record<string, Item>>({});
   const [hpRolls, setHpRolls] = useState<Record<string, number>>({});
+  const [skills, setSkills] = useState<string[]>([]); // pericias elegidas en /crear (solo lectura aquí)
   const [ac, setAc] = useState<number | null>(null); // CA: sesión-only (no se persiste)
   const [pickingSlot, setPickingSlot] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(true);
 
   const [cat, setCat] = useState<ItemCat>("Aventura");
   const [custom, setCustom] = useState("");
@@ -102,12 +106,14 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           if (Array.isArray(row.items)) setItems(row.items);
           if (row.equipment) setEquipment(row.equipment);
           if (row.hp_rolls) setHpRolls(row.hp_rolls);
+          if (Array.isArray(row.skills)) setSkills(row.skills);
         }
       } else {
         try {
           const b = localStorage.getItem(BUILD_KEY);
           if (b) {
-            const parsed = JSON.parse(b) as Partial<Build>;
+            const parsed = JSON.parse(b) as Partial<Build> & { skills?: string[] };
+            if (Array.isArray(parsed.skills)) setSkills(parsed.skills);
             setBuild((prev) => ({
               ...prev,
               name: parsed.name ?? prev.name,
@@ -168,26 +174,63 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     return out;
   }, [build.base, build.bonus]);
 
-  const totals = useMemo(() => asiTotals(asi), [asi]);
+  const hitDie = cls?.hitDie ?? 8;
+
+  // Pericias competentes = trasfondo (fijas) + clase (elegidas en /crear).
+  const mergedSkills = useMemo(
+    () => Array.from(new Set([...(bg?.skills ?? []), ...skills])),
+    [bg, skills]
+  );
+
+  // Objeto crudo que alimenta el motor de derivación (lib/derive.ts): única
+  // fuente de verdad para puntuaciones finales, PG máx, CA, salvaciones,
+  // pericias, percepción pasiva y (si conjurador) CD/ataque/espacios.
+  const charForDerive: Partial<CharacterData> = useMemo(
+    () => ({ level, cls: build.cls, base: build.base, bonus: build.bonus, asi, skills: mergedSkills, equipment, hp_rolls: hpRolls }),
+    [level, build.cls, build.base, build.bonus, asi, mergedSkills, equipment, hpRolls]
+  );
+  const d = useMemo(() => derive(charForDerive), [charForDerive]);
+
   const finalScores = useMemo(() => {
     const out = {} as Record<AbilityKey, number>;
-    ABILITIES.forEach((a) => (out[a.key] = preAsi[a.key] + (totals[a.key] ?? 0)));
+    ABILITIES.forEach((a) => (out[a.key] = d.abilities[a.key].score));
     return out;
-  }, [preAsi, totals]);
+  }, [d]);
   const mods = useMemo(() => {
     const out = {} as Record<AbilityKey, number>;
-    ABILITIES.forEach((a) => (out[a.key] = abilityMod(finalScores[a.key])));
+    ABILITIES.forEach((a) => (out[a.key] = d.abilities[a.key].mod));
     return out;
-  }, [finalScores]);
+  }, [d]);
 
-  const hitDie = cls?.hitDie ?? 8;
-  const hp = useMemo(() => maxHp(hitDie, level, mods.con), [hitDie, level, mods.con]);
-  const prof = proficiencyBonus(level);
+  const mechanics = useMemo(() => getMechanics(build.cls), [build.cls]);
+  const featuresByLevel = useMemo(() => {
+    if (!mechanics) return [] as { level: number; feats: ClassFeature[] }[];
+    const visible = mechanics.features.filter((f) => f.level <= level && (!f.subclass || !!build.subclass));
+    const map = new Map<number, ClassFeature[]>();
+    for (const f of visible) {
+      if (!map.has(f.level)) map.set(f.level, []);
+      map.get(f.level)!.push(f);
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([lvl, feats]) => ({ level: lvl, feats }));
+  }, [mechanics, level, build.subclass]);
+
+  const resourceChips = useMemo(() => {
+    if (!mechanics?.resources) return [] as { name: string; value: number | string }[];
+    const idx = Math.min(19, Math.max(0, level - 1));
+    return mechanics.resources.map((r) => ({ name: r.name, value: r.values[idx] }));
+  }, [mechanics, level]);
+
+  const spellSlotChips = useMemo(() => {
+    if (!d.spellSlots) return [] as { lvl: number; n: number }[];
+    return d.spellSlots.map((n, i) => ({ lvl: i + 1, n })).filter((s) => s.n > 0);
+  }, [d.spellSlots]);
+
   const cap = Math.max(10, 20 + 2 * mods.fue);
   const used = useMemo(() => items.reduce((s, i) => s + i.qty, 0), [items]);
   const full = used >= cap;
-  const defaultAc = 10 + mods.des;
-  const acValue = ac ?? defaultAc;
+  const acValue = ac ?? d.ac;
 
   /* --- handlers de nivel / asi --- */
   const onLevel = (n: number) => {
@@ -345,28 +388,130 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           {/* DERIVADOS */}
           <section className="panel p-5">
             <p className="eyebrow mb-3">Estadísticas derivadas</p>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <Derived icon="fa-heart" label="PG máx" value={hp} color="var(--color-ember)" />
-              <Derived icon="fa-shield-halved" label="Competencia" value={fmtMod(prof)} color="var(--color-bronze)" />
-              <Derived icon="fa-bolt" label="Iniciativa" value={fmtMod(mods.des)} color="var(--color-arcane)" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Derived icon="fa-heart" label="PG máx" value={d.maxHp} color="var(--color-ember)" />
+              <Derived icon="fa-shield-halved" label="Competencia" value={fmtMod(d.prof)} color="var(--color-bronze)" />
               <Derived icon="fa-shoe-prints" label="Velocidad" value={species ? `${species.speed} m` : "—"} color="var(--color-primitivo)" />
+            </div>
+          </section>
+
+          {/* COMBATE */}
+          <section className="panel p-5">
+            <p className="eyebrow mb-3"><i className="fas fa-shield-halved mr-1.5" style={{ color: "var(--color-bronze)" }} />Combate</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="panel-raised py-3 px-2 text-center flex flex-col items-center">
                 <i className="fas fa-shield text-lg mb-1" style={{ color: "var(--color-arcane-bright)" }} />
                 <p className="eyebrow !text-[9px] mb-1">CA</p>
                 {readOnly ? (
-                  <p className="font-display text-xl font-extrabold" style={{ color: "var(--color-parch)" }}>{acValue}</p>
+                  <p className="font-display text-2xl font-extrabold" style={{ color: "var(--color-parch)" }}>{acValue}</p>
                 ) : (
                   <input
                     type="number"
                     value={acValue}
                     onChange={(e) => setAc(e.target.value === "" ? null : Math.max(0, Math.floor(Number(e.target.value)) || 0))}
-                    className="w-16 text-center bg-[var(--color-night)] rounded-lg px-2 py-1 font-display text-xl font-extrabold outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]"
+                    className="w-16 text-center bg-[var(--color-night)] rounded-lg px-2 py-1 font-display text-2xl font-extrabold outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]"
                     style={{ color: "var(--color-parch)" }}
                   />
                 )}
+                <p className="text-[10px] mt-1 italic" style={{ color: "var(--color-dim)" }}>{d.acSource}</p>
               </div>
+              <Derived icon="fa-bolt" label="Iniciativa" value={fmtMod(d.initiative)} color="var(--color-arcane)" />
+              <Derived icon="fa-eye" label="Percepción pasiva" value={d.passivePerception} color="var(--color-primitivo)" />
+              {typeof d.spellDc === "number" && (
+                <>
+                  <Derived icon="fa-wand-sparkles" label="CD de conjuros" value={d.spellDc} color="var(--color-violet)" />
+                  <Derived icon="fa-hat-wizard" label="Ataque de conjuro" value={fmtMod(d.spellAttack ?? 0)} color="var(--color-violet)" />
+                </>
+              )}
             </div>
-            <p className="text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>CA por defecto 10 {fmtMod(mods.des)} (DES). Editable; no se guarda entre sesiones.</p>
+            <p className="text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>CA editable para reflejar bonificadores temporales (p. ej. conjuros); no se guarda entre sesiones. El cálculo base se indica bajo el número.</p>
+          </section>
+
+          {/* SALVACIONES */}
+          <section className="panel p-5">
+            <p className="eyebrow mb-3">Salvaciones</p>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {ABILITIES.map((a) => {
+                const sv = d.saves[a.key];
+                return (
+                  <div key={a.key} className="panel-raised py-3 text-center relative">
+                    {sv.proficient && (
+                      <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: "var(--color-arcane-bright)" }} title="Competente" />
+                    )}
+                    <p className="eyebrow mb-1">{a.abbr}</p>
+                    <p className="font-display text-xl font-extrabold" style={{ color: sv.proficient ? "var(--color-arcane-bright)" : "var(--color-warm)" }}>
+                      {fmtMod(sv.mod)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* PERICIAS */}
+          <section className="panel p-5">
+            <p className="eyebrow mb-3">Pericias</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {d.skills.map((s) => (
+                <div key={s.name} className="panel-raised px-3 py-1.5 flex items-center justify-between gap-2">
+                  <span className="font-ui text-[12px] font-semibold flex items-center gap-1.5" style={{ color: s.proficient ? "var(--color-bronze-bright)" : "var(--color-muted)" }}>
+                    {s.proficient && <i className="fas fa-circle text-[5px]" style={{ color: "var(--color-bronze)" }} />}
+                    {s.name}
+                  </span>
+                  <span className="font-ui text-[12px] font-bold" style={{ color: s.proficient ? "var(--color-bronze-bright)" : "var(--color-dim)" }}>
+                    {fmtMod(s.mod)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* RASGOS DE CLASE + RECURSOS */}
+          <section className="panel p-5">
+            <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+              <p className="eyebrow">
+                <i className="fas fa-scroll mr-1.5" style={{ color: cls ? `var(--color-${cls.group})` : "var(--color-bronze)" }} />
+                Rasgos de clase
+              </p>
+              {featuresByLevel.length > 0 && (
+                <button className="btn-ghost !py-1 !px-2.5 text-[11px]" onClick={() => setFeaturesOpen((o) => !o)}>
+                  <i className={`fas fa-chevron-${featuresOpen ? "up" : "down"} mr-1.5`} />{featuresOpen ? "Ocultar" : "Mostrar"}
+                </button>
+              )}
+            </div>
+
+            {(resourceChips.length > 0 || spellSlotChips.length > 0) && (
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {resourceChips.map((r) => (
+                  <span key={r.name} className="chip" data-on>{r.name} {r.value}</span>
+                ))}
+                {spellSlotChips.map((s) => (
+                  <span key={s.lvl} className="chip" data-on>Espacios nv{s.lvl} ×{s.n}</span>
+                ))}
+              </div>
+            )}
+
+            {!mechanics ? (
+              <p className="font-ui text-[13px]" style={{ color: "var(--color-dim)" }}>Elige una clase para ver sus rasgos.</p>
+            ) : featuresOpen ? (
+              <div className="space-y-4">
+                {featuresByLevel.map(({ level: lvl, feats }) => (
+                  <div key={lvl}>
+                    <p className="eyebrow !text-[10px] mb-1.5">Nivel {lvl}</p>
+                    <div className="space-y-2">
+                      {feats.map((f) => (
+                        <div key={f.name} className="panel-raised p-3">
+                          <p className="font-ui text-[13px] font-bold" style={{ color: "var(--color-parch)" }}>
+                            {f.name}{f.subclass && build.subclass ? ` — ${build.subclass}` : ""}
+                          </p>
+                          <p className="font-ui text-[12px] mt-1" style={{ color: "var(--color-muted)" }}>{f.blurb}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           {/* ORO */}

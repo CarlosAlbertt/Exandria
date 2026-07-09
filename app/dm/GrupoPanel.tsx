@@ -6,8 +6,9 @@ import { useParty } from "@/lib/character";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { getBackground } from "@/data/backgrounds";
-import { ABILITIES, abilityMod, fmtMod, AbilityKey } from "@/data/rules";
+import { ABILITIES, fmtMod } from "@/data/rules";
 import { xpForNext } from "@/data/leveling";
+import { derive } from "@/lib/derive";
 
 async function dmPatch(userId: string, patch: Record<string, unknown>) {
   await fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, patch }) });
@@ -63,11 +64,10 @@ export default function GrupoPanel() {
         const sp = c.species ? getSpecies(c.species) : undefined;
         const cls = c.cls ? getClass(c.cls) : undefined;
         const bg = c.background ? getBackground(c.background) : undefined;
-        const finalScores = {} as Record<AbilityKey, number>;
-        ABILITIES.forEach((a) => (finalScores[a.key] = (c.base?.[a.key] ?? 10) + (c.bonus?.[a.key] ?? 0)));
-        const conMod = abilityMod(finalScores.con);
-        const hp = cls ? cls.hitDie + conMod : 0;
         const skills = Array.from(new Set([...(bg?.skills ?? []), ...(Array.isArray(c.skills) ? c.skills : [])]));
+        // Ficha derivada (lib/derive.ts): misma fuente de verdad que la hoja
+        // interactiva del jugador, para que DM y jugador vean los mismos números.
+        const d = derive({ ...c, skills });
         const isOpen = open === c.user_id;
 
         return (
@@ -153,21 +153,29 @@ export default function GrupoPanel() {
               </div>
             </div>
 
+            {/* Franja compacta: siempre visible, sin necesidad de desplegar la ficha */}
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              <Stat icon="fa-shield" label="CA" value={d.ac} color="var(--color-arcane-bright)" />
+              <Stat icon="fa-heart" label="PG máx" value={d.maxHp} color="var(--color-ember)" />
+              <Stat icon="fa-bolt" label="Iniciativa" value={fmtMod(d.initiative)} color="var(--color-arcane)" />
+              {typeof d.spellDc === "number" && <Stat icon="fa-wand-sparkles" label="CD" value={d.spellDc} color="var(--color-violet)" />}
+            </div>
+
             {isOpen && (
               <div className="mt-5 pt-5 border-t border-[var(--color-line)]">
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5">
                   {ABILITIES.map((a) => (
                     <div key={a.key} className="panel-raised py-2 text-center">
                       <p className="eyebrow !text-[9px] mb-0.5">{a.abbr}</p>
-                      <p className="font-display text-xl font-extrabold" style={{ color: "var(--color-arcane-bright)" }}>{finalScores[a.key]}</p>
-                      <p className="font-ui text-[10px] font-bold" style={{ color: "var(--color-muted)" }}>{fmtMod(abilityMod(finalScores[a.key]))}</p>
+                      <p className="font-display text-xl font-extrabold" style={{ color: "var(--color-arcane-bright)" }}>{d.abilities[a.key].score}</p>
+                      <p className="font-ui text-[10px] font-bold" style={{ color: "var(--color-muted)" }}>{fmtMod(d.abilities[a.key].mod)}</p>
                     </div>
                   ))}
                 </div>
 
                 <div className="flex flex-wrap gap-4 mb-5">
-                  <Stat icon="fa-heart" label="PG" value={hp || "—"} color="var(--color-ember)" />
-                  <Stat icon="fa-shield-halved" label="Comp." value="+2" color="var(--color-bronze)" />
+                  <Stat icon="fa-heart" label="PG máx" value={d.maxHp} color="var(--color-ember)" />
+                  <Stat icon="fa-shield-halved" label="Comp." value={fmtMod(d.prof)} color="var(--color-bronze)" />
                   <Stat icon="fa-dice-d20" label="Dado" value={cls ? `d${cls.hitDie}` : "—"} color="var(--color-arcane)" />
                   <Stat icon="fa-bag-shopping" label="Objetos" value={Array.isArray(c.inventory) ? c.inventory.length : 0} color="var(--color-primitivo)" />
                 </div>
