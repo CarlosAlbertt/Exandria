@@ -13,8 +13,11 @@ import { CATALOG, ItemCat } from "@/data/equipment";
 import LevelPanel from "@/components/LevelPanel";
 import Paperdoll from "@/components/Paperdoll";
 import PortraitFrame from "@/components/PortraitFrame";
+import InitiativeTracker from "@/components/InitiativeTracker";
 import { derive } from "@/lib/derive";
 import { getMechanics, type ClassFeature } from "@/data/classdata";
+import { useSession } from "@/components/SessionProvider";
+import { publishRoll } from "@/lib/useDiceFeed";
 
 const BUILD_KEY = "taldorei.build.v1";
 const SHEET_KEY = "taldorei.sheet.v1";
@@ -65,6 +68,12 @@ type CharacterSheetProps = {
 };
 
 export default function CharacterSheet({ targetUserId, readOnly, saveMode }: CharacterSheetProps) {
+  // Los botones de tirada (salvación/pericia) solo tienen sentido cuando la
+  // ficha que se muestra es la del propio usuario logueado: el DM editando
+  // la ficha de OTRO jugador (vía ?user=) no debe poder tirar "por" él.
+  const session = useSession();
+  const isOwner = !!session && !!targetUserId && session.id === targetUserId;
+
   const [build, setBuild] = useState<Build>({ ...EMPTY_BUILD });
   const [level, setLevel] = useState(1);
   const [xp, setXp] = useState(0);
@@ -366,6 +375,11 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
         </div>
       </header>
 
+      {/* INICIATIVA EN VIVO: compacta, solo visible mientras hay ronda en curso */}
+      <div className="mb-6">
+        <InitiativeTracker mod={d.abilities.des.mod} hideEmpty />
+      </div>
+
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-6">
           {/* NIVEL + ASI */}
@@ -438,6 +452,16 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                     {sv.proficient && (
                       <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: "var(--color-arcane-bright)" }} title="Competente" />
                     )}
+                    {isOwner && (
+                      <button
+                        className="absolute top-1.5 left-1.5 w-5 h-5 flex items-center justify-center rounded-md transition-colors"
+                        style={{ color: "var(--color-bronze)" }}
+                        title={`Tirar salvación de ${a.name}`}
+                        onClick={() => publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod })}
+                      >
+                        <i className="fas fa-dice-d20 text-[11px]" />
+                      </button>
+                    )}
                     <p className="eyebrow mb-1">{a.abbr}</p>
                     <p className="font-display text-xl font-extrabold" style={{ color: sv.proficient ? "var(--color-arcane-bright)" : "var(--color-warm)" }}>
                       {fmtMod(sv.mod)}
@@ -458,8 +482,20 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                     {s.proficient && <i className="fas fa-circle text-[5px]" style={{ color: "var(--color-bronze)" }} />}
                     {s.name}
                   </span>
-                  <span className="font-ui text-[12px] font-bold" style={{ color: s.proficient ? "var(--color-bronze-bright)" : "var(--color-dim)" }}>
-                    {fmtMod(s.mod)}
+                  <span className="flex items-center gap-2">
+                    {isOwner && (
+                      <button
+                        className="w-5 h-5 flex items-center justify-center rounded-md transition-colors"
+                        style={{ color: "var(--color-bronze)" }}
+                        title={`Tirar ${s.name}`}
+                        onClick={() => publishRoll(session!.id, "skill", s.name, "1d20", { mod: s.mod })}
+                      >
+                        <i className="fas fa-dice-d20 text-[10px]" />
+                      </button>
+                    )}
+                    <span className="font-ui text-[12px] font-bold" style={{ color: s.proficient ? "var(--color-bronze-bright)" : "var(--color-dim)" }}>
+                      {fmtMod(s.mod)}
+                    </span>
                   </span>
                 </div>
               ))}
