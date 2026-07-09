@@ -8,7 +8,7 @@ export const BARBARO: ClassMechanics = {
   saves: ["fue", "con"],
   skillChoices: {
     pick: 2,
-    from: ["Trato con Animales", "Atletismo", "Intimidación", "Naturaleza", "Percepción", "Supervivencia"],
+    from: ["Atletismo", "Intimidación", "Naturaleza", "Percepción", "Supervivencia", "Trato con Animales"],
   },
   armor: ["ligera", "media", "escudos"],
   weapons: ["sencillas", "marciales"],
@@ -50,7 +50,7 @@ export const BARBARO: ClassMechanics = {
     {
       level: 3,
       name: "Conocimiento Primal",
-      blurb: "Mientras está enfurecido, el bárbaro puede volverse experto temporalmente en una pericia de Fuerza que no domine.",
+      blurb: "El bárbaro gana competencia en una pericia adicional de la lista de su clase y, mientras está enfurecido, puede usar Fuerza en las pruebas de ciertas pericias.",
     },
     {
       level: 4,
