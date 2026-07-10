@@ -23,19 +23,35 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
 ## Estructura
 - `app/` — páginas: `/` (home), `/reino` (lore), `/crear` (creador de
   personaje), `/inventario`, `/mapa`, `/taberna` (NPC IA), `/narrador`
-  (chat IA personal), `/login`, `/dm` (panel DM).
+  (chat IA personal), `/cronica` (diario/misiones/PNJ del grupo), `/login`,
+  `/dm` (panel DM).
 - `app/dm/` — `DmDashboard.tsx` con pestañas: Narración (`NarracionPanel` +
-  `AiConfigPanel`), Grupo (`GrupoPanel`), Regiones (`RegionesPanel`), Mapa
+  `AiConfigPanel`), Grupo (`GrupoPanel`), Baúl (`BaulPanel`), Dados
+  (`DadosPanel`: pedir tiradas, iniciativa), Crónica (`CronicaPanel`: diario,
+  misiones, PNJ, fecha), **Mesa** (`EncuentrosPanel`: calculadora de
+  encuentros + notas privadas del DM), Regiones (`RegionesPanel`), Mapa
   (`MapaPanel`), Usuarios (`UsuariosPanel`).
 - `app/api/` — `ia` (proxy a Ollama), `admin/users` (crear usuarios,
-  service_role), `version` (commit desplegado).
-- `data/` — `species.ts` (10 especies + linajes), `classes.ts` (12 clases ×4
-  subclases), `backgrounds.ts` (16), `rules.ts` (aptitudes/pericias/point-buy),
-  `taldorei.ts` (regiones+MAPS+REGION_RATIO+lore), `pois.ts`, `npcs.ts`,
-  `equipment.ts`, `loreText.ts` (guía de narración + lore para la IA).
+  service_role), `dm/character` (el DM edita/entrega en la hoja de cualquier
+  jugador: `setLevel`, `addXp`, `addItems`, `addGold`, service_role), `version`
+  (commit desplegado).
+- `data/` — `species.ts` (10 especies + linajes), `classes.ts` (13 clases ×4
+  subclases, incl. Cazador de Sangre), `classdata/` (datos mecánicos 2024 por
+  clase: rasgos, tabla de progresión, espacios de conjuro — un archivo por
+  clase + `spellSlots.ts`/`types.ts`), `backgrounds.ts` (16), `rules.ts`
+  (aptitudes/pericias/point-buy), `leveling.ts` (competencia, PG, ASI, tabla
+  XP 2024), `encounters.ts` (presupuesto de XP por dificultad + XP por CR,
+  DMG 2024), `taldorei.ts` (regiones+MAPS+REGION_RATIO+lore), `pois.ts`,
+  `npcs.ts`, `equipment.ts`, `equipmentSlots.ts`, `loreText.ts` (guía de
+  narración + lore para la IA).
 - `lib/` — `supabase/{client,server,env,proxy-session}.ts`, `auth.ts`,
-  `character.ts` (+`useParty`), hooks realtime: `useLiveSession`, `useRegions`,
-  `usePois`, `useGroupAction`, `useNpcChat`, `narrador.ts` (cliente `/api/ia`).
+  `character.ts` (+`useParty`), `derive.ts` (motor de ficha derivada: PG, CA,
+  modificadores, salvaciones, pericias — misma fuente de verdad para hoja y
+  panel DM), `dice.ts` (tiradas), `gameDate.ts` (festividades por fecha de
+  campaña), hooks realtime: `useLiveSession`, `useRegions`, `usePois`,
+  `useGroupAction`, `useNpcChat`, `useDiceFeed`, `useRollRequests`,
+  `useInitiative`, `useChronicle`, `useDmStash`, `useTaldorei`,
+  `useWorldPois`, `narrador.ts` (cliente `/api/ia`).
 - `components/` — SiteNav/Footer, EpicOverlay, GroupConsensus, RegionExplore,
   PinDragMap, RegionCard, Emblem, SessionProvider, ErrorBoundary.
 - `public/maps/` — `taldorei.jpg` es ahora el **mapa del mundo de Exandria**
@@ -167,6 +183,48 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
+## RESUELTO (2026-07-10): Kit D&D completo — clases, ficha, dados, crónica, encuentros
+Trabajo directo en `master` (sin rama aparte). Plan en
+`docs/superpowers/plans/2026-07-09-dnd-toolkit.md` (12 tareas).
+
+1. **Datos mecánicos de clase 2024** (`data/classdata/`): las 13 clases (12
+   PHB + Cazador de Sangre) con rasgos por nivel, tabla de progresión y
+   espacios de conjuro (`spellSlots.ts`: full/half/pact casters).
+2. **Ficha derivada** (`lib/derive.ts`): motor puro que calcula PG, CA,
+   modificadores, salvaciones y pericias a partir de la ficha guardada; es la
+   misma fuente de verdad que usan `/personaje` y Panel DM › Grupo, para que
+   DM y jugador vean siempre los mismos números.
+3. **Dados e iniciativa en vivo** (`schema_v11`): tiradas compartidas
+   (`lib/dice.ts` + `useDiceFeed`), peticiones de tirada del DM al grupo o a
+   un jugador (`useRollRequests`), e iniciativa en vivo con control de turno
+   del DM (`useInitiative`). UI en Panel DM › Dados (`DadosPanel`) y también
+   visible para el jugador en `/personaje`.
+4. **Crónica de campaña** (`schema_v12`): diario de sesión, misiones (activa/
+   completada/fallida/oculta) y PNJ conocidos, más fecha narrativa con
+   festividades (`lib/gameDate.ts`). Página `/cronica` para el grupo (solo ve
+   lo publicado/visible) y Panel DM › Crónica (`CronicaPanel`) con control
+   total, incl. borradores y ocultos.
+5. **Calculadora de encuentros + notas del DM** (Panel DM › Mesa,
+   `EncuentrosPanel`): presupuesto de XP del grupo por dificultad
+   (`data/encounters.ts`, tabla DMG 2024) vs. XP de los monstruos puestos en
+   la mesa, veredicto Baja/Moderada/Alta/Mortal, y botón **Repartir XP**
+   (reparte el XP de los monstruos entre el grupo vía la misma API
+   `/api/dm/character` que usa Grupo). **Notas privadas del DM** por región o
+   personaje, guardadas en `app_config` (`dm_notes`, un JSON por ámbito).
+   *Nota de seguridad*: la política RLS de `app_config` (`schema_v5`) permite
+   `select` a **cualquier usuario autenticado**, no solo al DM — un jugador
+   con acceso a la consola podría leer `dm_notes` llamando directo a la API de
+   Supabase. Aceptable por ahora (juego de confianza entre amigos), pero si se
+   quiere blindar de verdad habría que mover las notas a su propia tabla con
+   política de `select` restringida a `is_dm()`.
+- Verificado: `tsc --noEmit`, `next build` y `eslint` limpios en los archivos
+  tocados; sanity check de `data/encounters.ts` con `tsx` (presupuesto de
+  grupo y XP por CR contra los valores esperados).
+
+> **PENDIENTE del usuario: ejecutar `supabase/schema_v11.sql` y
+> `supabase/schema_v12.sql`** (dados/iniciativa y crónica). Sin ellas la nube
+> ignora esas tablas/columnas.
+
 ## RESUELTO (2026-07-07): Nivel / XP por el DM
 Rama `dm-nivel-xp`. Spec/plan en
 `docs/superpowers/{specs,plans}/2026-07-07-dm-nivel-xp*`.
@@ -283,5 +341,11 @@ Spec y plan en `docs/superpowers/{specs,plans}/2026-07-06-exandria-rebrand-roste
 - **Mergear la rama** `exandria-rebrand-roster` a `master` y desplegar (Vercel).
 
 ## Backlog
-- Dados e iniciativa: tiradas compartidas, pedir tiradas al grupo, orden de
-  iniciativa en vivo. No empezado.
+- **Retratos de personaje**: seguir sin subir (`public/species/`,
+  `public/species/lineages/`, `public/classes/`); ver «PENDIENTE de este
+  milestone» arriba.
+- **Spec de lore de Wildemount** (`docs/wildemount-lore-spec.md`): escrita,
+  pendiente de ejecutar (ampliar la lore del segundo continente jugable).
+- Notas del DM: si algún día importa que sean *de verdad* privadas, moverlas
+  de `app_config` a una tabla propia con RLS `is_dm()`-only (ver nota de
+  seguridad en el milestone 2026-07-10).
