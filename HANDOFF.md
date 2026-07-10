@@ -103,7 +103,8 @@ action_ready, npc_chat) · `schema_v3.sql` (pin_x/pin_y, poi_state) ·
 `schema_v8.sql` (characters: level/gold/asi/equipment/items) · `schema_v9.sql`
 (characters.hp_rolls) · `schema_v10.sql` (characters.xp) · `schema_v11.sql`
 (dice_rolls, roll_requests, initiative — **PENDIENTE de ejecutar por el
-usuario**).
+usuario**) · `schema_v12.sql` (journal_entries, quests, npcs_met,
+app_config.campaign_date — **PENDIENTE de ejecutar por el usuario**).
 
 ## IA / túnel (ritual tras apagar el PC)
 Ver **`GUIA-ARRANQUE.md`**. Resumen: doble clic en
