@@ -90,6 +90,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
 
   const [cat, setCat] = useState<ItemCat>("Aventura");
   const [custom, setCustom] = useState("");
+  const [rollErr, setRollErr] = useState<string | null>(null); // error de publishRoll (salvación/pericia)
 
   // Carga: por targetUserId (nube/API), si no hay sesión → localStorage.
   useEffect(() => {
@@ -375,10 +376,16 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
         </div>
       </header>
 
-      {/* INICIATIVA EN VIVO: compacta, solo visible mientras hay ronda en curso */}
-      <div className="mb-6">
-        <InitiativeTracker mod={d.abilities.des.mod} hideEmpty />
-      </div>
+      {/* INICIATIVA EN VIVO: compacta, solo visible mientras hay ronda en
+          curso y solo en la ficha PROPIA — el tracker tira con la identidad
+          de la sesión, y aquí el mod de DES es el del personaje mostrado:
+          mezclarlos (DM viendo ?user=) publicaría tiradas incoherentes. El
+          DM tiene el tracker completo en su pestaña «Dados». */}
+      {isOwner && (
+        <div className="mb-6">
+          <InitiativeTracker mod={d.abilities.des.mod} hideEmpty />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-6">
@@ -457,7 +464,10 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                         className="absolute top-1.5 left-1.5 w-5 h-5 flex items-center justify-center rounded-md transition-colors"
                         style={{ color: "var(--color-bronze)" }}
                         title={`Tirar salvación de ${a.name}`}
-                        onClick={() => publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod })}
+                        onClick={async () => {
+                          const { error } = await publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod });
+                          setRollErr(error);
+                        }}
                       >
                         <i className="fas fa-dice-d20 text-[11px]" />
                       </button>
@@ -470,6 +480,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                 );
               })}
             </div>
+            {rollErr && <p className="text-[12px] mt-2 italic" style={{ color: "var(--color-ember)" }}>{rollErr}</p>}
           </section>
 
           {/* PERICIAS */}
@@ -488,7 +499,10 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                         className="w-5 h-5 flex items-center justify-center rounded-md transition-colors"
                         style={{ color: "var(--color-bronze)" }}
                         title={`Tirar ${s.name}`}
-                        onClick={() => publishRoll(session!.id, "skill", s.name, "1d20", { mod: s.mod })}
+                        onClick={async () => {
+                          const { error } = await publishRoll(session!.id, "skill", s.name, "1d20", { mod: s.mod });
+                          setRollErr(error);
+                        }}
                       >
                         <i className="fas fa-dice-d20 text-[10px]" />
                       </button>
@@ -500,6 +514,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                 </div>
               ))}
             </div>
+            {rollErr && <p className="text-[12px] mt-2 italic" style={{ color: "var(--color-ember)" }}>{rollErr}</p>}
           </section>
 
           {/* RASGOS DE CLASE + RECURSOS */}

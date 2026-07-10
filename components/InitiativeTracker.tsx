@@ -29,6 +29,7 @@ export default function InitiativeTracker({ mod = 0, hideEmpty = false }: Props)
   const { rows } = useInitiative();
 
   const [rolling, setRolling] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const [npcName, setNpcName] = useState("");
   const [npcValue, setNpcValue] = useState("");
 
@@ -43,8 +44,14 @@ export default function InitiativeTracker({ mod = 0, hideEmpty = false }: Props)
   async function rollInitiative() {
     if (!myId || rolling) return;
     setRolling(true);
+    setErr(null);
     const { error, result } = await publishRoll(myId, "ability", "Iniciativa", "1d20", { mod });
-    if (!error && result) await setMyInitiative(myId, result.total);
+    if (error || !result) {
+      setErr(error ?? "No se pudo tirar la iniciativa.");
+    } else {
+      const { error: saveError } = await setMyInitiative(myId, result.total);
+      if (saveError) setErr(saveError);
+    }
     setRolling(false);
   }
 
@@ -72,6 +79,8 @@ export default function InitiativeTracker({ mod = 0, hideEmpty = false }: Props)
           <i className="fas fa-dice-d20 mr-1.5" />{rolling ? "Tirando…" : "Tirar iniciativa"}
         </button>
       </div>
+
+      {err && <p className="text-[12px] mb-2 italic" style={{ color: "var(--color-ember)" }}>{err}</p>}
 
       {rows.length === 0 ? (
         <p className="font-ui text-[13px] text-center py-3" style={{ color: "var(--color-dim)" }}>Sin ronda de iniciativa en curso.</p>

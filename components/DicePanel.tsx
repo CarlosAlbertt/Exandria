@@ -31,9 +31,11 @@ export default function DicePanel() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // useParty excluye al DM, así que un id desconocido que no es el mío solo
+  // puede ser el DM (todos los demás usuarios tienen su ficha en party).
   const nameFor = (userId: string) => {
     if (userId === myId) return session?.username ?? "Tú";
-    return party.find((p) => p.user_id === userId)?.username ?? "¿?";
+    return party.find((p) => p.user_id === userId)?.username ?? "Director de Juego";
   };
 
   // Solo peticiones dirigidas al grupo o a mí.
@@ -46,10 +48,12 @@ export default function DicePanel() {
   const formulaInvalid = !!formula.trim() && !parsedFormula;
 
   async function rollQuick(die: number) {
-    if (!myId) return;
+    if (!myId || busy) return;
+    setBusy(true);
     setErr(null);
     const { error } = await publishRoll(myId, "custom", "dado rápido", `1d${die}`, isDM ? { priv } : undefined);
     if (error) setErr(error);
+    setBusy(false);
   }
 
   async function rollFormula() {
