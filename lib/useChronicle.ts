@@ -101,3 +101,72 @@ export function useChronicle() {
 
   return { entries, quests, npcs, campaignDate, ready };
 }
+
+/* ------------------------------ Mutaciones ------------------------------ */
+/* Solo el DM puede escribir (RLS); estas funciones no comprueban rol, se */
+/* limitan a insertar/actualizar y devolver { error }. El panel DM (único */
+/* punto que las llama) ya está protegido por /dm. */
+
+// Crea (sin id) o actualiza (con id) una entrada de diario.
+export async function saveJournalEntry(patch: Partial<JournalEntry> & { id?: number }): Promise<{ error: string | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado" };
+  const supabase = createClient();
+  const { id, ...rest } = patch;
+  if (id == null) {
+    const { error } = await supabase.from("journal_entries").insert(rest);
+    return { error: error?.message ?? null };
+  }
+  const { error } = await supabase.from("journal_entries").update({ ...rest, updated_at: new Date().toISOString() }).eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+export async function deleteJournalEntry(id: number): Promise<{ error: string | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado" };
+  const { error } = await createClient().from("journal_entries").delete().eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+// Crea (sin id) o actualiza (con id) una misión.
+export async function saveQuest(patch: Partial<Quest> & { id?: number }): Promise<{ error: string | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado" };
+  const supabase = createClient();
+  const { id, ...rest } = patch;
+  if (id == null) {
+    const { error } = await supabase.from("quests").insert(rest);
+    return { error: error?.message ?? null };
+  }
+  const { error } = await supabase.from("quests").update({ ...rest, updated_at: new Date().toISOString() }).eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+export async function deleteQuest(id: number): Promise<{ error: string | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado" };
+  const { error } = await createClient().from("quests").delete().eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+// Crea (sin id) o actualiza (con id) un PNJ conocido.
+export async function saveNpc(patch: Partial<NpcMet> & { id?: number }): Promise<{ error: string | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado" };
+  const supabase = createClient();
+  const { id, ...rest } = patch;
+  if (id == null) {
+    const { error } = await supabase.from("npcs_met").insert(rest);
+    return { error: error?.message ?? null };
+  }
+  const { error } = await supabase.from("npcs_met").update(rest).eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+export async function deleteNpc(id: number): Promise<{ error: string | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado" };
+  const { error } = await createClient().from("npcs_met").delete().eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+// Actualiza la fecha narrativa actual (app_config, clave campaign_date).
+export async function setCampaignDate(value: string): Promise<{ error: string | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado" };
+  const { error } = await createClient().from("app_config").upsert({ key: DATE_KEY, value, updated_at: new Date().toISOString() });
+  return { error: error?.message ?? null };
+}
