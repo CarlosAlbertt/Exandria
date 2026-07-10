@@ -3,6 +3,7 @@ import { HISTORY, FACTIONS } from "@/data/taldorei";
 import { HISTORY_TIMELINE } from "@/data/history";
 import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS, type Deity } from "@/data/pantheon";
 import { CALENDAR, SEASONS, HOLIDAYS, MOONS, PLANES, WORLD_INTRO } from "@/data/cosmology";
+import { WILDEMOUNT_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "@/data/wildemount";
 import ReinoRegions from "@/components/ReinoRegions";
 
 export const metadata: Metadata = {
@@ -146,6 +147,73 @@ export default function ReinoPage() {
               <p style={{ color: "var(--color-muted)", fontSize: "14px", lineHeight: 1.55 }}>{f.blurb}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* WILDEMOUNT */}
+      <section className="mb-20">
+        <h2 className="font-display text-2xl font-bold mb-2 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
+          <i className="fas fa-map text-[var(--color-bronze)]" /> Wildemount — al otro lado del Mar Lucidiano
+        </h2>
+        <p className="prose-lore !text-[14px] mb-8" style={{ color: "var(--color-muted)" }}>
+          Un continente en guerra: el Imperio Dwendaliano y la Dinastía Kryn se disputan las balizas del Luxon
+          mientras ciudades-estado, culto y crimen organizado tejen su propio destino a los márgenes del conflicto.
+        </p>
+
+        <div className="rounded-xl overflow-hidden mb-10 panel" style={{ borderColor: "var(--color-line)" }}>
+          <img src="/maps/wildemount.jpg" alt="Mapa del continente de Wildemount" className="w-full h-auto object-cover" />
+        </div>
+
+        <p className="eyebrow mb-4" style={{ color: "var(--color-arcane)" }}>Regiones</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+          {WILDEMOUNT_REGIONS.map((r) => (
+            <div key={r.slug} className="panel overflow-hidden" style={{ borderColor: `color-mix(in srgb, ${r.accent} 30%, var(--color-line))` }}>
+              {r.image && (
+                <img src={r.image} alt={`Mapa de ${r.name}`} className="w-full h-32 object-cover" />
+              )}
+              <div className="p-5">
+                <h3 className="font-display font-bold text-[16px] mb-1" style={{ color: "var(--color-bronze-bright)" }}>{r.name}</h3>
+                <p className="font-ui text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: r.accent }}>{r.feature}</p>
+                <p className="font-ui text-[12px] mb-2" style={{ color: "var(--color-dim)" }}><strong style={{ color: "var(--color-warm)" }}>Capital:</strong> {r.capital}</p>
+                <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.55 }}>{r.blurb}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="eyebrow mb-4" style={{ color: "var(--color-ember)" }}>Facciones y sociedades</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+          {WILDEMOUNT_FACTIONS.map((f) => (
+            <div key={f.name} className="panel p-5" style={{ borderColor: "var(--color-line)" }}>
+              <h3 className="font-display font-bold text-[15px] mb-1.5" style={{ color: "var(--color-bronze-bright)" }}>{f.name}</h3>
+              <p style={{ color: "var(--color-muted)", fontSize: "14px", lineHeight: 1.55 }}>{f.blurb}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <p className="eyebrow mb-4" style={{ color: "var(--color-divino)" }}>Idiomas</p>
+            <ul className="space-y-3">
+              {LANGUAGES.map((l) => (
+                <li key={l.name} className="panel-raised px-4 py-3">
+                  <p className="font-display font-semibold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{l.name}</p>
+                  <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{l.blurb}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="eyebrow mb-4" style={{ color: "var(--color-divino)" }}>Vida diaria</p>
+            <ul className="space-y-3">
+              {DAILY_LIFE.map((n) => (
+                <li key={n.title} className="panel-raised px-4 py-3">
+                  <p className="font-display font-semibold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{n.title}</p>
+                  <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{n.body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
