@@ -79,8 +79,11 @@ export function useParty() {
     };
     load();
 
+    // Sufijo aleatorio: supabase-js reutiliza el canal si el nombre coincide y
+    // lanza si se añaden callbacks tras subscribe() — con varios useParty
+    // montados a la vez (p. ej. pestaña Dados) el nombre fijo rompía la página.
     const ch = supabase
-      .channel("characters_rt")
+      .channel(`characters_rt_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "characters" }, () => load())
       .subscribe();
 
