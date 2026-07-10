@@ -13,8 +13,9 @@ import AiConfigPanel from "./AiConfigPanel";
 import DadosPanel from "./DadosPanel";
 import CronicaPanel from "./CronicaPanel";
 import EncuentrosPanel from "./EncuentrosPanel";
+import RelojPanel from "./RelojPanel";
 
-type Tab = "narracion" | "grupo" | "baul" | "regiones" | "mapa" | "usuarios" | "dados" | "cronica" | "mesa";
+type Tab = "narracion" | "grupo" | "baul" | "regiones" | "mapa" | "usuarios" | "dados" | "cronica" | "mesa" | "tiempo";
 
 export default function DmDashboard() {
   const [tab, setTab] = useState<Tab>("narracion");
@@ -27,7 +28,7 @@ export default function DmDashboard() {
       </header>
 
       <div className="flex justify-center gap-2 mb-8 flex-wrap">
-        {([["narracion", "Narración", "fa-feather-pointed"], ["grupo", "Grupo", "fa-users-line"], ["baul", "Baúl", "fa-box-archive"], ["dados", "Dados", "fa-dice-d20"], ["cronica", "Crónica", "fa-book-open"], ["mesa", "Mesa", "fa-chess"], ["regiones", "Regiones", "fa-earth-americas"], ["mapa", "Mapa", "fa-map-location-dot"], ["usuarios", "Usuarios", "fa-users"]] as const).map(([id, label, icon]) => (
+        {([["narracion", "Narración", "fa-feather-pointed"], ["grupo", "Grupo", "fa-users-line"], ["baul", "Baúl", "fa-box-archive"], ["dados", "Dados", "fa-dice-d20"], ["cronica", "Crónica", "fa-book-open"], ["mesa", "Mesa", "fa-chess"], ["tiempo", "Tiempo", "fa-clock"], ["regiones", "Regiones", "fa-earth-americas"], ["mapa", "Mapa", "fa-map-location-dot"], ["usuarios", "Usuarios", "fa-users"]] as const).map(([id, label, icon]) => (
           <button key={id} onClick={() => setTab(id)} className="px-4 py-2 rounded-lg font-ui text-[13px] font-bold transition-colors"
             style={{ color: tab === id ? "var(--color-ink)" : "var(--color-muted)", background: tab === id ? "var(--color-bronze)" : "transparent", border: `1px solid ${tab === id ? "var(--color-bronze)" : "var(--color-line)"}` }}>
             <i className={`fas ${icon} mr-2`} />{label}
@@ -41,6 +42,7 @@ export default function DmDashboard() {
       {tab === "dados" && <DadosPanel />}
       {tab === "cronica" && <CronicaPanel />}
       {tab === "mesa" && <EncuentrosPanel />}
+      {tab === "tiempo" && <RelojPanel />}
       {tab === "regiones" && <RegionesPanel />}
       {tab === "mapa" && <MapaPanel />}
       {tab === "usuarios" && <UsuariosPanel />}
