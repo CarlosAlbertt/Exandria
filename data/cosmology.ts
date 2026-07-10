@@ -19,6 +19,9 @@ export const CALENDAR = {
     "Horisal", "Misuthar", "Dualahei", "Thunsheer", "Unndilar", "Brussendar",
     "Sydenstar", "Fessuran", "Quen'pillar", "Cuersaar", "Duscar",
   ],
+  // Longitudes reales de cada mes, mismo orden que `months`.
+  // 29+30+30+31+28+31+32+29+27+29+32 = 328 = yearDays.
+  monthDays: [29, 30, 30, 31, 28, 31, 32, 29, 27, 29, 32],
   // 7 días; Yulisen y Da'leysen son el fin de semana para mucha gente.
   weekdays: ["Miresen", "Grissen", "Whelsen", "Conthsen", "Folsen", "Yulisen", "Da'leysen"],
   weekend: ["Yulisen", "Da'leysen"],
