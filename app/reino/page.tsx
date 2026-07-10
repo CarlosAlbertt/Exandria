@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { HISTORY, FACTIONS } from "@/data/taldorei";
+import { HISTORY_TIMELINE } from "@/data/history";
 import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS, type Deity } from "@/data/pantheon";
 import { CALENDAR, SEASONS, HOLIDAYS, MOONS, PLANES, WORLD_INTRO } from "@/data/cosmology";
 import ReinoRegions from "@/components/ReinoRegions";
@@ -63,6 +64,33 @@ export default function ReinoPage() {
             <li key={i} className="relative pl-8">
               <span className="absolute -left-[11px] top-1 w-5 h-5 rounded-full border-2 border-[var(--color-bronze)] bg-[var(--color-night)]" />
               <p className="eyebrow mb-1" style={{ color: "var(--color-arcane)" }}>{e.year}</p>
+              <h3 className="font-display text-lg font-bold mb-1" style={{ color: "var(--color-parch)" }}>{e.title}</h3>
+              <p className="prose-lore !text-[15px] !mb-0">{e.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* CRONOLOGÍA AMPLIADA */}
+      <section className="mb-20">
+        <h2 className="font-display text-2xl font-bold mb-2 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
+          <i className="fas fa-scroll text-[var(--color-bronze)]" /> Cronología ampliada: de la Fundación a la Guerra de la Ceniza y la Luz
+        </h2>
+        <p className="prose-lore !text-[14px] mb-8" style={{ color: "var(--color-muted)" }}>
+          Los mitos compartidos de Exandria y, tras la Divergencia, el rastro detallado de Wildemount: el ascenso del Imperio Dwendaliano, la Dinastía Kryn y la guerra que hoy los enfrenta.
+        </p>
+        <ol className="relative border-l-2 border-[var(--color-line)] ml-2 space-y-8">
+          {HISTORY_TIMELINE.map((e, i) => (
+            <li key={i} className="relative pl-8">
+              <span className="absolute -left-[11px] top-1 w-5 h-5 rounded-full border-2 border-[var(--color-bronze)] bg-[var(--color-night)]" />
+              <div className="flex items-center gap-2 mb-1">
+                <p className="eyebrow" style={{ color: "var(--color-arcane)" }}>{e.year}</p>
+                {e.continent && (
+                  <span className="font-ui text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ color: "var(--color-ember)", border: "1px solid var(--color-ember)" }}>
+                    {e.continent}
+                  </span>
+                )}
+              </div>
               <h3 className="font-display text-lg font-bold mb-1" style={{ color: "var(--color-parch)" }}>{e.title}</h3>
               <p className="prose-lore !text-[15px] !mb-0">{e.text}</p>
             </li>
