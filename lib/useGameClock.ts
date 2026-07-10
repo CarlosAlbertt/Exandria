@@ -103,21 +103,17 @@ export function useGameClock() {
     };
   }, []);
 
-  // Efecto 2: sincroniza nowGameMin cada vez que cambia el reloj (Realtime o
-  // mutación local) y, mientras corre, lo refresca cada segundo. La
-  // sincronización inicial se difiere con setTimeout(0) (un callback, no una
-  // llamada síncrona en el cuerpo del efecto) para no disparar el aviso de
-  // "setState síncrono en efecto"; el retraso es de un macrotask (~0 ms).
+  // Efecto 2: sincroniza nowGameMin al montar y cada vez que cambia el reloj
+  // (Realtime o mutación local) y, mientras corre, lo refresca cada segundo.
+  // La forma "sincroniza ahora + suscribe (setInterval)" no dispara el aviso
+  // de "setState síncrono en efecto".
   useEffect(() => {
     if (!clock) return;
     const sync = () => setNowGameMin(currentGameMin(clock, Date.now()));
-    const initial = setTimeout(sync, 0);
-    if (!clock.running) return () => clearTimeout(initial);
+    sync();
+    if (!clock.running) return;
     const id = setInterval(sync, 1000);
-    return () => {
-      clearTimeout(initial);
-      clearInterval(id);
-    };
+    return () => clearInterval(id);
   }, [clock]);
 
   return { clock, nowGameMin, ready };
@@ -142,16 +138,14 @@ async function writeClock(next: CampaignClock): Promise<{ error: string | null }
   return { error: error?.message ?? null };
 }
 
-// Pausa o reanuda el reloj. Al pausar congela el minuto de juego actual
-// (epochGameMin = minuto calculado ahora mismo); al reanudar solo mueve el
-// epoch real, conservando el minuto de juego donde se quedó.
+// Pausa o reanuda el reloj. Reancla el epoch al minuto de juego actual y a
+// "ahora", y fija `running` al valor pedido. Al congelar-y-fijar en ambos
+// casos es idempotente: reanudar un reloj que ya corre no lo rebobina.
 export async function setClockRunning(running: boolean): Promise<{ error: string | null }> {
   if (!supabaseConfigured) return { error: "Supabase no configurado" };
   const cur = (await loadClock()) ?? buildDefaultClock();
   const now = Date.now();
-  const next: CampaignClock = running
-    ? { ...cur, epochRealMs: now, running: true }
-    : { ...cur, epochGameMin: currentGameMin(cur, now), epochRealMs: now, running: false };
+  const next: CampaignClock = { ...cur, epochGameMin: currentGameMin(cur, now), epochRealMs: now, running };
   return writeClock(next);
 }
 
