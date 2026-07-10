@@ -86,22 +86,8 @@ export const REGIONS: Region[] = [
   { slug: "litoral-filofulgor", name: "Litoral de Filofulgor", capital: "Bys", accent: "var(--color-ember)", feature: "Costa oriental ardiente", blurb: "La costa más lejana y agreste, de acantilados cortantes y asentamientos fronterizos que miran al mar abierto.", image: "/maps/regions/litoral-filofulgor.jpg", map: { x: 44, y: 50 } },
 ];
 
-export type Deity = { name: string; domain: string; side: "Primaria" | "Traidor" };
-
-export const PANTHEON: Deity[] = [
-  { name: "El Padre Tormenta", domain: "Guerra y honor", side: "Primaria" },
-  { name: "La Luz del Alba", domain: "Sol, luz y renacer", side: "Primaria" },
-  { name: "La Madre Salvaje", domain: "Naturaleza y bestias", side: "Primaria" },
-  { name: "El Forjador", domain: "Creación y artesanía", side: "Primaria" },
-  { name: "La Matriarca de Cuervos", domain: "Muerte y destino", side: "Primaria" },
-  { name: "El Custodio del Conocimiento", domain: "Saber y aprendizaje", side: "Primaria" },
-  { name: "El Caminante de los Páramos", domain: "Naturaleza salvaje", side: "Primaria" },
-  { name: "La Dama de los Lazos", domain: "Amor y belleza", side: "Primaria" },
-  { name: "La Reina Carmesí", domain: "Conquista y dominio", side: "Traidor" },
-  { name: "El Caos Errante", domain: "Destrucción y locura", side: "Traidor" },
-  { name: "El Engañador", domain: "Mentira y traición", side: "Traidor" },
-  { name: "La Tejedora de Plagas", domain: "Enfermedad y muerte", side: "Traidor" },
-];
+// El panteón canónico completo vive ahora en data/pantheon.ts
+// (PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS, PANTHEON de compatibilidad).
 
 export type Faction = { name: string; blurb: string };
 

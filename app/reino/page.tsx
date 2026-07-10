@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { HISTORY, PANTHEON, FACTIONS } from "@/data/taldorei";
+import { HISTORY, FACTIONS } from "@/data/taldorei";
+import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS, type Deity } from "@/data/pantheon";
 import { CALENDAR, SEASONS, HOLIDAYS, MOONS, PLANES, WORLD_INTRO } from "@/data/cosmology";
 import ReinoRegions from "@/components/ReinoRegions";
 
@@ -8,10 +9,42 @@ export const metadata: Metadata = {
   description: "Historia, continentes, panteón, calendario y cosmología de Exandria. La campaña transcurre en Tal'Dorei.",
 };
 
-export default function ReinoPage() {
-  const primarias = PANTHEON.filter((d) => d.side === "Primaria");
-  const traidores = PANTHEON.filter((d) => d.side === "Traidor");
+function DeityCard({ deity, accent }: { deity: Deity; accent: string }) {
+  return (
+    <li
+      className="panel-raised px-4 py-3.5"
+      style={{ borderColor: `color-mix(in srgb, ${accent} 30%, var(--color-line))` }}
+    >
+      <div className="flex items-baseline justify-between gap-3 mb-1">
+        <span className="font-display font-semibold text-[15px]" style={{ color: "var(--color-parch)" }}>
+          {deity.name}
+        </span>
+        <span className="font-ui text-[11px] font-bold uppercase tracking-wide" style={{ color: accent }}>
+          {deity.alignment}
+        </span>
+      </div>
+      <p className="font-ui text-[12px] italic mb-2" style={{ color: "var(--color-muted)" }}>{deity.epithet}</p>
+      <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.55 }} className="mb-2">{deity.blurb}</p>
+      <div className="font-ui text-[11px] mb-2" style={{ color: "var(--color-dim)" }}>
+        <p><strong style={{ color: "var(--color-warm)" }}>Esfera:</strong> {deity.province}</p>
+        <p><strong style={{ color: "var(--color-warm)" }}>Símbolo:</strong> {deity.symbol}</p>
+        {deity.holyDay && (
+          <p><strong style={{ color: "var(--color-warm)" }}>Día santo:</strong> {deity.holyDay.name} — {deity.holyDay.date}</p>
+        )}
+        {deity.patron && (
+          <p><strong style={{ color: "var(--color-warm)" }}>Patrón de brujo:</strong> {deity.patron}</p>
+        )}
+      </div>
+      <ul className="list-disc list-inside space-y-0.5">
+        {deity.commandments.map((c) => (
+          <li key={c} className="font-ui text-[12px]" style={{ color: "var(--color-muted)" }}>{c}</li>
+        ))}
+      </ul>
+    </li>
+  );
+}
 
+export default function ReinoPage() {
   return (
     <main className="max-w-5xl mx-auto px-6 py-16">
       <header className="text-center mb-14 reveal">
@@ -45,29 +78,31 @@ export default function ReinoPage() {
         <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
           <i className="fas fa-sun text-[var(--color-bronze)]" /> Panteón de Exandria
         </h2>
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 mb-10">
           <div>
             <p className="eyebrow mb-4" style={{ color: "var(--color-divino)" }}>Deidades primarias</p>
-            <ul className="space-y-2">
-              {primarias.map((d) => (
-                <li key={d.name} className="panel-raised px-4 py-3 flex items-center justify-between">
-                  <span className="font-display font-semibold text-[15px]" style={{ color: "var(--color-parch)" }}>{d.name}</span>
-                  <span className="font-ui text-[12px]" style={{ color: "var(--color-muted)" }}>{d.domain}</span>
-                </li>
+            <ul className="space-y-3">
+              {PRIME_DEITIES.map((d) => (
+                <DeityCard key={d.slug} deity={d} accent="var(--color-divino)" />
               ))}
             </ul>
           </div>
           <div>
             <p className="eyebrow mb-4" style={{ color: "var(--color-ember)" }}>Dioses traidores</p>
-            <ul className="space-y-2">
-              {traidores.map((d) => (
-                <li key={d.name} className="panel-raised px-4 py-3 flex items-center justify-between" style={{ borderColor: "color-mix(in srgb, var(--color-ember) 30%, var(--color-line))" }}>
-                  <span className="font-display font-semibold text-[15px]" style={{ color: "var(--color-parch)" }}>{d.name}</span>
-                  <span className="font-ui text-[12px]" style={{ color: "var(--color-muted)" }}>{d.domain}</span>
-                </li>
+            <ul className="space-y-3">
+              {BETRAYER_GODS.map((d) => (
+                <DeityCard key={d.slug} deity={d} accent="var(--color-ember)" />
               ))}
             </ul>
           </div>
+        </div>
+        <div>
+          <p className="eyebrow mb-4" style={{ color: "var(--color-violet)" }}>Ídolos menores</p>
+          <ul className="grid md:grid-cols-2 gap-3">
+            {LESSER_IDOLS.map((d) => (
+              <DeityCard key={d.slug} deity={d} accent="var(--color-violet)" />
+            ))}
+          </ul>
         </div>
       </section>
 
