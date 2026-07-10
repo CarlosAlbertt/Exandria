@@ -38,17 +38,17 @@ export type NpcMet = {
 const ENTRY_FIELDS = "id, session_no, title, body, game_date, visible, created_at, updated_at";
 const QUEST_FIELDS = "id, title, body, status, created_at, updated_at";
 const NPC_FIELDS = "id, name, role, notes, region, visible, created_at";
-const DATE_KEY = "campaign_date";
 
-// Crónica de campaña: diario de sesión, misiones y PNJ conocidos, más la
-// fecha narrativa actual. Tres tablas de un mismo dominio que se renderizan
-// juntas en /cronica, de ahí un único hook (recarga completa por evento,
-// como useParty: tablas pequeñas).
+// Crónica de campaña: diario de sesión, misiones y PNJ conocidos. Tres
+// tablas de un mismo dominio que se renderizan juntas en /cronica, de ahí un
+// único hook (recarga completa por evento, como useParty: tablas pequeñas).
+// La fecha narrativa ya no vive aquí: la deriva `lib/useGameClock.ts` del
+// reloj de campaña (`app_config.campaign_clock`); `campaign_date` (texto
+// libre) queda deprecado.
 export function useChronicle() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [npcs, setNpcs] = useState<NpcMet[]>([]);
-  const [campaignDate, setCampaignDate] = useState("");
   const [ready, setReady] = useState(() => !supabaseConfigured);
 
   useEffect(() => {
@@ -78,28 +78,19 @@ export function useChronicle() {
         .order("name", { ascending: true })
         .then(({ data }) => { if (mounted && data) setNpcs(data as NpcMet[]); });
 
-    const loadDate = () =>
-      supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", DATE_KEY)
-        .maybeSingle()
-        .then(({ data }) => { if (mounted) setCampaignDate(data?.value ?? ""); });
-
-    Promise.all([loadEntries(), loadQuests(), loadNpcs(), loadDate()]).then(() => { if (mounted) setReady(true); });
+    Promise.all([loadEntries(), loadQuests(), loadNpcs()]).then(() => { if (mounted) setReady(true); });
 
     const ch = supabase
       .channel(`chronicle_rt_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "journal_entries" }, () => loadEntries())
       .on("postgres_changes", { event: "*", schema: "public", table: "quests" }, () => loadQuests())
       .on("postgres_changes", { event: "*", schema: "public", table: "npcs_met" }, () => loadNpcs())
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_config", filter: `key=eq.${DATE_KEY}` }, () => loadDate())
       .subscribe();
 
     return () => { mounted = false; supabase.removeChannel(ch); };
   }, []);
 
-  return { entries, quests, npcs, campaignDate, ready };
+  return { entries, quests, npcs, ready };
 }
 
 /* ------------------------------ Mutaciones ------------------------------ */
@@ -161,12 +152,5 @@ export async function saveNpc(patch: Partial<NpcMet> & { id?: number }): Promise
 export async function deleteNpc(id: number): Promise<{ error: string | null }> {
   if (!supabaseConfigured) return { error: "Supabase no configurado" };
   const { error } = await createClient().from("npcs_met").delete().eq("id", id);
-  return { error: error?.message ?? null };
-}
-
-// Actualiza la fecha narrativa actual (app_config, clave campaign_date).
-export async function setCampaignDate(value: string): Promise<{ error: string | null }> {
-  if (!supabaseConfigured) return { error: "Supabase no configurado" };
-  const { error } = await createClient().from("app_config").upsert({ key: DATE_KEY, value, updated_at: new Date().toISOString() });
   return { error: error?.message ?? null };
 }

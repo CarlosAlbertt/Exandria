@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useChronicle, type Quest } from "@/lib/useChronicle";
 import { REGIONS } from "@/data/taldorei";
 import { holidayFor } from "@/lib/gameDate";
+import { useGameClock } from "@/lib/useGameClock";
+import { momentFromGameMin } from "@/lib/gameClock";
 
 const QUEST_BADGE: Record<Quest["status"], { icon: string; color: string; label: string }> = {
   activa: { icon: "fa-scroll", color: "var(--color-bronze)", label: "En curso" },
@@ -15,10 +17,12 @@ const QUEST_BADGE: Record<Quest["status"], { icon: string; color: string; label:
 const regionName = (slug: string | null) => (slug ? REGIONS.find((r) => r.slug === slug)?.name ?? null : null);
 
 export default function CronicaView() {
-  const { entries, quests, npcs, campaignDate, ready } = useChronicle();
+  const { entries, quests, npcs } = useChronicle();
+  const { nowGameMin, ready } = useGameClock();
   const [showClosed, setShowClosed] = useState(false);
 
-  const holiday = campaignDate ? holidayFor(campaignDate) : null;
+  const moment = momentFromGameMin(nowGameMin);
+  const holiday = moment.holiday ? holidayFor(moment.dateStr) : null;
   const active = quests.filter((q) => q.status === "activa");
   const closed = quests.filter((q) => q.status === "completada" || q.status === "fallida");
 
@@ -28,11 +32,11 @@ export default function CronicaView() {
         <p className="eyebrow mb-3">Registro de la campaña</p>
         <h1 className="font-display text-4xl md:text-5xl font-extrabold gold-text">La Crónica</h1>
 
-        {ready && campaignDate && (
+        {ready && (
           <div className="mt-6 inline-flex flex-col items-center gap-3">
             <p className="font-display text-lg font-semibold" style={{ color: "var(--color-parch)" }}>
               <i className="fas fa-hourglass-half mr-2" style={{ color: "var(--color-bronze)" }} />
-              Fecha en Exandria: <span style={{ color: "var(--color-bronze-bright)" }}>{campaignDate}</span>
+              Fecha en Exandria: <span style={{ color: "var(--color-bronze-bright)" }}>{moment.dateStr}</span>
             </p>
             {holiday && (
               <div className="panel-raised px-4 py-2.5 max-w-md" style={{ borderColor: "color-mix(in srgb, var(--color-divino) 40%, var(--color-line))" }}>

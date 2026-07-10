@@ -6,10 +6,8 @@ import {
   saveJournalEntry, deleteJournalEntry,
   saveQuest, deleteQuest,
   saveNpc, deleteNpc,
-  setCampaignDate,
   type JournalEntry, type Quest, type NpcMet,
 } from "@/lib/useChronicle";
-import { holidayFor } from "@/lib/gameDate";
 import { REGIONS } from "@/data/taldorei";
 
 const QUEST_LABEL: Record<Quest["status"], string> = {
@@ -21,15 +19,16 @@ const QUEST_COLOR: Record<Quest["status"], string> = {
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors";
 
-// Pestaña DM "Crónica": fecha narrativa + tres listas gestionadas (diario,
-// misiones, PNJ). El hook useChronicle ya trae todo (RLS: el DM ve también
-// borradores y ocultos).
+// Pestaña DM "Crónica": tres listas gestionadas (diario, misiones, PNJ). El
+// hook useChronicle ya trae todo (RLS: el DM ve también borradores y
+// ocultos). La fecha narrativa ya no se edita aquí: la controla el reloj de
+// campaña (pestaña "Tiempo").
 export default function CronicaPanel() {
-  const { entries, quests, npcs, campaignDate } = useChronicle();
+  const { entries, quests, npcs } = useChronicle();
 
   return (
     <div className="space-y-6">
-      <FechaSection campaignDate={campaignDate} />
+      <FechaNota />
       <DiarioSection entries={entries} />
       <MisionesSection quests={quests} />
       <PnjSection npcs={npcs} />
@@ -38,44 +37,13 @@ export default function CronicaPanel() {
 }
 
 /* ------------------------------ FECHA ------------------------------ */
-function FechaSection({ campaignDate }: { campaignDate: string }) {
-  const [value, setValue] = useState("");
-  const [touched, setTouched] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const current = touched ? value : campaignDate;
-  const holiday = holidayFor(current);
-
-  async function save() {
-    setBusy(true); setErr(null);
-    const { error } = await setCampaignDate(current.trim());
-    setBusy(false);
-    if (error) setErr(error);
-    else setTouched(false);
-  }
-
+function FechaNota() {
   return (
     <section className="panel p-5">
-      <p className="eyebrow mb-3"><i className="fas fa-hourglass-half mr-1.5" style={{ color: "var(--color-bronze)" }} />Fecha de campaña</p>
-      <div className="flex gap-2 flex-wrap items-start">
-        <input
-          value={current}
-          onChange={(e) => { setValue(e.target.value); setTouched(true); }}
-          placeholder="Ej.: 12 de Sydenstar, 836 PD"
-          className={`${inputCls} flex-1 min-w-[220px]`}
-          style={{ color: "var(--color-warm)" }}
-        />
-        <button className="btn-gold !py-2 !px-4 text-[12px]" onClick={save} disabled={busy || !current.trim()}>
-          <i className="fas fa-floppy-disk mr-1.5" />Guardar
-        </button>
-      </div>
-      {holiday && (
-        <p className="text-[13px] mt-3 italic" style={{ color: "var(--color-divino)" }}>
-          <i className="fas fa-star mr-1.5" />Hoy es {holiday.name}: {holiday.blurb}
-        </p>
-      )}
-      {err && <p className="text-[12px] mt-2 italic" style={{ color: "var(--color-ember)" }}>{err}</p>}
+      <p className="text-[13px]" style={{ color: "var(--color-muted)" }}>
+        <i className="fas fa-clock mr-1.5" style={{ color: "var(--color-bronze)" }} />
+        La fecha ahora se controla en la pestaña Tiempo.
+      </p>
     </section>
   );
 }

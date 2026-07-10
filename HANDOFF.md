@@ -28,9 +28,10 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
 - `app/dm/` — `DmDashboard.tsx` con pestañas: Narración (`NarracionPanel` +
   `AiConfigPanel`), Grupo (`GrupoPanel`), Baúl (`BaulPanel`), Dados
   (`DadosPanel`: pedir tiradas, iniciativa), Crónica (`CronicaPanel`: diario,
-  misiones, PNJ, fecha), **Mesa** (`EncuentrosPanel`: calculadora de
-  encuentros + notas privadas del DM), Regiones (`RegionesPanel`), Mapa
-  (`MapaPanel`), Usuarios (`UsuariosPanel`).
+  misiones, PNJ), **Mesa** (`EncuentrosPanel`: calculadora de encuentros +
+  notas privadas del DM), **Tiempo** (`RelojPanel`: play/pausa, avance rápido
+  de descansos/días, fijar fecha y hora del reloj de campaña), Regiones
+  (`RegionesPanel`), Mapa (`MapaPanel`), Usuarios (`UsuariosPanel`).
 - `app/api/` — `ia` (proxy a Ollama), `admin/users` (crear usuarios,
   service_role), `dm/character` (el DM edita/entrega en la hoja de cualquier
   jugador: `setLevel`, `addXp`, `addItems`, `addGold`, service_role), `version`
@@ -48,12 +49,18 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
   `character.ts` (+`useParty`), `derive.ts` (motor de ficha derivada: PG, CA,
   modificadores, salvaciones, pericias — misma fuente de verdad para hoja y
   panel DM), `dice.ts` (tiradas), `gameDate.ts` (festividades por fecha de
-  campaña), hooks realtime: `useLiveSession`, `useRegions`, `usePois`,
-  `useGroupAction`, `useNpcChat`, `useDiceFeed`, `useRollRequests`,
-  `useInitiative`, `useChronicle`, `useDmStash`, `useTaldorei`,
-  `useWorldPois`, `narrador.ts` (cliente `/api/ia`).
+  campaña, formato "D de Mes, AAAA PD"), `gameClock.ts` (derivación pura del
+  reloj: minuto de juego absoluto ↔ fecha/hora/estación/luna/festividad;
+  `momentFromGameMin`/`gameMinFromMoment`), `useGameClock.ts` (hook +
+  mutaciones del reloj de campaña, ver «Reloj de campaña» abajo), hooks
+  realtime: `useLiveSession`, `useRegions`, `usePois`, `useGroupAction`,
+  `useNpcChat`, `useDiceFeed`, `useRollRequests`, `useInitiative`,
+  `useChronicle`, `useDmStash`, `useTaldorei`, `useWorldPois`, `narrador.ts`
+  (cliente `/api/ia`).
 - `components/` — SiteNav/Footer, EpicOverlay, GroupConsensus, RegionExplore,
-  PinDragMap, RegionCard, Emblem, SessionProvider, ErrorBoundary.
+  PinDragMap, RegionCard, Emblem, SessionProvider, ErrorBoundary,
+  `ClockWidget` (reloj de campaña: variante compacta en la barra de
+  navegación y variante grande en paneles).
 - `public/maps/` — `taldorei.jpg` es ahora el **mapa del mundo de Exandria**
   (2560×1707, horizontal; sustituyó al mapa vertical solo-continente).
   `public/maps/pueblos/` — mapas de pueblo (emon, oestruun, piedrablanca,
@@ -109,6 +116,13 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
 - **IA** vía `/api/ia` → Ollama. Host resoluble desde `app_config.ollama_host`
   (editable por el DM, sin redeploy) o `OLLAMA_HOST` (env). Modelo por defecto
   `qwen2.5:14b`.
+- **Reloj de campaña en tiempo real**: corre solo a razón de **10 min reales =
+  1 h de juego**, sincronizado en vivo por Realtime (`app_config.campaign_clock`,
+  JSON, sin migración). Widget compacto en `SiteNav` y grande en Panel DM ›
+  **Tiempo** (`RelojPanel`: play/pausa, +1 h/descanso corto/largo/+1 día, fijar
+  fecha y hora exactas). La Crónica (`/cronica` y Panel DM › Crónica) muestra
+  la fecha derivada del reloj en vez de texto libre; `app_config.campaign_date`
+  queda **deprecado** (ya no se lee ni se escribe).
 
 ## Migraciones Supabase (ejecutar en orden si faltan)
 `schema.sql` (profiles, region_state, live_session, is_dm(), RLS, Realtime,
@@ -182,6 +196,42 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   defecto* pero la fuente de verdad en producción, una vez editado algo, es
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
+
+## RESUELTO (2026-07-11): Calendario exandriano en tiempo real
+Trabajo directo en `master` (sin rama aparte). Plan en
+`docs/superpowers/plans/2026-07-11-calendario-tiempo-real.md` (5 tareas);
+diseño en `docs/superpowers/specs/2026-07-11-atlas-y-calendario-design.md`.
+
+1. **Longitudes de mes + derivación pura** (`data/cosmology.ts`: `monthDays`;
+   `lib/gameClock.ts`): convierte un minuto de juego absoluto (desde año 0 PD)
+   en `GameMoment` (año/mes/día/hora/minuto/día de la semana/estación/fase
+   lunar de Catha/festividad/`dateStr`) y viceversa
+   (`momentFromGameMin`/`gameMinFromMoment`), sin React ni Supabase.
+2. **Fuente y hook del reloj** (`lib/useGameClock.ts`): `campaign_clock` (JSON
+   en `app_config`, **sin migración**) con `epochRealMs`/`epochGameMin`/
+   `running`/`msPerGameMin` (10000 ms = 10 s reales por minuto de juego → 10
+   min reales = 1 h de juego). Arranca corriendo por defecto (836 PD, 1 de
+   Horisal, 08:00 la primera vez). Realtime + tick de 1 s en cliente
+   (`useGameClock()` → `{ clock, nowGameMin, ready }`); mutaciones
+   `setClockRunning`, `advanceGame`, `setGameDateTime`.
+3. **Widget de reloj** (`components/ClockWidget.tsx`): variante compacta en
+   `SiteNav` (icono de luna + fecha/hora) y variante grande (día de semana,
+   fecha completa, hora, estación, fase lunar, chip de festividad).
+4. **Panel DM "Tiempo"** (`app/dm/RelojPanel.tsx`, pestaña en
+   `DmDashboard.tsx`): reloj grande + controles play/pausa, avance rápido
+   (+1 h, descanso corto/largo, +1 día) y formulario para fijar fecha/hora
+   exactas (selects de mes/día + año/hora/minuto).
+5. **La Crónica lee el reloj**: `CronicaView` y Panel DM › `CronicaPanel` ya
+   no leen `campaign_date` (texto libre); derivan la fecha de
+   `useGameClock()` + `momentFromGameMin`. Se retiró el input manual de fecha
+   del panel DM (sustituido por una nota que remite a la pestaña Tiempo) y
+   `campaignDate`/`setCampaignDate` se eliminaron de `lib/useChronicle.ts`
+   (sin más consumidores, confirmado por grep). `app_config.campaign_date`
+   queda deprecado: la columna/fila puede seguir existiendo pero nada la lee.
+- Verificado: `tsc --noEmit`, `next build` y `eslint` limpios. Sin
+  credenciales Supabase en este entorno: no se probó en vivo con el reloj
+  corriendo de verdad (Realtime, tick, controles DM); solo build + análisis
+  de código, igual que sesiones anteriores.
 
 ## RESUELTO (2026-07-10): Kit D&D completo — clases, ficha, dados, crónica, encuentros
 Trabajo directo en `master` (sin rama aparte). Plan en
