@@ -53,7 +53,7 @@ export function useGameClock() {
   // de useState, no en un efecto (evita un setState síncrono innecesario).
   const [clock, setClock] = useState<CampaignClock | null>(() => (!supabaseConfigured ? buildDefaultClock() : null));
   const [ready, setReady] = useState(() => !supabaseConfigured);
-  const [nowGameMin, setNowGameMin] = useState(0);
+  const [nowGameMin, setNowGameMin] = useState(() => (!supabaseConfigured ? currentGameMin(buildDefaultClock(), Date.now()) : 0));
 
   // Efecto 1: carga inicial + Realtime. Si no existe la fila, persiste el
   // default para fijar el epoch desde el primer arranque (fire-and-forget).
