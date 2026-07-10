@@ -331,19 +331,22 @@ Spec y plan en `docs/superpowers/{specs,plans}/2026-07-06-exandria-rebrand-roste
    vivo multijugador (igual que sesiones previas).
 
 ### PENDIENTE de este milestone
-- **Subir los retratos reales** (`.jpg`) a `public/species/<slug>.jpg`,
-  `public/species/lineages/<slug-linaje>.jpg` y `public/classes/<slug>.jpg`.
-  Sin ellos se ve un marco con icono (por diseño). Ver README «Imágenes de
-  personaje». Slugs = campo `slug` en `data/species.ts` / `data/classes.ts`;
-  el slug de linaje se deriva con `slugify(nombre)` en `app/crear/page.tsx`.
+- **Iconos de clase subidos** (`public/classes/<slug>.jpg`, 11 archivos,
+  todos < 32 KB) — solo faltan **bardo.jpg** y **paladin.jpg** (no hay icono
+  de origen en el vault); `PortraitFrame` muestra su fallback normal.
+- **Subir los retratos reales restantes** (`.jpg`) a `public/species/<slug>.jpg`
+  y `public/species/lineages/<slug-linaje>.jpg`. Sin ellos se ve un marco con
+  icono (por diseño). Ver README «Imágenes de personaje». Slugs = campo `slug`
+  en `data/species.ts` / `data/classes.ts`; el slug de linaje se deriva con
+  `slugify(nombre)` en `app/crear/page.tsx`.
 - **Mecánica de especies homebrew** (Sangre Bestial): rasgos resumidos, a
   afinar con el DM si se juegan.
 - **Mergear la rama** `exandria-rebrand-roster` a `master` y desplegar (Vercel).
 
 ## Backlog
-- **Retratos de personaje**: seguir sin subir (`public/species/`,
-  `public/species/lineages/`, `public/classes/`); ver «PENDIENTE de este
-  milestone» arriba.
+- **Retratos de personaje**: iconos de clase ya subidos (`public/classes/`,
+  ver «PENDIENTE de este milestone» arriba); siguen sin subir
+  `public/species/` y `public/species/lineages/`.
 - **Spec de lore de Wildemount** (`docs/wildemount-lore-spec.md`): escrita,
   pendiente de ejecutar (ampliar la lore del segundo continente jugable).
 - Notas del DM: si algún día importa que sean *de verdad* privadas, moverlas
