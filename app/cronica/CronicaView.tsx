@@ -14,11 +14,25 @@ const QUEST_BADGE: Record<Quest["status"], { icon: string; color: string; label:
 
 const regionName = (slug: string | null) => (slug ? REGIONS.find((r) => r.slug === slug)?.name ?? null : null);
 
+// Extrae día y mes de una fecha exandriana ("13 de Sydenstar, 836 PD").
+// Devuelve null si el texto no empieza por "D de Mes" (fecha malformada).
+function parseGameDate(text: string): { day: number; month: string } | null {
+  const m = /^(\d{1,2}) de ([A-Za-zÁ-ú']+)/.exec(text.trim());
+  return m ? { day: Number(m[1]), month: m[2].toLowerCase() } : null;
+}
+
+// Coincidencia exacta día+mes: evita que "13 de Fessuran" active "3 de Fessuran".
+function isHolidayDate(campaignDate: string, holidayDate: string): boolean {
+  const a = parseGameDate(campaignDate);
+  const b = parseGameDate(holidayDate);
+  return !!a && !!b && a.day === b.day && a.month === b.month;
+}
+
 export default function CronicaView() {
   const { entries, quests, npcs, campaignDate, ready } = useChronicle();
   const [showClosed, setShowClosed] = useState(false);
 
-  const holiday = campaignDate ? HOLIDAYS.find((h) => campaignDate.includes(h.date)) : undefined;
+  const holiday = campaignDate ? HOLIDAYS.find((h) => isHolidayDate(campaignDate, h.date)) : undefined;
   const active = quests.filter((q) => q.status === "activa");
   const closed = quests.filter((q) => q.status === "completada" || q.status === "fallida");
 
