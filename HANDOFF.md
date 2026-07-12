@@ -42,9 +42,10 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
   clase + `spellSlots.ts`/`types.ts`), `backgrounds.ts` (16), `rules.ts`
   (aptitudes/pericias/point-buy), `leveling.ts` (competencia, PG, ASI, tabla
   XP 2024), `encounters.ts` (presupuesto de XP por dificultad + XP por CR,
-  DMG 2024), `taldorei.ts` (regiones+MAPS+REGION_RATIO+lore), `pois.ts`,
-  `npcs.ts`, `equipment.ts`, `equipmentSlots.ts`, `loreText.ts` (guía de
-  narración + lore para la IA).
+  DMG 2024), `taldorei.ts` (regiones+MAPS+REGION_RATIO+lore de Tal'Dorei),
+  `pois.ts` (tipo `Poi`/`PoiType` + iconos/colores), `atlas.ts` (semilla del
+  **atlas por continente**, ver «Atlas» abajo), `npcs.ts`, `equipment.ts`,
+  `equipmentSlots.ts`, `loreText.ts` (guía de narración + lore para la IA).
 - `lib/` — `supabase/{client,server,env,proxy-session}.ts`, `auth.ts`,
   `character.ts` (+`useParty`), `derive.ts` (motor de ficha derivada: PG, CA,
   modificadores, salvaciones, pericias — misma fuente de verdad para hoja y
@@ -52,11 +53,12 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
   campaña, formato "D de Mes, AAAA PD"), `gameClock.ts` (derivación pura del
   reloj: minuto de juego absoluto ↔ fecha/hora/estación/luna/festividad;
   `momentFromGameMin`/`gameMinFromMoment`), `useGameClock.ts` (hook +
-  mutaciones del reloj de campaña, ver «Reloj de campaña» abajo), hooks
-  realtime: `useLiveSession`, `useRegions`, `usePois`, `useGroupAction`,
-  `useNpcChat`, `useDiceFeed`, `useRollRequests`, `useInitiative`,
-  `useChronicle`, `useDmStash`, `useTaldorei`, `useWorldPois`, `narrador.ts`
-  (cliente `/api/ia`).
+  mutaciones del reloj de campaña, ver «Reloj de campaña» abajo), `slug.ts`
+  (`slugify`, módulo neutral sin "use client" para poder importarse desde
+  `data/*`), hooks realtime: `useLiveSession`, `useRegions`, `usePois`,
+  `useGroupAction`, `useNpcChat`, `useDiceFeed`, `useRollRequests`,
+  `useInitiative`, `useChronicle`, `useDmStash`, `useAtlas` (ver «Atlas»
+  abajo), `useWorldPois`, `narrador.ts` (cliente `/api/ia`).
 - `components/` — SiteNav/Footer, EpicOverlay, GroupConsensus, RegionExplore,
   PinDragMap, RegionCard, Emblem, SessionProvider, ErrorBoundary,
   `ClockWidget` (reloj de campaña: variante compacta en la barra de
@@ -68,9 +70,15 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
 - `data/world.ts` — pines del **mundo** (continentes, regiones, ciudades) con
   jerarquía continente→región→lugar; `data/cosmology.ts` — calendario,
   estaciones, lunas, planos.
-- `lib/useWorldPois.ts` / `lib/useTaldorei.ts` — pines del mundo y
-  regiones/POIs de Tal'Dorei, editables por el DM y persistidos como **JSON en
-  `app_config`** (sin migración; ver «Editor de mapa» abajo).
+- `lib/useAtlas.ts` — regiones+POIs editables de los **5 continentes
+  habitados** (Tal'Dorei, Issylra, Wildemount, Marquet, Dientes Rotos),
+  persistidas como **JSON en `app_config`** (sin migración; ver «Atlas»
+  abajo). `lib/useWorldPois.ts` sigue vivo pero **acotado**: ya no es
+  superficie de edición de POIs (eso vive en el atlas, por región); se
+  mantiene solo para los **pines de navegación de continente** en `/mapa`
+  (clic para hacer zoom), la **niebla** de continentes no revelados y las
+  etiquetas de **Mares** (que no tiene regiones). Ver «Atlas» abajo para el
+  detalle de la migración y la limitación conocida del editor DM.
 - `supabase/schema*.sql` — migraciones (ver abajo). `schema_v7.sql` (tabla
   `world_poi`) quedó **sin uso**: se optó por `app_config` en su lugar.
 
@@ -84,22 +92,68 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
   Goliat6, Tiefling3, Aasimar3, Gnomo2, Enano2·, Humano2·, Mediano2· (·=variante
   clásica 2014 añadida a petición; Orco sin subraza — correcto).
 - **Inventario** por huecos = 20 + 2×(mod Fuerza). En Supabase con sesión.
-- **Mapa** (`/mapa`) jerárquico: **Exandria → continente → regiones/ciudades**.
-  El mapa mundial solo muestra pines de continentes + mares/océanos; clic en
-  un continente hace zoom (CSS) y revela sus regiones/ciudades. Pines **sin
-  etiqueta** (salvo continentes): clic para ver el detalle en el panel
-  lateral. **Niebla** sobre continentes no revelados (opaca para jugadores,
-  translúcida/clic-a-través para el DM). Botón **pantalla completa**.
-  Tal'Dorei conserva sus 8 regiones + visor de zona (`RegionExplore`) con
-  POIs; algunos POIs (Emon, Syngorn…) abren su **mapa de pueblo** a pantalla
-  completa.
-- **Editor de mapa (Panel DM › Mapa)**: pestañas **Todos · Tal'Dorei ·
-  Issylra · Wildemount · Marquet · Los Dientes Rotos · Mares** con CRUD
-  completo (añadir/editar/borrar/mover/revelar/icono/región) sobre los pines
-  del mundo, más **Regiones Tal'Dorei** y **POIs por región** con CRUD propio
-  sobre las regiones y sus POIs. Botón **«Ampliar»** en los mapas de arrastre
-  con zoom manual (+/-, rueda, arrastrar) solo para el DM. Guardado
-  **optimista** (el cambio se ve al instante, luego persiste).
+- **Mapa** (`/mapa`) jerárquico: **Exandria → continente → regiones
+  explorables**. El mapa mundial solo muestra pines de continentes +
+  mares/océanos (`useWorldPois`); clic en un continente hace zoom (CSS) y
+  revela **sus regiones** (los 5 continentes habitados tienen regiones desde
+  el atlas, no solo Tal'Dorei). Pines de continente **con etiqueta**; el
+  resto: clic para ver el detalle en el panel lateral. **Niebla** sobre
+  continentes no revelados (opaca para jugadores, translúcida/clic-a-través
+  para el DM). Botón **pantalla completa**. Cada región abre su visor de zona
+  (`RegionExplore`) con submapa (o marco «Región sin mapa propio» si aún no
+  tiene imagen) + POIs revelados uno a uno; algunos POIs (Emon, Syngorn…)
+  abren además su **mapa de pueblo** a pantalla completa.
+- **Atlas por continente** (`data/atlas.ts` + `lib/useAtlas.ts`, key
+  `atlas_defs` en `app_config`): generaliza el modelo antiguo de Tal'Dorei
+  (`Region`+`Poi`, ex `useTaldorei` — retirado en la limpieza del
+  2026-07-12, sin consumidores) a los 5 continentes habitados. `seedAtlas()`
+  arma la semilla la primera vez que falta `atlas_defs`: Tal'Dorei reutiliza
+  `data/taldorei.ts`/`data/pois.ts` tal cual; Issylra/Wildemount/Marquet/
+  Dientes Rotos se generan a partir de `REGIONS_BY_CONTINENT` +
+  `WORLD_POIS` (`data/world.ts`), con slugs de región **únicos
+  globalmente** (`uniqueRegionSlug`, prefijo de inicial de continente si
+  choca) porque `poi_state`/`region_state` indexan por slug sin distinguir
+  continente. Si existían `taldorei_defs` (ediciones viejas) y no
+  `atlas_defs`, se preservan al sembrar (no se pierden ediciones previas).
+  **Cómo subir un submapa de región**: soltar el `.jpg` en
+  `public/maps/<continente>/<slug>.jpg` (p. ej. `public/maps/marquet/
+  ank-harel.jpg`) y fijar `image` en la región del atlas. Ahora mismo eso es
+  **solo de código/seed**: el editor DM (`app/dm/MapaPanel.tsx`) todavía no
+  tiene un campo `image` en el formulario de región, así que para
+  Issylra/Marquet/Dientes Rotos hay que añadir la ruta a mano (una tabla
+  como `WILDEMOUNT_IMAGES` en `data/atlas.ts`, o parchear el JSON de
+  `atlas_defs` directamente en Supabase). **Wildemount ya tiene sus 4
+  regiones mapeadas** (`WILDEMOUNT_IMAGES` en `data/atlas.ts`: Imperio
+  Dwendaliano→zemni_fields, Xhorhas→xhorhas, Costa del Serrallo→
+  menagerie_coast_south, Yermos Grisáceos→greying_wildlands); Issylra,
+  Marquet y Los Dientes Rotos van con `image: ""` (fallback «Región sin mapa
+  propio», POIs igualmente posicionados por % sobre el marco) hasta que se
+  suban y enlacen submapas propios. **Limitación conocida** (detectada en la
+  revisión de la Tarea 3): en el editor DM, la superficie de arrastre de
+  **regiones** siempre es el mapa del mundo (`taldorei.jpg` recortado por
+  continente) y sus pines son % del mapa mundial — correcto. Pero para
+  **POIs** de una región sin `image` propia, el fondo de arrastre cae al
+  mismo mapa del mundo (sin recortar a esa región), así que no representa
+  la región real aunque las coordenadas x/y del POI se guardan bien; solo
+  se arregla visualmente subiendo un submapa para esa región. **Pines
+  planos (`world_pois`) deprecados como superficie de edición**: los POIs
+  ahora se crean y editan por región dentro del atlas; `world_pois` se
+  conserva solo para los pines de navegación de continente + niebla +
+  etiquetas de Mares en `/mapa` (ver bullet de `useWorldPois` arriba). Los
+  pines planos que el DM hubiera creado a mano en `world_pois` **no se
+  migran automáticamente** a regiones (fuera de alcance del plan del
+  2026-07-11) — hay que recrearlos por región si se quieren conservar.
+- **Editor de mapa (Panel DM › Mapa)**: selector de **continente** (Tal'Dorei
+  · Issylra · Wildemount · Marquet · Los Dientes Rotos — Mares no tiene
+  regiones) + sub-pestañas **Regiones** y **POIs por región**, con CRUD
+  completo (añadir/editar/borrar/mover el pin de región sobre el mapa del
+  mundo/mover y revelar POIs sobre el submapa de la región) para el
+  continente elegido. El modo antiguo de pines planos del mundo (`Todos` /
+  `Mares` con CRUD manual) se retiró del editor en la Tarea 3 — esos pines
+  ahora solo se leen desde `/mapa` (navegación de continente + niebla +
+  Mares), ver «Atlas por continente» arriba. Botón **«Ampliar»** en los
+  mapas de arrastre con zoom manual (+/-, rueda, arrastrar) solo para el DM.
+  Guardado **optimista** (el cambio se ve al instante, luego persiste).
 - **Lore del reino** (`/reino`): historia de Exandria por eras (Fundación →
   Arcanos → Calamidad → Divergencia 0 PD → Reclamación → ~836 PD), continentes
   descubiertos, panteón, facciones, **calendario** (328 días/11 meses/semana
@@ -196,6 +250,42 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   defecto* pero la fuente de verdad en producción, una vez editado algo, es
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
+
+## RESUELTO (2026-07-12): Atlas — regiones explorables en todos los continentes
+Trabajo directo en `master` (sin rama aparte). Plan en
+`docs/superpowers/plans/2026-07-11-atlas-continentes.md` (4 tareas); diseño en
+`docs/superpowers/specs/2026-07-11-atlas-y-calendario-design.md`.
+
+1. **Modelo y semilla del atlas** (`data/atlas.ts` + `lib/useAtlas.ts`, key
+   `atlas_defs` en `app_config`, sin migración): generaliza el modelo de
+   Tal'Dorei (`Region`+`Poi`) a los 5 continentes habitados. `seedAtlas()`
+   reutiliza Tal'Dorei tal cual y genera Issylra/Wildemount/Marquet/Dientes
+   Rotos desde `WORLD_POIS`, con slugs de región únicos globalmente
+   (`uniqueRegionSlug`). `scripts/check-atlas.ts` verifica slugs únicos,
+   reparto completo de POIs y las 4 imágenes de Wildemount.
+2. **`/mapa` con regiones por continente**: cualquier continente (no solo
+   Tal'Dorei) muestra sus regiones como pines y abre `RegionExplore` al
+   pulsar una; se retiraron los pines planos por continente (`useWorldPois`
+   se queda solo para navegación de continente + niebla + Mares).
+3. **Editor DM por continente** (`app/dm/MapaPanel.tsx`): selector de
+   continente + pestañas Regiones/POIs por región con CRUD completo sobre
+   el atlas de cada continente; se retiró el modo antiguo de pines planos
+   del mundo del editor.
+4. **Limpieza y documentación** (esta tarea): borrado `lib/useTaldorei.ts`
+   (sin consumidores tras las tareas 2-3, confirmado por grep; su
+   re-export de `slugify` tampoco se usaba, ya todo importa de
+   `lib/slug.ts`); `lib/useWorldPois.ts` confirmado con consumidores
+   (`app/mapa/page.tsx`, `components/ReinoRegions.tsx`) — se mantiene.
+   `components/RegionExplore.tsx` revisado: el fallback «Región sin mapa
+   propio» ya se leía claro para regiones nuevas sin imagen; no se tocó.
+   Ver «Atlas por continente» arriba para el detalle de cómo subir
+   submapas y la limitación conocida del editor DM (fondo de arrastre de
+   POIs sin recortar a la región cuando no hay `image`).
+- Verificado: `tsc --noEmit`, `next build` y `npx tsx scripts/check-atlas.ts`
+  limpios en las 4 tareas. Sin credenciales Supabase en este entorno: no se
+  probó en vivo (crear región/POI desde el editor DM en un continente nuevo,
+  revelar y explorar como jugador); solo build + análisis de código, igual
+  que sesiones anteriores.
 
 ## RESUELTO (2026-07-11): Calendario exandriano en tiempo real
 Trabajo directo en `master` (sin rama aparte). Plan en
