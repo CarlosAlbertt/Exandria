@@ -168,6 +168,109 @@ convierte en misión del grupo.
 
 ---
 
+## FASE H — Subida de imágenes (Supabase Storage) 🖼️
+
+**Objetivo**: el DM sube imágenes desde la propia app — sin tocar código ni
+redeployar. Una sola infraestructura sirve para todo: submapas de región,
+mapas de pueblo, battlemaps, retratos de NPCs, arte de monstruos y retratos
+de especies/clases (cierra el pendiente del vault).
+
+- **Storage**: bucket `assets` en Supabase Storage (lectura pública, escritura
+  solo DM vía policy con `is_dm()`). Carpetas: `maps/`, `battlemaps/`,
+  `npcs/`, `monsters/`, `species/`, `tokens/`.
+- **Componente `ImageUpload`**: input de archivo + preview + subida con
+  `supabase.storage.from("assets").upload(...)` → devuelve URL pública.
+  Redimensionado/compresión en cliente antes de subir (canvas, máx ~1600px
+  para retratos, ~4000px para battlemaps) para no comer cuota.
+- **Integraciones** (cada una es un campo nuevo + el componente):
+  1. **Editor de región** (MapaPanel): campo `image` con ImageUpload →
+     resuelve el hueco actual (submapas de Issylra/Marquet/Dientes Rotos sin
+     tocar código). El atlas acepta URLs de Storage además de `/maps/...`.
+  2. **Mapas de pueblo**: `townMaps` pasa a poder venir del atlas/Storage.
+  3. **Retratos de NPCs** (fase E): campo `portrait` en el editor de NPCs.
+  4. **Retratos de especies/linajes** (pendiente viejo del vault): pantalla
+     DM para subirlos a `species/<slug>.jpg`; `PortraitFrame` acepta URL de
+     Storage con fallback al `/species/...` local y al icono.
+  5. **Battlemaps y tokens** (fase I) y **arte de monstruos** (fase J).
+- Fallback: si Storage no está configurado, los campos aceptan URL manual.
+
+Sin migración de tablas (Storage tiene sus propias policies). Nota: crear el
+bucket y las policies es un paso manual del DM en el dashboard de Supabase —
+documentar el SQL/pasos exactos en el plan de la fase.
+
+---
+
+## FASE I — Tablero de batalla con tokens (VTT ligero) ⚔️
+
+**Objetivo**: el DM sube un battlemap, coloca tokens de jugadores y monstruos,
+y todos ven y mueven en vivo — el "tablero virtual" de verdad para combates.
+
+- **Alcance deliberado**: VTT *ligero*. Tokens sobre imagen con movimiento en
+  tiempo real, integrado con la iniciativa existente. SIN niebla de guerra por
+  celda, SIN medición de distancias, SIN automatización de combate (eso es un
+  Roll20 entero — no en la primera versión).
+- **Migración (`schema_v14`)**: `battle_boards` (id, name, image_url,
+  grid_size int nullable — px por casilla para el snap opcional, active
+  boolean) y `battle_tokens` (id, board_id, kind 'pj'|'monstruo'|'npc',
+  ref — user_id o monster slug, label, image_url nullable, x, y, size
+  1|2|3 — casillas, color, hidden boolean). RLS: lectura autenticados
+  (tokens hidden solo DM), escritura: DM todo; el jugador puede UPDATE
+  x/y solo del token cuyo `ref` = su user_id (su miniatura). Realtime en
+  ambas tablas.
+- **Página `/tablero`** (o sección grande en `/lugar` cuando hay board
+  activo): imagen del battlemap + tokens arrastrables (reutilizar la física
+  de arrastre de `PinDragMap`, generalizada). Snap a rejilla si `grid_size`.
+  Tokens con retrato circular (Storage) o inicial + color.
+- **DM**: crear tablero (ImageUpload de fase H), añadir tokens de PJs (uno
+  por miembro del grupo, retrato de su ficha si existe), de monstruos (desde
+  el bestiario de fase J, con su arte), ocultar/revelar tokens, activar y
+  cerrar tablero. Al activar → aviso realtime a todos ("¡Combate!") y la
+  iniciativa existente se abre al lado.
+- **Jugador**: ve el tablero en vivo, arrastra SU token, tira iniciativa
+  (dados 3D de fase A) — todo lo demás ya existe.
+
+---
+
+## FASE J — Bestiario D&D 2024 🐉
+
+**Objetivo**: bestiario oficial 2024 consultable en la app, con arte, enlazado
+a la calculadora de encuentros y a los tokens del tablero.
+
+- **Fuente de datos**: PDFs que subirá el usuario (p. ej. a
+  `Exandria-Obsidian/Exandria/Books/`). Flujo de extracción (como se hizo con
+  la EGW): si el PDF es escaneado, render por páginas con `py` + `pypdfium2` y
+  lectura visual; si tiene capa de texto, extracción directa. dndbeyond.com/
+  monsters como referencia de verificación puntual (WebFetch), no como fuente
+  masiva.
+- **⚠️ Convención de contenido (igual que todo el repo)**: los **datos
+  mecánicos son hechos** — nombre, tamaño, tipo, CA, PG, velocidades,
+  características, salvaciones, habilidades, resistencias, inmunidades,
+  sentidos, idiomas, CR/XP, y la MECÁNICA de rasgos/acciones (dados de daño,
+  alcances, CDs). Las **descripciones y el texto de sabor se redactan
+  propios** en español, breves — nunca se copia la prosa del manual. Priorizar
+  el subconjunto del SRD 5.2 (licencia CC-BY-4.0) como base limpia; los
+  monstruos fuera del SRD entran solo como datos mecánicos + resumen propio.
+- **Modelo**: `data/bestiary/types.ts` (`Monster`: slug, name, nameEn, size,
+  type, alignment, ac, hp, hpFormula, speeds, abilities, saves?, skills?,
+  resistances?, immunities?, senses, languages, cr, xp, traits[], actions[],
+  reactions?, legendary?, blurb propio, image? — URL Storage). Datos por
+  chunks: `data/bestiary/cr0-1.ts` etc. o tabla `monsters` en DB si el
+  volumen lo pide (decidir en el plan: ~500 monstruos → mejor DB con seed
+  script, `schema_v14`/`v15`).
+- **Página `/bestiario`** (DM completo; jugador solo ve los monstruos que el
+  DM marque "descubiertos" — como los POIs): buscador por nombre/CR/tipo,
+  ficha de monstruo con statblock estilizado + arte (Storage, fase H).
+- **Integraciones**:
+  - Calculadora de encuentros (Mesa): añadir monstruos por nombre desde el
+    bestiario (autocompletado), no solo por CR — el XP sale de su ficha.
+  - Tablero (fase I): "añadir token de monstruo" desde el bestiario con su
+    arte y tamaño.
+  - Statblock rápido: popover del monstruo en la iniciativa para el DM.
+- **Vault Obsidian**: nota `40 Datos del juego/Bestiario.md` con el estado
+  (fuente, cuántos extraídos, convención de contenido) al cerrar la fase.
+
+---
+
 ## FASE G — Polish visual transversal ✨
 
 En cualquier momento tras la Fase A; ideas ordenadas por impacto:
@@ -188,18 +291,36 @@ En cualquier momento tras la Fase A; ideas ordenadas por impacto:
 ## Orden y dependencias
 
 ```
-A (dados 3D)  ──────────────────────────┐
-B (ubicación) ──► C (tiendas) ──► D (posada)   G (polish, transversal)
-              └─► E (NPCs)                      
+A (dados 3D) ─────────────────────────────► I (tablero de batalla)
+H (subida de imágenes) ───► I               ▲
+                      └───► J (bestiario) ──┘
+B (ubicación) ──► C (tiendas) ──► D (posada)
+              └─► E (NPCs, retratos de H)
               └─► F (tablón)
+G (polish) — transversal, en cualquier momento tras A
 ```
 
 - **A primero**: impacto inmediato, sin dependencias, toca solo el sistema de
   dados.
+- **H pronto**: desbloquea el campo `image` del editor de región (hueco
+  conocido), los retratos pendientes del vault, y es prerequisito de I y J.
 - **B es la base** de C–F (todas viven en `/lugar`).
 - C y E comparten el patrón "NPC con prompt + IA" — implementar C primero y
   extraer el chat reutilizable para E.
-- Migración `schema_v13` agrupa lo de C+E+F (una sola pasada de SQL Editor).
+- **I necesita A + H** (dados para iniciativa, Storage para battlemaps/tokens);
+  **J necesita H** (arte) y los PDFs del usuario; I y J se enriquecen
+  mutuamente (tokens de monstruo) pero pueden ir en cualquier orden.
+- Migraciones: `schema_v13` agrupa C+E+F; `schema_v14` agrupa I (+ tabla de
+  bestiario de J si se opta por DB). Dos pasadas de SQL Editor en total.
+
+## Mantenimiento del vault (Obsidian)
+
+Al cerrar CADA fase: añadir el hito `[!success]` en
+`00 Meta/Historial de desarrollo.md`, actualizar `00 Meta/Pendientes.md`
+(migraciones nuevas, pasos manuales como el bucket de Storage o los PDFs del
+bestiario) y crear/actualizar la nota de funcionalidad correspondiente
+(`50 Funcionalidades/…`). El vault es el segundo cerebro del proyecto — se
+actualiza en el mismo ciclo que HANDOFF.md, no después.
 
 ## Notas de infraestructura
 
