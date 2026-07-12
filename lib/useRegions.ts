@@ -40,13 +40,17 @@ export function useRegions() {
   return { states, ready };
 }
 
+// Upsert (no update-only): las regiones de los continentes nuevos no tienen
+// fila en region_state todavía, así que un `.update().eq("slug", ...)` no
+// crearía nada y el cambio se perdería. Con upsert sobre la PK `slug` se crea
+// la fila si falta (known/explored quedan a su default de tabla) y solo se
+// tocan las columnas indicadas si ya existía.
 export async function setRegion(slug: string, patch: Partial<Pick<RegionState, "explored" | "known">>) {
   if (!supabaseConfigured) return { error: "Supabase no configurado" };
   const supabase = createClient();
   const { error } = await supabase
     .from("region_state")
-    .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq("slug", slug);
+    .upsert({ slug, ...patch, updated_at: new Date().toISOString() });
   return { error: error?.message ?? null };
 }
 
@@ -56,6 +60,5 @@ export async function setRegionPin(slug: string, x: number, y: number) {
   const supabase = createClient();
   await supabase
     .from("region_state")
-    .update({ pin_x: Math.round(x * 10) / 10, pin_y: Math.round(y * 10) / 10, updated_at: new Date().toISOString() })
-    .eq("slug", slug);
+    .upsert({ slug, pin_x: Math.round(x * 10) / 10, pin_y: Math.round(y * 10) / 10, updated_at: new Date().toISOString() });
 }

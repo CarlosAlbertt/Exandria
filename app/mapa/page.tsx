@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MAPS } from "@/data/taldorei";
+import type { Region } from "@/data/taldorei";
 import { WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW } from "@/data/world";
 import { townMap } from "@/data/townMaps";
 import { useWorldPois, type WorldPoiRow } from "@/lib/useWorldPois";
-import { useTaldorei } from "@/lib/useTaldorei";
+import { useAtlas, regionsOf, poisOf } from "@/lib/useAtlas";
+import type { AtlasDefs } from "@/data/atlas";
 import { useRegions } from "@/lib/useRegions";
 import { useRole } from "@/components/SessionProvider";
 import RegionExplore from "@/components/RegionExplore";
@@ -20,7 +22,7 @@ export default function MapaPage() {
   const role = useRole();
   const { states } = useRegions();
   const { pois } = useWorldPois();
-  const { regions: talRegions, poisByRegion } = useTaldorei();
+  const { atlas } = useAtlas();
   const isDM = role === "dm";
 
   const [focus, setFocus] = useState<string | null>(null); // continente enfocado (null = mundo)
@@ -61,14 +63,25 @@ export default function MapaPage() {
     ...continentPins.filter((cp) => isDM || cp.revealed),
     ...pois.filter((p) => p.continent === "Mares"),
   ];
-  const continentPois = focus && focus !== "Tal'Dorei"
-    ? pois.filter((p) => p.continent === focus && p.type !== "continente" && (isDM || p.revealed))
-    : [];
-  const taldoreiRegions = talRegions.filter((r) => isDM || states[r.slug]?.known);
+  // Regiones del continente enfocado (cualquiera, ya no solo Tal'Dorei) desde
+  // el atlas; visibles para el jugador solo si están "conocidas".
+  const focusRegions = focus ? regionsOf(atlas, focus) : [];
+  const visibleRegions = focusRegions.filter((r) => isDM || states[r.slug]?.known);
 
-  const selRegion = talRegions.find((r) => r.slug === selRegionSlug) ?? null;
+  const selRegion = focusRegions.find((r) => r.slug === selRegionSlug) ?? null;
   const selRegionState = selRegion ? states[selRegion.slug] : undefined;
   const selRegionExplored = isDM || !!selRegionState?.explored;
+
+  // Busca una región por slug en todo el atlas (los slugs son únicos
+  // globalmente), para que el visor de exploración no dependa de `focus`
+  // seguir apuntando al mismo continente mientras está abierto.
+  function findRegionGlobal(a: AtlasDefs, slug: string): { cont: string; region: Region } | null {
+    for (const cont of Object.keys(a)) {
+      const r = a[cont]?.regions.find((x) => x.slug === slug);
+      if (r) return { cont, region: r };
+    }
+    return null;
+  }
 
   function renderWorldPoi(p: WorldPoiRow) {
     const isCont = p.type === "continente";
@@ -145,9 +158,8 @@ export default function MapaPage() {
             })}
 
             {!focus && worldPins.map(renderWorldPoi)}
-            {focus && focus !== "Tal'Dorei" && continentPois.map(renderWorldPoi)}
 
-            {focus === "Tal'Dorei" && taldoreiRegions.map((r) => {
+            {focus && visibleRegions.map((r) => {
               const st = states[r.slug];
               const explored = !!st?.explored;
               const on = selRegionSlug === r.slug;
@@ -220,27 +232,12 @@ export default function MapaPage() {
               <p className="eyebrow mb-2" style={{ color: "var(--color-gold)" }}><i className="fas fa-earth-americas mr-1.5" />Continente</p>
               <h2 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>{focusLabel}</h2>
               <p className="prose-lore !text-[15px] mb-4">{pinForField(focus)?.blurb}</p>
-              <p className="eyebrow mb-3">{focus === "Tal'Dorei" ? "Regiones" : "Lugares por región"}</p>
-              {focus === "Tal'Dorei" ? (
-                <div className="flex flex-wrap gap-2">
-                  {taldoreiRegions.length ? taldoreiRegions.map((r) => (
-                    <button key={r.slug} onClick={() => setSel({ kind: "region", slug: r.slug })} className="chip" data-on={selRegionSlug === r.slug}>{r.name}</button>
-                  )) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>}
-                </div>
-              ) : continentPois.length ? (
-                <div className="space-y-3">
-                  {Array.from(new Set(continentPois.map((p) => p.region || "—"))).map((reg) => (
-                    <div key={reg}>
-                      <p className="font-ui text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--color-dim)" }}>{reg}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {continentPois.filter((p) => (p.region || "—") === reg).map((p) => (
-                          <button key={p.id} onClick={() => setSel({ kind: "poi", poi: p })} className="chip"><i className={`fas ${p.icon || WORLD_ICON[p.type]} mr-1.5`} style={{ color: WORLD_COLOR[p.type] }} />{p.name}</button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>}
+              <p className="eyebrow mb-3">Regiones</p>
+              <div className="flex flex-wrap gap-2">
+                {visibleRegions.length ? visibleRegions.map((r) => (
+                  <button key={r.slug} onClick={() => setSel({ kind: "region", slug: r.slug })} className="chip" data-on={selRegionSlug === r.slug}>{r.name}</button>
+                )) : <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nada revelado todavía.</span>}
+              </div>
             </>
           ) : (
             <>
@@ -260,11 +257,12 @@ export default function MapaPage() {
         </aside>
       </div>
 
-      {/* VISOR de región de Tal'Dorei con puntos de interés */}
+      {/* VISOR de la región enfocada (de cualquier continente) con puntos de interés */}
       {exploreSlug && (() => {
-        const r = talRegions.find((x) => x.slug === exploreSlug);
-        if (!r) return null;
-        return <RegionExplore slug={r.slug} name={r.name} image={r.image} accent={r.accent} pois={poisByRegion[r.slug] ?? []} onClose={() => setExploreSlug(null)} />;
+        const found = findRegionGlobal(atlas, exploreSlug);
+        if (!found) return null;
+        const { cont, region: r } = found;
+        return <RegionExplore slug={r.slug} name={r.name} image={r.image} accent={r.accent} pois={poisOf(atlas, cont, r.slug)} onClose={() => setExploreSlug(null)} />;
       })()}
 
       {/* Visor del mapa del pueblo */}
