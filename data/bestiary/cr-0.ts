@@ -1,0 +1,306 @@
+// Bestiario D&D 2024 — CR 0. Fuente: Monster Manual 2024, Apéndice A (Animales).
+// Datos mecánicos (hechos de juego); blurbs y texto de rasgos/acciones son
+// redacción PROPIA y concisa — no se copia ni traduce prosa del manual.
+import type { Monster } from "./types";
+
+export const BABUINO: Monster = {
+  slug: "babuino",
+  name: "Babuino",
+  nameEn: "Baboon",
+  size: "Pequeño",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 12,
+  initiative: 2,
+  hp: 3,
+  hpFormula: "1d6",
+  speeds: "9 m, trepar 9 m",
+  abilities: { fue: 8, des: 14, con: 11, int: 4, sab: 12, car: 6 },
+  senses: "Percepción pasiva 11",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  traits: [
+    {
+      name: "Tácticas de Grupo",
+      text: "Ventaja en una tirada de ataque contra una criatura si al menos un aliado del babuino está a 1,5 m de ella y ese aliado no tiene la condición Incapacitado.",
+    },
+  ],
+  actions: [
+    { name: "Mordisco", text: "Ataque de arma: +1, alcance 1,5 m, 1 (1d4-1) perforante." },
+  ],
+  blurb: "Primate gregario de pequeño tamaño que compensa su debilidad individual cazando en tropa.",
+};
+
+export const TEJON: Monster = {
+  slug: "tejon",
+  name: "Tejón",
+  nameEn: "Badger",
+  size: "Diminuto",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 11,
+  initiative: 0,
+  hp: 5,
+  hpFormula: "1d4 + 3",
+  speeds: "6 m, excavar 1,5 m",
+  abilities: { fue: 10, des: 11, con: 16, int: 2, sab: 12, car: 5 },
+  skills: "Percepción +3",
+  resistances: "Veneno",
+  senses: "Visión en la oscuridad 9 m; Percepción pasiva 13",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  actions: [
+    { name: "Mordisco", text: "Ataque de arma: +2, alcance 1,5 m, 1 perforante." },
+  ],
+  blurb: "Excavador robusto de constitución sorprendente para su tamaño; resiste el veneno mejor que la mayoría de sus depredadores.",
+};
+
+export const MURCIELAGO: Monster = {
+  slug: "murcielago",
+  name: "Murciélago",
+  nameEn: "Bat",
+  size: "Diminuto",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 12,
+  initiative: 2,
+  hp: 1,
+  hpFormula: "1d4 - 1",
+  speeds: "1,5 m, vuelo 9 m",
+  abilities: { fue: 2, des: 15, con: 8, int: 2, sab: 12, car: 4 },
+  senses: "Visión ciega 18 m; Percepción pasiva 11",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  actions: [
+    { name: "Mordisco", text: "Ataque de arma: +4, alcance 1,5 m, 1 perforante." },
+  ],
+  blurb: "Volador nocturno que se orienta por ecolocalización antes que por la vista.",
+};
+
+export const GATO: Monster = {
+  slug: "gato",
+  name: "Gato",
+  nameEn: "Cat",
+  size: "Diminuto",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 12,
+  initiative: 2,
+  hp: 2,
+  hpFormula: "1d4",
+  speeds: "12 m, trepar 12 m",
+  abilities: { fue: 3, des: 15, con: 10, int: 3, sab: 12, car: 7 },
+  skills: "Percepción +3, Sigilo +4",
+  senses: "Visión en la oscuridad 18 m; Percepción pasiva 13",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  traits: [
+    {
+      name: "Saltador",
+      text: "La distancia de salto del gato se calcula con su Destreza en lugar de su Fuerza.",
+    },
+  ],
+  actions: [
+    { name: "Arañazo", text: "Ataque de arma: +4, alcance 1,5 m, 1 cortante." },
+  ],
+  blurb: "Trepador ágil y sigiloso; salta mejor de lo que su fuerza física sugeriría.",
+};
+
+export const CANGREJO: Monster = {
+  slug: "cangrejo",
+  name: "Cangrejo",
+  nameEn: "Crab",
+  size: "Diminuto",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 11,
+  initiative: 0,
+  hp: 3,
+  hpFormula: "1d4 + 1",
+  speeds: "6 m, nadar 6 m",
+  abilities: { fue: 6, des: 11, con: 12, int: 1, sab: 8, car: 2 },
+  skills: "Sigilo +2",
+  senses: "Visión ciega 9 m; Percepción pasiva 9",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  traits: [
+    { name: "Anfibio", text: "El cangrejo puede respirar aire y agua." },
+  ],
+  actions: [
+    { name: "Pinza", text: "Ataque de arma: +2, alcance 1,5 m, 1 contundente." },
+  ],
+  blurb: "Crustáceo costero que se mueve con igual soltura dentro y fuera del agua.",
+};
+
+export const CIERVO: Monster = {
+  slug: "ciervo",
+  name: "Ciervo",
+  nameEn: "Deer",
+  size: "Mediano",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 13,
+  initiative: 3,
+  hp: 4,
+  hpFormula: "1d8",
+  speeds: "15 m",
+  abilities: { fue: 11, des: 16, con: 11, int: 2, sab: 14, car: 5 },
+  skills: "Percepción +4",
+  senses: "Visión en la oscuridad 18 m; Percepción pasiva 14",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  traits: [
+    {
+      name: "Ágil",
+      text: "El ciervo no provoca ataques de oportunidad al salir del alcance de un enemigo.",
+    },
+  ],
+  actions: [
+    { name: "Embestida", text: "Ataque de arma: +2, alcance 1,5 m, 2 (1d4) contundente." },
+  ],
+  blurb: "Herbívoro veloz y huidizo, siempre listo para escapar sin exponer el flanco.",
+};
+
+export const AGUILA: Monster = {
+  slug: "aguila",
+  name: "Águila",
+  nameEn: "Eagle",
+  size: "Pequeño",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 12,
+  initiative: 2,
+  hp: 4,
+  hpFormula: "1d6 + 1",
+  speeds: "3 m, vuelo 18 m",
+  abilities: { fue: 6, des: 15, con: 12, int: 2, sab: 14, car: 7 },
+  skills: "Percepción +6",
+  senses: "Percepción pasiva 16",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  actions: [
+    { name: "Garras", text: "Ataque de arma: +4, alcance 1,5 m, 4 (1d4+2) cortante." },
+  ],
+  blurb: "Rapaz de vista aguda que domina el aire mucho mejor que el suelo.",
+};
+
+export const RANA: Monster = {
+  slug: "rana",
+  name: "Rana",
+  nameEn: "Frog",
+  size: "Diminuto",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 11,
+  initiative: 1,
+  hp: 1,
+  hpFormula: "1d4 - 1",
+  speeds: "6 m, nadar 6 m",
+  abilities: { fue: 1, des: 13, con: 8, int: 1, sab: 8, car: 3 },
+  skills: "Percepción +1, Sigilo +3",
+  senses: "Visión en la oscuridad 9 m; Percepción pasiva 11",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  traits: [
+    { name: "Anfibia", text: "La rana puede respirar aire y agua." },
+    {
+      name: "Salto Estacionario",
+      text: "El salto de longitud de la rana es de hasta 3 m y el de altura de hasta 1,5 m, con o sin carrerilla.",
+    },
+  ],
+  actions: [
+    { name: "Mordisco", text: "Ataque de arma: +3, alcance 1,5 m, 1 perforante." },
+  ],
+  blurb: "Anfibio saltarín capaz de cubrir grandes distancias relativas a su tamaño desde parado.",
+};
+
+export const BUHO: Monster = {
+  slug: "buho",
+  name: "Búho",
+  nameEn: "Owl",
+  size: "Diminuto",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 11,
+  initiative: 1,
+  hp: 1,
+  hpFormula: "1d4 - 1",
+  speeds: "1,5 m, vuelo 18 m",
+  abilities: { fue: 3, des: 13, con: 8, int: 2, sab: 12, car: 7 },
+  skills: "Percepción +5, Sigilo +5",
+  senses: "Visión en la oscuridad 36 m; Percepción pasiva 15",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  traits: [
+    {
+      name: "Vuelo Rasante",
+      text: "El búho no provoca ataques de oportunidad al salir volando del alcance de un enemigo.",
+    },
+  ],
+  actions: [
+    { name: "Garras", text: "Ataque de arma: +3, alcance 1,5 m, 1 cortante." },
+  ],
+  blurb: "Cazador nocturno de vuelo silencioso y visión excelente en la oscuridad.",
+};
+
+export const RATA: Monster = {
+  slug: "rata",
+  name: "Rata",
+  nameEn: "Rat",
+  size: "Diminuto",
+  type: "Bestia",
+  alignment: "Sin alineamiento",
+  ac: 10,
+  initiative: 0,
+  hp: 1,
+  hpFormula: "1d4 - 1",
+  speeds: "6 m, trepar 6 m",
+  abilities: { fue: 2, des: 11, con: 9, int: 2, sab: 10, car: 4 },
+  skills: "Percepción +2",
+  senses: "Visión en la oscuridad 9 m; Percepción pasiva 12",
+  languages: "Ninguno",
+  cr: "0",
+  xp: 10,
+  pb: 2,
+  traits: [
+    {
+      name: "Ágil",
+      text: "La rata no provoca ataques de oportunidad al salir del alcance de un enemigo.",
+    },
+  ],
+  actions: [
+    { name: "Mordisco", text: "Ataque de arma: +2, alcance 1,5 m, 1 perforante." },
+  ],
+  blurb: "Roedor pequeño y prolífico, tan común en alcantarillas como en bodegas.",
+};
+
+export const CR_0_MONSTERS: Monster[] = [
+  BABUINO,
+  TEJON,
+  MURCIELAGO,
+  GATO,
+  CANGREJO,
+  CIERVO,
+  AGUILA,
+  RANA,
+  BUHO,
+  RATA,
+];
