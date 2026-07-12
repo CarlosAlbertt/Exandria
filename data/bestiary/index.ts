@@ -1,7 +1,8 @@
 import type { Monster } from "./types";
 import { CR_0_MONSTERS } from "./cr-0";
+import { CR_18_MONSTERS } from "./cr-18";
 
-const ALL_CHUNKS: Monster[][] = [CR_0_MONSTERS];
+const ALL_CHUNKS: Monster[][] = [CR_0_MONSTERS, CR_18_MONSTERS];
 
 export const MONSTERS: Partial<Record<string, Monster>> = Object.fromEntries(
   ALL_CHUNKS.flat().map((m) => [m.slug, m])
