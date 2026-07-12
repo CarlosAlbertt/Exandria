@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { MAPS, REGION_RATIO, type Region } from "@/data/taldorei";
 import { POI_ICON, POI_COLOR, type Poi, type PoiType } from "@/data/pois";
-import { CONTINENTS } from "@/data/world";
+import { CONTINENTS, CONTINENT_VIEW } from "@/data/world";
 import { useAtlas, regionsOf, poisOf } from "@/lib/useAtlas";
-import type { AtlasDefs } from "@/data/atlas";
+import { uniqueRegionSlug, type AtlasDefs } from "@/data/atlas";
 import { useRegions, setRegionPin } from "@/lib/useRegions";
 import { usePois, setPoiPos, setPoiRevealed } from "@/lib/usePois";
-import { slugify } from "@/lib/slug";
 import PinDragMap, { type DragMarker } from "@/components/PinDragMap";
 
 // Continentes con regiones editables (todos menos "Mares", que no tiene).
@@ -24,23 +23,14 @@ const EMPTY_P: PForm = { name: "", type: "ciudad", blurb: "" };
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
 
-// Slugs de región únicos GLOBALMENTE (poi_state/region_state van por slug, y el
-// atlas los comparte entre continentes). Si el slug natural ya existe en
-// cualquier continente, se prefija con la inicial del continente (igual que en
-// seedAtlas); si aun así choca, se numera.
+// Conjunto de todos los slugs de región del atlas (únicos globalmente porque
+// poi_state/region_state van por slug y el atlas los comparte entre
+// continentes). La derivación del slug único vive en data/atlas.ts
+// (uniqueRegionSlug), compartida con seedAtlas para no divergir.
 function allRegionSlugs(atlas: AtlasDefs): Set<string> {
   const s = new Set<string>();
   for (const cont of Object.keys(atlas)) for (const r of atlas[cont]?.regions ?? []) s.add(r.slug);
   return s;
-}
-function uniqueRegionSlug(name: string, continent: string, atlas: AtlasDefs): string {
-  const used = allRegionSlugs(atlas);
-  const base = slugify(name);
-  const candidate = used.has(base) ? `${continent[0].toLowerCase()}-${base}` : base;
-  let final = candidate;
-  let i = 2;
-  while (used.has(final)) { final = `${candidate}-${i}`; i++; }
-  return final;
 }
 
 export default function MapaPanel() {
@@ -52,7 +42,19 @@ export default function MapaPanel() {
   const [pEditing, setPEditing] = useState<Poi | "new" | null>(null);
   const [pForm, setPForm] = useState<PForm>(EMPTY_P);
   const [activeId, setActiveId] = useState<string | null>(null); // pin resaltado
+  // Posición de un POI nuevo: centro del submapa de región (0-100 %).
   const spread = () => ({ x: 44 + Math.random() * 12, y: 44 + Math.random() * 12 });
+  // Posición de una región nueva sobre el MAPA MUNDIAL: centrada en el recorte
+  // del continente (CONTINENT_VIEW[cont].box) con un pequeño jitter, para que no
+  // aparezca en el centro del mundo (Tal'Dorei) lejos de su continente.
+  const spreadIn = (cont: string) => {
+    const b = CONTINENT_VIEW[cont]?.box;
+    if (!b) return { x: 50, y: 50 };
+    return {
+      x: Math.round((b.x + b.w / 2 + (Math.random() - 0.5) * b.w * 0.3) * 10) / 10,
+      y: Math.round((b.y + b.h / 2 + (Math.random() - 0.5) * b.h * 0.3) * 10) / 10,
+    };
+  };
 
   const { atlas, save } = useAtlas();
   const { states: regionStates } = useRegions();
@@ -89,8 +91,8 @@ export default function MapaPanel() {
     if (!rForm.name.trim()) return;
     const base = { name: rForm.name.trim(), capital: rForm.capital.trim() || "—", feature: rForm.feature.trim(), accent: rForm.accent, blurb: rForm.blurb.trim() };
     if (rEditing === "new") {
-      const slug = uniqueRegionSlug(rForm.name, continent, atlas);
-      const newRegions = [...contData.regions, { slug, image: "", map: spread(), ...base }];
+      const slug = uniqueRegionSlug(rForm.name, continent, allRegionSlugs(atlas));
+      const newRegions = [...contData.regions, { slug, image: "", map: spreadIn(continent), ...base }];
       save({ ...atlas, [continent]: { regions: newRegions, pois: { ...contData.pois, [slug]: [] } } });
       setRegionSlug(slug);
     } else if (rEditing) {

@@ -60,6 +60,23 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
 }
 
+// Deriva un slug de región único GLOBALMENTE frente a `usedSlugs` (todos los
+// slugs ya presentes en el atlas, de cualquier continente). Si el slug natural
+// choca, se prefija con la inicial del continente; si aun así choca, se numera.
+// NO muta `usedSlugs`: el llamante añade el resultado si lo va a conservar.
+// Fuente de verdad compartida por seedAtlas y el editor DM (app/dm/MapaPanel).
+export function uniqueRegionSlug(name: string, cont: string, usedSlugs: Set<string>): string {
+  const base = slugify(name);
+  const candidate = usedSlugs.has(base) ? `${cont[0].toLowerCase()}-${base}` : base;
+  let finalSlug = candidate;
+  let suffix = 2;
+  while (usedSlugs.has(finalSlug)) {
+    finalSlug = `${candidate}-${suffix}`;
+    suffix++;
+  }
+  return finalSlug;
+}
+
 // Normaliza un nombre para comparar sin el artículo inicial ("Los"/"Las"/"La"/
 // "El"). Permite que la región "Dientes Rotos" case con el WORLD_POI
 // "Los Dientes Rotos" en la búsqueda de blurb (solo como respaldo).
@@ -88,18 +105,7 @@ function seedContinent(cont: string, usedSlugs: Set<string>): ContinentAtlas {
   const pois: Record<string, Poi[]> = {};
 
   names.forEach((name, idx) => {
-    let slug = slugify(name);
-    if (usedSlugs.has(slug)) {
-      slug = `${cont[0].toLowerCase()}-${slug}`;
-    }
-    // Por si el prefijo también colisionara (no ocurre con los datos
-    // actuales, pero mantiene la unicidad garantizada ante nuevos datos).
-    let finalSlug = slug;
-    let suffix = 2;
-    while (usedSlugs.has(finalSlug)) {
-      finalSlug = `${slug}-${suffix}`;
-      suffix++;
-    }
+    const finalSlug = uniqueRegionSlug(name, cont, usedSlugs);
     usedSlugs.add(finalSlug);
 
     const accent = ACCENTS[idx % ACCENTS.length];
