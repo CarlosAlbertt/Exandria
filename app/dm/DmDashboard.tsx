@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { REGIONS } from "@/data/taldorei";
+import { useAtlas, regionsOf } from "@/lib/useAtlas";
+import { CONTINENTS } from "@/data/world";
 import { useRegions, setRegion } from "@/lib/useRegions";
 import { useLiveSession, updateLiveSession } from "@/lib/useLiveSession";
 import { useGroupAction, resetGroup } from "@/lib/useGroupAction";
@@ -148,27 +149,43 @@ function NarracionPanel() {
 }
 
 /* ---------------------------- REGIONES ---------------------------- */
+const LAND_CONTINENTS = CONTINENTS.filter((c) => c !== "Mares");
+
 function RegionesPanel() {
-  const { states, ready } = useRegions();
+  const { atlas, ready: atlasReady } = useAtlas();
+  const { states, ready: regionsReady } = useRegions();
+  const ready = atlasReady && regionsReady;
+
   return (
     <div className="panel p-6">
       <h2 className="font-display text-lg font-bold mb-1" style={{ color: "var(--color-parch)" }}>Exploración del mapa</h2>
-      <p className="text-sm mb-5" style={{ color: "var(--color-muted)" }}>Marca qué regiones conocen y han explorado los jugadores. Se actualiza en vivo para todos.</p>
-      <div className="space-y-2">
-        {REGIONS.map((r) => {
-          const st = states[r.slug];
+      <p className="text-sm mb-5" style={{ color: "var(--color-muted)" }}>Marca qué regiones conocen y han explorado los jugadores, en todos los continentes. Se actualiza en vivo para todos.</p>
+      <div className="space-y-6">
+        {LAND_CONTINENTS.map((cont) => {
+          const regions = regionsOf(atlas, cont);
+          if (regions.length === 0) return null;
           return (
-            <div key={r.slug} className="panel-raised p-4 flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <span className="w-3 h-3 rounded-full" style={{ background: r.accent, boxShadow: `0 0 10px ${r.accent}` }} />
-                <div>
-                  <p className="font-display font-bold text-[15px]" style={{ color: "var(--color-parch)" }}>{r.name}</p>
-                  <p className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>{r.capital}</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Toggle label="Conocida" on={!!st?.known} disabled={!ready} onClick={() => setRegion(r.slug, { known: !st?.known })} />
-                <Toggle label="Explorada" on={!!st?.explored} disabled={!ready} onClick={() => setRegion(r.slug, { explored: !st?.explored, known: st?.explored ? st?.known : true })} accent />
+            <div key={cont}>
+              <p className="eyebrow mb-2">{cont}</p>
+              <div className="space-y-2">
+                {regions.map((r) => {
+                  const st = states[r.slug];
+                  return (
+                    <div key={r.slug} className="panel-raised p-4 flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <span className="w-3 h-3 rounded-full" style={{ background: r.accent, boxShadow: `0 0 10px ${r.accent}` }} />
+                        <div>
+                          <p className="font-display font-bold text-[15px]" style={{ color: "var(--color-parch)" }}>{r.name}</p>
+                          <p className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>{r.capital}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Toggle label="Conocida" on={!!st?.known} disabled={!ready} onClick={() => setRegion(r.slug, { known: !st?.known })} />
+                        <Toggle label="Explorada" on={!!st?.explored} disabled={!ready} onClick={() => setRegion(r.slug, { explored: !st?.explored, known: st?.explored ? st?.known : true })} accent />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
