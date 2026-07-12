@@ -92,5 +92,11 @@ for (const r of wildemount.regions) {
 }
 check("Wildemount: al menos una región tiene imagen mapeada", wildemountWithImage > 0);
 
+// --- Dientes Rotos: la región "Dientes Rotos" recupera su blurb del WORLD_POI
+// "Los Dientes Rotos" vía normalización de artículo inicial ---
+const dientesRegion = atlas["Dientes Rotos"].regions.find((r) => r.name === "Dientes Rotos");
+check("Dientes Rotos: región presente", !!dientesRegion);
+check("Dientes Rotos: blurb no vacío (normalización de artículo)", !!dientesRegion && dientesRegion.blurb.length > 0);
+
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
 process.exit(failures === 0 ? 0 : 1);

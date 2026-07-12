@@ -7,7 +7,7 @@
 import { REGIONS, type Region } from "@/data/taldorei";
 import { POIS, type Poi, type PoiType } from "@/data/pois";
 import { REGIONS_BY_CONTINENT, CONTINENT_VIEW, WORLD_POIS, type WorldType } from "@/data/world";
-import { slugify } from "@/lib/useTaldorei";
+import { slugify } from "@/lib/slug";
 
 export type ContinentAtlas = { regions: Region[]; pois: Record<string, Poi[]> }; // pois keyed por region.slug
 export type AtlasDefs = Record<string, ContinentAtlas>; // key = nombre de continente
@@ -60,6 +60,13 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
 }
 
+// Normaliza un nombre para comparar sin el artículo inicial ("Los"/"Las"/"La"/
+// "El"). Permite que la región "Dientes Rotos" case con el WORLD_POI
+// "Los Dientes Rotos" en la búsqueda de blurb (solo como respaldo).
+function stripArticle(name: string): string {
+  return name.replace(/^(los|las|la|el)\s+/i, "").toLowerCase();
+}
+
 // Posición del pin por defecto cuando no hay WORLD_POIS de tipo "region" con
 // ese nombre: un spread dentro de CONTINENT_VIEW[cont].box, repartido entre
 // las regiones del continente para no amontonarlas.
@@ -97,7 +104,12 @@ function seedContinent(cont: string, usedSlugs: Set<string>): ContinentAtlas {
 
     const accent = ACCENTS[idx % ACCENTS.length];
 
-    const worldMatch = WORLD_POIS.find((p) => (p.type === "region" || p.type === "continente") && p.name === name);
+    // Prioridad: coincidencia exacta de nombre; si no, coincidencia sin
+    // artículo inicial (p. ej. región "Dientes Rotos" ↔ "Los Dientes Rotos").
+    const isRegionEntry = (p: (typeof WORLD_POIS)[number]) => p.type === "region" || p.type === "continente";
+    const worldMatch =
+      WORLD_POIS.find((p) => isRegionEntry(p) && p.name === name) ??
+      WORLD_POIS.find((p) => isRegionEntry(p) && stripArticle(p.name) === stripArticle(name));
     const blurb = worldMatch?.blurb ?? "";
 
     const image = cont === "Wildemount" ? (WILDEMOUNT_IMAGES[name] ?? "") : "";

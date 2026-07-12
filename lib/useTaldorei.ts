@@ -16,10 +16,12 @@ const defaults = (): Defs => ({ regions: DEF_REGIONS, pois: DEF_POIS });
 
 export function useTaldorei() {
   const [defs, setDefs] = useState<Defs>(defaults);
-  const [ready, setReady] = useState(false);
+  // Init perezoso (patrón de useDiceFeed/useGameClock): sin Supabase, "listo"
+  // se conoce desde el primer render sin un setState síncrono en el efecto.
+  const [ready, setReady] = useState(() => !supabaseConfigured);
 
   useEffect(() => {
-    if (!supabaseConfigured) { setReady(true); return; }
+    if (!supabaseConfigured) return;
     const supabase = createClient();
     let mounted = true;
 
@@ -54,7 +56,7 @@ async function persist(d: Defs) {
   await createClient().from("app_config").upsert({ key: KEY, value: JSON.stringify(d), updated_at: new Date().toISOString() });
 }
 
-// slug a partir del nombre (para regiones nuevas).
-export function slugify(name: string): string {
-  return name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `region-${Date.now()}`;
-}
+// slug a partir del nombre (para regiones nuevas). La implementación vive en
+// lib/slug.ts (módulo neutral, sin "use client"); se reexporta aquí por
+// retrocompatibilidad con los importadores existentes.
+export { slugify } from "@/lib/slug";
