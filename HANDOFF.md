@@ -251,6 +251,29 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
+## RESUELTO (2026-07-13): Bestiario 2024 + formulario de monstruos del DM
+
+Plan en `docs/superpowers/plans/2026-07-13-bestiario-2024.md`. Página
+**/bestiario** (buscador nombre ES/EN, filtros CR/tipo, statblocks 2024) con
+**124 monstruos extraídos** del MM 2024 (todo CR 0, 1/8, 1/4, 1/2 —
+`data/bestiary/cr-*.ts`, validados por `scripts/check-bestiary.ts` y muestreo
+visual contra el PDF). **Formulario del DM** («Añadir monstruo», solo DM):
+statblock completo con CR propio → XP/BC autocalculados; se guardan en
+`app_config.custom_monsters` (sin migración) y PISAN al estático si el slug
+coincide (aviso en el formulario). **Descubrimiento**: jugadores solo ven
+`app_config.bestiary_discovered`; toggle por ficha + vista previa DM.
+Hook: `lib/useBestiary.ts` (merge estáticos+custom, realtime).
+
+**PENDIENTE de esta fase**: lotes de extracción J4 (CR 1–2), J5 (CR 3–5),
+J6 (CR 6–30) — ~370 monstruos; J8 integración con la calculadora de
+encuentros (añadir por nombre desde el bestiario). Pipeline: la capa OCR del
+PDF entrelaza columnas — SOLO sirve para localizar; la verdad terrena es la
+página renderizada (`py` + pypdfium2 → PNG → lectura visual). Convención:
+datos mecánicos = hechos; blurbs/textos = redacción propia ≤300 chars.
+Fuente: `C:\Users\carlo\Desktop\Exandria-Obsidian\Exandria\Books\DnD 5e 2024
+Monster Manual Alternate Cover.pdf` (390 págs; pageNNN.txt del dump = índice
+pypdfium2 NNN-1).
+
 ## RESUELTO (2026-07-12): Atlas — regiones explorables en todos los continentes
 Trabajo directo en `master` (sin rama aparte). Plan en
 `docs/superpowers/plans/2026-07-11-atlas-continentes.md` (4 tareas); diseño en
