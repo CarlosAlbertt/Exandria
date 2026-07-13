@@ -193,7 +193,7 @@ function StatblockModal({
             <h2 className="font-display text-2xl font-bold" style={{ color: "var(--color-bronze-bright)" }}>{monster.name}</h2>
             <p className="font-ui text-[11px] italic" style={{ color: "var(--color-dim)" }}>{monster.nameEn}</p>
           </div>
-          <button className="btn-ghost !py-1.5 !px-3 text-[11px]" onClick={onClose}><i className="fas fa-xmark" /></button>
+          <button className="btn-ghost !py-1.5 !px-3 text-[11px]" onClick={onClose} aria-label="Cerrar"><i className="fas fa-xmark" /></button>
         </div>
         <p className="font-ui text-[12px] italic mb-4" style={{ color: "var(--color-muted)" }}>
           {monster.size}, {monster.type} · {monster.alignment}
@@ -440,7 +440,7 @@ function MonsterForm({ editing, onClose }: { editing: Monster | null; onClose: (
           <h2 className="font-display text-xl font-bold" style={{ color: "var(--color-bronze-bright)" }}>
             {editing ? "Editar monstruo" : "Añadir monstruo"}
           </h2>
-          <button className="btn-ghost !py-1.5 !px-3 text-[11px]" onClick={onClose}><i className="fas fa-xmark" /></button>
+          <button className="btn-ghost !py-1.5 !px-3 text-[11px]" onClick={onClose} aria-label="Cerrar"><i className="fas fa-xmark" /></button>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-2 mb-2">
@@ -535,7 +535,7 @@ function MonsterForm({ editing, onClose }: { editing: Monster | null; onClose: (
           <button className="btn-gold !py-2 !px-4 text-[12px]" onClick={save} disabled={busy}>
             <i className="fas fa-floppy-disk mr-1.5" />{editing ? "Guardar cambios" : "Guardar monstruo"}
           </button>
-          <button className="btn-ghost !py-2 !px-4 text-[12px]" onClick={() => { setF(editing ? monsterToForm(editing) : EMPTY_FORM); setErr(null); }}>
+          <button className="btn-ghost !py-2 !px-4 text-[12px]" onClick={onClose}>
             <i className="fas fa-rotate-left mr-1.5" />Cancelar
           </button>
         </div>
