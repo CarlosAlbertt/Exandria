@@ -2,6 +2,7 @@
 // Uso: npx tsx scripts/check-bestiary.ts
 import { ALL_MONSTERS } from "../data/bestiary";
 import { CR_XP } from "../data/encounters";
+import { pbForCr, CR_OPTIONS } from "../lib/useBestiary";
 
 let failures = 0;
 
@@ -80,6 +81,11 @@ for (const m of ALL_MONSTERS) {
   // al menos una acción
   check(`${tag}: tiene al menos 1 acción`, m.actions.length >= 1);
 }
+
+// --- lib/useBestiary: pbForCr y CR_OPTIONS (comprobaciones puras rápidas) ---
+check(`pbForCr("1/4") === 2 (${pbForCr("1/4")})`, pbForCr("1/4") === 2);
+check(`pbForCr("13") === 5 (${pbForCr("13")})`, pbForCr("13") === 5);
+check(`CR_OPTIONS.length === CR_XP.length (${CR_OPTIONS.length} vs ${CR_XP.length})`, CR_OPTIONS.length === CR_XP.length);
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
 process.exit(failures === 0 ? 0 : 1);
