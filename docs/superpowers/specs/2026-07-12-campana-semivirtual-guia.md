@@ -1,10 +1,13 @@
 # Guía — Campaña semivirtual: tablero visual + autonomía de jugadores
 
-Hoja de ruta aprobada (2026-07-12). Visión: los jugadores pueden actuar por su
-cuenta desde casa — comprar, descansar, hablar con NPCs, aceptar encargos — en
-la ubicación donde estén, con la IA local del DM (Ollama, ya integrada) dando
-vida al mundo; y una capa visual de tablero virtual: dados 3D con física real,
-animaciones y efectos.
+Hoja de ruta aprobada (2026-07-12; ampliada 2026-07-14 con las fases K —
+stats con dados de tirada única —, L — control de acceso por rol — y la
+Fase G convertida en capa gráfica completa). Visión: los jugadores pueden
+actuar por su cuenta desde casa — comprar, descansar, hablar con NPCs,
+aceptar encargos — en la ubicación donde estén, con la IA local del DM
+(Ollama, ya integrada) dando vida al mundo; una capa visual de tablero
+virtual: dados 3D con física real, animaciones y efectos; y el DM con
+control total sobre todo, con base de reglas D&D 2024 (5.5E) en toda la app.
 
 Cada fase se implementa con su propio plan (`docs/superpowers/plans/`), en el
 orden de abajo. Las fases son incrementales: cada una deja la app funcionando.
@@ -271,9 +274,96 @@ a la calculadora de encuentros y a los tokens del tablero.
 
 ---
 
-## FASE G — Polish visual transversal ✨
+## FASE K — Stats en el creador: dados, array o point-buy (tirada única) 🎲
 
-En cualquier momento tras la Fase A; ideas ordenadas por impacto:
+**Objetivo**: al crear personaje, el jugador elige UNA vía para sus
+aptitudes; si tira dados, la tirada es única e **imposible de repetir** (si
+no, todo el mundo repetiría hasta sacar lo que quiere).
+
+- **Tres vías** en `/crear` › capítulo Aptitudes (selector de método,
+  bloqueado una vez usado):
+  1. **Dados**: 4d6-descarta-el-menor ×6, tirados con los dados 3D de la
+     Fase A (fallback aleatorio sin WebGL). Los **6 valores quedan fijos
+     para siempre**; la *asignación* a FUE/DES/CON/INT/SAB/CAR sí es libre y
+     editable hasta guardar la ficha.
+  2. **Array estándar 2024**: 15/14/13/12/10/8, asignación libre.
+  3. **Point-buy 27**: el sistema actual, intacto.
+- **Bloqueo en servidor, no en localStorage** (por consola se saltaría):
+  tabla nueva **`stat_rolls`** (migración `schema_v13`):
+  `user_id uuid PK → profiles`, `method text` (dados/array/pointbuy),
+  `values int[]`, `rolled_at timestamptz`. RLS: **INSERT propio, sin UPDATE
+  ni DELETE** para jugadores → la fila es inmutable y la PK impide una
+  segunda tirada. El DM tiene DELETE (`is_dm()`) = **resetear la tirada** de
+  un jugador (botón nuevo en Panel DM › Grupo). Elegir array/point-buy
+  también inserta su fila (bloquea cambiar de método para "probar suerte").
+- **Modelo de confianza**: los dados físicos ruedan en el cliente y el
+  cliente inserta el resultado — un tramposo con consola podría falsear UNA
+  inserción, igual que en las tiendas autoservicio (Fase C). Lo que el
+  sistema garantiza es que **no hay repetición**: mismo modelo de confianza
+  que el resto de la app, sin perder el espectáculo de los dados 3D
+  (dice-box no permite forzar resultados, así que tirar en servidor mataría
+  la animación).
+- **Sin sesión Supabase** (modo localStorage): solo array/point-buy, con
+  aviso — los dados exigen sesión para poder bloquearse.
+- Los **bonus de trasfondo** (+2/+1 o +1/+1/+1) se aplican después del
+  método elegido, exactamente igual que hoy.
+
+---
+
+## FASE L — Control de acceso por rol 🔒
+
+**Objetivo**: una sola app "separada pero conjunta": el jugador solo ve lo
+suyo; el DM lo ve y lo controla TODO. Gating **en servidor**, no solo
+ocultar botones.
+
+- **`/narrador` pasa a ser DM-only** (hoy cualquier logueado entra): el
+  server component comprueba `getSessionProfile()` y si `role !== "dm"` hace
+  `redirect("/")`; además desaparece del nav de jugadores (`SiteNav` ya
+  recibe `role`).
+- **Auditoría de superficies** (regla nueva: toda ruta que se cree declara
+  su rol en esta tabla):
+
+  | Superficie | Jugador | DM |
+  |---|---|---|
+  | `/`, `/reino`, `/crear`, `/personaje`, `/mapa`, `/taberna`, `/cronica`, `/bestiario`, `/lugar` (B) | ✅ | ✅ |
+  | `/narrador` | ❌ (se cierra en esta fase) | ✅ |
+  | `/dm` | ❌ (ya gated) | ✅ |
+  | `/api/dm/character`, `/api/admin/users` | ❌ (ya verifican DM/service) | ✅ |
+  | `/api/ia` | ✅ autenticado (taberna/NPCs lo usan) | ✅ |
+
+- **Acciones directas del DM sobre jugadores** (las existentes + las que
+  añaden otras fases, listadas para no perder el norte): nivel ±, dar XP,
+  oro, objetos, editar hoja completa, entregar desde el Baúl, re-tirar PG,
+  **resetear tirada de stats (K)**, **mover la ubicación del grupo (B)**,
+  revelar mapa/POIs/bestiario, pedir tiradas, controlar iniciativa, reloj.
+- Contenido sensible ya cubierto por RLS (tiradas privadas, crónica oculta);
+  la nota conocida de `dm_notes` legible por consola sigue aceptada (ver
+  HANDOFF, milestone 2026-07-10).
+
+---
+
+## FASE G — Capa gráfica transversal ✨🎨
+
+En cualquier momento tras la Fase A. La app es muy de texto; esta fase la
+hace **gráfica**: más imagen, más animación, menos párrafo.
+
+**Inventario de arte por página** (origen mixto: las piezas clave las sube
+el usuario — vía Fase H/Storage o `public/` —, el relleno se genera con IA;
+**cero arte oficial con copyright**):
+
+| Página | Arte |
+|---|---|
+| `/` (home) | fondo/héroe ilustrado con parallax ligero |
+| `/reino` | cabecera por era + viñeta por continente/facción |
+| `/crear` | retratos de especie/clase pendientes (backlog viejo) + fondos de capítulo del tomo |
+| `/personaje` | marco ornamental de hoja, iconos de hueco del paperdoll |
+| `/mapa` | ya gráfico — pulir niebla animada y marcadores |
+| `/lugar` (B) | cabecera del POI + iconos de servicio (tienda/posada/NPC/tablón) |
+| `/taberna` y NPCs (E) | retrato por NPC (campo `portrait` ya previsto) |
+| `/cronica` | viñetas por entrada de diario, sellos por estado de misión |
+| `/bestiario` | silueta/ilustración por tipo de criatura |
+
+**Animaciones** (ordenadas por impacto):
 
 1. Feed de dados y crónica con animaciones de entrada (CSS, sin librerías).
 2. Crítico/pifia con efecto en pantalla completa breve (destello).
@@ -282,36 +372,69 @@ En cualquier momento tras la Fase A; ideas ordenadas por impacto:
 4. `/lugar` con ambientación: imagen de cabecera con gradiente, iconos de
    servicio animados al hover.
 5. Mapa: pulso suave en la ubicación actual del grupo; trazo animado de viaje
-   cuando el DM mueve `party_location`.
+   cuando el DM mueve `party_location`; niebla que se disipa al revelar.
 6. Sonidos opcionales (dados, compra, campana de posada) con toggle global
    persistido — apagados por defecto.
+7. Apertura/cierre del tomo de `/crear` con más teatro (ya gira; añadir
+   polvo/brillo sutil).
+
+**Directrices**: `next/image` con tamaños explícitos (sin CLS), lazy por
+defecto, presupuesto ~200 KB por imagen de cabecera, y **todo** respeta
+`prefers-reduced-motion` (igual que el fallback de la Fase A).
+
+---
+
+## Backlog recomendado (sin fase asignada)
+
+- **PG actuales y condiciones en vivo**: la hoja solo tiene PG máximos.
+  Tracker de PG actuales/temporales + condiciones 2024 (envenenado, agarrado,
+  derribado…), editable por el DM y el propio jugador, visible en el tablero
+  de batalla (I); la posada (D) restauraría PG de verdad. Encaja como parte
+  de I o mini-fase previa.
+- **Modo espectador/TV**: ruta de solo lectura (mapa + reloj + feed de dados
+  + iniciativa, sin controles) para compartir pantalla en la tele durante la
+  sesión semivirtual.
 
 ---
 
 ## Orden y dependencias
 
 ```
-A (dados 3D) ─────────────────────────────► I (tablero de batalla)
-H (subida de imágenes) ───► I               ▲
-                      └───► J (bestiario) ──┘
+A (dados 3D) ──► K (stats con dados) ─────► I (tablero de batalla)
+A ─────────────────────────────────────────► I ▲
+H (subida de imágenes) ───► I                   │
+                      └───► J (bestiario) ──────┘
+                      └───► G (arte de la capa gráfica)
 B (ubicación) ──► C (tiendas) ──► D (posada)
               └─► E (NPCs, retratos de H)
               └─► F (tablón)
-G (polish) — transversal, en cualquier momento tras A
+L (acceso por rol) — pequeña e independiente, cuanto antes
+G (capa gráfica) — transversal, en cualquier momento tras A
 ```
 
 - **A primero**: impacto inmediato, sin dependencias, toca solo el sistema de
   dados.
+- **K tras A**: la tirada de stats usa los dados 3D (sin A funcionaría con el
+  fallback aleatorio, pero pierde el espectáculo que la justifica).
+- **L cuanto antes**: cierra `/narrador` a jugadores; media tarde, sin
+  dependencias.
 - **H pronto**: desbloquea el campo `image` del editor de región (hueco
-  conocido), los retratos pendientes del vault, y es prerequisito de I y J.
-- **B es la base** de C–F (todas viven en `/lugar`).
+  conocido), los retratos pendientes del vault, el arte de G y es
+  prerequisito de I y J.
+- **B es la base** de C–F (todas viven en `/lugar`); el acceso de jugadores a
+  los NPCs con IA (E) queda **acotado por la ubicación del grupo** que fija
+  el DM en B — coherencia narrativa por diseño.
 - C y E comparten el patrón "NPC con prompt + IA" — implementar C primero y
   extraer el chat reutilizable para E.
 - **I necesita A + H** (dados para iniciativa, Storage para battlemaps/tokens);
   **J necesita H** (arte) y los PDFs del usuario; I y J se enriquecen
   mutuamente (tokens de monstruo) pero pueden ir en cualquier orden.
-- Migraciones: `schema_v13` agrupa C+E+F; `schema_v14` agrupa I (+ tabla de
-  bestiario de J si se opta por DB). Dos pasadas de SQL Editor en total.
+- Migraciones: `schema_v13` agrupa C+E+F **+ `stat_rolls` (K)**; `schema_v14`
+  agrupa I (+ tabla de bestiario de J si se opta por DB). Dos pasadas de SQL
+  Editor en total.
+- **Base de reglas**: todo el proyecto ya implementa D&D 2024 (5.5E) — tablas
+  de nivel/XP, point-buy, ASI, encuentros DMG 2024, bestiario MM 2024. Las
+  fases nuevas siguen esa misma base; no hay trabajo de "migrar reglas".
 
 ## Mantenimiento del vault (Obsidian)
 
