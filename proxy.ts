@@ -7,5 +7,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // `dice-box` excluido: son assets públicos de @3d-dice/dice-box (.json/.wasm/
+  // texturas) que no deben pasar por el auth-proxy (si no, se redirigen a
+  // /login sin sesión y añaden un round-trip de auth innecesario con sesión).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|dice-box|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };
