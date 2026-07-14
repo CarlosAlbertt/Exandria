@@ -80,3 +80,42 @@ export function fmtRoll(r: RollResult): string {
   const sign = r.modifier < 0 ? "-" : "+";
   return `[${r.rolls.join(", ")}] ${sign} ${Math.abs(r.modifier)} = ${r.total}`;
 }
+
+// --- Puente con los dados físicos (dice-box) --------------------------------
+// dice-box calcula el valor de cada dado por física; estos helpers construyen
+// el mismo RollResult que roll()/d20Check() pero tomando esas caras, para que
+// el total del feed sea exactamente la suma de los dados que se vieron rodar.
+
+// Fórmula libre / dado rápido: `dice` son las N caras de NdX; total = suma+mod.
+export function rollFromDice(formula: string, dice: number[], mod: number): RollResult {
+  const total = dice.reduce((a, b) => a + b, 0) + mod;
+  return { formula: formula.trim(), rolls: dice, modifier: mod, total };
+}
+
+// Chequeo d20: dice = [a] normal, [a,b] con ventaja/desventaja. La fórmula
+// resultante coincide con la de d20Check (incluye " (ventaja)"/" (desventaja)").
+export function d20FromDice(dice: number[], mod: number, adv?: "adv" | "dis"): RollResult {
+  const picked = adv === "adv" ? Math.max(...dice) : adv === "dis" ? Math.min(...dice) : dice[0];
+  const total = picked + mod;
+  const suffix = adv === "adv" ? " (ventaja)" : adv === "dis" ? " (desventaja)" : "";
+  const sign = mod < 0 ? "-" : "+";
+  const formula = `1d20${sign}${Math.abs(mod)}${suffix}`;
+  return { formula, rolls: dice, modifier: mod, total };
+}
+
+// Estado crítico de una tirada d20, para efectos visuales del feed. Solo
+// aplica a tiradas de un d20 (chequeo o fórmula que empieza por 1d20/2d20).
+// La cara "elegida" se deduce de la fórmula: (ventaja)=max, (desventaja)=min,
+// resto=primer dado. Crítico si la elegida es 20; pifia si es 1.
+export function critState(formula: string, rolls: number[]): "crit" | "fumble" | null {
+  const isD20 = /d20/i.test(formula);
+  if (!isD20 || rolls.length === 0) return null;
+  const picked = /\(ventaja\)/.test(formula)
+    ? Math.max(...rolls)
+    : /\(desventaja\)/.test(formula)
+      ? Math.min(...rolls)
+      : rolls[0];
+  if (picked === 20) return "crit";
+  if (picked === 1) return "fumble";
+  return null;
+}
