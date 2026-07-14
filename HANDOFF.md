@@ -268,9 +268,14 @@ Ejecutado con subagentes (implementador + revisor por tarea).
   (`getDiceColor`/`setDiceColor`, `getDiceSound`/`setDiceSound`; clac de
   colisión con WebAudio). Sin tipos propios del paquete →
   `types/dice-box.d.ts`.
-- **`components/DiceBoard.tsx`**: overlay a pantalla completa (`#dice-board-canvas`,
-  `pointer-events:none`, z 60 < EpicOverlay z-100), montado en `app/layout.tsx`
-  dentro de `SessionProvider`.
+- **`components/DiceBoard.tsx`**: **mesa de fieltro verde centrada** (overlay
+  con fondo oscurecido, z 60 < EpicOverlay z-100), montada en `app/layout.tsx`
+  dentro de `SessionProvider`. Aparece al tirar; los dados ruedan dentro de la
+  mesa (canvas `#dice-board-canvas` de tamaño fijo → dados grandes); al reposar
+  muestra la etiqueta de la tirada + el total y se cierra sola (~2.6 s) o al
+  hacer clic. `rollVisual` emite eventos `{rolling,total,label}` vía
+  `setBoardListener`; `publishRoll` pasa la etiqueta. `scale` de dados = 7
+  (ajustable en `lib/diceBox.ts` si se quieren más grandes/pequeños).
 - **Integración por `publishRoll`** (`lib/useDiceFeed.ts`): se extrajo
   `publishRollResult` (insert en BD de una tirada YA resuelta); `publishRoll`
   intenta `rollVisual` (construye el `RollResult` con las **caras físicas**,
