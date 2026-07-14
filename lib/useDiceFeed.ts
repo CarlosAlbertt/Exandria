@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 import { roll, d20Check, type RollResult } from "@/lib/dice";
+import { rollVisual } from "@/lib/diceBox";
 
 // Refleja el check constraint de dice_rolls.kind en la BD (schema_v11).
 export type RollKind = "ability" | "save" | "skill" | "attack" | "custom" | "requested";
@@ -66,23 +67,14 @@ export function useDiceFeed() {
   return { rolls, ready };
 }
 
-// Publica una tirada. Si kind es ability/save/skill/attack y se pasa
-// opts.mod, se usa d20Check (con ventaja/desventaja); si no, se parsea y
-// tira `formula` con roll(). Rechaza fórmulas inválidas sin tocar la BD.
-export async function publishRoll(
+// Inserta en la BD una tirada YA resuelta (por la física o por el fallback).
+async function publishRollResult(
   userId: string,
   kind: RollKind,
   label: string,
-  formula: string,
-  opts?: { priv?: boolean; requestId?: number; adv?: "adv" | "dis"; mod?: number }
-): Promise<{ error: string | null; result: RollResult | null }> {
-  if (!supabaseConfigured) return { error: "Supabase no configurado", result: null };
-
-  const isCheck = D20_KINDS.includes(kind) && typeof opts?.mod === "number";
-  const result = isCheck ? d20Check(opts!.mod as number, opts?.adv) : roll(formula);
-
-  if (!result) return { error: "Fórmula de dado no válida.", result: null };
-
+  result: RollResult,
+  opts?: { priv?: boolean; requestId?: number }
+): Promise<{ error: string | null; result: RollResult }> {
   const { error } = await createClient().from("dice_rolls").insert({
     user_id: userId,
     kind,
@@ -93,6 +85,31 @@ export async function publishRoll(
     private: opts?.priv ?? false,
     request_id: opts?.requestId ?? null,
   });
-
   return { error: error?.message ?? null, result };
+}
+
+// Publica una tirada. Anima con el tablero físico si está disponible y
+// construye el resultado con las caras que se vieron; si no, cae al roll()/
+// d20Check() aleatorio de siempre. Rechaza fórmulas inválidas sin tocar la BD.
+export async function publishRoll(
+  userId: string,
+  kind: RollKind,
+  label: string,
+  formula: string,
+  opts?: { priv?: boolean; requestId?: number; adv?: "adv" | "dis"; mod?: number }
+): Promise<{ error: string | null; result: RollResult | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado", result: null };
+
+  const isCheck = D20_KINDS.includes(kind) && typeof opts?.mod === "number";
+
+  // 1) Intento visual (física). null si el tablero no está soportado/listo.
+  const visual = isCheck
+    ? await rollVisual(formula, { check: true, mod: opts!.mod as number, adv: opts?.adv })
+    : await rollVisual(formula);
+
+  // 2) Fallback aleatorio, idéntico al comportamiento previo.
+  const result = visual ?? (isCheck ? d20Check(opts!.mod as number, opts?.adv) : roll(formula));
+  if (!result) return { error: "Fórmula de dado no válida.", result: null };
+
+  return publishRollResult(userId, kind, label, result, { priv: opts?.priv, requestId: opts?.requestId });
 }
