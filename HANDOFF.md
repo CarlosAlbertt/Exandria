@@ -251,6 +251,53 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
+## RESUELTO (2026-07-15): Fase A — Dados 3D con física 🎲
+Trabajo directo en `master`. Plan en
+`docs/superpowers/plans/2026-07-13-fase-a-dados-3d.md`; spec en la guía
+`docs/superpowers/specs/2026-07-12-campana-semivirtual-guia.md` (§Fase A).
+Ejecutado con subagentes (implementador + revisor por tarea).
+
+- **Dependencia nueva**: `@3d-dice/dice-box` (WebGL/BabylonJS + física). Assets
+  **commiteados** en `public/dice-box/assets/` (copiados por
+  `scripts/copy-dice-assets.mjs`, que corre en `postinstall` — para builds
+  fiables en Vercel y offline). El postinstall propio del paquete deja un
+  duplicado en `public/assets/` → **ignorado** en `.gitignore`.
+- **`lib/diceBox.ts`** (singleton imperativo, no-hook): `initDiceBox(selector)`,
+  `rollVisual(formula, opts)`, `isDiceBoxSupported()` (SSR/WebGL/
+  `prefers-reduced-motion`), color de dado y sonido en localStorage
+  (`getDiceColor`/`setDiceColor`, `getDiceSound`/`setDiceSound`; clac de
+  colisión con WebAudio). Sin tipos propios del paquete →
+  `types/dice-box.d.ts`.
+- **`components/DiceBoard.tsx`**: overlay a pantalla completa (`#dice-board-canvas`,
+  `pointer-events:none`, z 60 < EpicOverlay z-100), montado en `app/layout.tsx`
+  dentro de `SessionProvider`.
+- **Integración por `publishRoll`** (`lib/useDiceFeed.ts`): se extrajo
+  `publishRollResult` (insert en BD de una tirada YA resuelta); `publishRoll`
+  intenta `rollVisual` (construye el `RollResult` con las **caras físicas**,
+  helpers puros `rollFromDice`/`d20FromDice` en `lib/dice.ts`) y **cae al
+  `roll()`/`d20Check()` aleatorio** si el tablero no está soportado/listo.
+  Firma pública intacta → los 6 llamadores (DicePanel, InitiativeTracker,
+  CharacterSheet) siguen igual.
+- **Efectos en el feed** (`DicePanel` + `globals.css`): nat 20 → destello
+  dorado + "¡CRÍTICO!"; nat 1 → tinte rojo + "PIFIA" (`critState`), animación
+  de entrada; todo respeta `prefers-reduced-motion`. Controles de color y
+  sonido en el panel. **Toast** de tirada ajena por realtime (A2).
+- **Fix de proxy** (`proxy.ts`): los assets `.json`/`.wasm` de dice-box caían
+  en el matcher del auth-proxy (307 a `/login` sin sesión / round-trip inútil
+  con sesión) → **`dice-box` añadido a las exclusiones del matcher**.
+- Verificado: `npx tsc --noEmit`, `next build` y `scripts/check-dicebox.ts`
+  (19 checks) + `check-dice.ts` limpios; dev server arranca sin errores de
+  consola y **los assets de dice-box se sirven 200 por HTTP** (`theme.config.json`,
+  `ammo.wasm.wasm`, texturas) tras el fix de proxy. **PENDIENTE de prueba en
+  vivo por el usuario**: iniciar sesión y tirar (hoja, dado rápido, fórmula,
+  iniciativa, petición) para ver rodar los dados y el crítico/pifia — requiere
+  login (no disponible en esta sesión). Sin migración.
+- **Nota lint**: `npm run lint` está roto **repo-wide** por
+  `react-hooks/set-state-in-effect` (React 19 más estricto) en ~7 archivos
+  preexistentes; el `useEffect` de carga de color/sonido en `DicePanel` añade
+  un caso más del **mismo patrón hydration-safe** ya usado en todos los hooks
+  realtime del repo. `tsc`/`build` limpios (gates reales del proyecto).
+
 ## RESUELTO (2026-07-13): Bestiario 2024 + formulario de monstruos del DM
 
 Plan en `docs/superpowers/plans/2026-07-13-bestiario-2024.md`. Página
