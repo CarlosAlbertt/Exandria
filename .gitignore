@@ -6,3 +6,6 @@ node_modules
 tsconfig.tsbuildinfo
 
 .superpowers/
+
+# assets duplicados que el postinstall propio de @3d-dice/dice-box deja fuera de public/dice-box
+public/assets/
