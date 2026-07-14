@@ -5,7 +5,7 @@ import { useSession } from "@/components/SessionProvider";
 import { useParty } from "@/lib/character";
 import { useDiceFeed, publishRoll } from "@/lib/useDiceFeed";
 import { useRollRequests } from "@/lib/useRollRequests";
-import { parseFormula, fmtRoll } from "@/lib/dice";
+import { parseFormula, fmtRoll, critState } from "@/lib/dice";
 
 const QUICK_DICE = [4, 6, 8, 10, 12, 20, 100];
 
@@ -143,8 +143,14 @@ export default function DicePanel() {
               // fmtRoll tal cual sin duplicar su lógica de formateo.
               const modifier = r.total - r.rolls.reduce((a, b) => a + b, 0);
               const breakdown = fmtRoll({ formula: r.formula, rolls: r.rolls, modifier, total: r.total });
+              const crit = critState(r.formula, r.rolls);
               return (
-                <div key={r.id} className="panel-raised px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
+                <div
+                  key={r.id}
+                  className={`panel-raised px-3 py-2 flex items-center justify-between gap-3 flex-wrap dice-entry ${
+                    crit === "crit" ? "dice-crit" : crit === "fumble" ? "dice-fumble" : ""
+                  }`}
+                >
                   <div className="min-w-0">
                     <span className="font-ui text-[12px] font-bold" style={{ color: "var(--color-arcane-bright)" }}>{nameFor(r.user_id)}</span>
                     <span className="font-ui text-[12px] mx-1.5" style={{ color: "var(--color-dim)" }}>·</span>
@@ -152,6 +158,12 @@ export default function DicePanel() {
                     {r.private && <i className="fas fa-lock ml-1.5 text-[10px]" style={{ color: "var(--color-dim)" }} title="Tirada privada" />}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
+                    {crit === "crit" && (
+                      <span className="font-ui text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--color-bronze)", color: "var(--color-night)" }}>¡CRÍTICO!</span>
+                    )}
+                    {crit === "fumble" && (
+                      <span className="font-ui text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--color-ember)", color: "var(--color-night)" }}>PIFIA</span>
+                    )}
                     <span className="font-ui text-[13px] font-bold" style={{ color: "var(--color-bronze-bright)" }}>{breakdown}</span>
                     <span className="font-ui text-[10px]" style={{ color: "var(--color-dim)" }}>{fmtTime(r.created_at)}</span>
                   </div>
