@@ -20,6 +20,18 @@ type DiceBoxInstance = {
 let instance: DiceBoxInstance | null = null;
 let initPromise: Promise<DiceBoxInstance | null> | null = null;
 
+// Estado del tablero de mesa (overlay). El componente DiceBoard se suscribe y
+// muestra/oculta la mesa de fieltro: `rolling` mientras ruedan los dados,
+// `total`/`label` cuando reposan. rollVisual() emite estos eventos.
+export type DiceBoardEvent = { rolling: boolean; total: number | null; label: string | null };
+let boardListener: ((e: DiceBoardEvent) => void) | null = null;
+export function setBoardListener(fn: ((e: DiceBoardEvent) => void) | null): void {
+  boardListener = fn;
+}
+function emitBoard(e: DiceBoardEvent): void {
+  boardListener?.(e);
+}
+
 export function isDiceBoxSupported(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -76,7 +88,7 @@ export function initDiceBox(selector: string): Promise<DiceBoxInstance | null> {
       const box = new DiceBox({
         assetPath: "/dice-box/assets/",
         container: selector,
-        scale: 6,
+        scale: 7,
         theme: "default",
         themeColor: getDiceColor(),
         enableShadows: true,
@@ -100,26 +112,33 @@ export function initDiceBox(selector: string): Promise<DiceBoxInstance | null> {
 // roll() aleatorio). `formula` ya debe estar validada por el llamador.
 export async function rollVisual(
   formula: string,
-  opts?: { mod?: number; adv?: "adv" | "dis"; check?: boolean }
+  opts?: { mod?: number; adv?: "adv" | "dis"; check?: boolean; label?: string }
 ): Promise<RollResult | null> {
   if (!isDiceBoxSupported()) return null;
   const box = instance ?? (initPromise ? await initPromise : null);
   if (!box) return null;
 
+  const label = opts?.label ?? null;
+  emitBoard({ rolling: true, total: null, label }); // muestra la mesa vacía
   try {
+    let result: RollResult;
     if (opts?.check && typeof opts.mod === "number") {
       const qty = opts.adv ? 2 : 1;
       const groups = await box.roll(`${qty}d20`, { themeColor: getDiceColor() });
       const dice = groups[0].rolls.map((r) => r.value);
-      return d20FromDice(dice, opts.mod, opts.adv);
+      result = d20FromDice(dice, opts.mod, opts.adv);
+    } else {
+      const parsed = parseFormula(formula);
+      if (!parsed) { emitBoard({ rolling: false, total: null, label }); return null; }
+      const groups = await box.roll(`${parsed.n}d${parsed.die}`, { themeColor: getDiceColor() });
+      const dice = groups[0].rolls.map((r) => r.value);
+      result = rollFromDice(formula, dice, parsed.mod);
     }
-    const parsed = parseFormula(formula);
-    if (!parsed) return null;
-    const groups = await box.roll(`${parsed.n}d${parsed.die}`, { themeColor: getDiceColor() });
-    const dice = groups[0].rolls.map((r) => r.value);
-    return rollFromDice(formula, dice, parsed.mod);
+    emitBoard({ rolling: false, total: result.total, label }); // reposan: muestra total
+    return result;
   } catch (e) {
     console.warn("[diceBox] rollVisual falló; fallback.", e);
+    emitBoard({ rolling: false, total: null, label });
     return null;
   }
 }

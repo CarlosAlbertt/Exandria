@@ -104,8 +104,8 @@ export async function publishRoll(
 
   // 1) Intento visual (física). null si el tablero no está soportado/listo.
   const visual = isCheck
-    ? await rollVisual(formula, { check: true, mod: opts!.mod as number, adv: opts?.adv })
-    : await rollVisual(formula);
+    ? await rollVisual(formula, { check: true, mod: opts!.mod as number, adv: opts?.adv, label })
+    : await rollVisual(formula, { label });
 
   // 2) Fallback aleatorio, idéntico al comportamiento previo.
   const result = visual ?? (isCheck ? d20Check(opts!.mod as number, opts?.adv) : roll(formula));
