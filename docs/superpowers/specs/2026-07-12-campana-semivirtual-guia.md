@@ -2,7 +2,10 @@
 
 Hoja de ruta aprobada (2026-07-12; ampliada 2026-07-14 con las fases K —
 stats con dados de tirada única —, L — control de acceso por rol — y la
-Fase G convertida en capa gráfica completa). Visión: los jugadores pueden
+Fase G convertida en capa gráfica completa; ampliada 2026-07-15 con M —
+caja de herramientas IA del DM —, N — mundo vivo: clima, saber por
+personaje y rumores —, O — libro de conjuros —, P — downtime y minijuegos —
+y Q — misiones personales con IA y visiones). Visión: los jugadores pueden
 actuar por su cuenta desde casa — comprar, descansar, hablar con NPCs,
 aceptar encargos — en la ubicación donde estén, con la IA local del DM
 (Ollama, ya integrada) dando vida al mundo; una capa visual de tablero
@@ -342,6 +345,141 @@ ocultar botones.
 
 ---
 
+## FASE M — Caja de herramientas IA del DM 🤖
+
+**Objetivo**: la IA trabaja PARA el DM — genera contenido que el DM retoca y
+aprueba. Multiplica todas las demás fases: se implementa **primero** entre
+las M–Q.
+
+- **Generadores en formularios DM existentes**: botón "✨ Generar con IA" en
+  los formularios de NPC (nombre, personalidad, prompt, secretos), tienda
+  (tendero + catálogo con precios PHB), encargo de tablón (gancho +
+  recompensa) y **documento in-game**. La IA (vía `/api/ia`) devuelve JSON
+  que rellena el formulario; el DM edita y guarda como siempre. Con el túnel
+  caído, el botón se desactiva — los formularios manuales no dependen de él.
+- **Documentos in-game**: objeto legible `{ titulo, texto, imagen? }` dentro
+  del item (campo `doc` en el jsonb de `items` — sin migración). El DM lo
+  crea/genera y lo **entrega vía Baúl**; el jugador lo abre desde su
+  inventario en un visor estilo pergamino (cartas, contratos, mapas del
+  tesoro, páginas de diario). Pistas tangibles.
+- **Memoria de NPC**: al cerrar una conversación con un NPC IA, la propia IA
+  resume lo hablado en 2-3 frases; el resumen se persiste **por NPC +
+  jugador** (tabla `npc_memories`: npc_ref, user_id, summary, updated_at —
+  entra en la migración agrupada) y se inyecta al system prompt la próxima
+  vez → el NPC recuerda. El DM ve y edita todas las memorias desde el editor
+  de NPCs.
+
+---
+
+## FASE N — Mundo vivo: clima, saber y rumores 🌍
+
+**Objetivo**: el mundo reacciona al reloj y **no todos los personajes saben
+lo mismo** — la historia del mundo se gana con estudio, tiradas o juego.
+
+- **Clima por región + estación**: derivación **pura** del reloj de campaña
+  (mismo patrón que `lib/gameClock.ts`, sin migración): cada día de juego y
+  región tiene clima coherente y determinista (semilla = día+región; los
+  Yermos nievan, Marquet abrasa, costa con tormentas en otoño). Visible en
+  `/lugar` y como icono junto al reloj del nav; se inyecta al contexto de
+  los NPCs IA para que lo comenten.
+- **Saber del mundo por personaje** — la lore de `/reino` se estratifica en
+  tres niveles:
+  1. **Común**: lo que cualquier habitante sabe. Visible para todos.
+  2. **Erudito**: desbloqueo **automático por pericias del PJ** —
+     **Historia** → eras antiguas y Calamidad; **Arcanos** → planos y
+     magia; **Religión** → panteón profundo; **Naturaleza** → tierras
+     salvajes y Ashari. El mago estudioso lee lo que el bárbaro ni sospecha.
+     (Datos: campo `tier` + `unlockSkill` en las entradas de lore de
+     `data/cosmology.ts`/`taldorei.ts`; derivación desde la ficha con
+     `derive` — sin migración.)
+  3. **Secreto**: solo lo revela el DM (como los POIs, flag en
+     `app_config.lore_revealed`) **o una tirada de saber in situ**: al
+     visitar un lugar, botón "¿Qué sé de esto?" → tirada de
+     Historia/Arcanos/Religión con los dados 3D → por tramos de total se
+     revela lore extra de ese lugar (se persiste lo desbloqueado — cada
+     tirada de saber es única por lugar+PJ, misma filosofía que la Fase K).
+- **Pistas y rumores**: registro de pistas `{ texto, misión?, lugar?,
+  descubierta_por }` en `app_config.clues` (JSON, volumen bajo). Las revela
+  el DM a mano **o las siembra como rumores con peso** en NPCs IA (Garda las
+  deja caer en la taberna). Pista descubierta → aparece en la Crónica ligada
+  a su misión.
+
+---
+
+## FASE O — Libro de conjuros 📖
+
+**Objetivo**: los lanzadores juegan completos — preparar conjuros, gastar
+huecos, recuperarlos al descansar. El hueco mecánico más grande de la app.
+
+- **Datos**: conjuros del **SRD 5.2 (CC-BY-4.0)** en `data/spells/` (por
+  nivel: `cantrips.ts`, `level1.ts`, …): nombre ES/EN, nivel, escuela,
+  tiempo, alcance, componentes, duración, mecánica de daño/efecto (dados,
+  salvaciones, CD) — hechos de juego; **descripción = redacción propia**
+  breve en español (misma convención que el bestiario). Listas por clase.
+- **Reglas por clase**: conocidos/preparados según 2024 —
+  `data/classdata/` ya tiene progresión y `spellSlots.ts` los huecos
+  (full/half/pact): la mitad del trabajo está hecho.
+- **Hoja › pestaña "Conjuros"**: trucos + preparados del día, **gastar un
+  hueco con un tap** (contador por nivel), lanzar → tirada de ataque de
+  conjuro o CD de salvación calculadas por `derive`. Estado en
+  `characters.spell_state` (jsonb: preparados + huecos gastados —
+  migración agrupada). El **descanso largo (Fase D) restaura los huecos**
+  de verdad; el corto restaura pacto (brujo).
+- **DM**: ve conjuros y huecos de todos en Grupo; concede pergaminos vía
+  Baúl. Verificación con `scripts/check-spells.ts` (conteos por clase/nivel,
+  CDs coherentes).
+
+---
+
+## FASE P — Downtime y minijuegos 🎲🍺
+
+**Objetivo**: tiempo muerto con sustancia — el jugador hace cosas útiles o
+se juega el oro en la taberna, solo desde casa.
+
+- **Actividades de descanso 2024** (sección en `/lugar`): **trabajar** (oro
+  por día según pericia), **investigar** (revela una pista de la Fase N si
+  hay disponibles en el lugar), **socializar** (crea/refuerza memoria de NPC
+  de la Fase M + puede soltar rumor), **entrenar** (progreso hacia una
+  herramienta/idioma, días acumulados). Cada actividad cuesta horas/días del
+  reloj vía el endpoint de la Fase D y deja nota automática en la Crónica.
+- **Minijuegos de taberna** (apuestas con el oro real de la ficha, movido
+  por el mismo endpoint):
+  1. **Dados del mentiroso / apuestas**: contra un NPC IA (que farolea por
+     prompt) o entre jugadores, con los dados 3D de la Fase A.
+  2. **Pulso**: tiradas de FUE enfrentadas al mejor de 3, con apuesta.
+  3. **Acertijo del tablón**: enigma semanal del DM (o generado por la Fase
+     M); la primera respuesta correcta se lleva el premio.
+- Anti-ruina simple: límite de apuesta configurable por el DM
+  (`app_config`), y todo movimiento de oro queda logueado (como shop_log).
+
+---
+
+## FASE Q — Misiones personales con IA + visiones 🔮
+
+**Objetivo**: el pasado de cada personaje vuelve a buscarle — aventuras en
+solitario jugadas por chat IA, con recompensas acotadas por el DM.
+
+- **Creación**: el DM crea (o **genera con la Fase M**) una misión personal
+  ligada al **trasfondo e historia del PJ** — el system prompt recibe la
+  historia personal (campo `lore` de 12000 chars que ya existe en
+  `characters`), su trasfondo, clase y nivel. Campos: título, gancho,
+  objetivo oculto, **presupuesto cerrado** `{ xpMax, oroMax, objetos? }`.
+- **Juego**: chat IA privado (patrón `/narrador`, pero por misión y con su
+  propio hilo persistido). La IA narra dentro del presupuesto; las tiradas
+  se hacen con los dados 3D y quedan en el feed como privadas.
+- **Cierre**: al terminar, resumen automático al DM (cola de aprobación en
+  Panel DM): aprueba/ajusta recompensas → se aplican vía `/api/dm/character`
+  y la misión pasa a la Crónica (visible u oculta, a elección).
+- **Visiones**: momentos clave de la misión disparan el **EpicOverlay
+  individual que ya existe** (visión cinemática solo para ese jugador). El
+  DM puede además programar visiones sueltas (sin misión) — sueños,
+  presagios, llamadas del patrón del brujo.
+- Datos: columnas en `quests` (`assignee`, `solo boolean`, `budget jsonb`,
+  `thread jsonb`) o tabla propia `solo_quests` — decidir en el plan de la
+  fase (migración agrupada).
+
+---
+
 ## FASE G — Capa gráfica transversal ✨🎨
 
 En cualquier momento tras la Fase A. La app es muy de texto; esta fase la
@@ -405,9 +543,10 @@ A ──────────────────────────
 H (subida de imágenes) ───► I                   │
                       └───► J (bestiario) ──────┘
                       └───► G (arte de la capa gráfica)
-B (ubicación) ──► C (tiendas) ──► D (posada)
-              └─► E (NPCs, retratos de H)
-              └─► F (tablón)
+B (ubicación) ──► C (tiendas) ──► D (posada) ──► P (downtime/minijuegos)
+              └─► E (NPCs) ──► M (IA del DM) ──► Q (misiones personales)
+              └─► F (tablón)                └──► N (mundo vivo)
+O (conjuros) — independiente y grande; en paralelo cuando se quiera
 L (acceso por rol) — pequeña e independiente, cuanto antes
 G (capa gráfica) — transversal, en cualquier momento tras A
 ```
@@ -429,8 +568,17 @@ G (capa gráfica) — transversal, en cualquier momento tras A
 - **I necesita A + H** (dados para iniciativa, Storage para battlemaps/tokens);
   **J necesita H** (arte) y los PDFs del usuario; I y J se enriquecen
   mutuamente (tokens de monstruo) pero pueden ir en cualquier orden.
+- **M antes que N/P/Q**: sus generadores y la memoria de NPC multiplican las
+  otras tres (P socializa contra memorias, Q se genera con M, N siembra
+  rumores en NPCs). Necesita E (los NPCs tienen que existir).
+- **N/P/Q**: P depende de D (endpoint de descanso/oro) y B (`/lugar`);
+  Q depende de M + trasfondos (ya existen); N solo de B para el botón de
+  saber in situ (el clima y los niveles de lore van solos).
+- **O (conjuros)** no depende de nada: datos + hoja + `derive`. Grande —
+  puede avanzar en paralelo por lotes (como el bestiario).
 - Migraciones: `schema_v13` agrupa C+E+F **+ `stat_rolls` (K)**; `schema_v14`
-  agrupa I (+ tabla de bestiario de J si se opta por DB). Dos pasadas de SQL
+  agrupa I + `npc_memories` (M) + `spell_state` (O) + misiones personales
+  (Q) (+ tabla de bestiario de J si se opta por DB). Dos pasadas de SQL
   Editor en total.
 - **Base de reglas**: todo el proyecto ya implementa D&D 2024 (5.5E) — tablas
   de nivel/XP, point-buy, ASI, encuentros DMG 2024, bestiario MM 2024. Las
