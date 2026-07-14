@@ -6,9 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "copy-dice-assets": "node scripts/copy-dice-assets.mjs",
+    "postinstall": "node scripts/copy-dice-assets.mjs"
   },
   "dependencies": {
+    "@3d-dice/dice-box": "^1.1.4",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.110.0",
     "next": "16.2.9",
