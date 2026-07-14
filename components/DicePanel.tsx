@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
 import { useParty } from "@/lib/character";
 import { useDiceFeed, publishRoll } from "@/lib/useDiceFeed";
 import { useRollRequests } from "@/lib/useRollRequests";
 import { parseFormula, fmtRoll, critState } from "@/lib/dice";
+import { getDiceColor, setDiceColor, getDiceSound, setDiceSound } from "@/lib/diceBox";
 
 const QUICK_DICE = [4, 6, 8, 10, 12, 20, 100];
 
@@ -30,6 +31,12 @@ export default function DicePanel() {
   const [priv, setPriv] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [diceColor, setDiceColorState] = useState<string>("#c8a24a");
+  const [sound, setSoundState] = useState<boolean>(false);
+  useEffect(() => {
+    setDiceColorState(getDiceColor());
+    setSoundState(getDiceSound());
+  }, []);
 
   // useParty excluye al DM, así que un id desconocido que no es el mío solo
   // puede ser el DM (todos los demás usuarios tienen su ficha en party).
@@ -120,6 +127,23 @@ export default function DicePanel() {
             Fórmula no válida. Usa el formato XdY(+/-Z), p. ej. 2d6+3.
           </p>
         )}
+
+        <div className="flex items-center gap-4 mt-3 flex-wrap">
+          <label className="flex items-center gap-2 font-ui text-[12px] font-semibold cursor-pointer select-none" style={{ color: "var(--color-muted)" }}>
+            <i className="fas fa-palette" style={{ color: "var(--color-dim)" }} />Color del dado
+            <input
+              type="color"
+              value={diceColor}
+              onChange={(e) => { setDiceColorState(e.target.value); setDiceColor(e.target.value); }}
+              className="w-7 h-7 rounded cursor-pointer bg-transparent border border-[var(--color-line)]"
+              aria-label="Color del dado"
+            />
+          </label>
+          <label className="flex items-center gap-2 font-ui text-[12px] font-semibold cursor-pointer select-none" style={{ color: "var(--color-muted)" }}>
+            <input type="checkbox" checked={sound} onChange={(e) => { setSoundState(e.target.checked); setDiceSound(e.target.checked); }} />
+            <i className="fas fa-volume-high" style={{ color: "var(--color-dim)" }} />Sonido de dados
+          </label>
+        </div>
 
         {isDM && (
           <label className="flex items-center gap-2 mt-3 font-ui text-[12px] font-semibold cursor-pointer select-none" style={{ color: "var(--color-muted)" }}>
