@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
 import { useParty } from "@/lib/character";
 import { useDiceFeed, publishRoll } from "@/lib/useDiceFeed";
@@ -45,6 +45,25 @@ export default function DicePanel() {
     return party.find((p) => p.user_id === userId)?.username ?? "Director de Juego";
   };
 
+  // Aviso breve cuando llega por realtime la tirada de OTRO jugador (A2).
+  // No hay repetición física del dado (dice-box no puede forzar el
+  // resultado): solo una notificación animada que se desvanece sola.
+  const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
+  const lastSeenRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (rolls.length === 0) return;
+    const newest = rolls[0];
+    if (lastSeenRef.current === null) { lastSeenRef.current = newest.id; return; } // ignora la carga inicial
+    if (newest.id !== lastSeenRef.current && newest.user_id !== myId && !newest.private) {
+      setToast({ id: newest.id, text: `🎲 ${nameFor(newest.user_id)} ha sacado ${newest.total} en ${newest.label}` });
+      const t = setTimeout(() => setToast(null), 3500);
+      lastSeenRef.current = newest.id;
+      return () => clearTimeout(t);
+    }
+    lastSeenRef.current = newest.id;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rolls, myId]);
+
   // Solo peticiones dirigidas al grupo o a mí.
   const myRequests = useMemo(
     () => requests.filter((r) => r.target === null || r.target === myId),
@@ -82,6 +101,11 @@ export default function DicePanel() {
 
   return (
     <div className="space-y-4">
+      {toast && (
+        <div key={toast.id} className="fixed bottom-6 right-6 z-[70] panel-raised px-4 py-2.5 dice-entry" style={{ borderColor: "var(--color-bronze)" }}>
+          <span className="font-ui text-[13px] font-bold" style={{ color: "var(--color-bronze-bright)" }}>{toast.text}</span>
+        </div>
+      )}
       {/* PETICIONES ABIERTAS */}
       {myRequests.length > 0 && (
         <div className="space-y-2">
