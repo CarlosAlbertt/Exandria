@@ -6,7 +6,7 @@ import { parseFormula, rollFromDice, d20FromDice, type RollResult } from "@/lib/
 
 const COLOR_KEY = "exandria:diceColor";
 const SOUND_KEY = "exandria:diceSound";
-const DEFAULT_COLOR = "#c8a24a"; // bronce, coherente con --color-bronze
+const DEFAULT_COLOR = "#b3202e"; // rojo D&D: números blancos del tema resaltan bien
 
 // dice-box no publica tipos; describimos lo mínimo que usamos.
 type DieRoll = { value: number };
@@ -58,12 +58,21 @@ export function setDiceSound(on: boolean): void {
   if (typeof window !== "undefined") window.localStorage.setItem(SOUND_KEY, on ? "1" : "0");
 }
 
+// AudioContext único y reutilizado (crear uno por colisión petaba el hilo).
+let audioCtx: AudioContext | null = null;
+function getAudioCtx(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AC) return null;
+  if (!audioCtx) audioCtx = new AC();
+  return audioCtx;
+}
+
 // Un "click" corto de colisión con WebAudio (sin assets de audio externos).
 function playClack(force: number) {
-  if (!getDiceSound() || typeof window === "undefined") return;
-  const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AC) return;
-  const ctx = new AC();
+  if (!getDiceSound()) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = "triangle";
@@ -73,7 +82,6 @@ function playClack(force: number) {
   osc.connect(gain).connect(ctx.destination);
   osc.start();
   osc.stop(ctx.currentTime + 0.09);
-  osc.onended = () => ctx.close();
 }
 
 // Inicializa el tablero sobre `selector`. Idempotente: reusa la misma
@@ -88,11 +96,12 @@ export function initDiceBox(selector: string): Promise<DiceBoxInstance | null> {
       const box = new DiceBox({
         assetPath: "/dice-box/assets/",
         container: selector,
-        scale: 7,
+        scale: 5,
         theme: "default",
         themeColor: getDiceColor(),
-        enableShadows: true,
+        enableShadows: false, // sombras = coste alto de render (evita el "petado")
         offscreen: true,
+        lightIntensity: 1.1,
       });
       box.onCollision = (_a, _b, force) => { if (force > 1) playClack(force); };
       await box.init();

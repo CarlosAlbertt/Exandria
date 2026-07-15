@@ -3,76 +3,55 @@
 import { useEffect, useRef, useState } from "react";
 import { initDiceBox, setBoardListener, type DiceBoardEvent } from "@/lib/diceBox";
 
-// Mesa de dados: overlay centrado que aparece al tirar. El canvas físico de
-// dice-box vive dentro de la mesa de fieltro (#dice-board-canvas), que tiene un
-// tamaño fijo → los dados se ven grandes. Se muestra al empezar la tirada y,
-// al reposar los dados, enseña el total y se cierra sola (o al hacer clic).
-// El canvas se inicializa una vez con la mesa ya dimensionada (opacidad 0, no
-// display:none) para que dice-box calcule bien el tamaño del lienzo.
+const COLLAPSE_KEY = "exandria:diceTrayCollapsed";
+
+// Bandeja de dados acoplada (abajo a la derecha), plegable con una flecha.
+// Los dados ruedan aquí, en la propia web (sin overlay a pantalla completa).
+// El canvas físico (#dice-board-canvas) tiene altura fija: al plegar, el
+// cuerpo colapsa con overflow:hidden pero el canvas conserva su tamaño, así
+// dice-box no re-dimensiona el lienzo. Se auto-despliega al tirar.
 export default function DiceBoard() {
-  const [visible, setVisible] = useState(false);
-  const [total, setTotal] = useState<number | null>(null);
-  const [label, setLabel] = useState<string | null>(null);
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [last, setLast] = useState<{ total: number | null; label: string | null } | null>(null);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "1");
+    }
     void initDiceBox("#dice-board-canvas");
     setBoardListener((e: DiceBoardEvent) => {
-      if (hideTimer.current) { clearTimeout(hideTimer.current); hideTimer.current = null; }
-      setVisible(true);
-      setLabel(e.label);
-      if (e.rolling) {
-        setTotal(null);
-      } else {
-        setTotal(e.total);
-        hideTimer.current = setTimeout(() => setVisible(false), 2600);
-      }
+      setCollapsed(false); // al tirar, despliega para que se vean los dados
+      setLast({ total: e.rolling ? null : e.total, label: e.label });
     });
-    return () => {
-      setBoardListener(null);
-      if (hideTimer.current) clearTimeout(hideTimer.current);
-    };
+    return () => setBoardListener(null);
   }, []);
 
-  function dismiss() {
-    if (hideTimer.current) { clearTimeout(hideTimer.current); hideTimer.current = null; }
-    setVisible(false);
-  }
+  const toggle = useRef((next: boolean) => {
+    setCollapsed(next);
+    if (typeof window !== "undefined") window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+  }).current;
 
   return (
-    <div
-      className={`fixed inset-0 z-[60] flex items-center justify-center transition-opacity duration-300 ${
-        visible ? "opacity-100" : "opacity-0 pointer-events-none"
-      }`}
-      aria-hidden={!visible}
-      onClick={dismiss}
-    >
-      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)" }} />
+    <div className="dice-tray" data-collapsed={collapsed}>
+      <div className="dice-tray-head" onClick={() => toggle(!collapsed)}>
+        <span className="font-ui text-[12px] font-bold" style={{ color: "var(--color-bronze-bright)" }}>
+          <i className="fas fa-dice-d20 mr-1.5" />Dados
+        </span>
+        <span className="font-ui text-[11px] flex-1 mx-2 truncate" style={{ color: "var(--color-dim)" }}>
+          {last && last.total !== null ? `${last.label ? last.label + ": " : ""}${last.total}` : ""}
+        </span>
+        <button
+          type="button"
+          aria-label={collapsed ? "Mostrar dados" : "Ocultar dados"}
+          className="shrink-0 w-6 h-6 grid place-items-center rounded"
+          style={{ color: "var(--color-muted)" }}
+        >
+          <i className={`fas ${collapsed ? "fa-chevron-up" : "fa-chevron-down"} text-[12px]`} />
+        </button>
+      </div>
 
-      <div className="dice-table relative" onClick={(e) => e.stopPropagation()}>
-        <div id="dice-board-canvas" className="absolute inset-0 rounded-[12px] overflow-hidden" />
-
-        {label && (
-          <div
-            className="absolute top-3 left-1/2 -translate-x-1/2 z-[2] font-ui text-[12px] font-bold px-3 py-1 rounded-full pointer-events-none"
-            style={{
-              color: "var(--color-warm)",
-              background: "rgba(0,0,0,0.4)",
-              border: "1px solid color-mix(in srgb, var(--color-bronze) 40%, transparent)",
-            }}
-          >
-            {label}
-          </div>
-        )}
-
-        {total !== null && (
-          <div
-            className="dice-total-pop absolute bottom-3 left-1/2 -translate-x-1/2 z-[2] font-bold pointer-events-none"
-            style={{ fontSize: 42, color: "var(--color-bronze-bright)", textShadow: "0 2px 10px rgba(0,0,0,0.7)" }}
-          >
-            {total}
-          </div>
-        )}
+      <div className="dice-tray-body">
+        <div id="dice-board-canvas" className="dice-tray-canvas" />
       </div>
     </div>
   );
