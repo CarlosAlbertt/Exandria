@@ -268,25 +268,35 @@ Ejecutado con subagentes (implementador + revisor por tarea).
   (`getDiceColor`/`setDiceColor`, `getDiceSound`/`setDiceSound`; clac de
   colisión con WebAudio). Sin tipos propios del paquete →
   `types/dice-box.d.ts`.
-- **`components/DiceBoard.tsx`**: **bandeja de dados acoplada** (abajo-dcha,
-  fija, z 55), montada en `app/layout.tsx` dentro de `SessionProvider`. Los
-  dados ruedan **en la propia web** (no overlay); cabecera plegable con flecha
-  (estado en localStorage `exandria:diceTrayCollapsed`) que muestra la última
-  etiqueta+total. El canvas `#dice-board-canvas` tiene **altura fija** (240px):
-  al plegar, el cuerpo colapsa con `overflow:hidden` pero el canvas conserva su
-  tamaño → dice-box no re-dimensiona el lienzo. Se **auto-despliega al tirar**.
-  `rollVisual` emite `{rolling,total,label}` vía `setBoardListener`;
-  `publishRoll` pasa la etiqueta.
-  - **Historia**: primero fue overlay transparente a pantalla completa (dados
-    diminutos, escalaban a la ventana), luego mesa de fieltro centrada
-    (overlay `opacity:0` al iniciar → canvas de tamaño 0 → **solo se veía el
-    total, no los dados**; y `backdrop-filter` a pantalla completa = lag).
-    Rediseñado a bandeja en la web.
-  - **Perf** (arregla el "petado"): `enableShadows:false`, un **único
-    `AudioContext` reutilizado** (antes se creaba uno por colisión), sin
-    backdrop-blur, canvas pequeño. `scale:5`, color por defecto rojo
-    `#b3202e` (números blancos del tema legibles); ambos ajustables en
+- **`components/DiceBoard.tsx`**: **overlay de tirada estilo Baldur's Gate**,
+  on-demand (montado en `app/layout.tsx` dentro de `SessionProvider`, z 80 <
+  EpicOverlay z-100). Aparece SOLO cuando hace falta una tirada: un **d20
+  grande centrado** + "Pulsa para tirar" (con la etiqueta y el modificador);
+  el jugador **pulsa para lanzar**, ruedan los dados físicos, sale el **total
+  grande** (con destello de crítico/pifia) y se cierra solo (~2 s) o al hacer
+  clic. Fases del overlay: `ready → rolling → result → hidden`.
+  - **`rollVisual` es interactivo**: emite fase `ready`, **espera
+    `triggerThrow()`** (el clic del jugador) y solo entonces lanza la física;
+    devuelve las caras a `publishRoll`, que publica al feed. Los 6 llamadores
+    no cambian. `setBoardListener`/`triggerThrow`/`isAwaitingThrow` en
     `lib/diceBox.ts`.
+  - **Init perezoso**: dice-box (y su bucle de render WebGL) arranca en la
+    **primera tirada**, no en cada página. El `#dice-board-canvas` sí se monta
+    siempre (y con tamaño fijo, nunca `display:none`) para que dice-box mida
+    bien el lienzo.
+  - **Perf** (arregla el "petado" reportado): `enableShadows:false`, un
+    **único `AudioContext` reutilizado** (antes uno nuevo por colisión) e init
+    perezoso. `scale:6`, color por defecto rojo `#b3202e` (números blancos del
+    tema legibles); ajustables en `lib/diceBox.ts`.
+  - **Historia**: overlay transparente a pantalla completa (dados diminutos) →
+    mesa de fieltro centrada auto-roll → bandeja plegable → **overlay BG3
+    interactivo** (el jugador lanza). El bug de "solo se veía el total" venía
+    del canvas en un contenedor de tamaño 0 al iniciar + saturación de render;
+    el "petado", de sombras + AudioContext por colisión + render global
+    permanente.
+  - ⚠️ **Sin verificación visual**: el navegador headless del entorno de dev
+    se cuelga con el bucle WebGL de dice-box (no se puede capturar). Verificado
+    por `tsc`/`build`/checks; el aspecto y el rendimiento se validan en vivo.
 - **Integración por `publishRoll`** (`lib/useDiceFeed.ts`): se extrajo
   `publishRollResult` (insert en BD de una tirada YA resuelta); `publishRoll`
   intenta `rollVisual` (construye el `RollResult` con las **caras físicas**,
