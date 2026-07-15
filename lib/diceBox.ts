@@ -2,7 +2,7 @@
 // No es un hook: publishRoll (lib/useDiceFeed) lo llama directamente. Guardado
 // contra SSR y contra la ausencia de WebGL / prefers-reduced-motion, en cuyo
 // caso rollVisual() devuelve null y el llamador usa el fallback aleatorio.
-import { parseFormula, rollFromDice, d20FromDice, type RollResult } from "@/lib/dice";
+import { parseFormula, rollFromDice, d20FromDice, critState, type RollResult } from "@/lib/dice";
 
 const COLOR_KEY = "exandria:diceColor";
 const SOUND_KEY = "exandria:diceSound";
@@ -20,16 +20,38 @@ type DiceBoxInstance = {
 let instance: DiceBoxInstance | null = null;
 let initPromise: Promise<DiceBoxInstance | null> | null = null;
 
-// Estado del tablero de mesa (overlay). El componente DiceBoard se suscribe y
-// muestra/oculta la mesa de fieltro: `rolling` mientras ruedan los dados,
-// `total`/`label` cuando reposan. rollVisual() emite estos eventos.
-export type DiceBoardEvent = { rolling: boolean; total: number | null; label: string | null };
+// Estado del overlay de tirada (estilo Baldur's Gate): aparece cuando hace
+// falta una tirada, el jugador LANZA (clic), salen los dados y el resultado, y
+// se cierra. El componente DiceBoard se suscribe a estas fases.
+//  - "ready":   dado listo, esperando que el jugador lo lance
+//  - "rolling": rodando (física)
+//  - "result":  reposaron; total/crit visibles antes de cerrar
+//  - "hidden":  cancelado/sin resultado
+export type DiceBoardPhase = "ready" | "rolling" | "result" | "hidden";
+export type DiceBoardEvent = {
+  phase: DiceBoardPhase;
+  label: string | null;
+  mod: number;
+  total: number | null;
+  crit: "crit" | "fumble" | null;
+};
 let boardListener: ((e: DiceBoardEvent) => void) | null = null;
 export function setBoardListener(fn: ((e: DiceBoardEvent) => void) | null): void {
   boardListener = fn;
 }
 function emitBoard(e: DiceBoardEvent): void {
   boardListener?.(e);
+}
+
+// El jugador lanza los dados: resuelve la espera de rollVisual (fase "ready").
+let awaitingThrow: (() => void) | null = null;
+export function triggerThrow(): void {
+  const fn = awaitingThrow;
+  awaitingThrow = null;
+  fn?.();
+}
+export function isAwaitingThrow(): boolean {
+  return awaitingThrow !== null;
 }
 
 export function isDiceBoxSupported(): boolean {
@@ -96,7 +118,7 @@ export function initDiceBox(selector: string): Promise<DiceBoxInstance | null> {
       const box = new DiceBox({
         assetPath: "/dice-box/assets/",
         container: selector,
-        scale: 5,
+        scale: 6,
         theme: "default",
         themeColor: getDiceColor(),
         enableShadows: false, // sombras = coste alto de render (evita el "petado")
@@ -116,38 +138,52 @@ export function initDiceBox(selector: string): Promise<DiceBoxInstance | null> {
   return initPromise;
 }
 
-// Anima una tirada y devuelve el RollResult construido con las caras físicas.
-// Devuelve null si el tablero no está listo/soportado (→ el llamador usa el
-// roll() aleatorio). `formula` ya debe estar validada por el llamador.
+// Tirada interactiva estilo Baldur's Gate: muestra el dado, ESPERA a que el
+// jugador lo lance (triggerThrow), rueda la física y devuelve el RollResult
+// construido con las caras reales. Devuelve null si el tablero no está
+// soportado/listo (→ el llamador usa el roll() aleatorio) o si ya hay otra
+// tirada pendiente. `formula` ya debe estar validada por el llamador.
 export async function rollVisual(
   formula: string,
   opts?: { mod?: number; adv?: "adv" | "dis"; check?: boolean; label?: string }
 ): Promise<RollResult | null> {
   if (!isDiceBoxSupported()) return null;
-  const box = instance ?? (initPromise ? await initPromise : null);
+  // Init perezoso: dice-box (y su bucle de render WebGL) solo arranca en la
+  // primera tirada real, no en cada página. El canvas #dice-board-canvas ya
+  // está montado (y dimensionado) por DiceBoard desde el inicio.
+  const box = instance ?? (await initDiceBox("#dice-board-canvas"));
   if (!box) return null;
+  if (awaitingThrow) return null; // ya hay una tirada esperando lanzamiento
 
   const label = opts?.label ?? null;
-  emitBoard({ rolling: true, total: null, label }); // muestra la mesa vacía
+  const isCheck = !!opts?.check && typeof opts.mod === "number";
+  const mod = isCheck ? (opts!.mod as number) : (parseFormula(formula)?.mod ?? 0);
+
+  // Fase "ready": dado a la espera de que el jugador lo lance.
+  emitBoard({ phase: "ready", label, mod, total: null, crit: null });
+  await new Promise<void>((resolve) => { awaitingThrow = resolve; });
+
+  emitBoard({ phase: "rolling", label, mod, total: null, crit: null });
   try {
     let result: RollResult;
-    if (opts?.check && typeof opts.mod === "number") {
-      const qty = opts.adv ? 2 : 1;
+    if (isCheck) {
+      const qty = opts!.adv ? 2 : 1;
       const groups = await box.roll(`${qty}d20`, { themeColor: getDiceColor() });
       const dice = groups[0].rolls.map((r) => r.value);
-      result = d20FromDice(dice, opts.mod, opts.adv);
+      result = d20FromDice(dice, opts!.mod as number, opts!.adv);
     } else {
       const parsed = parseFormula(formula);
-      if (!parsed) { emitBoard({ rolling: false, total: null, label }); return null; }
+      if (!parsed) { emitBoard({ phase: "hidden", label, mod, total: null, crit: null }); return null; }
       const groups = await box.roll(`${parsed.n}d${parsed.die}`, { themeColor: getDiceColor() });
       const dice = groups[0].rolls.map((r) => r.value);
       result = rollFromDice(formula, dice, parsed.mod);
     }
-    emitBoard({ rolling: false, total: result.total, label }); // reposan: muestra total
+    const crit = critState(result.formula, result.rolls);
+    emitBoard({ phase: "result", label, mod, total: result.total, crit });
     return result;
   } catch (e) {
     console.warn("[diceBox] rollVisual falló; fallback.", e);
-    emitBoard({ rolling: false, total: null, label });
+    emitBoard({ phase: "hidden", label, mod, total: null, crit: null });
     return null;
   }
 }

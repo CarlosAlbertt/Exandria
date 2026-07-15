@@ -372,44 +372,132 @@
   .dice-entry, .dice-crit { animation: none; }
 }
 
-/* Bandeja de dados acoplada y plegable (Fase A) — fieltro verde */
-.dice-tray {
+/* Overlay de tirada estilo Baldur's Gate (Fase A) — aparece al necesitar dados */
+.dice-overlay {
   position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 55;
-  width: min(92vw, 340px);
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--color-panel);
-  border: 1px solid color-mix(in srgb, var(--color-bronze) 35%, var(--color-line));
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-}
-.dice-tray-head {
+  inset: 0;
+  z-index: 80; /* sobre la nav, bajo EpicOverlay (z-100) */
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 10px;
-  cursor: pointer;
-  user-select: none;
-  background: linear-gradient(180deg, var(--color-raised), var(--color-panel));
-  border-bottom: 1px solid var(--color-line);
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
 }
-.dice-tray-body {
-  height: 240px;
-  overflow: hidden;
-  transition: height 0.25s ease;
+.dice-overlay.is-open { opacity: 1; pointer-events: auto; }
+.dice-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, rgba(10, 8, 16, 0.72), rgba(4, 3, 8, 0.9));
+  backdrop-filter: blur(2px);
 }
-.dice-tray[data-collapsed="true"] .dice-tray-body { height: 0; }
-.dice-tray[data-collapsed="true"] .dice-tray-head { border-bottom-color: transparent; }
-/* Altura fija del canvas: al plegar se recorta, no se re-dimensiona */
-.dice-tray-canvas {
-  width: 100%;
-  height: 240px;
-  background: radial-gradient(ellipse at 50% 40%, #2b855a 0%, #176844 48%, #0e3f28 100%);
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+/* Escena: el dado físico rueda aquí. Tamaño fijo → dados grandes y visibles. */
+.dice-stage {
+  position: relative;
+  width: min(94vw, 560px);
+  height: min(72vh, 560px);
 }
-
+.dice-stage-canvas {
+  position: absolute;
+  inset: 0;
+  /* halo tenue tras el dado para que resalte, sin tapar los números */
+  background: radial-gradient(circle at 50% 45%, rgba(200, 162, 74, 0.14), transparent 60%);
+}
+/* Dado grande central que se pulsa para lanzar (estilo BG3) */
+.dice-die-icon {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(96px, 22vh, 160px);
+  color: var(--color-bronze-bright);
+  text-shadow: 0 0 30px rgba(200, 162, 74, 0.55), 0 8px 20px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  animation: dice-die-float 1.8s ease-in-out infinite;
+}
+@keyframes dice-die-float {
+  0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-4deg); }
+  50%      { transform: translate(-50%, -54%) scale(1.05) rotate(4deg); }
+}
+/* Aviso "pulsa para tirar" */
+.dice-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+  animation: dice-prompt-pulse 1.4s ease-in-out infinite;
+}
+.dice-prompt-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-warm);
+  margin-bottom: 6px;
+}
+.dice-prompt-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-bronze-bright);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-bronze) 55%, transparent);
+}
+.dice-prompt-mod {
+  font-size: 13px;
+  color: var(--color-arcane-bright);
+}
+@keyframes dice-prompt-pulse {
+  0%, 100% { opacity: 0.75; }
+  50%      { opacity: 1; }
+}
+/* Resultado */
+.dice-result {
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+  animation: dice-result-pop 0.35s ease-out;
+}
+.dice-result-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-warm);
+  margin-bottom: 2px;
+}
+.dice-result-total {
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-bronze-bright);
+  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.8);
+}
+.dice-result.is-crit .dice-result-total { color: #ffd76a; text-shadow: 0 0 24px rgba(255, 200, 90, 0.8); }
+.dice-result.is-fumble .dice-result-total { color: var(--color-ember); }
+.dice-result-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-bronze);
+  color: var(--color-night);
+}
+.dice-result-badge.is-fumble { background: var(--color-ember); }
+@keyframes dice-result-pop {
+  from { opacity: 0; transform: translateX(-50%) scale(0.7); }
+  to   { opacity: 1; transform: translateX(-50%) scale(1); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .dice-tray-body { transition: none; }
+  .dice-overlay { transition: none; }
+  .dice-prompt, .dice-result { animation: none; }
 }

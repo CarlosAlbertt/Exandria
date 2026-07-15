@@ -1,57 +1,90 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { initDiceBox, setBoardListener, type DiceBoardEvent } from "@/lib/diceBox";
+import {
+  setBoardListener,
+  triggerThrow,
+  type DiceBoardEvent,
+  type DiceBoardPhase,
+} from "@/lib/diceBox";
 
-const COLLAPSE_KEY = "exandria:diceTrayCollapsed";
-
-// Bandeja de dados acoplada (abajo a la derecha), plegable con una flecha.
-// Los dados ruedan aquí, en la propia web (sin overlay a pantalla completa).
-// El canvas físico (#dice-board-canvas) tiene altura fija: al plegar, el
-// cuerpo colapsa con overflow:hidden pero el canvas conserva su tamaño, así
-// dice-box no re-dimensiona el lienzo. Se auto-despliega al tirar.
+// Overlay de tirada estilo Baldur's Gate: aparece SOLO cuando hace falta una
+// tirada, el jugador pulsa para lanzar el dado, sale el resultado y se cierra.
+// El canvas físico (#dice-board-canvas) está siempre montado y dimensionado
+// (nunca display:none) para que dice-box calcule bien el lienzo; el overlay se
+// muestra/oculta con opacidad. Se inicializa una vez al montar.
 export default function DiceBoard() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [last, setLast] = useState<{ total: number | null; label: string | null } | null>(null);
+  const [phase, setPhase] = useState<DiceBoardPhase>("hidden");
+  const [label, setLabel] = useState<string | null>(null);
+  const [mod, setMod] = useState(0);
+  const [total, setTotal] = useState<number | null>(null);
+  const [crit, setCrit] = useState<"crit" | "fumble" | null>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "1");
-    }
-    void initDiceBox("#dice-board-canvas");
+    // No se inicializa dice-box aquí: arranca de forma perezosa en la primera
+    // tirada (rollVisual). El canvas #dice-board-canvas sí se monta abajo.
     setBoardListener((e: DiceBoardEvent) => {
-      setCollapsed(false); // al tirar, despliega para que se vean los dados
-      setLast({ total: e.rolling ? null : e.total, label: e.label });
+      if (hideTimer.current) { clearTimeout(hideTimer.current); hideTimer.current = null; }
+      setPhase(e.phase);
+      setLabel(e.label);
+      setMod(e.mod);
+      setTotal(e.total);
+      setCrit(e.crit);
+      if (e.phase === "result") {
+        hideTimer.current = setTimeout(() => setPhase("hidden"), 2000);
+      }
     });
-    return () => setBoardListener(null);
+    return () => {
+      setBoardListener(null);
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
   }, []);
 
-  const toggle = useRef((next: boolean) => {
-    setCollapsed(next);
-    if (typeof window !== "undefined") window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
-  }).current;
+  function onOverlayClick() {
+    if (phase === "ready") {
+      triggerThrow();
+    } else if (phase === "result") {
+      if (hideTimer.current) { clearTimeout(hideTimer.current); hideTimer.current = null; }
+      setPhase("hidden");
+    }
+  }
+
+  const open = phase === "ready" || phase === "rolling" || phase === "result";
+  const modStr = mod === 0 ? "" : mod > 0 ? `+${mod}` : `${mod}`;
 
   return (
-    <div className="dice-tray" data-collapsed={collapsed}>
-      <div className="dice-tray-head" onClick={() => toggle(!collapsed)}>
-        <span className="font-ui text-[12px] font-bold" style={{ color: "var(--color-bronze-bright)" }}>
-          <i className="fas fa-dice-d20 mr-1.5" />Dados
-        </span>
-        <span className="font-ui text-[11px] flex-1 mx-2 truncate" style={{ color: "var(--color-dim)" }}>
-          {last && last.total !== null ? `${last.label ? last.label + ": " : ""}${last.total}` : ""}
-        </span>
-        <button
-          type="button"
-          aria-label={collapsed ? "Mostrar dados" : "Ocultar dados"}
-          className="shrink-0 w-6 h-6 grid place-items-center rounded"
-          style={{ color: "var(--color-muted)" }}
-        >
-          <i className={`fas ${collapsed ? "fa-chevron-up" : "fa-chevron-down"} text-[12px]`} />
-        </button>
-      </div>
+    <div
+      className={`dice-overlay${open ? " is-open" : ""}`}
+      aria-hidden={!open}
+      onClick={onOverlayClick}
+    >
+      <div className="dice-overlay-backdrop" />
 
-      <div className="dice-tray-body">
-        <div id="dice-board-canvas" className="dice-tray-canvas" />
+      <div className="dice-stage">
+        <div id="dice-board-canvas" className="dice-stage-canvas" />
+
+        {phase === "ready" && (
+          <>
+            <i className="fas fa-dice-d20 dice-die-icon" aria-hidden />
+            <div className="dice-prompt">
+              {label && <div className="dice-prompt-label">{label}</div>}
+              <div className="dice-prompt-cta">
+                <span>Pulsa para tirar</span>
+                {modStr && <span className="dice-prompt-mod">{modStr}</span>}
+              </div>
+            </div>
+          </>
+        )}
+
+        {phase === "result" && total !== null && (
+          <div className={`dice-result${crit === "crit" ? " is-crit" : crit === "fumble" ? " is-fumble" : ""}`}>
+            {label && <div className="dice-result-label">{label}</div>}
+            <div className="dice-result-total">{total}</div>
+            {crit === "crit" && <div className="dice-result-badge">¡CRÍTICO!</div>}
+            {crit === "fumble" && <div className="dice-result-badge is-fumble">PIFIA</div>}
+          </div>
+        )}
       </div>
     </div>
   );
