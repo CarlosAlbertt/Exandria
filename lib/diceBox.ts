@@ -106,6 +106,28 @@ function playClack(force: number) {
   osc.stop(ctx.currentTime + 0.09);
 }
 
+// dice-box no dimensiona su canvas al contenedor (queda a 0×0 o al 300×150 por
+// defecto y no se ve nada). Forzamos el búfer de dibujo al tamaño real del
+// contenedor y avisamos del resize para que Babylon ajuste su viewport. Se
+// re-aplica en cada resize de ventana (el escenario usa min(vw…) y cambia).
+function fitCanvasToContainer(selector: string): void {
+  if (typeof window === "undefined") return;
+  const el = document.querySelector(selector) as HTMLElement | null;
+  const cv = el?.querySelector("canvas") as HTMLCanvasElement | null;
+  if (!el || !cv) return;
+  const fit = () => {
+    if (el.clientWidth > 0 && el.clientHeight > 0) {
+      cv.width = el.clientWidth;
+      cv.height = el.clientHeight;
+    }
+    cv.style.width = "100%";
+    cv.style.height = "100%";
+  };
+  fit();
+  window.dispatchEvent(new Event("resize")); // que Babylon reajuste el viewport
+  window.addEventListener("resize", fit);
+}
+
 // Inicializa el tablero sobre `selector`. Idempotente: reusa la misma
 // promesa/instancia entre montajes (React remonta 2× en dev).
 export function initDiceBox(selector: string): Promise<DiceBoxInstance | null> {
@@ -122,11 +144,12 @@ export function initDiceBox(selector: string): Promise<DiceBoxInstance | null> {
         theme: "default",
         themeColor: getDiceColor(),
         enableShadows: false, // sombras = coste alto de render (evita el "petado")
-        offscreen: true,
+        offscreen: false, // offscreen rompía el auto-sizing (canvas quedaba 300×150)
         lightIntensity: 1.1,
       });
       box.onCollision = (_a, _b, force) => { if (force > 1) playClack(force); };
       await box.init();
+      fitCanvasToContainer(selector); // dice-box deja el canvas a 0×0: lo ajustamos
       instance = box;
       return box;
     } catch (e) {

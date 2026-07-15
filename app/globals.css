@@ -403,6 +403,13 @@
   /* halo tenue tras el dado para que resalte, sin tapar los números */
   background: radial-gradient(circle at 50% 45%, rgba(200, 162, 74, 0.14), transparent 60%);
 }
+/* El canvas que inyecta dice-box debe llenar el contenedor (si no, queda 300×150) */
+.dice-stage-canvas canvas,
+canvas.dice-box-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
 /* Dado grande central que se pulsa para lanzar (estilo BG3) */
 .dice-die-icon {
   position: absolute;
