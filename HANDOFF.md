@@ -268,14 +268,25 @@ Ejecutado con subagentes (implementador + revisor por tarea).
   (`getDiceColor`/`setDiceColor`, `getDiceSound`/`setDiceSound`; clac de
   colisión con WebAudio). Sin tipos propios del paquete →
   `types/dice-box.d.ts`.
-- **`components/DiceBoard.tsx`**: **mesa de fieltro verde centrada** (overlay
-  con fondo oscurecido, z 60 < EpicOverlay z-100), montada en `app/layout.tsx`
-  dentro de `SessionProvider`. Aparece al tirar; los dados ruedan dentro de la
-  mesa (canvas `#dice-board-canvas` de tamaño fijo → dados grandes); al reposar
-  muestra la etiqueta de la tirada + el total y se cierra sola (~2.6 s) o al
-  hacer clic. `rollVisual` emite eventos `{rolling,total,label}` vía
-  `setBoardListener`; `publishRoll` pasa la etiqueta. `scale` de dados = 7
-  (ajustable en `lib/diceBox.ts` si se quieren más grandes/pequeños).
+- **`components/DiceBoard.tsx`**: **bandeja de dados acoplada** (abajo-dcha,
+  fija, z 55), montada en `app/layout.tsx` dentro de `SessionProvider`. Los
+  dados ruedan **en la propia web** (no overlay); cabecera plegable con flecha
+  (estado en localStorage `exandria:diceTrayCollapsed`) que muestra la última
+  etiqueta+total. El canvas `#dice-board-canvas` tiene **altura fija** (240px):
+  al plegar, el cuerpo colapsa con `overflow:hidden` pero el canvas conserva su
+  tamaño → dice-box no re-dimensiona el lienzo. Se **auto-despliega al tirar**.
+  `rollVisual` emite `{rolling,total,label}` vía `setBoardListener`;
+  `publishRoll` pasa la etiqueta.
+  - **Historia**: primero fue overlay transparente a pantalla completa (dados
+    diminutos, escalaban a la ventana), luego mesa de fieltro centrada
+    (overlay `opacity:0` al iniciar → canvas de tamaño 0 → **solo se veía el
+    total, no los dados**; y `backdrop-filter` a pantalla completa = lag).
+    Rediseñado a bandeja en la web.
+  - **Perf** (arregla el "petado"): `enableShadows:false`, un **único
+    `AudioContext` reutilizado** (antes se creaba uno por colisión), sin
+    backdrop-blur, canvas pequeño. `scale:5`, color por defecto rojo
+    `#b3202e` (números blancos del tema legibles); ambos ajustables en
+    `lib/diceBox.ts`.
 - **Integración por `publishRoll`** (`lib/useDiceFeed.ts`): se extrajo
   `publishRollResult` (insert en BD de una tirada YA resuelta); `publishRoll`
   intenta `rollVisual` (construye el `RollResult` con las **caras físicas**,
