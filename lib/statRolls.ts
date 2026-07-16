@@ -52,3 +52,24 @@ export async function saveStatRoll(userId: string, method: StatMethod, scores: n
   const { error } = await createClient().from("stat_rolls").insert({ user_id: userId, method, scores });
   return error?.message ?? null;
 }
+
+// Reconstruye qué índice de `scores` fue a cada aptitud. `base` ya es la
+// puntuación SIN el bonus de trasfondo (ese vive aparte en `bonus`), así que
+// empareja por valor directo, consumiendo cada índice una sola vez: los valores
+// se repiten y dos 13 son dos índices distintos.
+//
+// Existe porque `assign` no se persiste: `base` es la fuente de verdad y de ella
+// se deriva. Si no cuadra (ficha vieja, valores editados a mano, o `scores`
+// vacío en point-buy) devuelve ASSIGN_EMPTY: nunca inventa una asignación.
+export function deriveAssign(base: Record<AbilityKey, number>, scores: number[]): Assign {
+  if (!scores.length) return { ...ASSIGN_EMPTY };
+  const out: Assign = { ...ASSIGN_EMPTY };
+  const used = new Set<number>();
+  for (const k of Object.keys(ASSIGN_EMPTY) as AbilityKey[]) {
+    const idx = scores.findIndex((v, i) => !used.has(i) && v === base[k]);
+    if (idx === -1) return { ...ASSIGN_EMPTY };
+    used.add(idx);
+    out[k] = idx;
+  }
+  return out;
+}

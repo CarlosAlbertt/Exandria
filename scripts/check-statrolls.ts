@@ -1,5 +1,5 @@
 // Comprobación manual de lib/statRolls.ts. Uso: npx tsx scripts/check-statrolls.ts
-import { dropLowest, STANDARD_ARRAY, ASSIGN_EMPTY, isAssignComplete } from "../lib/statRolls";
+import { dropLowest, STANDARD_ARRAY, ASSIGN_EMPTY, isAssignComplete, deriveAssign } from "../lib/statRolls";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -28,6 +28,27 @@ check("isAssignComplete(completo) = true",
   isAssignComplete({ fue: 0, des: 1, con: 2, int: 3, sab: 4, car: 5 }) === true);
 check("isAssignComplete(uno a null) = false",
   isAssignComplete({ fue: 0, des: 1, con: 2, int: 3, sab: 4, car: null }) === false);
+
+// deriveAssign: reconstruye la asignación comparando `base` con los 6 valores.
+check("deriveAssign reparte normal",
+  JSON.stringify(deriveAssign({ fue: 13, des: 14, con: 12, int: 10, sab: 15, car: 8 }, [15, 14, 13, 12, 10, 8]))
+  === JSON.stringify({ fue: 2, des: 1, con: 3, int: 4, sab: 0, car: 5 }));
+
+// Valores repetidos: dos 13 son DOS índices distintos, no el mismo.
+check("deriveAssign con valores repetidos usa índices distintos", (() => {
+  const a = deriveAssign({ fue: 13, des: 13, con: 12, int: 12, sab: 10, car: 8 }, [13, 13, 12, 12, 10, 8]);
+  return isAssignComplete(a) && new Set(Object.values(a)).size === 6;
+})());
+
+check("deriveAssign sin tirada (point-buy) = vacío",
+  JSON.stringify(deriveAssign({ fue: 13, des: 14, con: 12, int: 10, sab: 15, car: 8 }, []))
+  === JSON.stringify(ASSIGN_EMPTY));
+
+// Si no cuadra (ficha vieja, valores editados a mano) NO inventa: devuelve vacío
+// y el jugador reasigna como hoy.
+check("deriveAssign que no cuadra = vacío",
+  JSON.stringify(deriveAssign({ fue: 18, des: 14, con: 12, int: 10, sab: 15, car: 8 }, [15, 14, 13, 12, 10, 8]))
+  === JSON.stringify(ASSIGN_EMPTY));
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} fallaron.`);
 process.exit(failures === 0 ? 0 : 1);
