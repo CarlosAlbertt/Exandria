@@ -294,9 +294,15 @@ Ejecutado con subagentes (implementador + revisor por tarea).
     del canvas en un contenedor de tamaño 0 al iniciar + saturación de render;
     el "petado", de sombras + AudioContext por colisión + render global
     permanente.
-  - ⚠️ **Sin verificación visual**: el navegador headless del entorno de dev
-    se cuelga con el bucle WebGL de dice-box (no se puede capturar). Verificado
-    por `tsc`/`build`/checks; el aspecto y el rendimiento se validan en vivo.
+  - **Sizing del canvas** (bug que impedía ver los dados): dice-box dejaba su
+    canvas a 0×0 (offscreen) / 300×150 y no lo ajustaba → no se renderizaba
+    nada, solo se veía el total. Fix: `offscreen:false` +
+    `fitCanvasToContainer()` (fija el búfer al tamaño del contenedor + `resize`
+    para Babylon; se re-aplica en cada resize de ventana). Confirmado en vivo:
+    canvas 0×0 → 560×518 y dados visibles con números.
+  - ✅ **Confirmado funcionando por el usuario** (2026-07-15): dados grandes,
+    números legibles, rinde bien. `scale:6` y color rojo por defecto,
+    ajustables en `lib/diceBox.ts`.
 - **Integración por `publishRoll`** (`lib/useDiceFeed.ts`): se extrajo
   `publishRollResult` (insert en BD de una tirada YA resuelta); `publishRoll`
   intenta `rollVisual` (construye el `RollResult` con las **caras físicas**,
