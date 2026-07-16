@@ -9,9 +9,19 @@ import { getBackground } from "@/data/backgrounds";
 import { ABILITIES, fmtMod } from "@/data/rules";
 import { xpForNext } from "@/data/leveling";
 import { derive } from "@/lib/derive";
+import { createClient } from "@/lib/supabase/client";
 
 async function dmPatch(userId: string, patch: Record<string, unknown>) {
   await fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, patch }) });
+}
+
+// Borra la tirada de aptitudes guardada del jugador (RLS solo permite al DM
+// hacer delete en stat_rolls). Al no existir política de update, "resetear"
+// es literalmente borrar la fila: el jugador podrá elegir método y tirar de nuevo.
+async function resetStatRoll(uid: string) {
+  if (!confirm("¿Resetear la tirada de aptitudes de este jugador? Podrá volver a elegir método y tirar.")) return;
+  const { error } = await createClient().from("stat_rolls").delete().eq("user_id", uid);
+  if (error) alert(error.message);
 }
 
 export default function GrupoPanel() {
@@ -86,6 +96,13 @@ export default function GrupoPanel() {
                   </p>
                 </div>
                 <i className={`fas fa-chevron-${isOpen ? "up" : "down"}`} style={{ color: "var(--color-dim)" }} />
+              </button>
+              <button
+                className="btn-ghost shrink-0"
+                title="Borra su tirada de aptitudes guardada para que pueda elegir método y tirar de nuevo"
+                onClick={() => resetStatRoll(c.user_id)}
+              >
+                <i className="fas fa-dice-d20 mr-2" />Resetear aptitudes
               </button>
               <Link href={`/personaje?user=${c.user_id}`} className="btn-ghost shrink-0">
                 <i className="fas fa-pen-to-square mr-2" />Editar hoja
