@@ -254,7 +254,96 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
+## RESUELTO (2026-07-16): Creador — una escena por paso 🎬
+Trabajo directo en `master`. Diseño en
+`docs/superpowers/specs/2026-07-16-crear-escenas-por-paso-design.md`;
+plan en `docs/superpowers/plans/2026-07-16-crear-escenas-por-paso.md`.
+Ejecutado con subagentes (implementador + revisor de spec + revisor de calidad
+por tarea).
+
+> **El círculo de invocación se RETIRÓ.** El milestone de abajo (2026-07-15)
+> describe una UI que ya no existe: se conserva por historia, no como
+> referencia. `InvocationCircle.tsx`, `Medallion.tsx` y `DetailPanel.tsx`
+> están borrados.
+
+**El problema** (medido en el navegador a 1280px): la página topaba en 1152px;
+el círculo medía 300px perdido en una columna de 824px mientras el carril se
+ahogaba a 280px; y los **pasos 3–5 se renderizaban dentro de ese carril**, así
+que las tres tarjetas de método del paso Aptitudes medían **75px de ancho por
+425 de alto**, con los títulos partidos en 2–3 líneas. `min(74vw, 300px)` topa
+en 300px desde vw≥405: el círculo no crecía por mucha pantalla que hubiera.
+
+**Falso positivo descartado**: las runas **no** estaban mal colocadas ni
+recortadas. Medido a 375, 900 y 1280px, `--r: min(37vw,150px)` era exactamente
+la mitad de `min(74vw,300px)`, así que caían siempre sobre el aro. Lo que se
+percibía como «cortada» era que cada runa estaba centrada en la línea del aro y
+la mitad sobresalía del disco.
+
+**Qué hay ahora**: cada paso es su propia escena a pantalla completa
+(`max-w-[1600px]`), y la navegación es una **barra de runas** (`RuneBar`) con el
+**mismo gate** de siempre.
+- `components/crear/RuneBar.tsx` — las 6 runas: encendida = completo, resaltada
+  = actual, apagada + `disabled` = no alcanzable (`maxStep`). Ahora el nombre
+  del paso es **texto visible**, no un `title` oculto; por eso el último paso
+  pasó de «Resumen» a **«Ficha»** (su nombre en el resto del proyecto).
+- `components/crear/ArtPanel.tsx` — retrato vertical de **260px**
+  (`aspect-ratio: 659/1025`, el tamaño real del arte de clase) o **silueta**
+  rúnica. Sustituye al medallón de 168px recortado en círculo.
+- `steps/SpeciesScene.tsx` — acordeón por región (más grande: filas de 38px,
+  nombre a 14px) | retrato | detalle con origen, tamaño, velocidad, rasgos y el
+  **linaje** como sub-elección.
+- `steps/ClassScene.tsx` — **flechas** ◀ ▶ (una clase cada vez, arte grande) +
+  **tira de las 13** miniaturas para saltar y ver cuánto queda. Sin acordeón ni
+  buscador aquí. Recorre por grupo (Marcial · Arcano · Divino · Primigenio).
+  **Ojo**: hojear con las flechas **compromete la elección** (`onPick` =
+  `pickClass`, que limpia subclase y pericias) — es el comportamiento deseado.
+- `steps/BackgroundScene.tsx` — lista + detalle en dos bloques. **Sin arte**:
+  `backgrounds.ts` no tiene campo `image` ni está previsto.
+- `steps/SkillsScene.tsx` y `steps/SummaryScene.tsx` — salieron de `page.tsx` a
+  archivos propios. Pericias en dos bloques; la Ficha enseña héroe e historia en
+  paralelo. `page.tsx` baja de ~575 a ~350 líneas: solo estado, validación, gate
+  y guardado.
+- El tipo **`Build` vive ahora en `lib/character.ts`** (es el borrador en curso;
+  `CharacterData` es la ficha guardada). No en `page.tsx`: importar tipos desde
+  `app/` invertía la dirección de dependencia y no tenía precedente en el repo.
+- Limpieza: `abbrOf()` sube a `data/rules.ts` (estaba duplicada); se borra
+  `RailOption.children` + `.rail-nest` (la sub-elección anidada en el carril,
+  sin productor desde que linaje y subclase viven en el detalle de su escena).
+
+**Bug arreglado — «error al crear otro personaje»**: `reset()` («Empezar de
+nuevo») ponía `statMethod: null` **solo en cliente**; la fila de `stat_rolls`
+seguía en la BD, el selector reaparecía y el `insert` chocaba con la PK,
+soltando el texto crudo de Postgres (`duplicate key value violates unique
+constraint "stat_rolls_pkey"`). Con 4d6 era peor: se lanzaban los **seis dados
+antes** del insert.
+- **El bloqueo del servidor es correcto y no se tocó** (PK + sin policy de
+  UPDATE). Lo que fallaba era el cliente.
+- Ahora `reset()` **conserva** `statMethod` y `rolled`: rehaces el personaje,
+  no la tirada — *la tirada es del jugador, no del personaje*. `pickDados`
+  **comprueba** `loadStatRoll` antes de tirar (cortesía; la garantía sigue
+  siendo la PK), y cualquier error de la BD se **traduce** al español.
+- **`assign` no se persiste**: se **deriva de `base`** con `deriveAssign`
+  (`lib/statRolls.ts`, verificada por `check-statrolls.ts`). Antes, al volver a
+  `/crear` con una tirada hecha, `assign` vacío hacía `stepDone[3]` falso y el
+  gate te obligaba a reasignar los 6 valores **siempre**. Sin migración.
+
+**Arte**: `public/classes/` sigue con **11 de 13** (faltan `bardo.jpg` y
+`paladin.jpg`) y `public/species/` sigue **vacío** → silueta. A 260px canta
+mucho más que en la miniatura de 30px de antes. Formato: vertical ~659×1025,
+<32 KB, en `public/species/<slug>.jpg` y `public/species/lineages/<slug>.jpg`.
+
+- Verificado: `tsc`, `build` y los 3 `check-*` limpios en **cada** commit; dos
+  revisiones (spec + calidad) por tarea. **NO se verificó en el navegador**: el
+  panel de navegador se desconectó a mitad de sesión y no se pudo levantar el
+  dev server ni medir el DOM. **Queda pendiente comprobar a ojo** que las
+  tarjetas de método pasan de 75px a ≥320px con el título en una línea, que la
+  barra de runas respeta el gate, y que las flechas y la tira recorren las 13
+  clases. Sin migración.
+
 ## RESUELTO (2026-07-15): Creador — Círculo de invocación + Fase K 🔮
+> ⚠️ **Histórico**: el círculo se retiró el 2026-07-16 (ver arriba). Esta
+> sección describe la UI anterior.
+
 Trabajo directo en `master`. Diseño en
 `docs/superpowers/specs/2026-07-15-creador-circulo-invocacion-design.md`;
 plan en `docs/superpowers/plans/2026-07-15-creador-circulo-invocacion.md`.
