@@ -657,3 +657,13 @@ Spec y plan en `docs/superpowers/{specs,plans}/2026-07-06-exandria-rebrand-roste
 - Notas del DM: si algún día importa que sean *de verdad* privadas, moverlas
   de `app_config` a una tabla propia con RLS `is_dm()`-only (ver nota de
   seguridad en el milestone 2026-07-10).
+- **Archivar personaje ("borrar" sin borrar)** (pedido el 2026-07-16, sin spec):
+  el jugador retira su personaje y deja de verlo; el DM lo sigue viendo y puede
+  devolverlo a juego. **No es una casilla**: `characters.user_id` es PK (un
+  personaje por usuario, `saveCharacter` hace upsert), así que conservar el viejo
+  mientras se crea otro exige `id` PK + `user_id` FK + columna de archivado →
+  migración + tocar `/personaje`, `useParty`, `/api/dm/character` y `/crear`. El
+  ocultado debe ser RLS (el jugador tiene policy `for all` sobre su fila y podría
+  desarchivarse desde la consola): copiar el patrón de `stat_rolls` (sin update
+  para el jugador, restaurar solo con `is_dm()`). A decidir: `stat_rolls` es una
+  fila por jugador, así que el personaje nuevo hereda la tirada del archivado.
