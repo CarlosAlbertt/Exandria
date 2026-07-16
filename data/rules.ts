@@ -12,6 +12,12 @@ export const ABILITIES: { key: AbilityKey; name: string; abbr: string; blurb: st
   { key: "car", name: "Carisma", abbr: "CAR", blurb: "Presencia, persuasión y fuerza de voluntad." },
 ];
 
+// Abreviatura de una aptitud por su clave ("fue" → "FUE"). Cae a la clave en
+// mayúsculas si no existe.
+export function abbrOf(key: string): string {
+  return ABILITIES.find((a) => a.key === key)?.abbr ?? key.toUpperCase();
+}
+
 export type Skill = { name: string; ability: AbilityKey };
 
 export const SKILLS: Skill[] = [

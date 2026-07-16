@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CLASSES, GROUP_LABEL, type CharClass } from "@/data/classes";
-import { ABILITIES } from "@/data/rules";
+import { abbrOf } from "@/data/rules";
 import ArtPanel from "@/components/crear/ArtPanel";
 
 // Escena 1 — Clase. Navegación por FLECHAS (una clase cada vez, con su arte
@@ -16,10 +16,6 @@ const GROUP_ORDER = Object.keys(GROUP_LABEL) as (keyof typeof GROUP_LABEL)[];
 const ORDERED: CharClass[] = [...CLASSES].sort(
   (a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group)
 );
-
-function abbr(key: string) {
-  return ABILITIES.find((a) => a.key === key)?.abbr ?? key.toUpperCase();
-}
 
 // Miniatura de la tira: cae al rombo si no hay .jpg (bardo y paladin hoy).
 function Thumb({ cls, on, onClick }: { cls: CharClass; on: boolean; onClick: () => void }) {
@@ -64,6 +60,7 @@ export default function ClassScene({
 
   return (
     <div>
+      <span aria-live="polite" className="sr-only">{shown.name}</span>
       <div className="cls-stage">
         <button type="button" className="cls-arrow" onClick={() => go(-1)} aria-label="Clase anterior">◀</button>
 
@@ -79,13 +76,15 @@ export default function ClassScene({
 
           <div className="flex gap-6 mb-4 flex-wrap">
             <div><p className="eyebrow !text-[9px]">Dado de golpe</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>d{shown.hitDie}</p></div>
-            <div><p className="eyebrow !text-[9px]">Aptitud principal</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{shown.primary.map(abbr).join(" / ")}</p></div>
-            <div><p className="eyebrow !text-[9px]">Salvaciones</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{shown.saves.map(abbr).join(" / ")}</p></div>
+            <div><p className="eyebrow !text-[9px]">Aptitud principal</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{shown.primary.map(abbrOf).join(" / ")}</p></div>
+            <div><p className="eyebrow !text-[9px]">Salvaciones</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{shown.saves.map(abbrOf).join(" / ")}</p></div>
             <div><p className="eyebrow !text-[9px]">Pericias</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{shown.skillCount} a elegir</p></div>
           </div>
 
-          {/* La subclase solo es elegible de la clase YA seleccionada: si estás
-              hojeando con las flechas sin haber pulsado, no hay qué elegir. */}
+          {/* Al entrar sin clase elegida se muestra la primera, pero NO se selecciona
+              sola: hace falta un clic explícito (el gate lo exige). En cuanto se pulsa
+              una flecha o una miniatura, `onPick` ya fija la clase, así que a partir de
+              ahí siempre se ven sus subclases y este botón no vuelve a aparecer. */}
           {cls?.slug === shown.slug ? (
             <>
               <p className="eyebrow mb-1.5">{shown.subclassLabel} *</p>

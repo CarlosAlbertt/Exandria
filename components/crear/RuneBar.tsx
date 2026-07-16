@@ -28,7 +28,6 @@ export default function RuneBar({
             className={`rune ${state}`}
             disabled={i > maxStep}
             onClick={() => onGo(i)}
-            title={label}
             aria-current={i === current ? "step" : undefined}
           >
             <span className="rune-glyph" aria-hidden="true">{GLYPHS[i] ?? "•"}</span>

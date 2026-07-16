@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
 import { loadCharacter, saveCharacter } from "@/lib/character";
 import { getSpecies, REGIONS, regionSpecies } from "@/data/species";
-import { CLASSES, getClass, GROUP_LABEL } from "@/data/classes";
+import { getClass } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
-import InvocationCircle from "@/components/crear/InvocationCircle";
-import OptionRail, { type RailOption } from "@/components/crear/OptionRail";
-import Medallion from "@/components/crear/Medallion";
-import DetailPanel from "@/components/crear/DetailPanel";
+import RuneBar from "@/components/crear/RuneBar";
+import { type RailOption } from "@/components/crear/OptionRail";
+import SpeciesScene from "@/components/crear/steps/SpeciesScene";
+import ClassScene from "@/components/crear/steps/ClassScene";
+import BackgroundScene from "@/components/crear/steps/BackgroundScene";
 import AbilitiesStep from "@/components/crear/steps/AbilitiesStep";
 import {
   ABILITIES, SKILLS, AbilityKey, abilityMod, fmtMod,
@@ -55,15 +56,6 @@ const speciesOptions: RailOption[] = REGIONS.flatMap((r) =>
     group: r.label,
   }))
 );
-// Se ordenan por grupo (Marcial/Arcano/Divino/Primigenio, según GROUP_LABEL)
-// para que las clases de un mismo grupo queden CONSECUTIVAS: OptionRail solo
-// agrupa rachas consecutivas de `group`.
-const GROUP_ORDER = Object.keys(GROUP_LABEL) as (keyof typeof GROUP_LABEL)[];
-const classOptions: RailOption[] = [...CLASSES]
-  .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group))
-  .map((c) => ({
-    slug: c.slug, name: c.name, sub: c.tagline, img: `/classes/${c.slug}.jpg`, group: GROUP_LABEL[c.group],
-  }));
 const backgroundOptions: RailOption[] = BACKGROUNDS.map((g) => ({
   slug: g.slug, name: g.name, sub: g.feat,
 }));
@@ -142,19 +134,6 @@ export default function CrearPage() {
   const species = b.species ? getSpecies(b.species) : undefined;
   const cls = b.cls ? getClass(b.cls) : undefined;
   const bg = b.background ? getBackground(b.background) : undefined;
-
-  // Opciones del carril con la sub-elección (linaje/subclase) anidada bajo la
-  // opción seleccionada, en vez de renderizarse debajo de toda la lista.
-  const speciesOptionsUI: RailOption[] = speciesOptions.map((o) =>
-    o.slug === b.species && species?.lineages
-      ? { ...o, children: <LineagePicker lineages={species.lineages} value={b.lineage} onPick={(name) => set({ lineage: name })} /> }
-      : o
-  );
-  const classOptionsUI: RailOption[] = classOptions.map((o) =>
-    o.slug === b.cls && cls
-      ? { ...o, children: <SubclassPicker label={cls.subclassLabel} subclasses={cls.subclasses} value={b.subclass} onPick={(name) => set({ subclass: name })} /> }
-      : o
-  );
 
   // Qué aptitudes puede mejorar el +3 del trasfondo (Fase K: AbilitiesStep).
   const canBonus = useMemo(() => {
@@ -269,20 +248,8 @@ export default function CrearPage() {
   const pickClass = (slug: string) => set({ cls: slug, subclass: null, skills: [] });
   const pickBackground = (slug: string) => set({ background: slug, bonus: { ...NO_BONUS } });
 
-  // Medallón central: retrato + nombre de la selección actual del paso.
-  const medallionSrc =
-    b.step === 0 ? (species?.image ?? null) :
-    b.step === 1 ? (b.cls ? `/classes/${b.cls}.jpg` : null) :
-    null;
-  const medallionCaption =
-    b.step === 0 ? (species?.name ?? null) :
-    b.step === 1 ? (cls?.name ?? null) :
-    b.step === 2 ? (bg?.name ?? null) :
-    b.step === 5 ? (b.name.trim() || null) :
-    (cls?.name ?? species?.name ?? null);
-
   return (
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+    <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-10">
       <header className="text-center mb-6">
         <p className="eyebrow mb-3">Forja de héroes · Reglas 2024</p>
         <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text">Crea tu personaje</h1>
@@ -301,71 +268,54 @@ export default function CrearPage() {
         />
       </div>
 
-      <div className="crear-grid">
-        <div className="crear-left">
-          <InvocationCircle steps={STEPS} current={b.step} maxStep={maxStep} onGo={go}>
-            <Medallion src={medallionSrc} caption={medallionCaption} />
-          </InvocationCircle>
-          <DetailPanel step={b.step} species={species} cls={cls} subclass={b.subclass} bg={bg} />
-        </div>
+      <RuneBar steps={STEPS} current={b.step} maxStep={maxStep} onGo={go} />
 
-        <div>
-          {b.step === 0 && (
-            <OptionRail
-              title="Especies de Exandria"
-              options={speciesOptionsUI}
-              selected={b.species}
-              onPick={pickSpecies}
-              searchPlaceholder="Buscar especie…"
-            />
-          )}
+      {b.step === 0 && (
+        <SpeciesScene
+          options={speciesOptions}
+          species={species}
+          selected={b.species}
+          lineage={b.lineage}
+          onPick={pickSpecies}
+          onLineage={(name) => set({ lineage: name })}
+        />
+      )}
 
-          {b.step === 1 && (
-            <OptionRail
-              title="Clases"
-              options={classOptionsUI}
-              selected={b.cls}
-              onPick={pickClass}
-              searchPlaceholder="Buscar clase…"
-            />
-          )}
+      {b.step === 1 && (
+        <ClassScene
+          cls={cls}
+          subclass={b.subclass}
+          onPick={pickClass}
+          onSubclass={(name) => set({ subclass: name })}
+        />
+      )}
 
-          {b.step === 2 && (
-            <OptionRail title="Trasfondos" options={backgroundOptions} selected={b.background} onPick={pickBackground} searchPlaceholder="Buscar trasfondo…" />
-          )}
+      {b.step === 2 && (
+        <BackgroundScene options={backgroundOptions} bg={bg} selected={b.background} onPick={pickBackground} />
+      )}
 
-          {b.step === 3 && (
-            <div className="p-3">
-              <AbilitiesStep
-                userId={userId}
-                method={b.statMethod}
-                rolled={b.rolled}
-                assign={b.assign}
-                base={b.base}
-                bonus={b.bonus}
-                canBonus={canBonus}
-                onMethod={(m) => set({ statMethod: m, rolled: [], assign: { ...ASSIGN_EMPTY } })}
-                onRolled={(scores) => set({ rolled: scores, assign: { ...ASSIGN_EMPTY } })}
-                onAssign={(a) => set({ assign: a })}
-                onBase={(k, v) => set({ base: { ...b.base, [k]: v } })}
-                onBonus={(k, v) => set({ bonus: { ...b.bonus, [k]: v } })}
-              />
-            </div>
-          )}
+      {b.step === 3 && (
+        <AbilitiesStep
+          userId={userId}
+          method={b.statMethod}
+          rolled={b.rolled}
+          assign={b.assign}
+          base={b.base}
+          bonus={b.bonus}
+          canBonus={canBonus}
+          onMethod={(m) => set({ statMethod: m, rolled: [], assign: { ...ASSIGN_EMPTY } })}
+          onRolled={(scores) => set({ rolled: scores, assign: { ...ASSIGN_EMPTY } })}
+          onAssign={(a) => set({ assign: a })}
+          onBase={(k, v) => set({ base: { ...b.base, [k]: v } })}
+          onBonus={(k, v) => set({ bonus: { ...b.bonus, [k]: v } })}
+        />
+      )}
 
-          {b.step === 4 && (
-            <div className="p-3">
-              <StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} />
-            </div>
-          )}
+      {b.step === 4 && <StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} />}
 
-          {b.step === 5 && (
-            <div className="p-3">
-              <StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} />
-            </div>
-          )}
-        </div>
-      </div>
+      {b.step === 5 && (
+        <StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} />
+      )}
 
       <div className="flex items-center justify-between gap-3 mt-6 flex-wrap">
         <button className="btn-ghost" onClick={() => go(b.step - 1)} disabled={b.step === 0}>
@@ -392,63 +342,6 @@ export default function CrearPage() {
 
 function bonusTotal(bonus: Record<AbilityKey, number>) {
   return ABILITIES.reduce((s, a) => s + (bonus[a.key] ?? 0), 0);
-}
-
-/* ================== SUB-ELECCIÓN: LINAJE (bajo el carril de especies) ================== */
-function LineagePicker({ lineages, value, onPick }: {
-  lineages: { name: string; perk: string; homebrew?: boolean }[];
-  value: string | null;
-  onPick: (name: string) => void;
-}) {
-  return (
-    <div className="mt-1 px-1">
-      <div className="rail-group">Linaje *</div>
-      {lineages.map((l) => (
-        <button
-          key={l.name}
-          type="button"
-          className={`rail-opt${value === l.name ? " sel" : ""}`}
-          onClick={() => onPick(l.name)}
-          aria-pressed={value === l.name}
-        >
-          <div className="rail-thumb"><span className="ph">✦</span></div>
-          <span>
-            <span className="rail-name">{l.name}{l.homebrew ? " · DM" : ""}</span>
-            <br /><span className="rail-sub">{l.perk}</span>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/* ================== SUB-ELECCIÓN: SUBCLASE (bajo el carril de clases) ================== */
-function SubclassPicker({ label, subclasses, value, onPick }: {
-  label: string;
-  subclasses: { name: string; blurb: string }[];
-  value: string | null;
-  onPick: (name: string) => void;
-}) {
-  return (
-    <div className="mt-1 px-1">
-      <div className="rail-group">{label} *</div>
-      {subclasses.map((sc) => (
-        <button
-          key={sc.name}
-          type="button"
-          className={`rail-opt${value === sc.name ? " sel" : ""}`}
-          onClick={() => onPick(sc.name)}
-          aria-pressed={value === sc.name}
-        >
-          <div className="rail-thumb"><span className="ph">◈</span></div>
-          <span>
-            <span className="rail-name">{sc.name}</span>
-            <br /><span className="rail-sub">{sc.blurb}</span>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
 }
 
 /* ============================ PASO 5: PERICIAS ============================ */
