@@ -518,7 +518,7 @@ canvas.dice-box-canvas {
   overflow: hidden;
   border: 2px solid color-mix(in srgb, var(--color-bronze) 70%, transparent);
   box-shadow: 0 0 26px rgba(200, 162, 74, 0.4), inset 0 0 22px rgba(0, 0, 0, 0.7);
-  background: radial-gradient(circle at 50% 32%, #3a2f4d, #15111d 72%);
+  background: radial-gradient(circle at 50% 32%, var(--color-raised), var(--color-night) 72%);
   display: grid;
   place-items: center;
 }
@@ -555,4 +555,60 @@ canvas.dice-box-canvas {
   color: var(--color-warm);
   opacity: 0.8;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+
+/* Creador — círculo de invocación */
+.inv-scene { position: relative; display: grid; place-items: center; padding: 20px; min-height: 340px; }
+.inv-scene::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(69, 199, 189, 0.12), transparent 65%);
+  pointer-events: none;
+}
+.inv-circle { position: relative; width: min(74vw, 300px); aspect-ratio: 1; }
+.inv-ring-outer, .inv-ring-inner { position: absolute; border-radius: 50%; }
+.inv-ring-outer {
+  inset: 0;
+  border: 2px solid color-mix(in srgb, var(--color-bronze) 50%, transparent);
+  box-shadow: 0 0 30px rgba(201, 163, 92, 0.3), inset 0 0 26px rgba(201, 163, 92, 0.12);
+  animation: inv-spin 60s linear infinite;
+}
+.inv-ring-inner {
+  inset: 12%;
+  border: 1px dashed color-mix(in srgb, var(--color-arcane) 65%, transparent);
+  box-shadow: 0 0 20px rgba(69, 199, 189, 0.3);
+  animation: inv-spin 40s linear infinite reverse;
+}
+@keyframes inv-spin { to { transform: rotate(360deg); } }
+.inv-medal-slot { position: absolute; inset: 22%; }
+/* Runas = pasos. Se colocan por ángulo con --a (grados) y --r (radio). */
+.inv-rune {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 30px; height: 30px;
+  margin: -15px 0 0 -15px;
+  transform: rotate(var(--a)) translate(var(--r)) rotate(calc(-1 * var(--a)));
+  border-radius: 7px;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 800;
+  background: var(--color-raised);
+  color: var(--color-dim);
+  border: 1px solid var(--color-line);
+  cursor: pointer;
+  transition: box-shadow 0.2s, color 0.2s, background 0.2s;
+}
+.inv-rune:disabled { cursor: not-allowed; opacity: 0.45; }
+.inv-rune.done {
+  background: var(--color-bronze);
+  color: var(--color-night);
+  border-color: var(--color-bronze-bright);
+  box-shadow: 0 0 12px rgba(201, 163, 92, 0.7);
+}
+.inv-rune.now {
+  color: var(--color-bronze-bright);
+  border-color: var(--color-bronze-bright);
+  box-shadow: 0 0 14px rgba(201, 163, 92, 0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .inv-ring-outer, .inv-ring-inner { animation: none; }
 }
