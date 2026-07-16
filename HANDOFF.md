@@ -254,6 +254,58 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
 
+## RESUELTO (2026-07-15): Creador — Círculo de invocación + Fase K 🔮
+Trabajo directo en `master`. Diseño en
+`docs/superpowers/specs/2026-07-15-creador-circulo-invocacion-design.md`;
+plan en `docs/superpowers/plans/2026-07-15-creador-circulo-invocacion.md`.
+Ejecutado con subagentes (implementador + revisor por tarea).
+
+- **El tomo (`CharacterBook.tsx`) se retiró**: `/crear` es ahora un **círculo
+  de invocación**. `components/crear/`:
+  - `InvocationCircle.tsx` — dos aros + **6 runas = los pasos**: encendida =
+    completo, resaltada = actual, apagada/deshabilitada = aún no alcanzable
+    (respeta el gate de `stepDone`/`maxStep`). No hay barra de progreso.
+  - `Medallion.tsx` — **arte real si existe, silueta rúnica generativa si no**
+    (nunca un hueco vacío). Resetea el fallo de carga al cambiar `src`.
+  - `OptionRail.tsx` — carril de opciones con miniatura + nombre + subtítulo,
+    agrupando por región (especies).
+  - `DetailPanel.tsx` — **detalle bajo el círculo** (blurb, origen, rasgos,
+    dado de golpe, etc.). Se añadió tras detectar que el rediseño se había
+    dejado fuera el texto necesario para poder elegir con criterio.
+  - `steps/AbilitiesStep.tsx` — el paso de Aptitudes (Fase K).
+- **Fase K — aptitudes de tirada única** (`supabase/schema_v13.sql`, **ya
+  ejecutada** por el usuario): el jugador elige **una vez** entre **4d6**
+  (con los dados 3D de la Fase A; el jugador lanza, estilo BG3), **array
+  estándar** (15/14/13/12/10/8) o **point-buy 27**. `lib/statRolls.ts`
+  (`dropLowest`, `STANDARD_ARRAY`, `Assign`/`ASSIGN_EMPTY`,
+  `isAssignComplete`, `loadStatRoll`, `saveStatRoll`), verificado por
+  `scripts/check-statrolls.ts`.
+  - **Bloqueo real**: `stat_rolls` tiene `user_id` como **PK** (una fila = una
+    tirada) y **sin policy de UPDATE** (con RLS, sin policy = denegado) → no se
+    puede repetir la tirada. **Solo el DM borra** (`is_dm()`) = **resetear**:
+    botón «Resetear aptitudes» por jugador en **Panel DM › Grupo** (sin
+    endpoint: la RLS ya lo cubre).
+  - **Sin sesión** (modo localStorage): solo array/point-buy — los dados
+    exigen sesión para poder bloquearse.
+  - *Modelo de confianza*: los dados ruedan en cliente y el cliente inserta,
+    así que alguien con consola podría falsear UNA inserción (como las tiendas
+    autoservicio); lo que el sistema garantiza es que **no hay repetición**.
+- **Decisión clave**: `base` (`Record<AbilityKey, number>`) **sigue siendo la
+  fuente de verdad** de las puntuaciones; dados/array solo cambian **cómo** se
+  rellena (asignando por índice, porque los valores pueden repetirse). Por eso
+  `finalScores`, `saveCharacter` y la hoja **no se tocaron**.
+- **Arte**: `public/classes/` tiene **11 de 13** (faltan `bardo.jpg` y
+  `paladin.jpg` → caen a la silueta, es lo esperado); `public/species/` sigue
+  **vacío** (las 36 especies van con silueta). En cuanto se suelte un `.jpg`
+  aparece solo; con la **Fase H** admitirá URLs de Storage.
+- Verificado: `tsc`, `build` y los 3 `check-*` limpios **+ prueba real en el
+  navegador** (excluyendo `crear` del matcher del proxy temporalmente, ya
+  revertido): rejilla 2 columnas, 6 runas con el gate correcto (solo la 1ª
+  activa al entrar), 36 especies en 7 grupos regionales, medallón con silueta,
+  y en el paso Clase **`/classes/mago.jpg` carga de verdad** (698px) junto con
+  las 11 miniaturas existentes. **Pendiente de prueba en vivo del usuario**: el
+  paso de dados (4d6 ×6 con el overlay BG3) y el reset del DM.
+
 ## RESUELTO (2026-07-15): Fase A — Dados 3D con física 🎲
 Trabajo directo en `master`. Plan en
 `docs/superpowers/plans/2026-07-13-fase-a-dados-3d.md`; spec en la guía
