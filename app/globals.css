@@ -640,3 +640,7 @@ canvas.dice-box-canvas {
 .rail-thumb .ph { font-size: 10px; color: var(--color-dim); }
 .rail-name { font-family: var(--font-ui); font-size: 12px; font-weight: 700; color: var(--color-warm); }
 .rail-sub { font-family: var(--font-ui); font-size: 9px; color: var(--color-dim); }
+
+/* Creador — rejilla escena + carril */
+.crear-grid { display: grid; grid-template-columns: 1fr 280px; align-items: stretch; min-height: 420px; }
+@media (max-width: 860px) { .crear-grid { grid-template-columns: 1fr; } }

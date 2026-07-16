@@ -8,8 +8,9 @@ import { loadCharacter, saveCharacter } from "@/lib/character";
 import { getSpecies, REGIONS, regionSpecies } from "@/data/species";
 import { CLASSES, getClass, GROUP_LABEL } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
-import PortraitFrame from "@/components/PortraitFrame";
-import CharacterBook, { type Chapter } from "@/components/CharacterBook";
+import InvocationCircle from "@/components/crear/InvocationCircle";
+import OptionRail, { type RailOption } from "@/components/crear/OptionRail";
+import Medallion from "@/components/crear/Medallion";
 import AbilitiesStep from "@/components/crear/steps/AbilitiesStep";
 import {
   ABILITIES, SKILLS, AbilityKey, abilityMod, fmtMod,
@@ -40,19 +41,25 @@ const NO_BONUS: Record<AbilityKey, number> = { fue: 0, des: 0, con: 0, int: 0, s
 const STEPS = ["Especie", "Clase", "Trasfondo", "Aptitudes", "Pericias", "Resumen"];
 const KEY = "taldorei.build.v1";
 
-const CHAPTERS = [
-  { key: "razas", label: "Razas", step: 0 },
-  { key: "clases", label: "Clases", step: 1 },
-  { key: "trasfondos", label: "Trasfondos", step: 2 },
-  { key: "aptitudes", label: "Aptitudes", step: 3 },
-  { key: "pericias", label: "Pericias", step: 4 },
-  { key: "ficha", label: "Ficha", step: 5 },
-] as const;
-
-function slugify(s: string) {
-  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
+// Opciones del carril: derivadas de los datos estáticos, no cambian en tiempo
+// de ejecución. `speciesOptions` recorre las regiones en orden para que las
+// especies de una misma región queden CONSECUTIVAS (OptionRail agrupa rachas
+// consecutivas de `group`).
+const speciesOptions: RailOption[] = REGIONS.flatMap((r) =>
+  regionSpecies(r.key).map((s) => ({
+    slug: s.slug,
+    name: s.name + (s.homebrew ? " · DM" : ""),
+    sub: s.tagline,
+    img: `/species/${s.slug}.jpg`,
+    group: r.label,
+  }))
+);
+const classOptions: RailOption[] = CLASSES.map((c) => ({
+  slug: c.slug, name: c.name, sub: GROUP_LABEL[c.group], img: `/classes/${c.slug}.jpg`,
+}));
+const backgroundOptions: RailOption[] = BACKGROUNDS.map((g) => ({
+  slug: g.slug, name: g.name, sub: g.feat,
+}));
 
 export default function CrearPage() {
   const [b, setB] = useState<Build>({
@@ -61,7 +68,6 @@ export default function CrearPage() {
     statMethod: null, rolled: [], assign: { ...ASSIGN_EMPTY },
   });
   const [loaded, setLoaded] = useState(false);
-  const [mobileShowRight, setMobileShowRight] = useState(false);
 
   // Sesión: si hay usuario, la ficha vive en la NUBE (fuente de verdad).
   const session = useSession();
@@ -239,37 +245,21 @@ export default function CrearPage() {
     if (loaded && b.step > maxStep) setB((p) => ({ ...p, step: maxStep }));
   }, [loaded, b.step, maxStep]);
 
-  const pickSpecies = (slug: string) => { set({ species: slug, lineage: null }); setMobileShowRight(true); };
-  const pickClass = (slug: string) => { set({ cls: slug, subclass: null, skills: [] }); setMobileShowRight(true); };
-  const pickBackground = (slug: string) => { set({ background: slug, bonus: { ...NO_BONUS } }); setMobileShowRight(true); };
+  const pickSpecies = (slug: string) => set({ species: slug, lineage: null });
+  const pickClass = (slug: string) => set({ cls: slug, subclass: null, skills: [] });
+  const pickBackground = (slug: string) => set({ background: slug, bonus: { ...NO_BONUS } });
 
-  const activeKey = CHAPTERS.find((c) => c.step === b.step)?.key ?? "razas";
-  const unlockedKeys = CHAPTERS.filter((c) => c.step <= maxStep).map((c) => c.key);
-  const onSelectChapter = (key: string) => { const c = CHAPTERS.find((x) => x.key === key); if (c) { go(c.step); setMobileShowRight(false); } };
-
-  const chapters: Chapter[] = [
-    { key: "razas", label: "Razas", left: <RazasIndex b={b} set={set} onPickSpecies={pickSpecies} />, right: <RazaDetalle b={b} set={set} /> },
-    { key: "clases", label: "Clases", left: <ClasesIndex b={b} onPickClass={pickClass} />, right: <ClaseDetalle b={b} set={set} /> },
-    { key: "trasfondos", label: "Trasfondos", left: <TrasfondosIndex b={b} onPickBackground={pickBackground} />, right: <TrasfondoDetalle b={b} /> },
-    { key: "aptitudes", label: "Aptitudes", left: <div className="tome-dark-inset">
-      <AbilitiesStep
-        userId={userId}
-        method={b.statMethod}
-        rolled={b.rolled}
-        assign={b.assign}
-        base={b.base}
-        bonus={b.bonus}
-        canBonus={canBonus}
-        onMethod={(m) => set({ statMethod: m, rolled: [], assign: { ...ASSIGN_EMPTY } })}
-        onRolled={(scores) => set({ rolled: scores, assign: { ...ASSIGN_EMPTY } })}
-        onAssign={(a) => set({ assign: a })}
-        onBase={(k, v) => set({ base: { ...b.base, [k]: v } })}
-        onBonus={(k, v) => set({ bonus: { ...b.bonus, [k]: v } })}
-      />
-    </div> },
-    { key: "pericias", label: "Pericias", left: <div className="tome-dark-inset"><StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} /></div> },
-    { key: "ficha", label: "Ficha", left: <div className="tome-dark-inset"><StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} /></div> },
-  ];
+  // Medallón central: retrato + nombre de la selección actual del paso.
+  const medallionSrc =
+    b.step === 0 ? (species?.image ?? null) :
+    b.step === 1 ? (b.cls ? `/classes/${b.cls}.jpg` : null) :
+    null;
+  const medallionCaption =
+    b.step === 0 ? (species?.name ?? null) :
+    b.step === 1 ? (cls?.name ?? null) :
+    b.step === 2 ? (bg?.name ?? null) :
+    b.step === 5 ? (b.name.trim() || null) :
+    (cls?.name ?? species?.name ?? null);
 
   return (
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
@@ -278,15 +268,79 @@ export default function CrearPage() {
         <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text">Crea tu personaje</h1>
       </header>
 
-      <div className="only-narrow justify-center mb-3">
-        {activeKey === "razas" || activeKey === "clases" || activeKey === "trasfondos" ? (
-          <button className="btn-ghost" onClick={() => setMobileShowRight((v) => !v)}>
-            <i className={`fas ${mobileShowRight ? "fa-list" : "fa-eye"} mr-2`} />{mobileShowRight ? "Ver lista" : "Ver detalle"}
-          </button>
-        ) : null}
+      <div className="mb-6 max-w-md mx-auto">
+        <label className="tome-region" htmlFor="hero-name">Nombre de tu héroe *</label>
+        <input
+          id="hero-name"
+          value={b.name}
+          onChange={(e) => set({ name: e.target.value })}
+          placeholder="Ej.: Vex'ahlia, Grog, Percival…"
+          maxLength={40}
+          className="w-full rounded-lg px-3 py-2 font-display text-lg font-bold outline-none"
+          style={{ background: "rgba(120,80,35,0.10)", color: "var(--paper-ink)", border: `1px solid ${b.name.trim() ? "var(--paper-line)" : "var(--color-ember)"}` }}
+        />
       </div>
 
-      <CharacterBook chapters={chapters} activeKey={activeKey} unlockedKeys={unlockedKeys} onSelect={onSelectChapter} mobileShowRight={mobileShowRight} />
+      <div className="crear-grid">
+        <InvocationCircle steps={STEPS} current={b.step} maxStep={maxStep} onGo={go}>
+          <Medallion src={medallionSrc} caption={medallionCaption} />
+        </InvocationCircle>
+
+        <div>
+          {b.step === 0 && (
+            <>
+              <OptionRail title="Especies de Exandria" options={speciesOptions} selected={b.species} onPick={pickSpecies} />
+              {species?.lineages && (
+                <LineagePicker lineages={species.lineages} value={b.lineage} onPick={(name) => set({ lineage: name })} />
+              )}
+            </>
+          )}
+
+          {b.step === 1 && (
+            <>
+              <OptionRail title="Clases" options={classOptions} selected={b.cls} onPick={pickClass} />
+              {cls && (
+                <SubclassPicker label={cls.subclassLabel} subclasses={cls.subclasses} value={b.subclass} onPick={(name) => set({ subclass: name })} />
+              )}
+            </>
+          )}
+
+          {b.step === 2 && (
+            <OptionRail title="Trasfondos" options={backgroundOptions} selected={b.background} onPick={pickBackground} />
+          )}
+
+          {b.step === 3 && (
+            <div className="p-3">
+              <AbilitiesStep
+                userId={userId}
+                method={b.statMethod}
+                rolled={b.rolled}
+                assign={b.assign}
+                base={b.base}
+                bonus={b.bonus}
+                canBonus={canBonus}
+                onMethod={(m) => set({ statMethod: m, rolled: [], assign: { ...ASSIGN_EMPTY } })}
+                onRolled={(scores) => set({ rolled: scores, assign: { ...ASSIGN_EMPTY } })}
+                onAssign={(a) => set({ assign: a })}
+                onBase={(k, v) => set({ base: { ...b.base, [k]: v } })}
+                onBonus={(k, v) => set({ bonus: { ...b.bonus, [k]: v } })}
+              />
+            </div>
+          )}
+
+          {b.step === 4 && (
+            <div className="p-3">
+              <StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} />
+            </div>
+          )}
+
+          {b.step === 5 && (
+            <div className="p-3">
+              <StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} />
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="flex items-center justify-between gap-3 mt-6 flex-wrap">
         <button className="btn-ghost" onClick={() => go(b.step - 1)} disabled={b.step === 0}>
@@ -315,86 +369,27 @@ function bonusTotal(bonus: Record<AbilityKey, number>) {
   return ABILITIES.reduce((s, a) => s + (bonus[a.key] ?? 0), 0);
 }
 
-/* ============================ CAPÍTULO: RAZAS ============================ */
-function RazasIndex({ b, set, onPickSpecies }: { b: Build; set: (p: Partial<Build>) => void; onPickSpecies: (slug: string) => void }) {
+/* ================== SUB-ELECCIÓN: LINAJE (bajo el carril de especies) ================== */
+function LineagePicker({ lineages, value, onPick }: {
+  lineages: { name: string; perk: string; homebrew?: boolean }[];
+  value: string | null;
+  onPick: (name: string) => void;
+}) {
   return (
-    <div>
-      <div className="mb-4">
-        <label className="tome-region" htmlFor="hero-name">Nombre de tu héroe *</label>
-        <input
-          id="hero-name"
-          value={b.name}
-          onChange={(e) => set({ name: e.target.value })}
-          placeholder="Ej.: Vex'ahlia, Grog, Percival…"
-          maxLength={40}
-          className="w-full rounded-lg px-3 py-2 font-display text-lg font-bold outline-none"
-          style={{ background: "rgba(120,80,35,0.10)", color: "var(--paper-ink)", border: `1px solid ${b.name.trim() ? "var(--paper-line)" : "var(--color-ember)"}` }}
-        />
-      </div>
-      <h2 className="tome-detail-name" style={{ marginTop: 0 }}>✦ Razas de Exandria</h2>
-      {REGIONS.map((r) => {
-        const list = regionSpecies(r.key);
-        if (!list.length) return null;
-        return (
-          <div key={r.key} className="mb-2">
-            <p className="tome-region">{r.label}</p>
-            {list.map((s) => (
-              <button key={s.slug} className="tome-opt" data-sel={b.species === s.slug} onClick={() => onPickSpecies(s.slug)}>
-                <PortraitFrame src={`/species/${s.slug}.jpg`} alt={s.name} size="sm" icon="fa-dragon" />
-                <span className="tome-opt-txt">
-                  <span className="tome-opt-name">{s.name}{s.homebrew && <span className="tome-dm">DM</span>}</span>
-                  <span className="tome-opt-tag">{s.tagline}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function RazaDetalle({ b, set }: { b: Build; set: (p: Partial<Build>) => void }) {
-  const s = b.species ? getSpecies(b.species) : undefined;
-  if (!s) return <p className="tome-opt-tag">Elige una raza en la página izquierda.</p>;
-  return (
-    <div>
-      <PortraitFrame src={`/species/${s.slug}.jpg`} alt={s.name} size="lg" icon="fa-dragon" />
-      <p className="tome-detail-name">{s.name}</p>
-      <p className="tome-region">{REGIONS.find((r) => r.key === s.region)?.label}{s.homebrew ? " · a criterio del DM" : ""}</p>
-      <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--paper-ink)" }}>{s.blurb}</p>
-      <p style={{ fontSize: 13, fontStyle: "italic", color: "var(--paper-ink-soft)", margin: "8px 0" }}>{s.origin}</p>
-      <p className="tome-region">Rasgos</p>
-      <ul>{s.traits.map((t) => <li key={t} style={{ fontSize: 13, color: "var(--paper-ink)", margin: "3px 0" }}>◆ {t}</li>)}</ul>
-      {s.lineages && (
-        <>
-          <p className="tome-region">Linaje *</p>
-          {s.lineages.map((l) => (
-            <button key={l.name} className="tome-opt" data-sel={b.lineage === l.name} onClick={() => set({ lineage: l.name })}>
-              <PortraitFrame src={`/species/lineages/${slugify(l.name)}.jpg`} alt={l.name} size="sm" icon="fa-star" />
-              <span className="tome-opt-txt">
-                <span className="tome-opt-name">{l.name}{l.homebrew && <span className="tome-dm">DM</span>}</span>
-                <span className="tome-opt-tag">{l.perk}</span>
-              </span>
-            </button>
-          ))}
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ============================ CAPÍTULO: CLASES ============================ */
-function ClasesIndex({ b, onPickClass }: { b: Build; onPickClass: (slug: string) => void }) {
-  return (
-    <div>
-      <h2 className="tome-detail-name" style={{ marginTop: 0 }}>✦ Clases</h2>
-      {CLASSES.map((c) => (
-        <button key={c.slug} className="tome-opt" data-sel={b.cls === c.slug} onClick={() => onPickClass(c.slug)}>
-          <PortraitFrame src={`/classes/${c.slug}.jpg`} alt={c.name} size="sm" icon="fa-hat-wizard" />
-          <span className="tome-opt-txt">
-            <span className="tome-opt-name">{c.name}</span>
-            <span className="tome-opt-tag">{c.tagline}</span>
+    <div className="mt-1 px-1">
+      <div className="rail-group">Linaje *</div>
+      {lineages.map((l) => (
+        <button
+          key={l.name}
+          type="button"
+          className={`rail-opt${value === l.name ? " sel" : ""}`}
+          onClick={() => onPick(l.name)}
+          aria-pressed={value === l.name}
+        >
+          <div className="rail-thumb"><span className="ph">✦</span></div>
+          <span>
+            <span className="rail-name">{l.name}{l.homebrew ? " · DM" : ""}</span>
+            <br /><span className="rail-sub">{l.perk}</span>
           </span>
         </button>
       ))}
@@ -402,64 +397,31 @@ function ClasesIndex({ b, onPickClass }: { b: Build; onPickClass: (slug: string)
   );
 }
 
-function ClaseDetalle({ b, set }: { b: Build; set: (p: Partial<Build>) => void }) {
-  const cls = b.cls ? getClass(b.cls) : undefined;
-  if (!cls) return <p className="tome-opt-tag">Elige una clase en la página izquierda.</p>;
+/* ================== SUB-ELECCIÓN: SUBCLASE (bajo el carril de clases) ================== */
+function SubclassPicker({ label, subclasses, value, onPick }: {
+  label: string;
+  subclasses: { name: string; blurb: string }[];
+  value: string | null;
+  onPick: (name: string) => void;
+}) {
   return (
-    <div>
-      <PortraitFrame src={`/classes/${cls.slug}.jpg`} alt={cls.name} size="lg" icon="fa-hat-wizard" />
-      <p className="tome-detail-name">{cls.name}</p>
-      <p className="tome-region">{GROUP_LABEL[cls.group]}</p>
-      <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--paper-ink)" }}>{cls.blurb}</p>
-      <ul style={{ margin: "8px 0" }}>
-        <li style={{ fontSize: 13, color: "var(--paper-ink)", margin: "3px 0" }}>◆ Dado de golpe: d{cls.hitDie}</li>
-        <li style={{ fontSize: 13, color: "var(--paper-ink)", margin: "3px 0" }}>◆ Aptitud principal: {cls.primary.map((p) => ABILITIES.find((a) => a.key === p)!.abbr).join(" / ")}</li>
-        <li style={{ fontSize: 13, color: "var(--paper-ink)", margin: "3px 0" }}>◆ Salvaciones: {cls.saves.map((p) => ABILITIES.find((a) => a.key === p)!.abbr).join(" / ")}</li>
-      </ul>
-      <p className="tome-region">{cls.subclassLabel} *</p>
-      {cls.subclasses.map((sc) => (
-        <button key={sc.name} className="tome-opt" data-sel={b.subclass === sc.name} onClick={() => set({ subclass: sc.name })}>
-          <span className="tome-opt-txt">
-            <span className="tome-opt-name">{sc.name}</span>
-            <span className="tome-opt-tag">{sc.blurb}</span>
+    <div className="mt-1 px-1">
+      <div className="rail-group">{label} *</div>
+      {subclasses.map((sc) => (
+        <button
+          key={sc.name}
+          type="button"
+          className={`rail-opt${value === sc.name ? " sel" : ""}`}
+          onClick={() => onPick(sc.name)}
+          aria-pressed={value === sc.name}
+        >
+          <div className="rail-thumb"><span className="ph">◈</span></div>
+          <span>
+            <span className="rail-name">{sc.name}</span>
+            <br /><span className="rail-sub">{sc.blurb}</span>
           </span>
         </button>
       ))}
-    </div>
-  );
-}
-
-/* ============================ CAPÍTULO: TRASFONDOS ============================ */
-function TrasfondosIndex({ b, onPickBackground }: { b: Build; onPickBackground: (slug: string) => void }) {
-  return (
-    <div>
-      <h2 className="tome-detail-name" style={{ marginTop: 0 }}>✦ Trasfondos</h2>
-      {BACKGROUNDS.map((g) => (
-        <button key={g.slug} className="tome-opt" data-sel={b.background === g.slug} onClick={() => onPickBackground(g.slug)}>
-          <PortraitFrame alt={g.name} size="sm" icon="fa-scroll" />
-          <span className="tome-opt-txt">
-            <span className="tome-opt-name">{g.name}</span>
-            <span className="tome-opt-tag">{g.feat}</span>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function TrasfondoDetalle({ b }: { b: Build }) {
-  const bg = b.background ? getBackground(b.background) : undefined;
-  if (!bg) return <p className="tome-opt-tag">Elige un trasfondo en la página izquierda.</p>;
-  return (
-    <div>
-      <p className="tome-detail-name" style={{ marginTop: 0 }}>{bg.name}</p>
-      <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--paper-ink)" }}>{bg.blurb}</p>
-      <p className="tome-region">Pericias</p>
-      <p style={{ fontSize: 13, color: "var(--paper-ink)" }}>{bg.skills.join(", ")}</p>
-      <p className="tome-region">Herramienta</p>
-      <p style={{ fontSize: 13, color: "var(--paper-ink)" }}>{bg.tool}</p>
-      <p className="tome-region">Dote</p>
-      <p style={{ fontSize: 13, color: "var(--paper-ink)" }}>{bg.feat}</p>
     </div>
   );
 }
@@ -572,14 +534,6 @@ function StepSummary({ b, set, finalScores, hp, allSkills, onCopy, onReset, onCr
 }
 
 /* ============================ AUXILIARES ============================ */
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="eyebrow mb-1">{label}</p>
-      <p className="font-ui text-[13px] font-semibold" style={{ color: "var(--color-warm)" }}>{value}</p>
-    </div>
-  );
-}
 function Stat({ icon, label, value, color }: { icon: string; label: string; value: string | number; color: string }) {
   return (
     <div className="flex items-center gap-2.5">
