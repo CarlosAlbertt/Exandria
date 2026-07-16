@@ -6,9 +6,19 @@ import {
   POINT_BUY_COST, POINT_BUY_BUDGET, POINT_BUY_MIN, POINT_BUY_MAX,
   type AbilityKey,
 } from "@/data/rules";
-import { STANDARD_ARRAY, dropLowest, saveStatRoll, type Assign, type StatMethod } from "@/lib/statRolls";
+import { STANDARD_ARRAY, dropLowest, loadStatRoll, saveStatRoll, type Assign, type StatMethod } from "@/lib/statRolls";
 import { rollVisual } from "@/lib/diceBox";
 import { roll as rollFallback } from "@/lib/dice";
+
+// El insert en `stat_rolls` choca con la PK si ya hay tirada. No debería
+// llegarse aquí (el selector no se muestra si hay método fijado), pero si pasa,
+// nada de texto de Postgres.
+function humanError(msg: string): string {
+  if (/duplicate key|stat_rolls_pkey/i.test(msg)) {
+    return "Ya tienes una tirada registrada y no se puede repetir. Pide al DM que te la resetee en Panel DM › Grupo.";
+  }
+  return msg;
+}
 
 // Paso de Aptitudes (Fase K). El método se elige UNA vez: al confirmarlo se
 // inserta en `stat_rolls` (inmutable en la BD — PK sin policy de UPDATE; solo
@@ -65,6 +75,16 @@ export default function AbilitiesStep({
     if (!userId || busy) return;
     setBusy(true);
     setError(null);
+    // Comprobamos ANTES de tirar: `scores` es not null, así que la fila no se
+    // puede reservar sin valores, pero sí evitamos que el jugador lance seis
+    // dados para que el insert falle al final. No es una garantía (la de verdad
+    // es la PK, en el servidor): es cortesía.
+    const existing = await loadStatRoll(userId);
+    if (existing) {
+      setError(humanError("duplicate key"));
+      setBusy(false);
+      return;
+    }
     onMethod("dados");
     const scores: number[] = [];
     for (let i = 0; i < 6; i++) {
@@ -75,7 +95,7 @@ export default function AbilitiesStep({
     }
     onRolled(scores);
     const err = await saveStatRoll(userId, "dados", scores);
-    if (err) setError(err);
+    if (err) setError(humanError(err));
     setProgress(0);
     setBusy(false);
   }
@@ -88,7 +108,7 @@ export default function AbilitiesStep({
     onRolled([...STANDARD_ARRAY]);
     if (userId) {
       const err = await saveStatRoll(userId, "array", STANDARD_ARRAY);
-      if (err) setError(err);
+      if (err) setError(humanError(err));
     }
     setBusy(false);
   }
@@ -100,7 +120,7 @@ export default function AbilitiesStep({
     onMethod("pointbuy");
     if (userId) {
       const err = await saveStatRoll(userId, "pointbuy", []);
-      if (err) setError(err);
+      if (err) setError(humanError(err));
     }
     setBusy(false);
   }
@@ -212,6 +232,14 @@ export default function AbilitiesStep({
           : <>Método: <strong>{method === "dados" ? "Tirada de dados (4d6)" : "Array estándar"}</strong>. Asigna cada valor a una aptitud.</>
         } Después suma <strong>+3 de tu trasfondo</strong> (máx. +2 a una aptitud).
       </p>
+
+      {userId && (
+        <p className="font-ui text-[12px] mb-4" style={{ color: "var(--color-dim)" }}>
+          <i className="fas fa-lock mr-1.5" style={{ color: "var(--color-bronze)" }} />
+          Tu tirada quedó registrada y no se puede repetir. Pide al DM que te la
+          resetee en Panel DM › Grupo si quieres volver a tirar.
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-6 justify-center">
         {isPointbuy ? (

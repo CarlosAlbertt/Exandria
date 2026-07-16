@@ -19,7 +19,7 @@ import {
   ABILITIES, AbilityKey, abilityMod, fmtMod,
   POINT_BUY_COST, POINT_BUY_BUDGET,
 } from "@/data/rules";
-import { ASSIGN_EMPTY, isAssignComplete, loadStatRoll } from "@/lib/statRolls";
+import { ASSIGN_EMPTY, deriveAssign, isAssignComplete, loadStatRoll } from "@/lib/statRolls";
 
 const EMPTY_SCORES: Record<AbilityKey, number> = { fue: 8, des: 8, con: 8, int: 8, sab: 8, car: 8 };
 const NO_BONUS: Record<AbilityKey, number> = { fue: 0, des: 0, con: 0, int: 0, sab: 0, car: 0 };
@@ -96,13 +96,29 @@ export default function CrearPage() {
   }, [loaded, userId]);
 
   // Fase K: si el jugador YA tiene tirada registrada, el método queda fijado.
+  // `assign` no se persiste: se deriva de `base` (la fuente de verdad), o si no
+  // cuadra queda vacío y el jugador reasigna.
   useEffect(() => {
     if (!userId) return;
     loadStatRoll(userId).then((row) => {
       if (!row) return;
-      setB((p) => ({ ...p, statMethod: row.method, rolled: row.scores ?? [] }));
+      setB((p) => ({
+        ...p,
+        statMethod: row.method,
+        rolled: row.scores ?? [],
+        assign: isAssignComplete(p.assign) ? p.assign : deriveAssign(p.base, row.scores ?? []),
+      }));
     });
   }, [userId]);
+
+  // La ficha (`base`) y la tirada (`rolled`) llegan de dos consultas distintas y
+  // en cualquier orden. Cuando ya están las dos y `assign` sigue vacío, se
+  // deriva. Solo rellena huecos: nunca pisa una asignación del jugador.
+  useEffect(() => {
+    if (!b.rolled.length || isAssignComplete(b.assign)) return;
+    const derived = deriveAssign(b.base, b.rolled);
+    if (isAssignComplete(derived)) setB((p) => ({ ...p, assign: derived }));
+  }, [b.rolled, b.base, b.assign]);
 
   useEffect(() => {
     if (!loaded || !userId || !cloudLoaded.current) return;
@@ -147,8 +163,16 @@ export default function CrearPage() {
   const classSkills = b.skills;
   const allSkills = useMemo(() => Array.from(new Set([...bgSkills, ...classSkills])), [bgSkills, classSkills]);
 
+  // «Empezar de nuevo» rehace el personaje, NO la tirada: `stat_rolls` es
+  // inmutable en la BD (PK sin policy de update) y solo el DM puede borrarla.
+  // Si limpiásemos statMethod/rolled aquí, el selector reaparecería y el insert
+  // chocaría con la PK. La tirada es del jugador, no del personaje.
   function reset() {
-    setB({ name: "", species: null, lineage: null, cls: null, subclass: null, background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0, statMethod: null, rolled: [], assign: { ...ASSIGN_EMPTY } });
+    setB((p) => ({
+      name: "", species: null, lineage: null, cls: null, subclass: null, background: null,
+      base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0,
+      statMethod: p.statMethod, rolled: p.rolled, assign: { ...ASSIGN_EMPTY },
+    }));
   }
 
   function copySheet() {
