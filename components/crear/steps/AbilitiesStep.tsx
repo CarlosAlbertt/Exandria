@@ -131,15 +131,15 @@ export default function AbilitiesStep({
   if (!method) {
     return (
       <div>
-        <h2 className="font-display text-xl font-bold mb-2" style={{ color: "var(--color-parch)" }}>
+        <h2 className="font-display text-2xl font-bold mb-2 text-center" style={{ color: "var(--color-parch)" }}>
           ¿Cómo obtienes tus aptitudes?
         </h2>
-        <p className="font-ui text-[12px] font-bold mb-5" style={{ color: "var(--color-ember)" }}>
+        <p className="font-ui text-[12px] font-bold mb-6 text-center" style={{ color: "var(--color-ember)" }}>
           <i className="fas fa-triangle-exclamation mr-1.5" />
           Solo puedes elegir una vez: la tirada no se puede repetir.
         </p>
 
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-3 gap-5 max-w-5xl mx-auto">
           <button
             type="button"
             onClick={pickDados}
@@ -213,7 +213,7 @@ export default function AbilitiesStep({
         } Después suma <strong>+3 de tu trasfondo</strong> (máx. +2 a una aptitud).
       </p>
 
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex flex-wrap gap-3 mb-6 justify-center">
         {isPointbuy ? (
           <span className="chip" data-on={remaining >= 0}>Puntos restantes: {remaining}</span>
         ) : (

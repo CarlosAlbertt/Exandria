@@ -566,12 +566,6 @@ canvas.dice-box-canvas {
 .rail-acc-count { font-weight: 700; letter-spacing: 0; color: var(--color-dim); margin-left: 6px; text-transform: none; }
 .rail-acc i { font-size: 9px; color: var(--color-dim); }
 
-.rail-nest {
-  margin: 2px 0 8px 18px;
-  border-left: 1px solid var(--color-line);
-  padding-left: 8px;
-}
-
 /* ============ Creador — escenas por paso (2026-07-16) ============ */
 
 /* Barra de runas: navegación y progreso. Sustituye al círculo. */

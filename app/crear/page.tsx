@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
 import { loadCharacter, saveCharacter } from "@/lib/character";
@@ -14,13 +13,15 @@ import SpeciesScene from "@/components/crear/steps/SpeciesScene";
 import ClassScene from "@/components/crear/steps/ClassScene";
 import BackgroundScene from "@/components/crear/steps/BackgroundScene";
 import AbilitiesStep from "@/components/crear/steps/AbilitiesStep";
+import SkillsScene from "@/components/crear/steps/SkillsScene";
+import SummaryScene from "@/components/crear/steps/SummaryScene";
 import {
-  ABILITIES, SKILLS, AbilityKey, abilityMod, fmtMod,
+  ABILITIES, AbilityKey, abilityMod, fmtMod,
   POINT_BUY_COST, POINT_BUY_BUDGET,
 } from "@/data/rules";
 import { ASSIGN_EMPTY, isAssignComplete, loadStatRoll, type Assign, type StatMethod } from "@/lib/statRolls";
 
-type Build = {
+export type Build = {
   name: string;
   species: string | null;
   lineage: string | null;
@@ -40,7 +41,7 @@ type Build = {
 const EMPTY_SCORES: Record<AbilityKey, number> = { fue: 8, des: 8, con: 8, int: 8, sab: 8, car: 8 };
 const NO_BONUS: Record<AbilityKey, number> = { fue: 0, des: 0, con: 0, int: 0, sab: 0, car: 0 };
 
-const STEPS = ["Especie", "Clase", "Trasfondo", "Aptitudes", "Pericias", "Resumen"];
+const STEPS = ["Especie", "Clase", "Trasfondo", "Aptitudes", "Pericias", "Ficha"];
 const KEY = "taldorei.build.v1";
 
 // Opciones del carril: derivadas de los datos estáticos, no cambian en tiempo
@@ -311,10 +312,10 @@ export default function CrearPage() {
         />
       )}
 
-      {b.step === 4 && <StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} />}
+      {b.step === 4 && <SkillsScene b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} />}
 
       {b.step === 5 && (
-        <StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} />
+        <SummaryScene b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} />
       )}
 
       <div className="flex items-center justify-between gap-3 mt-6 flex-wrap">
@@ -342,127 +343,4 @@ export default function CrearPage() {
 
 function bonusTotal(bonus: Record<AbilityKey, number>) {
   return ABILITIES.reduce((s, a) => s + (bonus[a.key] ?? 0), 0);
-}
-
-/* ============================ PASO 5: PERICIAS ============================ */
-function StepSkills({ b, set, cls, bgSkills, classPool }:
-  { b: Build; set: (p: Partial<Build>) => void; cls: ReturnType<typeof getClass>; bgSkills: string[]; classPool: string[] }) {
-  const need = cls?.skillCount ?? 0;
-  const toggle = (s: string) => {
-    const has = b.skills.includes(s);
-    if (has) set({ skills: b.skills.filter((x) => x !== s) });
-    else if (b.skills.length < need) set({ skills: [...b.skills, s] });
-  };
-  if (!cls) return <Empty msg="Elige primero una clase." />;
-  return (
-    <div>
-      <h2 className="font-display text-xl font-bold mb-1" style={{ color: "var(--color-parch)" }}>Escoge tus pericias</h2>
-      <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-        Tu clase otorga <strong>{need}</strong> pericias a elección. Tu trasfondo añade {bgSkills.length}.
-      </p>
-      <span className="chip mb-6 inline-block" data-on={b.skills.length === need}>Elegidas: {b.skills.length}/{need}</span>
-
-      {bgSkills.length > 0 && (
-        <div className="mb-6">
-          <p className="eyebrow mb-2">Del trasfondo (fijas)</p>
-          <div className="flex flex-wrap gap-2">
-            {bgSkills.map((s) => <span key={s} className="chip" data-on><i className="fas fa-lock text-[9px] mr-1" />{s}</span>)}
-          </div>
-        </div>
-      )}
-
-      <p className="eyebrow mb-2">De la clase ({cls.name})</p>
-      <div className="flex flex-wrap gap-2">
-        {classPool.map((s) => {
-          const on = b.skills.includes(s);
-          const ab = SKILLS.find((x) => x.name === s)?.ability;
-          return (
-            <button key={s} className="chip" data-on={on} onClick={() => toggle(s)}
-              disabled={!on && b.skills.length >= need}
-              style={{ opacity: !on && b.skills.length >= need ? 0.4 : 1 }}>
-              {s} <span className="opacity-60">{ABILITIES.find((a) => a.key === ab)?.abbr}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ============================ PASO 6: RESUMEN ============================ */
-function StepSummary({ b, set, finalScores, hp, allSkills, onCopy, onReset, onCreate }:
-  { b: Build; set: (p: Partial<Build>) => void; finalScores: Record<AbilityKey, number>; hp: number; allSkills: string[]; onCopy: () => void; onReset: () => void; onCreate: () => void }) {
-  const species = b.species ? getSpecies(b.species) : undefined;
-  const cls = b.cls ? getClass(b.cls) : undefined;
-  const bg = b.background ? getBackground(b.background) : undefined;
-  return (
-    <div>
-      <h2 className="font-display text-xl font-bold mb-1" style={{ color: "var(--color-parch)" }}>Tu héroe está listo</h2>
-      <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>Revisa la ficha y cópiala para tu mesa.</p>
-      <div className="panel p-6">
-        <p className="font-display text-2xl font-extrabold gold-text mb-1">{b.name || "Personaje sin nombre"}</p>
-        <p className="font-ui text-[13px] font-semibold mb-5" style={{ color: "var(--color-muted)" }}>
-          {species?.name}{b.lineage ? ` · ${b.lineage}` : ""} · {cls?.name}{b.subclass ? ` · ${b.subclass}` : ""} · {bg?.name}
-        </p>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6">
-          {ABILITIES.map((a) => (
-            <div key={a.key} className="panel-raised py-3 text-center">
-              <p className="eyebrow mb-1">{a.abbr}</p>
-              <p className="font-display text-2xl font-extrabold" style={{ color: "var(--color-arcane-bright)" }}>{finalScores[a.key]}</p>
-              <p className="font-ui text-[11px] font-bold" style={{ color: "var(--color-muted)" }}>{fmtMod(abilityMod(finalScores[a.key]))}</p>
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-4 mb-6">
-          <Stat icon="fa-heart" label="Puntos de golpe" value={hp || "—"} color="var(--color-ember)" />
-          <Stat icon="fa-shield-halved" label="Competencia" value="+2" color="var(--color-bronze)" />
-          <Stat icon="fa-dice-d20" label="Dado de golpe" value={cls ? `d${cls.hitDie}` : "—"} color="var(--color-arcane)" />
-        </div>
-        <p className="eyebrow mb-2">Pericias</p>
-        <div className="flex flex-wrap gap-2">
-          {allSkills.length ? allSkills.map((s) => <span key={s} className="chip" data-on>{s}</span>) : <span className="text-sm" style={{ color: "var(--color-dim)" }}>—</span>}
-        </div>
-      </div>
-      <div className="panel p-6 mt-5">
-        <label className="eyebrow block mb-1.5" htmlFor="hero-lore">
-          <i className="fas fa-feather-pointed mr-1.5" style={{ color: "var(--color-bronze)" }} />Historia del personaje
-        </label>
-        <p className="text-[13px] mb-3" style={{ color: "var(--color-muted)" }}>Su pasado, motivaciones, secretos… (opcional). Lo verá el DM en las fichas del grupo.</p>
-        <textarea
-          id="hero-lore"
-          value={b.lore}
-          onChange={(e) => set({ lore: e.target.value })}
-          rows={10}
-          maxLength={12000}
-          placeholder="Nacido en las brumas de Pleabruma, juré no volver a…"
-          className="w-full bg-[var(--color-night)] rounded-lg px-4 py-3 font-body text-[15px] leading-relaxed outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] resize-y"
-          style={{ color: "var(--color-warm)", minHeight: "180px" }}
-        />
-        <p className="text-right text-[11px] mt-1" style={{ color: "var(--color-dim)" }}>{b.lore.length}/12000</p>
-      </div>
-
-      <div className="flex flex-wrap gap-3 mt-5">
-        <button className="btn-gold" onClick={onCreate}><i className="fas fa-user-plus mr-2" />Crear personaje</button>
-        <button className="btn-ghost" onClick={onCopy}><i className="fas fa-copy mr-2" />Copiar hoja</button>
-        <Link href="/personaje" className="btn-ghost inline-block"><i className="fas fa-scroll mr-2" />Ir a la ficha</Link>
-        <button className="btn-ghost" onClick={onReset}><i className="fas fa-rotate-left mr-2" />Empezar de nuevo</button>
-      </div>
-    </div>
-  );
-}
-
-/* ============================ AUXILIARES ============================ */
-function Stat({ icon, label, value, color }: { icon: string; label: string; value: string | number; color: string }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <i className={`fas ${icon} text-lg`} style={{ color }} />
-      <div>
-        <p className="eyebrow !text-[9px]">{label}</p>
-        <p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{value}</p>
-      </div>
-    </div>
-  );
-}
-function Empty({ msg }: { msg: string }) {
-  return <div className="panel p-8 text-center" style={{ color: "var(--color-dim)" }}><i className="fas fa-triangle-exclamation mr-2" />{msg}</div>;
 }

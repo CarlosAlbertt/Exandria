@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 
 // Panel de arte vertical (el arte de clase es 659×1025). Si hay imagen, el
-// retrato; si no, la SILUETA RÚNICA — nunca un hueco vacío. Hereda la silueta
-// del antiguo Medallion, pero sin recortar en círculo.
+// retrato; si no, la SILUETA RÚNICA — nunca un hueco vacío. Incluye la
+// silueta de reserva (el mismo patrón que traía el antiguo círculo de
+// invocación), pero sin recortar en círculo.
 //
 // Hoy: public/classes tiene 11 de 13 (faltan bardo y paladin) y public/species
 // está vacío. El panel se reserva igualmente: en cuanto se suelte el .jpg

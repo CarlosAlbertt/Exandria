@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export type RailOption = {
   slug: string;
@@ -8,7 +8,6 @@ export type RailOption = {
   sub?: string;
   img?: string | null; // ruta de miniatura; si falta, se ve el rombo de reserva
   group?: string;      // para agrupar (p. ej. región de la especie)
-  children?: ReactNode; // sub-elección (linaje/subclase) anidada bajo la opción, si está seleccionada
 };
 
 // Quita diacríticos para comparar sin acentos (mismo criterio que lib/slug.ts).
@@ -94,7 +93,6 @@ export default function OptionRail({
             {o.sub && <><br /><span className="rail-sub">{o.sub}</span></>}
           </span>
         </button>
-        {isSel && o.children && <div className="rail-nest">{o.children}</div>}
       </div>
     );
   }
