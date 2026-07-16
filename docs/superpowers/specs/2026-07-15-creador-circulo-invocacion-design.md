@@ -86,9 +86,11 @@ El jugador elige **una vía, una sola vez**:
 
 **Bloqueo en servidor** (en `localStorage` se saltaría por consola):
 
-- Tabla **`stat_rolls`** (migración `schema_v13`): `user_id uuid PK →
-  profiles`, `method text` (`dados`|`array`|`pointbuy`), `values int[]`,
-  `rolled_at timestamptz`.
+- Tabla **`stat_rolls`** (migración `supabase/schema_v13.sql`, ya escrita):
+  `user_id uuid PK → auth.users`, `method text` (`dados`|`array`|`pointbuy`),
+  `scores int[]` (los 6 valores sin asignar), `rolled_at timestamptz`.
+  La columna es `scores` y **no** `values` porque `values` es palabra
+  reservada en SQL.
 - **RLS**: `select` propio (y DM), `insert` propio, **sin `update` ni
   `delete`** para jugadores → la fila es inmutable y la **PK impide una
   segunda tirada**. El **DM tiene `delete`** (`is_dm()`) = **resetear** la
