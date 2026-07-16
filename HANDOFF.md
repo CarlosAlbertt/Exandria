@@ -268,7 +268,15 @@ Ejecutado con subagentes (implementador + revisor por tarea).
   - `Medallion.tsx` — **arte real si existe, silueta rúnica generativa si no**
     (nunca un hueco vacío). Resetea el fallo de carga al cambiar `src`.
   - `OptionRail.tsx` — carril de opciones con miniatura + nombre + subtítulo,
-    agrupando por región (especies).
+    en **acordeón**: las 36 especies se pliegan por **región** (7 grupos con
+    recuento, **una abierta a la vez**, y se **auto-abre** la de la especie
+    elegida) y las 13 clases por **grupo** (Marcial/Arcano/Divino/Primigenio;
+    `CLASSES` se ordena por grupo porque el carril agrupa runs consecutivos).
+    **Buscador** arriba que filtra por nombre entre TODAS (sin acentos) y
+    muestra resultados planos. La **sub-elección va anidada bajo la opción
+    seleccionada** (`RailOption.children`): el **linaje** bajo su especie y la
+    **subclase** bajo su clase — antes se renderizaban al final de la lista y
+    había que pasar las 36 especies para verlos.
   - `DetailPanel.tsx` — **detalle bajo el círculo** (blurb, origen, rasgos,
     dado de golpe, etc.). Se añadió tras detectar que el rediseño se había
     dejado fuera el texto necesario para poder elegir con criterio.
