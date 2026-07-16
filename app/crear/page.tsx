@@ -55,9 +55,15 @@ const speciesOptions: RailOption[] = REGIONS.flatMap((r) =>
     group: r.label,
   }))
 );
-const classOptions: RailOption[] = CLASSES.map((c) => ({
-  slug: c.slug, name: c.name, sub: GROUP_LABEL[c.group], img: `/classes/${c.slug}.jpg`,
-}));
+// Se ordenan por grupo (Marcial/Arcano/Divino/Primigenio, según GROUP_LABEL)
+// para que las clases de un mismo grupo queden CONSECUTIVAS: OptionRail solo
+// agrupa rachas consecutivas de `group`.
+const GROUP_ORDER = Object.keys(GROUP_LABEL) as (keyof typeof GROUP_LABEL)[];
+const classOptions: RailOption[] = [...CLASSES]
+  .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group))
+  .map((c) => ({
+    slug: c.slug, name: c.name, sub: c.tagline, img: `/classes/${c.slug}.jpg`, group: GROUP_LABEL[c.group],
+  }));
 const backgroundOptions: RailOption[] = BACKGROUNDS.map((g) => ({
   slug: g.slug, name: g.name, sub: g.feat,
 }));
@@ -136,6 +142,19 @@ export default function CrearPage() {
   const species = b.species ? getSpecies(b.species) : undefined;
   const cls = b.cls ? getClass(b.cls) : undefined;
   const bg = b.background ? getBackground(b.background) : undefined;
+
+  // Opciones del carril con la sub-elección (linaje/subclase) anidada bajo la
+  // opción seleccionada, en vez de renderizarse debajo de toda la lista.
+  const speciesOptionsUI: RailOption[] = speciesOptions.map((o) =>
+    o.slug === b.species && species?.lineages
+      ? { ...o, children: <LineagePicker lineages={species.lineages} value={b.lineage} onPick={(name) => set({ lineage: name })} /> }
+      : o
+  );
+  const classOptionsUI: RailOption[] = classOptions.map((o) =>
+    o.slug === b.cls && cls
+      ? { ...o, children: <SubclassPicker label={cls.subclassLabel} subclasses={cls.subclasses} value={b.subclass} onPick={(name) => set({ subclass: name })} /> }
+      : o
+  );
 
   // Qué aptitudes puede mejorar el +3 del trasfondo (Fase K: AbilitiesStep).
   const canBonus = useMemo(() => {
@@ -292,25 +311,27 @@ export default function CrearPage() {
 
         <div>
           {b.step === 0 && (
-            <>
-              <OptionRail title="Especies de Exandria" options={speciesOptions} selected={b.species} onPick={pickSpecies} />
-              {species?.lineages && (
-                <LineagePicker lineages={species.lineages} value={b.lineage} onPick={(name) => set({ lineage: name })} />
-              )}
-            </>
+            <OptionRail
+              title="Especies de Exandria"
+              options={speciesOptionsUI}
+              selected={b.species}
+              onPick={pickSpecies}
+              searchPlaceholder="Buscar especie…"
+            />
           )}
 
           {b.step === 1 && (
-            <>
-              <OptionRail title="Clases" options={classOptions} selected={b.cls} onPick={pickClass} />
-              {cls && (
-                <SubclassPicker label={cls.subclassLabel} subclasses={cls.subclasses} value={b.subclass} onPick={(name) => set({ subclass: name })} />
-              )}
-            </>
+            <OptionRail
+              title="Clases"
+              options={classOptionsUI}
+              selected={b.cls}
+              onPick={pickClass}
+              searchPlaceholder="Buscar clase…"
+            />
           )}
 
           {b.step === 2 && (
-            <OptionRail title="Trasfondos" options={backgroundOptions} selected={b.background} onPick={pickBackground} />
+            <OptionRail title="Trasfondos" options={backgroundOptions} selected={b.background} onPick={pickBackground} searchPlaceholder="Buscar trasfondo…" />
           )}
 
           {b.step === 3 && (
