@@ -644,3 +644,9 @@ canvas.dice-box-canvas {
 /* Creador — rejilla escena + carril */
 .crear-grid { display: grid; grid-template-columns: 1fr 280px; align-items: stretch; min-height: 420px; }
 @media (max-width: 860px) { .crear-grid { grid-template-columns: 1fr; } }
+
+/* Columna izquierda: círculo + panel de detalle. Scroll propio si el
+   detalle (rasgos, blurb…) es más alto que el círculo, para no estirar
+   la fila entera (y con ella el carril de la derecha). */
+.crear-left { display: flex; flex-direction: column; gap: 14px; max-height: 640px; overflow-y: auto; }
+@media (max-width: 860px) { .crear-left { max-height: none; overflow: visible; } }

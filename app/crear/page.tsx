@@ -11,6 +11,7 @@ import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
 import InvocationCircle from "@/components/crear/InvocationCircle";
 import OptionRail, { type RailOption } from "@/components/crear/OptionRail";
 import Medallion from "@/components/crear/Medallion";
+import DetailPanel from "@/components/crear/DetailPanel";
 import AbilitiesStep from "@/components/crear/steps/AbilitiesStep";
 import {
   ABILITIES, SKILLS, AbilityKey, abilityMod, fmtMod,
@@ -282,9 +283,12 @@ export default function CrearPage() {
       </div>
 
       <div className="crear-grid">
-        <InvocationCircle steps={STEPS} current={b.step} maxStep={maxStep} onGo={go}>
-          <Medallion src={medallionSrc} caption={medallionCaption} />
-        </InvocationCircle>
+        <div className="crear-left">
+          <InvocationCircle steps={STEPS} current={b.step} maxStep={maxStep} onGo={go}>
+            <Medallion src={medallionSrc} caption={medallionCaption} />
+          </InvocationCircle>
+          <DetailPanel step={b.step} species={species} cls={cls} subclass={b.subclass} bg={bg} />
+        </div>
 
         <div>
           {b.step === 0 && (
