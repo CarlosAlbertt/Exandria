@@ -3,10 +3,33 @@
 import { useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 import type { AbilityKey } from "@/data/rules";
+import type { Assign, StatMethod } from "@/lib/statRolls";
 
 export type Item = { id: string; name: string; qty: number; notes?: string };
 
 export type Asi = Record<string, Partial<Record<AbilityKey, number>>>;
+
+// Estado del creador de personaje EN CURSO (el borrador de /crear: qué se ha
+// elegido y por qué paso va). Distinto de `CharacterData`, que es la ficha ya
+// guardada: `Build` tiene `step`/`statMethod`/`rolled`/`assign`, que solo
+// existen mientras se construye, y le faltan los campos de juego (nivel,
+// inventario, oro…) que solo aparecen una vez creado el personaje.
+export type Build = {
+  name: string;
+  species: string | null;
+  lineage: string | null;
+  cls: string | null;
+  subclass: string | null;
+  background: string | null;
+  base: Record<AbilityKey, number>;
+  bonus: Record<AbilityKey, number>;
+  skills: string[];
+  lore: string;
+  step: number;
+  statMethod: StatMethod | null;
+  rolled: number[];   // los 6 valores (dados/array); vacío en point-buy
+  assign: Assign;     // aptitud -> índice en `rolled`
+};
 
 export type CharacterData = {
   name: string;

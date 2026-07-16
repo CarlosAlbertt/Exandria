@@ -2,7 +2,7 @@
 
 import { getClass } from "@/data/classes";
 import { ABILITIES, SKILLS } from "@/data/rules";
-import type { Build } from "@/app/crear/page";
+import type { Build } from "@/lib/character";
 
 // Escena 5 — Pericias: dos bloques en paralelo (del trasfondo, fijas | de la
 // clase, a elegir). Antes vivía apilada en un carril de 280px; a lo ancho

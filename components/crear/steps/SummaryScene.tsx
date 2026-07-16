@@ -5,7 +5,7 @@ import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { getBackground } from "@/data/backgrounds";
 import { ABILITIES, abilityMod, fmtMod, type AbilityKey } from "@/data/rules";
-import type { Build } from "@/app/crear/page";
+import type { Build } from "@/lib/character";
 
 // Escena 6 — Ficha: hoja del héroe y su historia en paralelo. Antes vivían
 // apiladas (panel + panel con mt-5) en el carril de 280px; a lo ancho caben

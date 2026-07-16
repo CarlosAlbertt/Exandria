@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
-import { loadCharacter, saveCharacter } from "@/lib/character";
+import { loadCharacter, saveCharacter, type Build } from "@/lib/character";
 import { getSpecies, REGIONS, regionSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
@@ -19,24 +19,7 @@ import {
   ABILITIES, AbilityKey, abilityMod, fmtMod,
   POINT_BUY_COST, POINT_BUY_BUDGET,
 } from "@/data/rules";
-import { ASSIGN_EMPTY, isAssignComplete, loadStatRoll, type Assign, type StatMethod } from "@/lib/statRolls";
-
-export type Build = {
-  name: string;
-  species: string | null;
-  lineage: string | null;
-  cls: string | null;
-  subclass: string | null;
-  background: string | null;
-  base: Record<AbilityKey, number>;
-  bonus: Record<AbilityKey, number>;
-  skills: string[];
-  lore: string;
-  step: number;
-  statMethod: StatMethod | null;
-  rolled: number[];   // los 6 valores (dados/array); vacío en point-buy
-  assign: Assign;     // aptitud -> índice en `rolled`
-};
+import { ASSIGN_EMPTY, isAssignComplete, loadStatRoll } from "@/lib/statRolls";
 
 const EMPTY_SCORES: Record<AbilityKey, number> = { fue: 8, des: 8, con: 8, int: 8, sab: 8, car: 8 };
 const NO_BONUS: Record<AbilityKey, number> = { fue: 0, des: 0, con: 0, int: 0, sab: 0, car: 0 };
