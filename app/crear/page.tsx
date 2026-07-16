@@ -10,9 +10,10 @@ import { CLASSES, getClass, GROUP_LABEL } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
 import PortraitFrame from "@/components/PortraitFrame";
 import CharacterBook, { type Chapter } from "@/components/CharacterBook";
+import AbilitiesStep from "@/components/crear/steps/AbilitiesStep";
 import {
   ABILITIES, SKILLS, AbilityKey, abilityMod, fmtMod,
-  POINT_BUY_COST, POINT_BUY_BUDGET, POINT_BUY_MIN, POINT_BUY_MAX,
+  POINT_BUY_COST, POINT_BUY_BUDGET,
 } from "@/data/rules";
 import { ASSIGN_EMPTY, isAssignComplete, loadStatRoll, type Assign, type StatMethod } from "@/lib/statRolls";
 
@@ -129,6 +130,13 @@ export default function CrearPage() {
   const cls = b.cls ? getClass(b.cls) : undefined;
   const bg = b.background ? getBackground(b.background) : undefined;
 
+  // Qué aptitudes puede mejorar el +3 del trasfondo (Fase K: AbilitiesStep).
+  const canBonus = useMemo(() => {
+    const out = {} as Record<AbilityKey, boolean>;
+    ABILITIES.forEach((a) => (out[a.key] = !!bg?.abilities.includes(a.key)));
+    return out;
+  }, [bg]);
+
   const pointsSpent = useMemo(
     () => ABILITIES.reduce((sum, a) => sum + (POINT_BUY_COST[b.base[a.key]] ?? 0), 0),
     [b.base]
@@ -243,7 +251,22 @@ export default function CrearPage() {
     { key: "razas", label: "Razas", left: <RazasIndex b={b} set={set} onPickSpecies={pickSpecies} />, right: <RazaDetalle b={b} set={set} /> },
     { key: "clases", label: "Clases", left: <ClasesIndex b={b} onPickClass={pickClass} />, right: <ClaseDetalle b={b} set={set} /> },
     { key: "trasfondos", label: "Trasfondos", left: <TrasfondosIndex b={b} onPickBackground={pickBackground} />, right: <TrasfondoDetalle b={b} /> },
-    { key: "aptitudes", label: "Aptitudes", left: <div className="tome-dark-inset"><StepAbilities b={b} set={set} pointsSpent={pointsSpent} finalScores={finalScores} /></div> },
+    { key: "aptitudes", label: "Aptitudes", left: <div className="tome-dark-inset">
+      <AbilitiesStep
+        userId={userId}
+        method={b.statMethod}
+        rolled={b.rolled}
+        assign={b.assign}
+        base={b.base}
+        bonus={b.bonus}
+        canBonus={canBonus}
+        onMethod={(m) => set({ statMethod: m, rolled: [], assign: { ...ASSIGN_EMPTY } })}
+        onRolled={(scores) => set({ rolled: scores, assign: { ...ASSIGN_EMPTY } })}
+        onAssign={(a) => set({ assign: a })}
+        onBase={(k, v) => set({ base: { ...b.base, [k]: v } })}
+        onBonus={(k, v) => set({ bonus: { ...b.bonus, [k]: v } })}
+      />
+    </div> },
     { key: "pericias", label: "Pericias", left: <div className="tome-dark-inset"><StepSkills b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} /></div> },
     { key: "ficha", label: "Ficha", left: <div className="tome-dark-inset"><StepSummary b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} /></div> },
   ];
@@ -437,72 +460,6 @@ function TrasfondoDetalle({ b }: { b: Build }) {
       <p style={{ fontSize: 13, color: "var(--paper-ink)" }}>{bg.tool}</p>
       <p className="tome-region">Dote</p>
       <p style={{ fontSize: 13, color: "var(--paper-ink)" }}>{bg.feat}</p>
-    </div>
-  );
-}
-
-/* ============================ PASO 4: APTITUDES ============================ */
-function StepAbilities({ b, set, pointsSpent, finalScores }:
-  { b: Build; set: (p: Partial<Build>) => void; pointsSpent: number; finalScores: Record<AbilityKey, number> }) {
-  const bg = b.background ? getBackground(b.background) : undefined;
-  const remaining = POINT_BUY_BUDGET - pointsSpent;
-  const totalBonus = bonusTotal(b.bonus);
-
-  const setBase = (k: AbilityKey, v: number) => {
-    if (v < POINT_BUY_MIN || v > POINT_BUY_MAX) return;
-    const cost = (POINT_BUY_COST[v] ?? 0) - (POINT_BUY_COST[b.base[k]] ?? 0);
-    if (pointsSpent + cost > POINT_BUY_BUDGET) return;
-    set({ base: { ...b.base, [k]: v } });
-  };
-  const setBonus = (k: AbilityKey, v: number) => {
-    if (v < 0 || v > 2) return;
-    const next = { ...b.bonus, [k]: v };
-    if (bonusTotal(next) > 3) return;
-    set({ bonus: next });
-  };
-
-  return (
-    <div>
-      <h2 className="font-display text-xl font-bold mb-1" style={{ color: "var(--color-parch)" }}>Reparte tus aptitudes</h2>
-      <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-        Compra de puntos (27): valores 8–15. Después suma <strong>+3 de tu trasfondo</strong> (máx. +2 a una aptitud).
-      </p>
-      <div className="flex flex-wrap gap-3 mb-6">
-        <span className="chip" data-on={remaining >= 0}>Puntos restantes: {remaining}</span>
-        <span className="chip" data-on={totalBonus === 3}>Bonus de trasfondo: {totalBonus}/3</span>
-      </div>
-
-      <div className="space-y-3">
-        {ABILITIES.map((a) => {
-          const canBonus = bg?.abilities.includes(a.key);
-          return (
-            <div key={a.key} className="panel-raised p-4 flex items-center gap-3 flex-wrap">
-              <div className="w-32">
-                <p className="font-display font-bold" style={{ color: "var(--color-parch)" }}>{a.name}</p>
-                <p className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>{a.abbr}</p>
-              </div>
-              {/* base stepper */}
-              <div className="flex items-center gap-2">
-                <button className="stat-btn" onClick={() => setBase(a.key, b.base[a.key] - 1)} disabled={b.base[a.key] <= POINT_BUY_MIN}>−</button>
-                <span className="font-ui font-extrabold text-lg w-7 text-center" style={{ color: "var(--color-warm)" }}>{b.base[a.key]}</span>
-                <button className="stat-btn" onClick={() => setBase(a.key, b.base[a.key] + 1)} disabled={b.base[a.key] >= POINT_BUY_MAX}>+</button>
-              </div>
-              {/* bonus */}
-              <div className="flex items-center gap-2">
-                <span className="font-ui text-[11px] font-bold" style={{ color: canBonus ? "var(--color-bronze)" : "var(--color-dim)" }}>trasfondo</span>
-                <button className="stat-btn" onClick={() => setBonus(a.key, (b.bonus[a.key] ?? 0) - 1)} disabled={!canBonus || (b.bonus[a.key] ?? 0) <= 0}>−</button>
-                <span className="font-ui font-bold w-6 text-center" style={{ color: "var(--color-bronze-bright)" }}>+{b.bonus[a.key] ?? 0}</span>
-                <button className="stat-btn" onClick={() => setBonus(a.key, (b.bonus[a.key] ?? 0) + 1)} disabled={!canBonus || totalBonus >= 3 || (b.bonus[a.key] ?? 0) >= 2}>+</button>
-              </div>
-              {/* total */}
-              <div className="ml-auto text-right">
-                <p className="font-display text-2xl font-extrabold" style={{ color: "var(--color-arcane-bright)" }}>{finalScores[a.key]}</p>
-                <p className="font-ui text-[11px] font-bold" style={{ color: "var(--color-muted)" }}>{fmtMod(abilityMod(finalScores[a.key]))}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
