@@ -14,6 +14,7 @@ import {
   ABILITIES, SKILLS, AbilityKey, abilityMod, fmtMod,
   POINT_BUY_COST, POINT_BUY_BUDGET, POINT_BUY_MIN, POINT_BUY_MAX,
 } from "@/data/rules";
+import { ASSIGN_EMPTY, isAssignComplete, loadStatRoll, type Assign, type StatMethod } from "@/lib/statRolls";
 
 type Build = {
   name: string;
@@ -27,6 +28,9 @@ type Build = {
   skills: string[];
   lore: string;
   step: number;
+  statMethod: StatMethod | null;
+  rolled: number[];   // los 6 valores (dados/array); vacío en point-buy
+  assign: Assign;     // aptitud -> índice en `rolled`
 };
 
 const EMPTY_SCORES: Record<AbilityKey, number> = { fue: 8, des: 8, con: 8, int: 8, sab: 8, car: 8 };
@@ -53,6 +57,7 @@ export default function CrearPage() {
   const [b, setB] = useState<Build>({
     name: "", species: null, lineage: null, cls: null, subclass: null,
     background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0,
+    statMethod: null, rolled: [], assign: { ...ASSIGN_EMPTY },
   });
   const [loaded, setLoaded] = useState(false);
   const [mobileShowRight, setMobileShowRight] = useState(false);
@@ -100,6 +105,15 @@ export default function CrearPage() {
     });
   }, [loaded, userId]);
 
+  // Fase K: si el jugador YA tiene tirada registrada, el método queda fijado.
+  useEffect(() => {
+    if (!userId) return;
+    loadStatRoll(userId).then((row) => {
+      if (!row) return;
+      setB((p) => ({ ...p, statMethod: row.method, rolled: row.scores ?? [] }));
+    });
+  }, [userId]);
+
   useEffect(() => {
     if (!loaded || !userId || !cloudLoaded.current) return;
     const t = setTimeout(() => {
@@ -137,7 +151,7 @@ export default function CrearPage() {
   const allSkills = useMemo(() => Array.from(new Set([...bgSkills, ...classSkills])), [bgSkills, classSkills]);
 
   function reset() {
-    setB({ name: "", species: null, lineage: null, cls: null, subclass: null, background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0 });
+    setB({ name: "", species: null, lineage: null, cls: null, subclass: null, background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0, statMethod: null, rolled: [], assign: { ...ASSIGN_EMPTY } });
   }
 
   function copySheet() {
@@ -173,7 +187,11 @@ export default function CrearPage() {
     !!b.name.trim() && !!species && (!species.lineages || !!b.lineage),
     !!cls && !!b.subclass,
     !!bg,
-    pointsSpent <= POINT_BUY_BUDGET && bonusTotal(b.bonus) === 3,
+    // Aptitudes: point-buy valida presupuesto; dados/array exigen asignar los
+    // 6 valores. En ambos casos hay que repartir los +3 del trasfondo.
+    (b.statMethod === "pointbuy"
+      ? pointsSpent <= POINT_BUY_BUDGET
+      : b.statMethod !== null && isAssignComplete(b.assign)) && bonusTotal(b.bonus) === 3,
     !!cls && classSkills.length === cls.skillCount,
     true,
   ];
@@ -197,7 +215,13 @@ export default function CrearPage() {
       : b.step === 2
       ? (!bg ? "Elige un trasfondo" : null)
       : b.step === 3
-      ? (bonusTotal(b.bonus) !== 3 ? "Reparte los +3 del trasfondo" : null)
+      ? (!b.statMethod
+          ? "Elige cómo obtienes tus aptitudes"
+          : b.statMethod !== "pointbuy" && !isAssignComplete(b.assign)
+          ? "Asigna los 6 valores a tus aptitudes"
+          : bonusTotal(b.bonus) !== 3
+          ? "Reparte los +3 del trasfondo"
+          : null)
       : b.step === 4
       ? (cls && classSkills.length !== cls.skillCount ? `Elige tus pericias (${classSkills.length}/${cls.skillCount})` : null)
       : null;
