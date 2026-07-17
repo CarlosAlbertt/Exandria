@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { loadActiveCharacter, saveCharacter, type Item, type CharacterData } from "@/lib/character";
+import { loadActiveCharacter, saveCharacter, listCharacters, archiveCharacter, type Item, type CharacterData } from "@/lib/character";
 import type { Asi } from "@/lib/character";
+import { archivedOf, MAX_CHARACTERS } from "@/lib/archive";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { getBackground } from "@/data/backgrounds";
@@ -89,6 +90,9 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const [featuresOpen, setFeaturesOpen] = useState(true);
   // id de la ficha activa (saveCharacter va por id). Retirar/listar es la Tarea 5.
   const [characterId, setCharacterId] = useState<string | null>(null);
+  // Huecos del jugador (activo + archivados), solo se cargan en la ficha propia.
+  const [slots, setSlots] = useState<Awaited<ReturnType<typeof listCharacters>>>([]);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
 
   const [cat, setCat] = useState<ItemCat>("Aventura");
   const [custom, setCustom] = useState("");
@@ -155,6 +159,13 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     })();
     return () => { done = true; };
   }, [targetUserId]);
+
+  // Huecos (activo + archivados) para el bloque de retirada, solo en la ficha
+  // propia: el DM editando a otro (?user=) no necesita esta lista aquí.
+  useEffect(() => {
+    if (saveMode !== "self" || !targetUserId) return;
+    listCharacters(targetUserId).then(setSlots);
+  }, [saveMode, targetUserId]);
 
   // Adaptador de guardado: readOnly no guarda; sin sesión → localStorage;
   // con sesión → saveCharacter (self) o POST /api/dm/character (dm).
@@ -708,6 +719,51 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           />
         </div>
       </div>
+
+      {/* RETIRAR PERSONAJE: acción del dueño sobre su cuenta, no una edición de
+          la ficha — va bajo saveMode==="self" (incluye al jugador aunque su
+          ficha sea readOnly) y no bajo !readOnly (eso la escondería de todos
+          los jugadores: la ficha propia de un jugador ES readOnly). */}
+      {saveMode === "self" && targetUserId && (
+        <div className="panel p-6 mt-5">
+          <p className="eyebrow mb-2">Personajes</p>
+          <p className="font-ui text-[13px] mb-4" style={{ color: "var(--color-muted)" }}>
+            Tienes {slots.length} de {MAX_CHARACTERS}. Solo puedes jugar uno a la vez.
+          </p>
+
+          {archivedOf(slots).length > 0 && (
+            <div className="mb-4">
+              <p className="eyebrow mb-2">Retirados</p>
+              {archivedOf(slots).map((c) => (
+                <div key={c.id} className="pick-row" style={{ opacity: 0.5, cursor: "default" }}>
+                  <span className="pick-row-name">{c.name || "Sin nombre"}</span>
+                  <span className="pick-row-sub">Retirado. Solo el DM puede devolverlo a juego.</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {characterId && (
+            <button
+              className="btn-ghost"
+              onClick={async () => {
+                if (!confirm("¿Retirar a este personaje del juego? Dejarás de verlo y solo el DM podrá devolverlo.")) return;
+                const err = await archiveCharacter(characterId);
+                if (err) { setArchiveError(err); return; }
+                // A /crear: sin activo, es donde se hace el siguiente.
+                window.location.href = "/crear";
+              }}
+            >
+              <i className="fas fa-box-archive mr-2" />Retirar personaje
+            </button>
+          )}
+          {archiveError && (
+            <p className="font-ui text-[12px] font-bold mt-3" style={{ color: "var(--color-ember)" }}>
+              <i className="fas fa-circle-exclamation mr-1.5" />{archiveError}
+            </p>
+          )}
+        </div>
+      )}
     </>
   );
 }
