@@ -11,6 +11,8 @@ import { xpForNext } from "@/data/leveling";
 import { derive } from "@/lib/derive";
 import { createClient } from "@/lib/supabase/client";
 
+const YA_TIENE_ACTIVO = "Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este.";
+
 async function dmPatch(userId: string, patch: Record<string, unknown>) {
   await fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, patch }) });
 }
@@ -30,20 +32,37 @@ export default function GrupoPanel() {
   const [xpInput, setXpInput] = useState<Record<string, string>>({});
   const [allXp, setAllXp] = useState("");
   const [archivados, setArchivados] = useState<Record<string, { id: string; name: string }[]>>({});
+  const [nombres, setNombres] = useState<Record<string, string>>({});
   const [dmError, setDmError] = useState<string | null>(null);
 
   // Los archivados no vienen en useParty (que solo trae los activos), así que
   // se cargan aparte. No llevan Realtime propio: tras restaurar/borrar se
   // vuelve a llamar a mano en vez de recargar la página entera.
+  //
+  // Se trae también `profiles` porque un jugador que archivó su único personaje
+  // NO está en `party` (useParty filtra por archived_at) y aun así hay que
+  // pintarlo: sin su username el DM no sabría de quién son esos retirados.
+  // Se excluye al DM igual que hace useParty (roles[...] !== "dm"): sus propias
+  // fichas no salen en «Todo el grupo», así que tampoco deben salir sus
+  // retirados — si no, el DM se vería a sí mismo como un jugador más.
   async function loadArchivados() {
-    const { data } = await createClient()
-      .from("characters")
-      .select("id, user_id, name, archived_at")
-      .not("archived_at", "is", null);
+    const supabase = createClient();
+    const [chars, profs] = await Promise.all([
+      supabase.from("characters").select("id, user_id, name, archived_at").not("archived_at", "is", null),
+      supabase.from("profiles").select("id, username, role"),
+    ]);
+    const names: Record<string, string> = {};
+    const roles: Record<string, string> = {};
+    for (const p of (profs.data ?? []) as { id: string; username: string; role: string }[]) {
+      names[p.id] = p.username;
+      roles[p.id] = p.role;
+    }
     const by: Record<string, { id: string; name: string }[]> = {};
-    for (const c of (data ?? []) as { id: string; user_id: string; name: string }[]) {
+    for (const c of (chars.data ?? []) as { id: string; user_id: string; name: string }[]) {
+      if (roles[c.user_id] === "dm") continue;
       (by[c.user_id] ??= []).push({ id: c.id, name: c.name });
     }
+    setNombres(names);
     setArchivados(by);
   }
   useEffect(() => { loadArchivados(); }, []);
@@ -64,11 +83,14 @@ export default function GrupoPanel() {
       const { data: activo } = await supabase.from("characters")
         .select("id").eq("user_id", userId).is("archived_at", null).maybeSingle();
       if (activo) {
-        setDmError("Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este.");
+        setDmError(YA_TIENE_ACTIVO);
         return;
       }
       const { error } = await supabase.from("characters").update({ archived_at: null }).eq("id", characterId);
-      if (error) { setDmError(error.message); return; }
+      // 23505 = unique_violation: el jugador se creó uno entre el select de
+      // arriba y este update (ventana minúscula, pero el índice único parcial
+      // lo para). Se traduce por código, no por texto, igual que lib/character.ts.
+      if (error) { setDmError(error.code === "23505" ? YA_TIENE_ACTIVO : error.message); return; }
     } else {
       // La FK de stat_rolls es `on delete cascade`: la tirada se va con él.
       const { error } = await supabase.from("characters").delete().eq("id", characterId);
@@ -77,7 +99,13 @@ export default function GrupoPanel() {
     loadArchivados();
   }
 
-  if (ready && party.length === 0) {
+  // Los que tienen retirados pero NO salen en `party`: archivaron su único
+  // personaje y no se han hecho otro.
+  const sinActivo = Object.keys(archivados).filter((uid) => !party.some((c) => c.user_id === uid));
+
+  // El vacío solo es vacío de verdad si tampoco hay retirados: si un jugador
+  // archivó su único personaje, party está vacía pero SÍ hay algo que gestionar.
+  if (ready && party.length === 0 && Object.keys(archivados).length === 0) {
     return (
       <div className="panel p-10 text-center">
         <i className="fas fa-users-slash text-3xl mb-3" style={{ color: "var(--color-dim)" }} />
@@ -297,6 +325,43 @@ export default function GrupoPanel() {
           </div>
         );
       })}
+
+      {/* Jugadores que archivaron su único personaje: no están en `party`
+          (useParty filtra los archivados), así que sin esto desaparecerían del
+          panel y el DM no podría ni devolverles el personaje ni borrárselo —
+          y con 3 archivados el jugador se quedaba sin poder crear, atascado. */}
+      {sinActivo.length > 0 && (
+        <div className="panel p-5">
+          <p className="eyebrow mb-3">
+            <i className="fas fa-user-slash mr-1.5" style={{ color: "var(--color-dim)" }} />Jugadores sin personaje en juego
+          </p>
+          {sinActivo.map((uid) => (
+            <div key={uid} className="mb-4 last:mb-0">
+              <span className="font-ui text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: "var(--color-arcane)", border: "1px solid var(--color-arcane)55" }}>
+                <i className="fas fa-user mr-1" />{nombres[uid] ?? "jugador"}
+              </span>
+              <div className="mt-2">
+                <p className="eyebrow mb-1.5">Retirados</p>
+                {(archivados[uid] ?? []).map((arch) => (
+                  <div key={arch.id} className="flex items-center gap-2 mb-1.5">
+                    <span className="font-ui text-[12px]" style={{ color: "var(--color-muted)" }}>{arch.name || "Sin nombre"}</span>
+                    <button className="btn-ghost !py-1 !text-[11px]" onClick={() => dmAction("restore", arch.id, uid)}>
+                      <i className="fas fa-rotate-left mr-1" />Devolver a juego
+                    </button>
+                    <button
+                      className="btn-ghost !py-1 !text-[11px]"
+                      style={{ color: "var(--color-ember)" }}
+                      onClick={() => { if (confirm(`¿Borrar a "${arch.name}" para siempre? Esto NO se puede deshacer.`)) dmAction("destroy", arch.id, uid); }}
+                    >
+                      <i className="fas fa-trash mr-1" />Borrar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
