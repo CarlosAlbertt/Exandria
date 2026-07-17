@@ -9,6 +9,7 @@ import {
 import { useRole } from "@/components/SessionProvider";
 import { xpForCr } from "@/data/encounters";
 import { slugify } from "@/lib/slug";
+import ImageUpload from "@/components/ImageUpload";
 import { ALL_MONSTERS, type Monster, type MonsterAbility } from "@/data/bestiary";
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors";
@@ -229,6 +230,10 @@ function StatblockModal({
           {monster.treasure && <p><strong style={{ color: "var(--color-bronze-bright)" }}>Tesoro. </strong>{monster.treasure}</p>}
         </div>
 
+        {monster.image && (
+          <img src={monster.image} alt={monster.name} loading="lazy"
+            className="w-full max-h-72 object-cover rounded-lg border border-[var(--color-line)] mb-4" />
+        )}
         <p className="text-[13px] italic mb-4" style={{ color: "var(--color-muted)" }}>{monster.blurb}</p>
 
         <AbilitySection title="Rasgos" items={monster.traits} />
@@ -296,6 +301,7 @@ type FormState = {
   senses: string; languages: string;
   habitat: string; treasure: string;
   blurb: string;
+  image: string;
   traits: AbilityRow[]; actions: AbilityRow[]; bonusActions: AbilityRow[]; reactions: AbilityRow[]; legendary: AbilityRow[];
 };
 
@@ -308,6 +314,7 @@ const EMPTY_FORM: FormState = {
   senses: "", languages: "—",
   habitat: "", treasure: "",
   blurb: "",
+  image: "",
   traits: [], actions: [{ name: "", text: "" }], bonusActions: [], reactions: [], legendary: [],
 };
 
@@ -323,6 +330,7 @@ function monsterToForm(m: Monster): FormState {
     senses: m.senses, languages: m.languages,
     habitat: m.habitat ?? "", treasure: m.treasure ?? "",
     blurb: m.blurb,
+    image: m.image ?? "",
     traits: m.traits && m.traits.length ? m.traits : [],
     actions: m.actions && m.actions.length ? m.actions : [{ name: "", text: "" }],
     bonusActions: m.bonusActions && m.bonusActions.length ? m.bonusActions : [],
@@ -397,6 +405,7 @@ function buildMonster(f: FormState, slug: string): Monster {
   if (f.gear.trim()) m.gear = f.gear.trim();
   if (f.habitat.trim()) m.habitat = f.habitat.trim();
   if (f.treasure.trim()) m.treasure = f.treasure.trim();
+  if (f.image.trim()) m.image = f.image.trim();
   const traits = cleanRows(f.traits); if (traits.length) m.traits = traits;
   const bonusActions = cleanRows(f.bonusActions); if (bonusActions.length) m.bonusActions = bonusActions;
   const reactions = cleanRows(f.reactions); if (reactions.length) m.reactions = reactions;
@@ -524,6 +533,11 @@ function MonsterForm({ editing, onClose }: { editing: Monster | null; onClose: (
           placeholder="Descripción breve (máx. 300 caracteres)…" className={`${inputCls} mb-1 resize-none`} style={{ color: "var(--color-warm)" }}
         />
         <p className="font-ui text-[10px] text-right mb-4" style={{ color: "var(--color-dim)" }}>{f.blurb.length}/300</p>
+
+        <div className="mb-4">
+          <ImageUpload folder="monsters" filename={slug || "monstruo"} label="Arte del monstruo (opcional)"
+            maxWidth={1600} currentUrl={f.image} onUploaded={(url) => patch("image", url)} />
+        </div>
 
         <AbilityListEditor label="Rasgos" rows={f.traits} onChange={(rows) => patch("traits", rows)} />
         <AbilityListEditor label="Acciones" rows={f.actions} onChange={(rows) => patch("actions", rows)} required />
