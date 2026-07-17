@@ -60,7 +60,7 @@ tienes 3 en total, te bloquea y el DM tiene que borrar uno.
 | 8 consumidores de `useParty` | Sin cambios si `useParty` filtra bien. **Verificar uno por uno.** | 3 |
 | `app/crear/page.tsx` | Edita el activo; crea si no hay; bloquea al llegar a 3. | 4 |
 | `components/CharacterSheet.tsx` | Botón «Retirar personaje» + lista de archivados. | 5 |
-| `app/api/dm/character/route.ts` | Acotar al activo; acciones `archive`/`restore`/`destroy`. | 6 |
+| `app/api/dm/character/route.ts` | **Solo** acotar las escrituras al activo (bug latente del XP). | 6 |
 | `app/dm/GrupoPanel.tsx` | UI del DM: restaurar y borrar de verdad. | 7 |
 | `HANDOFF.md` + vault | Documentación y coordinación de la migración. | 8 |
 
@@ -852,50 +852,31 @@ En `route.ts`, la lectura (línea 35) y la escritura (línea 54) van por
     .update(update).eq("user_id", userId).is("archived_at", null);
 ```
 
-- [ ] **Paso 2: Acciones nuevas — restaurar y borrar**
+- [ ] **Paso 2: NO añadas restore/destroy aquí. Van sin endpoint.**
 
-Añade, justo después de leer el `patch` (línea ~21):
+**Esta tarea NO añade acciones nuevas a la API.** La versión anterior de este plan
+mandaba hacer `restore`/`destroy` aquí con `service_role`, y **estaba mal**. Lo
+detectó la revisión de la Tarea 1:
 
-```ts
-  // Acciones de archivado del DM. Van por `characterId` (no por jugador: un
-  // jugador tiene varios) y usan service_role, que salta la RLS y los triggers
-  // de guardia — el rol de DM ya se verificó arriba.
-  const { action, characterId } = body as { action?: string; characterId?: string };
-  if (action === "restore" || action === "destroy") {
-    if (!characterId) return Response.json({ error: "Falta characterId." }, { status: 400 });
-    const admin2 = createAdminClient();
+- `service_role` **salta la RLS, pero NO los triggers**: un `BEFORE UPDATE`
+  dispara con cualquier rol.
+- Con `service_role` la petición **no lleva JWT de usuario**, así que
+  `auth.uid()` es `null` dentro del trigger → `public.is_dm()` da **`false`** →
+  `guard_desarchivar` **rechaza al DM de verdad**, con el mensaje pensado para
+  bloquear a los jugadores. El botón «Devolver a juego» **no funcionaría nunca**,
+  y `tsc` y `build` no dirían ni mu.
 
-    if (action === "restore") {
-      // Restaurar exige que el jugador no tenga otro en juego: el índice único
-      // parcial lo impediría. Se comprueba aquí para dar un mensaje decente.
-      const { data: target } = await admin2.from("characters").select("user_id").eq("id", characterId).maybeSingle();
-      if (!target) return Response.json({ error: "Ese personaje no existe." }, { status: 404 });
-      const { data: activo } = await admin2.from("characters")
-        .select("id").eq("user_id", (target as { user_id: string }).user_id).is("archived_at", null).maybeSingle();
-      if (activo) return Response.json({ error: "Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este." }, { status: 409 });
-      const { error } = await admin2.from("characters").update({ archived_at: null }).eq("id", characterId);
-      if (error) return Response.json({ error: error.message }, { status: 400 });
-      return Response.json({ ok: true });
-    }
+**El camino correcto es la sesión autenticada del DM**, que es lo que
+`schema_v14` ya prepara: la policy `"chars: actualizar lo propio"` lleva
+`or public.is_dm()`, y la de delete es `using (public.is_dm())`. Con su propia
+sesión, la RLS le deja y el trigger ve su `auth.uid()` real.
 
-    // destroy: borrado real. La FK de stat_rolls es `on delete cascade`, así que
-    // la tirada de ese personaje se va con él.
-    const { error } = await admin2.from("characters").delete().eq("id", characterId);
-    if (error) return Response.json({ error: error.message }, { status: 400 });
-    return Response.json({ ok: true });
-  }
-```
+**Y hay precedente en el repo**: «Resetear aptitudes» del Panel DM **no tiene
+endpoint** — la RLS ya lo cubre (ver `HANDOFF.md`, milestone de la Fase K).
+Restaurar y borrar siguen ese mismo patrón, **desde el cliente, en la Tarea 7**.
 
-Y añade `action`/`characterId` al tipo del body (línea 18):
-
-```ts
-  let body: { userId?: string; patch?: Record<string, unknown>; action?: string; characterId?: string };
-```
-
-> **`userId` sigue siendo obligatorio para el resto de acciones**, pero
-> `restore`/`destroy` no lo necesitan: van por `characterId`. Asegúrate de que
-> el `if (!userId)` de la línea 22 **no bloquea** esas dos — muévelo debajo del
-> bloque nuevo o exclúyelas.
+Así que en esta tarea **solo haces el Paso 1** (acotar al activo). No toques nada
+más de este archivo.
 
 - [ ] **Paso 3: Verificar**
 
@@ -907,11 +888,11 @@ npx tsc --noEmit && npm run build
 
 ```bash
 git add app/api/dm/character/route.ts
-git commit -m "feat(archivo): la API del DM restaura, borra y solo toca al activo
+git commit -m "fix(archivo): la API del DM solo toca al personaje en juego
 
 Bug latente: update .eq(user_id) le habría dado el XP a los tres
-personajes del jugador a la vez. Se acota al que está en juego. Se
-añaden restore (con aviso si ya tiene otro activo) y destroy.
+personajes del jugador a la vez, porque desde schema_v14 hay varias
+filas por jugador. Se acota al que está en juego.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -973,23 +954,45 @@ Junto a «Resetear aptitudes» de cada jugador:
   )}
 ```
 
-Con el helper:
+Con el helper. **Va por la sesión del DM, sin endpoint** — como «Resetear
+aptitudes», que ya funciona así porque la RLS lo cubre:
 
 ```tsx
-  // Llama a la API del DM. `restore` puede fallar si el jugador ya tiene otro
-  // en juego: el mensaje viene del servidor y se enseña tal cual (ya está en
-  // español).
-  async function dmAction(action: "restore" | "destroy", characterId: string) {
-    const res = await fetch("/api/dm/character", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, characterId }),
-    });
-    const json = await res.json();
-    if (json.error) setDmError(json.error);
-    else location.reload();
+  // Restaurar y borrar van con la SESIÓN del DM, no por la API con service_role.
+  // Motivo (lo cazó la revisión de schema_v14): service_role salta la RLS pero
+  // NO los triggers, y sin JWT `auth.uid()` es null → `is_dm()` da false →
+  // `guard_desarchivar` rechazaría al propio DM. Con su sesión, la policy
+  // («chars: actualizar lo propio», que lleva `or is_dm()`) le deja y el trigger
+  // ve su auth.uid() real. Mismo patrón que «Resetear aptitudes».
+  async function dmAction(action: "restore" | "destroy", characterId: string, userId: string) {
+    const supabase = createClient();
+    setDmError(null);
+
+    if (action === "restore") {
+      // El índice único parcial impide dos activos. Se comprueba antes para dar
+      // un mensaje decente en vez de soltar el error de Postgres.
+      const { data: activo } = await supabase.from("characters")
+        .select("id").eq("user_id", userId).is("archived_at", null).maybeSingle();
+      if (activo) {
+        setDmError("Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este.");
+        return;
+      }
+      const { error } = await supabase.from("characters").update({ archived_at: null }).eq("id", characterId);
+      if (error) { setDmError(error.message); return; }
+    } else {
+      // La FK de stat_rolls es `on delete cascade`: la tirada se va con él.
+      const { error } = await supabase.from("characters").delete().eq("id", characterId);
+      if (error) { setDmError(error.message); return; }
+    }
+    location.reload();
   }
 ```
+
+Con `const [dmError, setDmError] = useState<string | null>(null);` y su
+`{dmError && <p …>{dmError}</p>}` en el JSX.
+
+Las llamadas del Paso 3 pasan a `dmAction("restore", c.id, m.user_id)` y
+`dmAction("destroy", c.id, m.user_id)`.
 
 > El `confirm` del borrado **dice el nombre y dice que no se puede deshacer**.
 > Es la única acción irreversible de toda la feature.
