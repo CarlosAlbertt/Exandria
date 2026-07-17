@@ -224,6 +224,34 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-17): Fase L — control de acceso por rol 🔒
+Rama `fase-l-acceso-por-rol`. Spec en
+`docs/superpowers/specs/2026-07-17-fase-l-acceso-por-rol-design.md`; plan en
+`docs/superpowers/plans/2026-07-17-fase-l-acceso-por-rol.md`. Ejecutado con
+subagentes (implementador + revisor spec + revisor calidad por tarea).
+
+- **`/narrador` pasa a DM-only** con gate de **servidor** (no ocultar botones):
+  `app/narrador/page.tsx` se parte en server component (`getSessionProfile()` →
+  sin perfil `redirect("/login")`, `role !== "dm"` `redirect("/")`) +
+  `app/narrador/NarradorClient.tsx` (el chat cliente, lógica intacta). Mismo
+  patrón que `/dm` → `DmDashboard`. Era un narrador IA personal del jugador; se
+  cierra por decisión del usuario — su chat IA sigue en la **Taberna**.
+- **`SiteNav`**: `/narrador` sale de `BASE_LINKS` y entra en `DM_LINKS` junto a
+  `/dm`; el jugador no ve ninguno de los dos (desktop y móvil derivan del mismo
+  array `links`). Ocultar es cosmético; la garantía es el redirect de servidor.
+- **Auditoría de superficies** (tabla en la spec, regla nueva: toda ruta declara
+  su rol): el resto ya estaba gateado (`/dm`, `/api/dm/character`,
+  `/api/admin/users`) — sin cambio de código. **`/api/ia` se queda autenticado**
+  (Taberna/NPCs lo usan; cerrarlo los rompería). RLS sin tocar; `dm_notes`
+  legible por consola sigue aceptado.
+- Verificado: `tsc --noEmit` + `next build` limpios (`/narrador` es ruta
+  dinámica `ƒ`); dos revisiones por tarea; y en navegador **anon en `/narrador`
+  redirige a `/login`** (dev server). Sin migración.
+
+> **PENDIENTE de prueba del usuario** (necesita sesión, sin credenciales en dev):
+> **jugador logueado** que navegue a `/narrador` debe redirigir a `/`, y su nav
+> no debe mostrar "Narrador"; el **DM** sí lo ve y entra.
+
 ## RESUELTO ESTA SESIÓN (2026-07-02 → 2026-07-03)
 1. **Botón "Terminar" del DM**: el bug real era que `EpicOverlay` se monta a
    pantalla completa y tapaba el botón "Terminar" del panel (inalcanzable). El
