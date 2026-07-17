@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParty } from "@/lib/character";
 import { getSpecies } from "@/data/species";
@@ -29,6 +29,53 @@ export default function GrupoPanel() {
   const [open, setOpen] = useState<string | null>(null);
   const [xpInput, setXpInput] = useState<Record<string, string>>({});
   const [allXp, setAllXp] = useState("");
+  const [archivados, setArchivados] = useState<Record<string, { id: string; name: string }[]>>({});
+  const [dmError, setDmError] = useState<string | null>(null);
+
+  // Los archivados no vienen en useParty (que solo trae los activos), así que
+  // se cargan aparte. No llevan Realtime propio: tras restaurar/borrar se
+  // vuelve a llamar a mano en vez de recargar la página entera.
+  async function loadArchivados() {
+    const { data } = await createClient()
+      .from("characters")
+      .select("id, user_id, name, archived_at")
+      .not("archived_at", "is", null);
+    const by: Record<string, { id: string; name: string }[]> = {};
+    for (const c of (data ?? []) as { id: string; user_id: string; name: string }[]) {
+      (by[c.user_id] ??= []).push({ id: c.id, name: c.name });
+    }
+    setArchivados(by);
+  }
+  useEffect(() => { loadArchivados(); }, []);
+
+  // Restaurar y borrar van con la SESIÓN del DM, no por la API con service_role.
+  // Motivo (lo cazó la revisión de schema_v14): service_role salta la RLS pero
+  // NO los triggers, y sin JWT `auth.uid()` es null → `is_dm()` da false →
+  // `guard_desarchivar` rechazaría al propio DM. Con su sesión, la policy
+  // («chars: actualizar lo propio», que lleva `or is_dm()`) le deja y el trigger
+  // ve su auth.uid() real. Mismo patrón que «Resetear aptitudes».
+  async function dmAction(action: "restore" | "destroy", characterId: string, userId: string) {
+    const supabase = createClient();
+    setDmError(null);
+
+    if (action === "restore") {
+      // El índice único parcial impide dos activos. Se comprueba antes para dar
+      // un mensaje decente en vez de soltar el error de Postgres.
+      const { data: activo } = await supabase.from("characters")
+        .select("id").eq("user_id", userId).is("archived_at", null).maybeSingle();
+      if (activo) {
+        setDmError("Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este.");
+        return;
+      }
+      const { error } = await supabase.from("characters").update({ archived_at: null }).eq("id", characterId);
+      if (error) { setDmError(error.message); return; }
+    } else {
+      // La FK de stat_rolls es `on delete cascade`: la tirada se va con él.
+      const { error } = await supabase.from("characters").delete().eq("id", characterId);
+      if (error) { setDmError(error.message); return; }
+    }
+    loadArchivados();
+  }
 
   if (ready && party.length === 0) {
     return (
@@ -41,6 +88,13 @@ export default function GrupoPanel() {
 
   return (
     <div className="space-y-4">
+      {dmError && (
+        <div className="panel p-3" style={{ border: "1px solid var(--color-ember)" }}>
+          <p className="font-ui text-[13px]" style={{ color: "var(--color-ember)" }}>
+            <i className="fas fa-triangle-exclamation mr-2" />{dmError}
+          </p>
+        </div>
+      )}
       <div className="panel p-4 flex flex-wrap items-center justify-between gap-3">
         <p className="eyebrow"><i className="fas fa-users mr-1.5" style={{ color: "var(--color-bronze)" }} />Todo el grupo</p>
         <div className="flex flex-wrap items-center gap-2">
@@ -169,6 +223,27 @@ export default function GrupoPanel() {
                 </button>
               </div>
             </div>
+
+            {(archivados[c.user_id] ?? []).length > 0 && (
+              <div className="mt-3">
+                <p className="eyebrow mb-1.5">Retirados</p>
+                {(archivados[c.user_id] ?? []).map((arch) => (
+                  <div key={arch.id} className="flex items-center gap-2 mb-1.5">
+                    <span className="font-ui text-[12px]" style={{ color: "var(--color-muted)" }}>{arch.name || "Sin nombre"}</span>
+                    <button className="btn-ghost !py-1 !text-[11px]" onClick={() => dmAction("restore", arch.id, c.user_id)}>
+                      <i className="fas fa-rotate-left mr-1" />Devolver a juego
+                    </button>
+                    <button
+                      className="btn-ghost !py-1 !text-[11px]"
+                      style={{ color: "var(--color-ember)" }}
+                      onClick={() => { if (confirm(`¿Borrar a "${arch.name}" para siempre? Esto NO se puede deshacer.`)) dmAction("destroy", arch.id, c.user_id); }}
+                    >
+                      <i className="fas fa-trash mr-1" />Borrar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Franja compacta: siempre visible, sin necesidad de desplegar la ficha */}
             <div className="mt-3 flex flex-wrap items-center gap-4">
