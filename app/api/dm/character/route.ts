@@ -32,7 +32,10 @@ export async function POST(req: Request) {
   }
 
   if (Array.isArray(addItems) || typeof addGold === "number" || typeof addXp === "number") {
-    const { data: row } = await admin.from("characters").select("items, gold, xp, level").eq("user_id", userId).maybeSingle();
+    // Solo el personaje EN JUEGO. Desde schema_v14 hay varias filas por jugador
+    // (activo + archivados), así que sin este filtro `maybeSingle()` reventaría
+    // en cuanto alguien archivara algo.
+    const { data: row } = await admin.from("characters").select("items, gold, xp, level").eq("user_id", userId).is("archived_at", null).maybeSingle();
     if (Array.isArray(addItems)) {
       const items: Item[] = Array.isArray(row?.items) ? [...(row!.items as Item[])] : [];
       for (const it of addItems) {
@@ -51,7 +54,10 @@ export async function POST(req: Request) {
   }
 
   update.updated_at = new Date().toISOString();
-  const { error } = await admin.from("characters").update(update).eq("user_id", userId);
+  // Acotado al personaje en juego: sin el filtro, dar XP u objetos se los daría
+  // también a los archivados del jugador (hay varias filas por user_id desde
+  // schema_v14).
+  const { error } = await admin.from("characters").update(update).eq("user_id", userId).is("archived_at", null);
   if (error) return Response.json({ error: error.message }, { status: 400 });
   return Response.json({ ok: true });
 }
