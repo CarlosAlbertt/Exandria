@@ -333,12 +333,31 @@ mucho más que en la miniatura de 30px de antes. Formato: vertical ~659×1025,
 <32 KB, en `public/species/<slug>.jpg` y `public/species/lineages/<slug>.jpg`.
 
 - Verificado: `tsc`, `build` y los 3 `check-*` limpios en **cada** commit; dos
-  revisiones (spec + calidad) por tarea. **NO se verificó en el navegador**: el
-  panel de navegador se desconectó a mitad de sesión y no se pudo levantar el
-  dev server ni medir el DOM. **Queda pendiente comprobar a ojo** que las
-  tarjetas de método pasan de 75px a ≥320px con el título en una línea, que la
-  barra de runas respeta el gate, y que las flechas y la tira recorren las 13
-  clases. Sin migración.
+  revisiones (spec + calidad) por tarea; **y prueba real en el navegador**
+  (excluyendo `crear` del matcher del proxy temporalmente, ya revertido).
+  Medido a 1280px, antes → después:
+
+  | | Antes | Ahora |
+  |---|---|---|
+  | Tarjeta de método (ancho) | 75px | **328px** |
+  | Tarjeta de método (alto) | 425px | **175px** |
+  | Líneas del título | 2 y 3 | **1** |
+  | Alto de la descripción | 180–200px | **40px** |
+
+  Comprobado además: 6 runas con los labels correctos (**«Ficha»**, no
+  «Resumen»), el **gate intacto** (entrando de cero solo la 1ª activa), **cero
+  rastro** de `.crear-grid`/`.inv-circle`/`.medallion`, sin scroll horizontal, y
+  en el paso Clase el **arte real de Clérigo carga** (`659×1025` en panel de
+  260×452), 2 flechas, **tira de 13 sin ninguna rota**, siluetas exactamente en
+  **Bardo y Paladín**, 4 dominios y el `aria-live` anunciando la clase. Pulsar ▶
+  pasa de Clérigo (9/13) a Paladín (10/13) actualizando arte, anuncio y
+  miniatura activa. **Confirmado funcionando por el usuario** (2026-07-17).
+  Sin migración.
+
+  > **Ojo al verificar `/crear` en el futuro**: el dev server debe arrancarse
+  > **después** de excluir `crear` del matcher de `proxy.ts`. Si se edita el
+  > proxy con el servidor ya en marcha, no lo recoge y `/crear` sigue
+  > redirigiendo a `/login`.
 
 ## RESUELTO (2026-07-15): Creador — Círculo de invocación + Fase K 🔮
 > ⚠️ **Histórico**: el círculo se retiró el 2026-07-16 (ver arriba). Esta
