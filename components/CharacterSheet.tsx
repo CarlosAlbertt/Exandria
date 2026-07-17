@@ -362,6 +362,57 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     if (pickingSlot) equipInto(pickingSlot, item);
   };
 
+  /* --- RETIRAR PERSONAJE / LISTA DE RETIRADOS ---
+     Acción del dueño sobre su cuenta, no una edición de la ficha: va bajo
+     saveMode==="self" (incluye al jugador aunque su ficha sea readOnly) y no
+     bajo !readOnly (eso la escondería de todos los jugadores: la ficha propia
+     de un jugador ES readOnly).
+
+     Se define ANTES del early-return del estado vacío y se pinta en los dos
+     returns: tras archivar te quedas sin activo, que es justo cuando la lista
+     de retirados y el contador hacen falta. El botón de retirar se esconde
+     solo en el estado vacío porque allí no hay characterId que retirar. */
+  const personajesPanel = saveMode === "self" && targetUserId && (
+    <div className="panel p-6 mt-5 text-left">
+      <p className="eyebrow mb-2">Personajes</p>
+      <p className="font-ui text-[13px] mb-4" style={{ color: "var(--color-muted)" }}>
+        Tienes {slots.length} de {MAX_CHARACTERS}. Solo puedes jugar uno a la vez.
+      </p>
+
+      {archivedOf(slots).length > 0 && (
+        <div className="mb-4">
+          <p className="eyebrow mb-2">Retirados</p>
+          {archivedOf(slots).map((c) => (
+            <div key={c.id} className="pick-row" style={{ opacity: 0.5, cursor: "default" }}>
+              <span className="pick-row-name">{c.name || "Sin nombre"}</span>
+              <span className="pick-row-sub">Retirado. Solo el DM puede devolverlo a juego.</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {characterId && (
+        <button
+          className="btn-ghost"
+          onClick={async () => {
+            if (!confirm("¿Retirar a este personaje del juego? Dejarás de verlo y solo el DM podrá devolverlo.")) return;
+            const err = await archiveCharacter(characterId);
+            if (err) { setArchiveError(err); return; }
+            // A /crear: sin activo, es donde se hace el siguiente.
+            window.location.href = "/crear";
+          }}
+        >
+          <i className="fas fa-box-archive mr-2" />Retirar personaje
+        </button>
+      )}
+      {archiveError && (
+        <p className="font-ui text-[12px] font-bold mt-3" style={{ color: "var(--color-ember)" }}>
+          <i className="fas fa-circle-exclamation mr-1.5" />{archiveError}
+        </p>
+      )}
+    </div>
+  );
+
   /* --- estado vacío --- */
   if (loaded && !build.species && !build.cls) {
     return (
@@ -372,6 +423,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           Crea un personaje para abrir su hoja interactiva: nivel, aptitudes, oro, inventario y equipo.
         </p>
         <Link href="/crear" className="btn-gold"><i className="fas fa-hat-wizard mr-2" />Crear personaje</Link>
+        {personajesPanel}
       </main>
     );
   }
@@ -720,50 +772,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
         </div>
       </div>
 
-      {/* RETIRAR PERSONAJE: acción del dueño sobre su cuenta, no una edición de
-          la ficha — va bajo saveMode==="self" (incluye al jugador aunque su
-          ficha sea readOnly) y no bajo !readOnly (eso la escondería de todos
-          los jugadores: la ficha propia de un jugador ES readOnly). */}
-      {saveMode === "self" && targetUserId && (
-        <div className="panel p-6 mt-5">
-          <p className="eyebrow mb-2">Personajes</p>
-          <p className="font-ui text-[13px] mb-4" style={{ color: "var(--color-muted)" }}>
-            Tienes {slots.length} de {MAX_CHARACTERS}. Solo puedes jugar uno a la vez.
-          </p>
-
-          {archivedOf(slots).length > 0 && (
-            <div className="mb-4">
-              <p className="eyebrow mb-2">Retirados</p>
-              {archivedOf(slots).map((c) => (
-                <div key={c.id} className="pick-row" style={{ opacity: 0.5, cursor: "default" }}>
-                  <span className="pick-row-name">{c.name || "Sin nombre"}</span>
-                  <span className="pick-row-sub">Retirado. Solo el DM puede devolverlo a juego.</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {characterId && (
-            <button
-              className="btn-ghost"
-              onClick={async () => {
-                if (!confirm("¿Retirar a este personaje del juego? Dejarás de verlo y solo el DM podrá devolverlo.")) return;
-                const err = await archiveCharacter(characterId);
-                if (err) { setArchiveError(err); return; }
-                // A /crear: sin activo, es donde se hace el siguiente.
-                window.location.href = "/crear";
-              }}
-            >
-              <i className="fas fa-box-archive mr-2" />Retirar personaje
-            </button>
-          )}
-          {archiveError && (
-            <p className="font-ui text-[12px] font-bold mt-3" style={{ color: "var(--color-ember)" }}>
-              <i className="fas fa-circle-exclamation mr-1.5" />{archiveError}
-            </p>
-          )}
-        </div>
-      )}
+      {personajesPanel}
     </>
   );
 }
