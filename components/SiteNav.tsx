@@ -16,7 +16,6 @@ const BASE_LINKS = [
   { href: "/crear", label: "Crear" },
   { href: "/inventario", label: "Inventario" },
   { href: "/mapa", label: "Mapa" },
-  { href: "/narrador", label: "Narrador" },
 ];
 
 export default function SiteNav({ role, username }: { role: Role; username: string }) {
@@ -25,7 +24,11 @@ export default function SiteNav({ role, username }: { role: Role; username: stri
   const [open, setOpen] = useState(false);
   const active = (h: string) => (h === "/" ? pathname === "/" : pathname.startsWith(h));
 
-  const links = role === "dm" ? [...BASE_LINKS, { href: "/dm", label: "Panel DM" }] : BASE_LINKS;
+  const DM_LINKS = [
+    { href: "/narrador", label: "Narrador" },
+    { href: "/dm", label: "Panel DM" },
+  ];
+  const links = role === "dm" ? [...BASE_LINKS, ...DM_LINKS] : BASE_LINKS;
 
   async function logout() {
     await createClient().auth.signOut();
