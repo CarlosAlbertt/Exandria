@@ -9,6 +9,8 @@ import { uniqueRegionSlug, type AtlasDefs } from "@/data/atlas";
 import { useRegions, setRegionPin } from "@/lib/useRegions";
 import { usePois, setPoiPos, setPoiRevealed } from "@/lib/usePois";
 import PinDragMap, { type DragMarker } from "@/components/PinDragMap";
+import ImageUpload from "@/components/ImageUpload";
+import { slugify } from "@/lib/slug";
 
 // Continentes con regiones editables (todos menos "Mares", que no tiene).
 const LAND_CONTINENTS = CONTINENTS.filter((c) => c !== "Mares");
@@ -16,8 +18,8 @@ const LAND_CONTINENTS = CONTINENTS.filter((c) => c !== "Mares");
 const POI_TYPES = Object.keys(POI_ICON) as PoiType[];
 const ACCENTS = ["--color-bronze", "--color-arcane", "--color-divino", "--color-marcial", "--color-violet", "--color-primitivo", "--color-ember", "--color-arcane-deep"];
 
-type RForm = { name: string; capital: string; feature: string; accent: string; blurb: string };
-const EMPTY_R: RForm = { name: "", capital: "", feature: "", accent: "var(--color-bronze)", blurb: "" };
+type RForm = { name: string; capital: string; feature: string; accent: string; blurb: string; image: string };
+const EMPTY_R: RForm = { name: "", capital: "", feature: "", accent: "var(--color-bronze)", blurb: "", image: "" };
 type PForm = { name: string; type: PoiType; blurb: string };
 const EMPTY_P: PForm = { name: "", type: "ciudad", blurb: "" };
 
@@ -86,13 +88,13 @@ export default function MapaPanel() {
 
   // Region CRUD (persiste en atlas[continent])
   const openNewRegion = () => { setRForm(EMPTY_R); setREditing("new"); };
-  const openEditRegion = (r: Region) => { setRForm({ name: r.name, capital: r.capital, feature: r.feature, accent: r.accent, blurb: r.blurb }); setREditing(r); };
+  const openEditRegion = (r: Region) => { setRForm({ name: r.name, capital: r.capital, feature: r.feature, accent: r.accent, blurb: r.blurb, image: r.image ?? "" }); setREditing(r); };
   const saveRegion = () => {
     if (!rForm.name.trim()) return;
-    const base = { name: rForm.name.trim(), capital: rForm.capital.trim() || "—", feature: rForm.feature.trim(), accent: rForm.accent, blurb: rForm.blurb.trim() };
+    const base = { name: rForm.name.trim(), capital: rForm.capital.trim() || "—", feature: rForm.feature.trim(), accent: rForm.accent, blurb: rForm.blurb.trim(), image: rForm.image };
     if (rEditing === "new") {
       const slug = uniqueRegionSlug(rForm.name, continent, allRegionSlugs(atlas));
-      const newRegions = [...contData.regions, { slug, image: "", map: spreadIn(continent), ...base }];
+      const newRegions = [...contData.regions, { slug, map: spreadIn(continent), ...base }];
       save({ ...atlas, [continent]: { regions: newRegions, pois: { ...contData.pois, [slug]: [] } } });
       setRegionSlug(slug);
     } else if (rEditing) {
@@ -168,6 +170,14 @@ export default function MapaPanel() {
                   </div>
                   <input value={rForm.feature} onChange={(e) => setRForm({ ...rForm, feature: e.target.value })} placeholder="Rasgo (p. ej. Forjas enanas)" className={inputCls} style={{ color: "var(--color-warm)" }} />
                   <textarea value={rForm.blurb} onChange={(e) => setRForm({ ...rForm, blurb: e.target.value })} rows={3} placeholder="Descripción" className={`${inputCls} resize-none`} style={{ color: "var(--color-warm)" }} />
+                  <ImageUpload
+                    folder="maps"
+                    filename={`${continent}/${rEditing === "new" ? slugify(rForm.name || "region") : rEditing.slug}`}
+                    label="Submapa de la región"
+                    currentUrl={rForm.image}
+                    maxWidth={4000}
+                    onUploaded={(url) => setRForm({ ...rForm, image: url })}
+                  />
                   <div className="flex gap-2">
                     <button onClick={saveRegion} disabled={!rForm.name.trim()} className="btn-gold flex-1 !py-1.5 text-[13px] disabled:opacity-40"><i className="fas fa-check mr-1.5" />Guardar</button>
                     <button onClick={() => setREditing(null)} className="btn-ghost !py-1.5 !px-3 text-[13px]">Cancelar</button>
