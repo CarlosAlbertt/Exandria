@@ -5,7 +5,7 @@ import Link from "next/link";
 import { MAPS } from "@/data/taldorei";
 import type { Region } from "@/data/taldorei";
 import { WORLD_ICON, WORLD_COLOR, CONTINENT_VIEW } from "@/data/world";
-import { townMap } from "@/data/townMaps";
+import { useTownMaps } from "@/lib/useTownMaps";
 import { useWorldPois, type WorldPoiRow } from "@/lib/useWorldPois";
 import { useAtlas, regionsOf, poisOf } from "@/lib/useAtlas";
 import type { AtlasDefs } from "@/data/atlas";
@@ -23,6 +23,7 @@ export default function MapaPage() {
   const { states } = useRegions();
   const { pois } = useWorldPois();
   const { atlas } = useAtlas();
+  const { townMap } = useTownMaps();
   const isDM = role === "dm";
 
   const [focus, setFocus] = useState<string | null>(null); // continente enfocado (null = mundo)

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { REGION_RATIO } from "@/data/taldorei";
 import { POI_ICON, POI_COLOR, type Poi } from "@/data/pois";
-import { townMap } from "@/data/townMaps";
+import { useTownMaps } from "@/lib/useTownMaps";
 import { usePois } from "@/lib/usePois";
 import { useRole } from "@/components/SessionProvider";
 
@@ -12,6 +12,7 @@ export default function RegionExplore({
   slug, name, image, accent, pois: basePois, onClose,
 }: { slug: string; name: string; image: string; accent: string; pois: Poi[]; onClose: () => void }) {
   const isDM = useRole() === "dm";
+  const { townMap } = useTownMaps();
   const { states, keyOf } = usePois();
   const [sel, setSel] = useState<Poi | null>(null);
   const [townOpen, setTownOpen] = useState<{ name: string; image: string } | null>(null);
