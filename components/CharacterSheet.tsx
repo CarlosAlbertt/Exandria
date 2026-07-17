@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { loadCharacter, saveCharacter, type Item, type CharacterData } from "@/lib/character";
+import { loadActiveCharacter, saveCharacter, type Item, type CharacterData } from "@/lib/character";
 import type { Asi } from "@/lib/character";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
@@ -87,6 +87,8 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const [pickingSlot, setPickingSlot] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(true);
+  // id de la ficha activa (saveCharacter va por id). Retirar/listar es la Tarea 5.
+  const [characterId, setCharacterId] = useState<string | null>(null);
 
   const [cat, setCat] = useState<ItemCat>("Aventura");
   const [custom, setCustom] = useState("");
@@ -97,8 +99,9 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     let done = false;
     (async () => {
       if (targetUserId) {
-        const row = await loadCharacter(targetUserId);
+        const row = await loadActiveCharacter(targetUserId);
         if (!done && row) {
+          setCharacterId(row.id);
           setBuild({
             name: row.name ?? "",
             species: row.species ?? null,
@@ -160,7 +163,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       if (!readOnly && !targetUserId) { try { localStorage.setItem(SHEET_KEY, JSON.stringify({ level, gold, asi, items, equipment, hp_rolls: hpRolls })); } catch {} }
       return;
     }
-    if (saveMode === "self") { await saveCharacter(targetUserId, patch); return; }
+    if (saveMode === "self") { if (characterId) await saveCharacter(characterId, patch); return; }
     await fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: targetUserId, patch }) });
   }
 
@@ -171,7 +174,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     const t = setTimeout(() => { persistSheet({ level, gold, asi, items, equipment, hp_rolls: hpRolls }); }, 700);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, gold, asi, items, equipment, hpRolls, loaded, readOnly, targetUserId, saveMode]);
+  }, [level, gold, asi, items, equipment, hpRolls, loaded, readOnly, targetUserId, saveMode, characterId]);
 
   /* --- datos derivados --- */
   const species = build.species ? getSpecies(build.species) : undefined;
@@ -278,7 +281,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     setHpRolls((prev) => {
       const next = { ...prev, [String(lv)]: val };
       if (targetUserId) {
-        if (saveMode === "self") saveCharacter(targetUserId, { hp_rolls: next });
+        if (saveMode === "self") { if (characterId) saveCharacter(characterId, { hp_rolls: next }); }
         else fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: targetUserId, patch: { hp_rolls: next } }) });
       } else {
         try { const s = JSON.parse(localStorage.getItem(SHEET_KEY) ?? "{}"); localStorage.setItem(SHEET_KEY, JSON.stringify({ ...s, hp_rolls: next })); } catch {}

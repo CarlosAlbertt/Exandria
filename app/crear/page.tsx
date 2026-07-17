@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
-import { loadCharacter, saveCharacter, type Build } from "@/lib/character";
+import { loadActiveCharacter, saveCharacter, type Build } from "@/lib/character";
 import { getSpecies, REGIONS, regionSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
@@ -51,6 +51,9 @@ export default function CrearPage() {
     statMethod: null, rolled: [], assign: { ...ASSIGN_EMPTY },
   });
   const [loaded, setLoaded] = useState(false);
+  // id de la ficha activa: sin él no se puede guardar (saveCharacter va por
+  // id, no por user_id). Se rellena al cargar; crear/archivar es la Tarea 4.
+  const [characterId, setCharacterId] = useState<string | null>(null);
 
   // Sesión: si hay usuario, la ficha vive en la NUBE (fuente de verdad).
   const session = useSession();
@@ -77,8 +80,9 @@ export default function CrearPage() {
   useEffect(() => {
     if (!loaded || !userId || cloudLoaded.current) return;
     cloudLoaded.current = true;
-    loadCharacter(userId).then((row) => {
+    loadActiveCharacter(userId).then((row) => {
       if (!row) return;
+      setCharacterId(row.id);
       setB((p) => ({
         ...p,
         name: row.name ?? p.name,
@@ -121,15 +125,15 @@ export default function CrearPage() {
   }, [b.rolled, b.base, b.assign]);
 
   useEffect(() => {
-    if (!loaded || !userId || !cloudLoaded.current) return;
+    if (!loaded || !userId || !cloudLoaded.current || !characterId) return;
     const t = setTimeout(() => {
-      saveCharacter(userId, {
+      saveCharacter(characterId, {
         name: b.name, species: b.species, lineage: b.lineage, cls: b.cls, subclass: b.subclass,
         background: b.background, base: b.base, bonus: b.bonus, skills: b.skills, lore: b.lore,
       });
     }, 900);
     return () => clearTimeout(t);
-  }, [loaded, userId, b.name, b.species, b.lineage, b.cls, b.subclass, b.background, b.base, b.bonus, b.skills, b.lore]);
+  }, [loaded, userId, characterId, b.name, b.species, b.lineage, b.cls, b.subclass, b.background, b.base, b.bonus, b.skills, b.lore]);
 
   const species = b.species ? getSpecies(b.species) : undefined;
   const cls = b.cls ? getClass(b.cls) : undefined;
@@ -191,8 +195,8 @@ export default function CrearPage() {
 
   // Finaliza el personaje: asegura nivel 1 y abre la hoja interactiva.
   function onCreate() {
-    if (userId) saveCharacter(userId, { level: 1 });
-    else {
+    if (userId && characterId) saveCharacter(characterId, { level: 1 });
+    else if (!userId) {
       try {
         const prev = JSON.parse(localStorage.getItem("taldorei.sheet.v1") ?? "{}");
         localStorage.setItem("taldorei.sheet.v1", JSON.stringify({ ...prev, level: prev.level ?? 1 }));
