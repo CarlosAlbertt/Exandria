@@ -190,8 +190,19 @@ action_ready, npc_chat) · `schema_v3.sql` (pin_x/pin_y, poi_state) ·
 usuario**) · `schema_v12.sql` (journal_entries, quests, npcs_met,
 app_config.campaign_date — **PENDIENTE de ejecutar por el usuario**) ·
 `schema_v13.sql` (**stat_rolls** — Fase K: tirada única de aptitudes,
-inmutable por PK + sin policy de update; solo el DM borra = resetear —
+inmutable por PK + sin policy de update; solo el DM borra = resetear — **ya
+ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** —
 **PENDIENTE de ejecutar por el usuario**).
+
+> ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
+> columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
+> datos dentro**: mueve la PK de `characters` de `user_id` a `id`, y la de
+> `stat_rolls` de `user_id` a `character_id`. Si sale a medias no es «la feature
+> nueva no va», es «se han movido las fichas». Va entera en una transacción y es
+> idempotente. **El código y la migración tienen que aterrizar juntos**:
+> ejecutarla con el código viejo desplegado rompe el guardado de fichas, y
+> desplegar el código nuevo sin ejecutarla rompe `/crear` y `/personaje` (piden
+> columnas que no existen). Ver el milestone de abajo.
 
 ## IA / túnel (ritual tras apagar el PC)
 Ver **`GUIA-ARRANQUE.md`**. Resumen: doble clic en
@@ -253,6 +264,86 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
   defecto* pero la fuente de verdad en producción, una vez editado algo, es
   `app_config` (`taldorei_defs`). Si se quiere "resetear" Tal'Dorei a los
   defaults del código, borrar esa key en `app_config`.
+
+## RESUELTO (2026-07-17): Archivar personaje 📦
+Trabajo directo en `master`. Diseño en
+`docs/superpowers/specs/2026-07-17-archivar-personaje-design.md`; plan en
+`docs/superpowers/plans/2026-07-17-archivar-personaje.md`. Ejecutado con
+subagentes (implementador + revisor por tarea).
+
+> ⚠️ **PENDIENTE del usuario: ejecutar `supabase/schema_v14.sql`.** Sin ella,
+> `/crear` y `/personaje` **no funcionan** (piden columnas que no existen).
+
+**Qué es**: el jugador **retira** su personaje (deja de jugarlo; lo ve en gris en
+`/personaje`). No se borra. El **DM lo conserva**, puede **devolverlo a juego** o
+**borrarlo de verdad** para hacer sitio.
+
+**Modelo nuevo**: `characters` pasa de una fila por jugador (`user_id` era PK) a
+**varias** — `id` PK, `user_id` FK, `archived_at IS NULL` = en juego. **Uno
+activo, máximo 3 por jugador** (1 activo + 2 archivados).
+
+**Las tres garantías están en la BD, no en el cliente**:
+- **Uno activo** → índice único **parcial**: `characters (user_id) where archived_at is null`.
+- **Máximo 3** → trigger `guard_limite_personajes` (`before insert`).
+- **Solo el DM desarchiva** → trigger `guard_desarchivar`, **no RLS**: `with
+  check` **no ve el valor viejo**, así que la RLS no puede distinguir archivar de
+  desarchivar. El jugador hace el viaje de ida; la vuelta, solo el DM. Además el
+  `delete` pasa a `using (public.is_dm())` (la policy `for all` de v4 se parte).
+
+**⚠️ La trampa que casi nos come, anotada para que no se repita**: restaurar y
+borrar **NO van por `/api/dm/character`** con `service_role`. `service_role` salta
+la RLS **pero no los triggers** (disparan con cualquier rol), y sin JWT
+`auth.uid()` es `null` → `is_dm()` da `false` → `guard_desarchivar` **rechazaría
+al propio DM**. Van con la **sesión del DM** desde `GrupoPanel`, como
+«Resetear aptitudes», que ya funciona así porque la RLS lo cubre.
+
+**El flujo**: `/crear` **edita tu activo**. Para hacerte otro, primero lo
+**archivas** desde `/personaje`; entonces `/crear` no encuentra activo y **crea
+uno** al primer guardado (antes lo creaba solo el `upsert`). Con 3 y ninguno
+activo, `/crear` **bloquea al entrar** y el DM tiene que borrar uno.
+
+**`stat_rolls` pasa a `character_id` como PK**: **nuevo personaje, nueva tirada**.
+Esto **relaja la Fase K a propósito** — decisión explícita del usuario. La Fase K
+(2026-07-15) impedía repetir tirada con bloqueo de servidor; ahora el camino para
+repetir es *archivar → crear otro → tirar*. Está **acotado**: son **3 tiradas por
+jugador** y luego hace falta que el DM borre un archivado. Pero **el freno deja de
+ser el servidor y pasa a ser el DM**. Mesa de amigos; no es un descuido.
+
+**Archivos**: `lib/archive.ts` (reglas puras + `scripts/check-archive.ts`),
+`lib/character.ts` (`loadActiveCharacter`/`listCharacters`/`createCharacter`/
+`saveCharacter(id)`/`archiveCharacter`; **`saveCharacter` ya no es un upsert por
+`user_id`** porque el índice único nuevo es **parcial** y no sirve como target de
+conflicto), `app/crear/page.tsx`, `components/CharacterSheet.tsx`,
+`app/dm/GrupoPanel.tsx`, `app/api/dm/character/route.ts`.
+
+**Tres bugs que cazaron las revisiones y que compilaban sin rechistar** (ninguno
+lo habrían visto `tsc` ni `build`):
+1. **La API del DM le daba el XP a los 3 personajes**: `update .eq("user_id")`
+   sin filtrar; y su `maybeSingle()` habría reventado en cuanto alguien
+   archivara. Acotado al activo.
+2. **El botón de retirar, invisible**: se iba a condicionar a `!readOnly`, pero
+   **la ficha propia de un jugador ES `readOnly`** (bloqueo del DM de
+   2026-07-07). Va bajo `saveMode === "self"`, como `canRollHp`.
+3. **Bloqueo mutuo DM/jugador**: `useParty` solo trae activos, así que un jugador
+   que archivara su único personaje **desaparecía del Panel DM** — y el DM no
+   podía devolvérselo ni borrárselo; si además tenía 3, `/crear` le mandaba pedir
+   sitio al DM y el DM no lo veía. Arreglado con el bloque **«Jugadores sin
+   personaje en juego»**, y también el early-return de «Aún no hay fichas», que
+   tapaba el panel entero en campañas de un solo jugador.
+
+**Limitación conocida**: el trigger del límite tiene una **race** teórica (dos
+inserts simultáneos podrían colar un 4º personaje). Se arreglaría con
+`pg_advisory_xact_lock`; se dejó fuera por sobre-ingeniería — exige dos pestañas
+creando personaje en el mismo milisegundo, y el daño es una fila de más.
+
+- Verificado: `tsc`, `build` y los 4 `check-*` limpios en cada commit; dos
+  revisiones por tarea; y las 12 consultas a `characters` repasadas una por una
+  (cada una filtra `archived_at`, va por `id`, o es la lista de archivados del
+  DM). **NADA se ha probado contra la BD**: no hay credenciales en desarrollo y
+  la migración no está ejecutada. Esta feature es casi toda base de datos, así
+  que es más ciego de lo habitual. **Solo el usuario puede probar**: archivar, el
+  límite de 3, devolver a juego, borrar, y que el XP del DM solo le llegue al
+  activo.
 
 ## RESUELTO (2026-07-16): Creador — una escena por paso 🎬
 Trabajo directo en `master`. Diseño en
@@ -765,13 +856,4 @@ Spec y plan en `docs/superpowers/{specs,plans}/2026-07-06-exandria-rebrand-roste
 - Notas del DM: si algún día importa que sean *de verdad* privadas, moverlas
   de `app_config` a una tabla propia con RLS `is_dm()`-only (ver nota de
   seguridad en el milestone 2026-07-10).
-- **Archivar personaje ("borrar" sin borrar)** (pedido el 2026-07-16, sin spec):
-  el jugador retira su personaje y deja de verlo; el DM lo sigue viendo y puede
-  devolverlo a juego. **No es una casilla**: `characters.user_id` es PK (un
-  personaje por usuario, `saveCharacter` hace upsert), así que conservar el viejo
-  mientras se crea otro exige `id` PK + `user_id` FK + columna de archivado →
-  migración + tocar `/personaje`, `useParty`, `/api/dm/character` y `/crear`. El
-  ocultado debe ser RLS (el jugador tiene policy `for all` sobre su fila y podría
-  desarchivarse desde la consola): copiar el patrón de `stat_rolls` (sin update
-  para el jugador, restaurar solo con `is_dm()`). A decidir: `stat_rolls` es una
-  fila por jugador, así que el personaje nuevo hereda la tirada del archivado.
+- ~~Archivar personaje~~ → **hecho el 2026-07-17**, ver su milestone arriba.
