@@ -4,6 +4,7 @@ import type { Species } from "@/data/species";
 import { REGIONS } from "@/data/species";
 import OptionRail, { type RailOption } from "@/components/crear/OptionRail";
 import ArtPanel from "@/components/crear/ArtPanel";
+import { useArt } from "@/lib/useArt";
 
 // Escena 0 — Especie: acordeón por región | retrato | detalle + linaje.
 // El acordeón se queda (36 especies en 7 regiones) pero más grande y legible.
@@ -23,6 +24,7 @@ export default function SpeciesScene({
   onPick: (slug: string) => void;
   onLineage: (name: string) => void;
 }) {
+  const { artSrc } = useArt();
   const region = species ? REGIONS.find((r) => r.key === species.region)?.label : null;
 
   return (
@@ -35,7 +37,7 @@ export default function SpeciesScene({
         searchPlaceholder="Buscar especie…"
       />
 
-      <ArtPanel src={species?.image ?? null} alt={species?.name ?? null} />
+      <ArtPanel src={species ? (artSrc("species", species.slug, species.image) ?? null) : null} alt={species?.name ?? null} />
 
       <div className="scene-detail">
         {!species ? (

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CLASSES, GROUP_LABEL, type CharClass } from "@/data/classes";
 import { abbrOf } from "@/data/rules";
 import ArtPanel from "@/components/crear/ArtPanel";
+import { useArt } from "@/lib/useArt";
 
 // Escena 1 — Clase. Navegación por FLECHAS (una clase cada vez, con su arte
 // grande) + tira de las 13 abajo para saltar. Sin acordeón ni buscador: es lo
@@ -47,6 +48,7 @@ export default function ClassScene({
   // Sin clase elegida arrancamos en la primera: la escena SIEMPRE enseña una
   // clase (es un pase de arte, no una lista vacía). No selecciona nada por su
   // cuenta — el gate sigue pidiendo que el jugador pulse.
+  const { artSrc } = useArt();
   const idx = useMemo(() => {
     const i = ORDERED.findIndex((c) => c.slug === cls?.slug);
     return i === -1 ? 0 : i;
@@ -64,7 +66,7 @@ export default function ClassScene({
       <div className="cls-stage">
         <button type="button" className="cls-arrow" onClick={() => go(-1)} aria-label="Clase anterior">◀</button>
 
-        <ArtPanel src={`/classes/${shown.slug}.jpg`} alt={shown.name} />
+        <ArtPanel src={artSrc("class", shown.slug, `/classes/${shown.slug}.jpg`) ?? null} alt={shown.name} />
 
         <div className="scene-detail">
           <p className="eyebrow mb-1">{GROUP_LABEL[shown.group]} · Clase {idx + 1} de {ORDERED.length}</p>
