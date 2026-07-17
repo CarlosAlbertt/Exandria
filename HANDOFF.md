@@ -224,6 +224,38 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-17): Fase H — subida de imágenes (Storage) 🖼️
+Rama `fase-h-subida-imagenes`. Spec en
+`docs/superpowers/specs/2026-07-17-fase-h-subida-imagenes-design.md`; plan en
+`docs/superpowers/plans/2026-07-17-fase-h-subida-imagenes.md`. Alcance: "Fase H
+entera" acotada a lo que tiene superficie hoy (NPC/battlemaps/tokens diferidos a
+sus fases E/I).
+
+- **Infra**: `lib/storage.ts` (`uploadImage(folder, filename, file, maxWidth)`:
+  resize/compresión canvas → JPEG 0.85 → sube a bucket `assets` con `upsert` →
+  URL pública con cache-bust) + `components/ImageUpload.tsx` genérico (preview,
+  subida, **fallback a URL manual** si Storage no configurado).
+- **Integraciones (4)**: (1) campo de **submapa** en el editor de región
+  (`MapaPanel`, folder `maps/`) → cierra el hueco Issylra/Marquet/Dientes Rotos;
+  (2) pestaña DM **«Arte»** (`ArtePanel`) para **retratos de especie/linaje/
+  clase** → override en `app_config.art_overrides` (`useArt`+`artSrc`), leído por
+  el creador (`SpeciesScene`/`ClassScene`); (3) **mapas de pueblo data-driven**
+  (`useTownMaps`, `app_config.town_maps`, sección en «Arte») — `TOWN_MAPS` queda
+  como defaults; (4) **arte de monstruo** en el formulario del bestiario
+  (reutiliza `Monster.image`, ya reservado; se guarda en `custom_monsters` y se
+  pinta en el statblock).
+- **Sin migración de tablas**; los overrides van en `app_config` (realtime,
+  patrón `useDmStash`). **Paso manual pendiente del usuario**: ejecutar
+  `supabase/storage-assets.sql` (crea bucket público `assets` + policies de
+  escritura solo DM vía `is_dm()`). Sin él, la subida cae al **fallback de URL
+  manual** (no rompe nada).
+- Verificado: `tsc --noEmit` + `next build` + `check-bestiary` limpios en cada
+  commit (7 tareas). **NADA probado contra Storage/BD** (sin bucket ni sesión DM
+  en dev; las superficies DM/`/crear` redirigen a `/login` sin sesión). **Prueba
+  en vivo del usuario**: tras crear el bucket, subir un submapa a una región de
+  Marquet y verlo en `/mapa`; subir un retrato de especie y verlo en `/crear`;
+  subir arte a un monstruo custom; añadir un mapa de pueblo.
+
 ## RESUELTO (2026-07-17): Fase L — control de acceso por rol 🔒
 Rama `fase-l-acceso-por-rol`. Spec en
 `docs/superpowers/specs/2026-07-17-fase-l-acceso-por-rol-design.md`; plan en
