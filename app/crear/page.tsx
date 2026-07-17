@@ -52,6 +52,11 @@ export default function CrearPage() {
     statMethod: null, rolled: [], assign: { ...ASSIGN_EMPTY },
   });
   const [loaded, setLoaded] = useState(false);
+  // Seguro para empezar a persistir el borrador: solo tras haberlo LEÍDO (sin
+  // sesión, del KEY; con sesión, tras la carga en nube). Sin esto, el efecto de
+  // guardado se dispararía en el montaje con `b` vacío y pisaría un borrador a
+  // medias antes de que la carga lo restaurase.
+  const [draftReady, setDraftReady] = useState(false);
   // id de la ficha activa: sin él no se puede guardar (saveCharacter va por
   // id, no por user_id). Se rellena al cargar, o al crear la fila en el
   // primer guardado si no había ninguna activa.
@@ -65,13 +70,10 @@ export default function CrearPage() {
   const userId = session?.id;
   const router = useRouter();
   const cloudLoaded = useRef(false);
-  // Creación de la fila en curso: una ref (no estado) porque el closure del
-  // setTimeout de guardado la lee de forma síncrona antes de que React
-  // re-renderice. Si dos guardados se disparan mientras la primera creación
-  // sigue en vuelo, el segundo debe esperar la MISMA promesa en vez de lanzar
-  // otro createCharacter — si no, tecleando rápido se crearían dos personajes
-  // y se comería el límite de 3 sin que el jugador lo pidiera.
-  const creating = useRef<Promise<string | null> | null>(null);
+  // Finalización en curso: evita que un doble clic en «Crear personaje» lance
+  // dos createCharacter y gaste dos huecos. Ref y no estado porque onCreate la
+  // lee de forma síncrona antes de que React re-renderice.
+  const finalizing = useRef(false);
 
   // cargar / guardar en localStorage SOLO cuando NO hay sesión (modo demo).
   // Con sesión, localStorage es global del navegador y filtraría el personaje
@@ -82,20 +84,37 @@ export default function CrearPage() {
         const raw = localStorage.getItem(KEY);
         if (raw) setB((prev) => ({ ...prev, ...JSON.parse(raw) }));
       } catch {}
+      setDraftReady(true); // sin sesión, el borrador ya está leído
     }
     setLoaded(true);
   }, [userId]);
   useEffect(() => {
-    if (loaded && !userId) localStorage.setItem(KEY, JSON.stringify(b));
-  }, [b, loaded, userId]);
+    if (!draftReady) return;
+    // Sin sesión: borrador en KEY. Con sesión y SIN personaje activo (creando
+    // uno nuevo): borrador namespaceado por usuario, hasta que la fila se cree
+    // al finalizar. Namespaceado para no filtrar el borrador de una cuenta a
+    // otra en el mismo navegador. Con fila (editando), manda la nube.
+    if (!userId) localStorage.setItem(KEY, JSON.stringify(b));
+    else if (!characterId) localStorage.setItem(`${KEY}.${userId}`, JSON.stringify(b));
+  }, [b, draftReady, userId, characterId]);
 
   useEffect(() => {
     if (!loaded || !userId || cloudLoaded.current) return;
     cloudLoaded.current = true;
     listCharacters(userId).then(setSlots);
     loadActiveCharacter(userId).then((row) => {
-      if (!row) return;
+      if (!row) {
+        // Sin personaje activo (nuevo, o acaba de archivar): restaura el
+        // borrador de ESTE usuario si lo dejó a medias. La fila no se crea aquí.
+        try {
+          const raw = localStorage.getItem(`${KEY}.${userId}`);
+          if (raw) setB((p) => ({ ...p, ...JSON.parse(raw) }));
+        } catch {}
+        setDraftReady(true); // ya leído el borrador: seguro persistir
+        return;
+      }
       setCharacterId(row.id);
+      setDraftReady(true);
       setB((p) => ({
         ...p,
         name: row.name ?? p.name,
@@ -137,33 +156,19 @@ export default function CrearPage() {
     if (isAssignComplete(derived)) setB((p) => ({ ...p, assign: derived }));
   }, [b.rolled, b.base, b.assign]);
 
-  // Guardado con debounce. La primera vez que hay algo que guardar y no existe
-  // fila, se crea: es el mismo momento en que antes el upsert la creaba sola.
+  // Autoguardado con debounce en la nube. SOLO si ya existe fila, es decir,
+  // editando un personaje ACTIVO. Un personaje NUEVO no se crea aquí: se crea al
+  // pulsar «Crear personaje» al final (onCreate). Si se creara en el
+  // autoguardado, con solo entrar en /crear se crearía un personaje vacío que
+  // gasta un hueco y bloquea crear otro. El borrador del personaje nuevo vive
+  // en localStorage hasta que se finaliza.
   useEffect(() => {
-    if (!loaded || !userId || !cloudLoaded.current) return;
-    const t = setTimeout(async () => {
-      const patch = {
+    if (!loaded || !userId || !cloudLoaded.current || !characterId) return;
+    const t = setTimeout(() => {
+      saveCharacter(characterId, {
         name: b.name, species: b.species, lineage: b.lineage, cls: b.cls, subclass: b.subclass,
         background: b.background, base: b.base, bonus: b.bonus, skills: b.skills, lore: b.lore,
-      };
-      let id = characterId;
-      if (!id) {
-        // Si ya hay una creación en vuelo (segundo guardado disparado antes de
-        // que la primera responda), espera esa MISMA promesa en vez de lanzar
-        // otro createCharacter: evita crear dos personajes de golpe.
-        if (!creating.current) {
-          creating.current = createCharacter(userId).then((res) => {
-            creating.current = null;
-            if ("error" in res) { setLimitError(res.error); return null; }
-            setCharacterId(res.id);
-            listCharacters(userId).then(setSlots);
-            return res.id;
-          });
-        }
-        id = await creating.current;
-      }
-      if (!id) return;
-      saveCharacter(id, patch);
+      });
     }, 900);
     return () => clearTimeout(t);
   }, [loaded, userId, characterId, b.name, b.species, b.lineage, b.cls, b.subclass, b.background, b.base, b.bonus, b.skills, b.lore]);
@@ -226,18 +231,27 @@ export default function CrearPage() {
     navigator.clipboard?.writeText(lines.join("\n"));
   }
 
-  // Finaliza el personaje: asegura nivel 1 y abre la hoja interactiva.
-  // Con sesión y sin characterId, la fila aún no existe (el guardado con
-  // debounce no ha llegado a los 900ms, o está creándola en este instante):
-  // navegar ahora llevaría a una ficha vacía sin avisar. Se avisa y no se
-  // navega; el guardado en curso rellenará characterId enseguida.
-  function onCreate() {
+  // Finaliza el personaje: es AQUÍ, al pulsar «Crear personaje» al final del
+  // formulario, donde el personaje se crea de verdad (gasta un hueco) — no al
+  // entrar en /crear ni al teclear. Si ya hay fila (editando un activo), solo
+  // fija nivel 1. Si no, se crea ahora con todo el borrador.
+  async function onCreate() {
     if (userId) {
-      if (!characterId) {
-        setLimitError("Aún se está guardando tu personaje. Espera un segundo y vuelve a pulsar.");
-        return;
+      let id = characterId;
+      if (!id) {
+        if (finalizing.current) return; // guarda contra doble clic
+        finalizing.current = true;
+        const res = await createCharacter(userId);
+        finalizing.current = false;
+        if ("error" in res) { setLimitError(res.error); return; }
+        id = res.id;
+        setCharacterId(id);
       }
-      saveCharacter(characterId, { level: 1 });
+      await saveCharacter(id, {
+        name: b.name, species: b.species, lineage: b.lineage, cls: b.cls, subclass: b.subclass,
+        background: b.background, base: b.base, bonus: b.bonus, skills: b.skills, lore: b.lore, level: 1,
+      });
+      try { localStorage.removeItem(`${KEY}.${userId}`); } catch {}
     } else {
       try {
         const prev = JSON.parse(localStorage.getItem("taldorei.sheet.v1") ?? "{}");
