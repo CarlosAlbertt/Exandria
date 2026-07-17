@@ -605,7 +605,10 @@ canvas.dice-box-canvas {
   background: radial-gradient(circle at 50% 32%, var(--color-raised), var(--color-night) 72%);
   display: grid; place-items: center;
 }
-.art-panel img { width: 100%; height: 100%; object-fit: cover; }
+/* contain, no cover: una imagen subida con otra proporción se ve ENTERA
+   (con banda en el marco vertical 659×1025) en vez de recortada. El arte de
+   clase, que ya es 659×1025, sigue llenando el marco exacto. */
+.art-panel img { width: 100%; height: 100%; object-fit: contain; }
 .art-silo {
   width: 30%; height: 52%;
   border-radius: 40% 40% 12% 12%;

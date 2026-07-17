@@ -35,5 +35,17 @@ export function useTownMaps() {
 
   const merged: TownMap = { ...TOWN_MAPS, ...overrides };
   const townMap = (name: string): string | undefined => merged[name];
-  return { townMap, merged, overrides, ready };
+
+  // Mutación OPTIMISTA (app_config no dispara realtime): actualiza el estado
+  // local al instante y persiste; url vacía = borrar el override.
+  const updateTown = (name: string, url: string) => {
+    setOverrides((prev) => {
+      const next = { ...prev };
+      if (url) next[name] = url; else delete next[name];
+      void saveTownMaps(next);
+      return next;
+    });
+  };
+
+  return { townMap, merged, overrides, ready, updateTown };
 }

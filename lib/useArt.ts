@@ -37,5 +37,18 @@ export function useArt() {
   const artSrc = (kind: ArtKind, slug: string, localFallback?: string): string | undefined =>
     map[`${kind}/${slug}`] || localFallback;
 
-  return { artSrc, map, ready };
+  // Mutación OPTIMISTA: app_config no está en la publicación realtime, así que
+  // la subscripción de arriba no dispara tras escribir. Actualizamos el estado
+  // local al instante y persistimos; url vacía = borrar el override.
+  const updateArt = (kind: ArtKind, slug: string, url: string) => {
+    const key = `${kind}/${slug}`;
+    setMap((prev) => {
+      const next = { ...prev };
+      if (url) next[key] = url; else delete next[key];
+      void saveArt(next);
+      return next;
+    });
+  };
+
+  return { artSrc, map, ready, updateArt };
 }
