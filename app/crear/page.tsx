@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
-import { loadActiveCharacter, saveCharacter, type Build } from "@/lib/character";
+import { loadActiveCharacter, saveCharacter, createCharacter, listCharacters, type Build } from "@/lib/character";
+import { canCreate, type CharSlot } from "@/lib/archive";
 import { getSpecies, REGIONS, regionSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
@@ -52,14 +53,25 @@ export default function CrearPage() {
   });
   const [loaded, setLoaded] = useState(false);
   // id de la ficha activa: sin él no se puede guardar (saveCharacter va por
-  // id, no por user_id). Se rellena al cargar; crear/archivar es la Tarea 4.
+  // id, no por user_id). Se rellena al cargar, o al crear la fila en el
+  // primer guardado si no había ninguna activa.
   const [characterId, setCharacterId] = useState<string | null>(null);
+  // Todos sus personajes: para saber si puede crear otro (límite de 3).
+  const [slots, setSlots] = useState<CharSlot[]>([]);
+  const [limitError, setLimitError] = useState<string | null>(null);
 
   // Sesión: si hay usuario, la ficha vive en la NUBE (fuente de verdad).
   const session = useSession();
   const userId = session?.id;
   const router = useRouter();
   const cloudLoaded = useRef(false);
+  // Creación de la fila en curso: una ref (no estado) porque el closure del
+  // setTimeout de guardado la lee de forma síncrona antes de que React
+  // re-renderice. Si dos guardados se disparan mientras la primera creación
+  // sigue en vuelo, el segundo debe esperar la MISMA promesa en vez de lanzar
+  // otro createCharacter — si no, tecleando rápido se crearían dos personajes
+  // y se comería el límite de 3 sin que el jugador lo pidiera.
+  const creating = useRef<Promise<string | null> | null>(null);
 
   // cargar / guardar en localStorage SOLO cuando NO hay sesión (modo demo).
   // Con sesión, localStorage es global del navegador y filtraría el personaje
@@ -80,6 +92,7 @@ export default function CrearPage() {
   useEffect(() => {
     if (!loaded || !userId || cloudLoaded.current) return;
     cloudLoaded.current = true;
+    listCharacters(userId).then(setSlots);
     loadActiveCharacter(userId).then((row) => {
       if (!row) return;
       setCharacterId(row.id);
@@ -124,13 +137,33 @@ export default function CrearPage() {
     if (isAssignComplete(derived)) setB((p) => ({ ...p, assign: derived }));
   }, [b.rolled, b.base, b.assign]);
 
+  // Guardado con debounce. La primera vez que hay algo que guardar y no existe
+  // fila, se crea: es el mismo momento en que antes el upsert la creaba sola.
   useEffect(() => {
-    if (!loaded || !userId || !cloudLoaded.current || !characterId) return;
-    const t = setTimeout(() => {
-      saveCharacter(characterId, {
+    if (!loaded || !userId || !cloudLoaded.current) return;
+    const t = setTimeout(async () => {
+      const patch = {
         name: b.name, species: b.species, lineage: b.lineage, cls: b.cls, subclass: b.subclass,
         background: b.background, base: b.base, bonus: b.bonus, skills: b.skills, lore: b.lore,
-      });
+      };
+      let id = characterId;
+      if (!id) {
+        // Si ya hay una creación en vuelo (segundo guardado disparado antes de
+        // que la primera responda), espera esa MISMA promesa en vez de lanzar
+        // otro createCharacter: evita crear dos personajes de golpe.
+        if (!creating.current) {
+          creating.current = createCharacter(userId).then((res) => {
+            creating.current = null;
+            if ("error" in res) { setLimitError(res.error); return null; }
+            setCharacterId(res.id);
+            listCharacters(userId).then(setSlots);
+            return res.id;
+          });
+        }
+        id = await creating.current;
+      }
+      if (!id) return;
+      saveCharacter(id, patch);
     }, 900);
     return () => clearTimeout(t);
   }, [loaded, userId, characterId, b.name, b.species, b.lineage, b.cls, b.subclass, b.background, b.base, b.bonus, b.skills, b.lore]);
@@ -194,9 +227,18 @@ export default function CrearPage() {
   }
 
   // Finaliza el personaje: asegura nivel 1 y abre la hoja interactiva.
+  // Con sesión y sin characterId, la fila aún no existe (el guardado con
+  // debounce no ha llegado a los 900ms, o está creándola en este instante):
+  // navegar ahora llevaría a una ficha vacía sin avisar. Se avisa y no se
+  // navega; el guardado en curso rellenará characterId enseguida.
   function onCreate() {
-    if (userId && characterId) saveCharacter(characterId, { level: 1 });
-    else if (!userId) {
+    if (userId) {
+      if (!characterId) {
+        setLimitError("Aún se está guardando tu personaje. Espera un segundo y vuelve a pulsar.");
+        return;
+      }
+      saveCharacter(characterId, { level: 1 });
+    } else {
       try {
         const prev = JSON.parse(localStorage.getItem("taldorei.sheet.v1") ?? "{}");
         localStorage.setItem("taldorei.sheet.v1", JSON.stringify({ ...prev, level: prev.level ?? 1 }));
@@ -266,6 +308,23 @@ export default function CrearPage() {
         <p className="eyebrow mb-3">Forja de héroes · Reglas 2024</p>
         <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text">Crea tu personaje</h1>
       </header>
+
+      {userId && !characterId && slots.length > 0 && !canCreate(slots) && (
+        <div className="panel p-6 max-w-xl mx-auto text-center mb-6">
+          <p className="font-display text-xl font-bold mb-2" style={{ color: "var(--color-ember)" }}>
+            <i className="fas fa-triangle-exclamation mr-2" />Has llegado al límite
+          </p>
+          <p className="font-ui text-[13px]" style={{ color: "var(--color-muted)" }}>
+            Tienes 3 personajes y ninguno en juego. Pide al DM que borre uno en
+            Panel DM › Grupo para hacer sitio.
+          </p>
+        </div>
+      )}
+      {limitError && (
+        <p className="font-ui text-[12px] font-bold text-center mb-4" style={{ color: "var(--color-ember)" }}>
+          <i className="fas fa-circle-exclamation mr-1.5" />{limitError}
+        </p>
+      )}
 
       <div className="mb-6 max-w-md mx-auto">
         <label className="tome-region" htmlFor="hero-name">Nombre de tu héroe *</label>
