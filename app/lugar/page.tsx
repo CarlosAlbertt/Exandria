@@ -5,6 +5,7 @@ import { useTownMaps } from "@/lib/useTownMaps";
 import { useGameClock } from "@/lib/useGameClock";
 import { momentFromGameMin } from "@/lib/gameClock";
 import { weatherFor, ambientLine } from "@/lib/weather";
+import { useClues } from "@/lib/useClues";
 import { POI_ICON, POI_COLOR } from "@/data/pois";
 import ClockWidget from "@/components/ClockWidget";
 import ShopSection from "@/components/lugar/ShopSection";
@@ -17,6 +18,7 @@ export default function LugarPage() {
   const { atlas } = useAtlas();
   const { townMap } = useTownMaps();
   const { nowGameMin } = useGameClock();
+  const { clues } = useClues();
 
   if (!ready) {
     return <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center"><p className="pulse font-ui text-[13px]" style={{ color: "var(--color-muted)" }}>Cargando…</p></main>;
@@ -42,7 +44,16 @@ export default function LugarPage() {
   const townImg = townMap(poi.name);
   const moment = momentFromGameMin(nowGameMin);
   const weather = weatherFor(location.continent, location.regionSlug, region?.name, moment);
-  const ambient = ambientLine(weather, moment.season);
+  // Rumores por sembrar (pistas marcadas como rumor y aún no descubiertas): se
+  // pasan a los NPCs IA para que los dejen caer con naturalidad. Filtramos a
+  // los del lugar actual o sin lugar concreto.
+  const rumores = clues
+    .filter((c) => c.rumor && !c.discovered && (!c.lugar || c.lugar === poi.name))
+    .map((c) => c.texto);
+  const rumorLine = rumores.length
+    ? `\n[Rumores que puedes dejar caer con naturalidad si la conversación lo permite, sin insistir: ${rumores.map((r) => `"${r}"`).join("; ")}.]`
+    : "";
+  const ambient = ambientLine(weather, moment.season) + rumorLine;
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12">

@@ -11,6 +11,7 @@ import {
 import { REGIONS } from "@/data/taldorei";
 import { useAtlas } from "@/lib/useAtlas";
 import { generarEncargo } from "@/lib/generar";
+import { useClues } from "@/lib/useClues";
 
 const QUEST_LABEL: Record<Quest["status"], string> = {
   oferta: "Oferta", activa: "En curso", completada: "Completada", fallida: "Fallida", oculta: "Oculta",
@@ -34,7 +35,71 @@ export default function CronicaPanel() {
       <DiarioSection entries={entries} />
       <MisionesSection quests={quests} />
       <PnjSection npcs={npcs} />
+      <PistasSection quests={quests} />
     </div>
+  );
+}
+
+/* ------------------------------ PISTAS ------------------------------ */
+function PistasSection({ quests }: { quests: Quest[] }) {
+  const { clues, addClue, updateClue, removeClue } = useClues();
+  const { atlas } = useAtlas();
+  const [texto, setTexto] = useState("");
+  const [mision, setMision] = useState("");
+  const [lugar, setLugar] = useState("");
+  const [rumor, setRumor] = useState(false);
+
+  const poiNames = Array.from(new Set(Object.values(atlas).flatMap((c) => Object.values(c.pois).flat().map((p) => p.name)))).sort((a, b) => a.localeCompare(b));
+
+  function add() {
+    if (!texto.trim()) return;
+    addClue({ texto: texto.trim(), mision: mision.trim() || undefined, lugar: lugar.trim() || undefined, rumor, discovered: false });
+    setTexto(""); setMision(""); setLugar(""); setRumor(false);
+  }
+
+  return (
+    <section className="panel p-5">
+      <p className="eyebrow mb-3"><i className="fas fa-magnifying-glass mr-1.5" style={{ color: "var(--color-bronze)" }} />Pistas y rumores</p>
+
+      <div className="space-y-2 mb-4">
+        {clues.map((c) => (
+          <div key={c.id} className="panel-raised px-3 py-2.5 flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="font-ui text-[13px]" style={{ color: "var(--color-parch)" }}>{c.texto}</p>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                {c.mision && <span className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}><i className="fas fa-map mr-1" />{c.mision}</span>}
+                {c.lugar && <span className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}><i className="fas fa-location-dot mr-1" />{c.lugar}</span>}
+                {c.rumor && <span className="font-ui text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: "var(--color-arcane)", border: "1px solid var(--color-arcane)55" }}>rumor</span>}
+                <span className="font-ui text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: c.discovered ? "var(--color-primitivo)" : "var(--color-dim)", border: `1px solid ${c.discovered ? "var(--color-primitivo)" : "var(--color-line)"}` }}>{c.discovered ? "descubierta" : "oculta"}</span>
+              </div>
+            </div>
+            <div className="flex gap-1.5 shrink-0">
+              <button className="btn-ghost !py-1 !px-2.5 text-[11px]" onClick={() => updateClue(c.id, { discovered: !c.discovered })}>
+                <i className={`fas ${c.discovered ? "fa-eye-slash" : "fa-eye"} mr-1`} />{c.discovered ? "Ocultar" : "Revelar"}
+              </button>
+              <button className="btn-ghost !py-1 !px-2.5 text-[11px]" style={{ color: "var(--color-ember)" }} onClick={() => removeClue(c.id)}><i className="fas fa-trash" /></button>
+            </div>
+          </div>
+        ))}
+        {clues.length === 0 && <p className="text-[13px] italic" style={{ color: "var(--color-dim)" }}>Sin pistas todavía.</p>}
+      </div>
+
+      <div className="panel-raised p-4">
+        <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={2} placeholder="La pista o el rumor…" className={`${inputCls} mb-2 resize-none`} style={{ color: "var(--color-warm)" }} />
+        <div className="grid sm:grid-cols-2 gap-2 mb-2">
+          <input value={mision} onChange={(e) => setMision(e.target.value)} list="clue-quest-list" placeholder="Misión ligada (opcional)" className={inputCls} style={{ color: "var(--color-warm)" }} />
+          <datalist id="clue-quest-list">{quests.map((q) => <option key={q.id} value={q.title} />)}</datalist>
+          <input value={lugar} onChange={(e) => setLugar(e.target.value)} list="clue-poi-list" placeholder="Lugar (opcional)" className={inputCls} style={{ color: "var(--color-warm)" }} />
+          <datalist id="clue-poi-list">{poiNames.map((n) => <option key={n} value={n} />)}</datalist>
+        </div>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <label className="flex items-center gap-2 font-ui text-[12px]" style={{ color: "var(--color-warm)" }}>
+            <input type="checkbox" checked={rumor} onChange={(e) => setRumor(e.target.checked)} /> Sembrar como rumor en los NPCs IA
+          </label>
+          <button className="btn-gold !py-2 !px-4 text-[12px]" onClick={add} disabled={!texto.trim()}><i className="fas fa-plus mr-1.5" />Añadir pista</button>
+        </div>
+      </div>
+    </section>
   );
 }
 
