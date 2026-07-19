@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 
+import type { ItemDoc } from "@/lib/character";
+
 export type StashType = "magico" | "normal" | "oro";
-export type StashEntry = { id: string; name: string; type: StashType; qty: number; notes?: string };
+export type StashEntry = { id: string; name: string; type: StashType; qty: number; notes?: string; doc?: ItemDoc };
 const KEY = "dm_stash";
 
 export async function saveStash(entries: StashEntry[]) {

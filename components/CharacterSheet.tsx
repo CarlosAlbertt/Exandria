@@ -95,6 +95,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const [archiveError, setArchiveError] = useState<string | null>(null);
 
   const [cat, setCat] = useState<ItemCat>("Aventura");
+  const [openDoc, setOpenDoc] = useState<Item | null>(null); // documento in-game abierto (Fase M)
   const [custom, setCustom] = useState("");
   const [rollErr, setRollErr] = useState<string | null>(null); // error de publishRoll (salvación/pericia)
 
@@ -725,7 +726,13 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                     style={pickingSlot ? { borderColor: "var(--color-bronze)", cursor: "pointer" } : undefined}
                     onClick={pickingSlot ? () => onItemClick(it) : undefined}>
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-ui text-[14px] font-semibold flex-1 min-w-0" style={{ color: "var(--color-warm)" }}>{it.name}</span>
+                      <span className="font-ui text-[14px] font-semibold flex-1 min-w-0" style={{ color: "var(--color-warm)" }}>
+                        {it.doc && <i className="fas fa-scroll mr-1.5" style={{ color: "var(--color-arcane)" }} />}{it.name}
+                      </span>
+                      {it.doc && (
+                        <button className="btn-ghost !py-1 !px-2.5 text-[12px]" style={{ color: "var(--color-arcane-bright)" }}
+                          onClick={(e) => { e.stopPropagation(); setOpenDoc(it); }}><i className="fas fa-book-open mr-1" />Leer</button>
+                      )}
                       {!readOnly && (
                         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <button className="stat-btn !w-7 !h-7" onClick={() => changeQty(it.id, -1)}>−</button>
@@ -773,7 +780,28 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       </div>
 
       {personajesPanel}
+
+      {openDoc?.doc && <DocViewer item={openDoc} onClose={() => setOpenDoc(null)} />}
     </>
+  );
+}
+
+// Visor de documento in-game: pergamino a pantalla completa (carta, contrato…).
+function DocViewer({ item, onClose }: { item: Item; onClose: () => void }) {
+  const doc = item.doc!;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }} onClick={onClose}>
+      <div className="max-w-2xl w-full max-h-[85vh] overflow-y-auto rounded-xl p-6 sm:p-8"
+        style={{ background: "var(--color-parch)", color: "#2a2018", boxShadow: "0 10px 40px rgba(0,0,0,0.5)", border: "1px solid var(--color-bronze)" }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h3 className="font-display text-2xl font-extrabold" style={{ color: "#3a2a15" }}>{doc.titulo || item.name}</h3>
+          <button onClick={onClose} className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#2a201810", color: "#3a2a15" }} aria-label="Cerrar"><i className="fas fa-xmark" /></button>
+        </div>
+        {doc.imagen && <img src={doc.imagen} alt="" className="w-full rounded-lg mb-4 border" style={{ borderColor: "#3a2a1533" }} />}
+        <p className="font-body text-[16px] leading-relaxed whitespace-pre-wrap" style={{ color: "#2a2018" }}>{doc.texto}</p>
+      </div>
+    </div>
   );
 }
 

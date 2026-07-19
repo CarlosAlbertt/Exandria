@@ -1,8 +1,9 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAtlas } from "@/lib/useAtlas";
 import { useNpcs, createNpc, updateNpc, deleteNpc, type LocationNpc } from "@/lib/useNpcs";
 import { generarNpc } from "@/lib/generar";
+import { listMemories, updateMemory, deleteMemory, type NpcMemory } from "@/lib/useNpcMemory";
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
 
@@ -94,6 +95,45 @@ function NpcEditor({ npc, onChange }: { npc: LocationNpc; onChange: () => void }
         <label className="flex items-center gap-2 font-ui text-[12px]" style={{ color: "var(--color-warm)" }}><input type="checkbox" checked={pub} onChange={(e) => setPub(e.target.checked)} /> Visible para los jugadores</label>
         <button onClick={save} className="btn-gold !py-1.5 !px-3 text-[12px]"><i className="fas fa-check mr-1.5" />Guardar</button>
       </div>
+      <MemoriesBlock npcRef={`npc:${npc.id}`} />
+    </div>
+  );
+}
+
+// Memorias que este NPC guarda de cada jugador (Fase M). El DM las lee, edita
+// o borra ("olvida").
+function MemoriesBlock({ npcRef }: { npcRef: string }) {
+  const [mems, setMems] = useState<(NpcMemory & { username: string })[]>([]);
+  const [open, setOpen] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+
+  const reload = () => listMemories(npcRef).then((rows) => {
+    setMems(rows);
+    setDrafts(Object.fromEntries(rows.map((r) => [r.user_id, r.summary])));
+  });
+  useEffect(() => { if (open) void reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [open, npcRef]);
+
+  return (
+    <div className="pt-2 border-t border-[var(--color-line)]">
+      <button onClick={() => setOpen((o) => !o)} className="font-ui text-[12px] font-semibold flex items-center gap-2" style={{ color: "var(--color-arcane-bright)" }}>
+        <i className={`fas ${open ? "fa-chevron-down" : "fa-chevron-right"}`} /><i className="fas fa-brain" />Memorias{mems.length ? ` (${mems.length})` : ""}
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2">
+          {mems.length === 0 && <p className="text-[12px] italic" style={{ color: "var(--color-dim)" }}>Este NPC aún no recuerda a nadie.</p>}
+          {mems.map((m) => (
+            <div key={m.user_id} className="panel-raised p-2 space-y-1.5">
+              <p className="font-ui text-[11px] font-bold" style={{ color: "var(--color-bronze-bright)" }}>{m.username}</p>
+              <textarea value={drafts[m.user_id] ?? ""} onChange={(e) => setDrafts((d) => ({ ...d, [m.user_id]: e.target.value }))} rows={2}
+                className={`${inputCls} resize-none`} style={{ color: "var(--color-warm)" }} />
+              <div className="flex gap-2">
+                <button onClick={() => updateMemory(npcRef, m.user_id, drafts[m.user_id] ?? "").then(reload)} className="btn-ghost !py-1 !px-2.5 text-[11px]"><i className="fas fa-check mr-1" />Guardar</button>
+                <button onClick={() => { if (confirm("¿Que este NPC olvide a este jugador?")) deleteMemory(npcRef, m.user_id).then(reload); }} className="btn-ghost !py-1 !px-2.5 text-[11px]" style={{ color: "var(--color-ember)" }}><i className="fas fa-eraser mr-1" />Olvidar</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
