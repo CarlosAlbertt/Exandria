@@ -7,6 +7,7 @@ import ClockWidget from "@/components/ClockWidget";
 import ServiceSections from "@/components/lugar/ServiceSections";
 import ShopSection from "@/components/lugar/ShopSection";
 import PosadaSection from "@/components/lugar/PosadaSection";
+import NpcSection from "@/components/lugar/NpcSection";
 
 export default function LugarPage() {
   const { location, ready } = usePartyLocation();
@@ -50,6 +51,7 @@ export default function LugarPage() {
 
       <ShopSection poiName={poi.name} />
       <PosadaSection posada={!!poi.services?.posada} />
+      <NpcSection poiName={poi.name} />
       <ServiceSections services={poi.services} />
     </main>
   );
