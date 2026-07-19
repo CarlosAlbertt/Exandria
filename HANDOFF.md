@@ -229,6 +229,39 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-19): Fase N (parte 1) — clima por región y estación 🌦️
+Rama `fase-n-clima`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-19-fase-n-clima*`. **Sin migración.**
+Alcance acotado a la pieza autocontenida; «saber del mundo por pericia» y
+«pistas/rumores» **diferidos**.
+
+- **`lib/weather.ts`** (puro, patrón de `lib/gameClock.ts`): `weatherFor(
+  continent, regionSlug, regionName?, moment)` devuelve `{ condition, icon,
+  temp }` **determinista** — semilla = hash `regionSlug|year|dayOfYear` (mismo
+  clima todo el día de juego, cambia al siguiente). `zoneFor` elige zona
+  (`templado|frio|arido|costero|humedo|brumoso`): **mapa explícito** de las 8
+  regiones de Tal'Dorei → **heurística por palabras** del slug/nombre
+  (montaña→frío, costa→costero, desierto→árido, bosque→húmedo, bruma→brumoso) →
+  **por continente** (Marquet árido, Wildemount frío, Dientes Rotos húmedo) →
+  templado. Tabla de condiciones por zona×estación (las 4 de `cosmology.ts`).
+  `ambientLine` arma una frase de contexto para los NPCs.
+- **`/lugar`**: badge de clima bajo la cabecera (icono + condición + temp +
+  estación), con `useGameClock`+`momentFromGameMin`.
+- **Nav** (`PartyLocationWidget`): icono del clima del lugar del grupo junto al
+  📍 (+ tooltip con condición/temp).
+- **NPCs IA**: `/lugar` pasa `ambient` (la frase) a `ShopSection` (tendero) y
+  `NpcSection` (PNJ), que la añaden al system prompt → los NPCs pueden comentar
+  el tiempo. Con el túnel caído no cambia nada (solo es texto en el prompt).
+- **Diferido**: **saber del mundo por pericia** (`tier`/`unlockSkill` en la lore
+  de `cosmology.ts`/`taldorei.ts` + derivación con `derive` + `/reino` +
+  tirada de saber in situ — feature grande, N-saber), **pistas/rumores**
+  (`app_config.clues` + siembra en NPCs — N-pistas).
+- Verificado: `tsc --noEmit` + `next build` limpios. **Sin sesión en dev**: no
+  probado en vivo. **Prueba del usuario**: fijar ubicación del grupo y ver el
+  clima en `/lugar` y el icono en el nav; que sea el mismo dentro del día de
+  juego y cambie al avanzar el reloj a otro día; que difiera por región (una de
+  montaña vs. la costa).
+
 ## RESUELTO (2026-07-19): Fase M (parte 1) — generadores IA del DM 🤖
 Rama `fase-m-generadores-ia`. Spec/plan en
 `docs/superpowers/{specs,plans}/2026-07-19-fase-m-generadores-ia*`. **Sin
