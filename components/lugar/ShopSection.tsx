@@ -6,7 +6,7 @@ import { buy, sell, type ShopChar } from "@/lib/shopTx";
 import { loadActiveCharacter, type Item } from "@/lib/character";
 import { narrar, type Msg } from "@/lib/narrador";
 
-export default function ShopSection({ poiName }: { poiName: string }) {
+export default function ShopSection({ poiName, ambient }: { poiName: string; ambient?: string }) {
   const session = useSession();
   const { shops, ready } = useShops(poiName);
   const [openId, setOpenId] = useState<number | null>(null);
@@ -97,7 +97,7 @@ export default function ShopSection({ poiName }: { poiName: string }) {
             </div>
           )}
 
-          <Shopkeeper shop={open} />
+          <Shopkeeper shop={open} ambient={ambient} />
         </div>
       )}
     </section>
@@ -105,7 +105,7 @@ export default function ShopSection({ poiName }: { poiName: string }) {
 }
 
 // Chat del tendero: reusa la IA con el prompt del NPC + el catálogo inyectado.
-function Shopkeeper({ shop }: { shop: Shop }) {
+function Shopkeeper({ shop, ambient }: { shop: Shop; ambient?: string }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -113,7 +113,7 @@ function Shopkeeper({ shop }: { shop: Shop }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
-  const persona = `${shop.npc_prompt || `Eres el tendero de "${shop.name}", una tienda de tipo ${shop.kind}.`}\nCatálogo (nombre — precio po): ${shop.items.map((i) => `${i.name} — ${i.price}`).join("; ") || "vacío"}. Atiende con brevedad y en personaje; no inventes precios fuera del catálogo.`;
+  const persona = `${shop.npc_prompt || `Eres el tendero de "${shop.name}", una tienda de tipo ${shop.kind}.`}\nCatálogo (nombre — precio po): ${shop.items.map((i) => `${i.name} — ${i.price}`).join("; ") || "vacío"}. Atiende con brevedad y en personaje; no inventes precios fuera del catálogo.${ambient ? `\n${ambient}` : ""}`;
 
   async function send() {
     const text = input.trim();
