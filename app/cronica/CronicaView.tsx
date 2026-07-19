@@ -8,6 +8,7 @@ import { useGameClock } from "@/lib/useGameClock";
 import { momentFromGameMin } from "@/lib/gameClock";
 
 const QUEST_BADGE: Record<Quest["status"], { icon: string; color: string; label: string }> = {
+  oferta: { icon: "fa-bullhorn", color: "var(--color-arcane)", label: "Oferta" },
   activa: { icon: "fa-scroll", color: "var(--color-bronze)", label: "En curso" },
   completada: { icon: "fa-check", color: "var(--color-primitivo)", label: "Completada" },
   fallida: { icon: "fa-xmark", color: "var(--color-ember)", label: "Fallida" },

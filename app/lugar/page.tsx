@@ -4,10 +4,10 @@ import { useAtlas, regionsOf, poisOf } from "@/lib/useAtlas";
 import { useTownMaps } from "@/lib/useTownMaps";
 import { POI_ICON, POI_COLOR } from "@/data/pois";
 import ClockWidget from "@/components/ClockWidget";
-import ServiceSections from "@/components/lugar/ServiceSections";
 import ShopSection from "@/components/lugar/ShopSection";
 import PosadaSection from "@/components/lugar/PosadaSection";
 import NpcSection from "@/components/lugar/NpcSection";
+import TablonSection from "@/components/lugar/TablonSection";
 
 export default function LugarPage() {
   const { location, ready } = usePartyLocation();
@@ -52,7 +52,7 @@ export default function LugarPage() {
       <ShopSection poiName={poi.name} />
       <PosadaSection posada={!!poi.services?.posada} />
       <NpcSection poiName={poi.name} />
-      <ServiceSections services={poi.services} />
+      {poi.services?.tablon && <TablonSection poiName={poi.name} />}
     </main>
   );
 }
