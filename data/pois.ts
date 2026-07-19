@@ -10,6 +10,12 @@ export type Poi = {
   blurb: string;
   x: number;
   y: number;
+  services?: {
+    tienda?: string[];   // ids de tienda (Fase C)
+    posada?: boolean;    // descanso (Fase D)
+    npcs?: string[];     // ids de NPC (Fase E)
+    tablon?: boolean;    // tablón de misiones (Fase F)
+  };
 };
 
 export const POI_ICON: Record<PoiType, string> = {

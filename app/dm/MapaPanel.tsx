@@ -20,8 +20,8 @@ const ACCENTS = ["--color-bronze", "--color-arcane", "--color-divino", "--color-
 
 type RForm = { name: string; capital: string; feature: string; accent: string; blurb: string; image: string };
 const EMPTY_R: RForm = { name: "", capital: "", feature: "", accent: "var(--color-bronze)", blurb: "", image: "" };
-type PForm = { name: string; type: PoiType; blurb: string };
-const EMPTY_P: PForm = { name: "", type: "ciudad", blurb: "" };
+type PForm = { name: string; type: PoiType; blurb: string; posada: boolean; tablon: boolean; tienda: string; npcs: string };
+const EMPTY_P: PForm = { name: "", type: "ciudad", blurb: "", posada: false, tablon: false, tienda: "", npcs: "" };
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
 
@@ -112,15 +112,32 @@ export default function MapaPanel() {
 
   // POI CRUD (para la región activa, persiste en atlas[continent].pois)
   const openNewPoi = () => { setPForm(EMPTY_P); setPEditing("new"); };
-  const openEditPoi = (p: Poi) => { setPForm({ name: p.name, type: p.type, blurb: p.blurb }); setPEditing(p); };
+  const openEditPoi = (p: Poi) => {
+    setPForm({
+      name: p.name, type: p.type, blurb: p.blurb,
+      posada: p.services?.posada ?? false,
+      tablon: p.services?.tablon ?? false,
+      tienda: (p.services?.tienda ?? []).join(", "),
+      npcs: (p.services?.npcs ?? []).join(", "),
+    });
+    setPEditing(p);
+  };
   const savePoi = () => {
     if (!region || !pForm.name.trim()) return;
     const cur = contData.pois[region.slug] ?? [];
+    const splitIds = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
+    const services: Poi["services"] = {};
+    if (pForm.posada) services.posada = true;
+    if (pForm.tablon) services.tablon = true;
+    const tienda = splitIds(pForm.tienda); if (tienda.length) services.tienda = tienda;
+    const npcs = splitIds(pForm.npcs); if (npcs.length) services.npcs = npcs;
+    const hasServices = Object.keys(services).length > 0;
+    const fields = { name: pForm.name.trim(), type: pForm.type, blurb: pForm.blurb.trim(), ...(hasServices ? { services } : {}) };
     let arr: Poi[];
     if (pEditing === "new") {
-      arr = [...cur, { name: pForm.name.trim(), type: pForm.type, blurb: pForm.blurb.trim(), ...spread() }];
+      arr = [...cur, { ...fields, ...spread() }];
     } else if (pEditing) {
-      arr = cur.map((p) => (p.name === pEditing.name ? { ...p, name: pForm.name.trim(), type: pForm.type, blurb: pForm.blurb.trim() } : p));
+      arr = cur.map((p) => (p.name === pEditing.name ? { ...p, ...fields, services: hasServices ? services : undefined } : p));
     } else return;
     save({ ...atlas, [continent]: { regions: contData.regions, pois: { ...contData.pois, [region.slug]: arr } } });
     setPEditing(null);
@@ -229,6 +246,17 @@ export default function MapaPanel() {
                       {POI_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                     <textarea value={pForm.blurb} onChange={(e) => setPForm({ ...pForm, blurb: e.target.value })} rows={3} placeholder="Descripción" className={`${inputCls} resize-none`} style={{ color: "var(--color-warm)" }} />
+                    <div className="space-y-1.5">
+                      <p className="eyebrow !text-[9px]">Servicios (para /lugar)</p>
+                      <label className="flex items-center gap-2 font-ui text-[12px]" style={{ color: "var(--color-warm)" }}>
+                        <input type="checkbox" checked={pForm.posada} onChange={(e) => setPForm({ ...pForm, posada: e.target.checked })} /> Posada (descanso)
+                      </label>
+                      <label className="flex items-center gap-2 font-ui text-[12px]" style={{ color: "var(--color-warm)" }}>
+                        <input type="checkbox" checked={pForm.tablon} onChange={(e) => setPForm({ ...pForm, tablon: e.target.checked })} /> Tablón de misiones
+                      </label>
+                      <input value={pForm.tienda} onChange={(e) => setPForm({ ...pForm, tienda: e.target.value })} placeholder="Tiendas (ids, coma)" className={inputCls} style={{ color: "var(--color-warm)" }} />
+                      <input value={pForm.npcs} onChange={(e) => setPForm({ ...pForm, npcs: e.target.value })} placeholder="NPCs (ids, coma)" className={inputCls} style={{ color: "var(--color-warm)" }} />
+                    </div>
                     <div className="flex gap-2">
                       <button onClick={savePoi} disabled={!pForm.name.trim()} className="btn-gold flex-1 !py-1.5 text-[13px] disabled:opacity-40"><i className="fas fa-check mr-1.5" />Guardar</button>
                       <button onClick={() => setPEditing(null)} className="btn-ghost !py-1.5 !px-3 text-[13px]">Cancelar</button>
