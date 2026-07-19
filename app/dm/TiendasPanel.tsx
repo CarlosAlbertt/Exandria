@@ -6,6 +6,7 @@ import {
   useShops, createShop, updateShop, deleteShop,
   addItem, updateItem, deleteItem, seedCatalog, type Shop, type ShopItem,
 } from "@/lib/useShops";
+import { generarTienda } from "@/lib/generar";
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
 
@@ -21,12 +22,30 @@ export default function TiendasPanel() {
   const { shops, ready, reload } = useShops(poi || null);
   const [newName, setNewName] = useState("");
   const [newKind, setNewKind] = useState(SHOP_KINDS[0]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
 
   async function onCreate() {
     if (!poi || !newName.trim()) return;
     await createShop(poi, newName.trim(), newKind);
     setNewName("");
     await reload();
+  }
+
+  async function onGenerate() {
+    if (!poi || busy) return;
+    setBusy(true); setMsg(null);
+    const r = await generarTienda(newName, newKind, poi);
+    if (r.ok) {
+      const id = await createShop(poi, r.data.name, newKind);
+      if (id != null) await updateShop(id, { greeting: r.data.greeting, npc_prompt: r.data.npc_prompt });
+      setNewName("");
+      await reload();
+    } else {
+      setMsg(r.error); setOffline(!!r.offline);
+    }
+    setBusy(false);
   }
 
   return (
@@ -51,8 +70,10 @@ export default function TiendasPanel() {
             <select value={newKind} onChange={(e) => setNewKind(e.target.value)} className="bg-[var(--color-night)] rounded-lg px-2 py-1.5 font-ui text-[13px] border border-[var(--color-line)]" style={{ color: "var(--color-warm)" }}>
               {SHOP_KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
             </select>
-            <button onClick={onCreate} disabled={!newName.trim()} className="btn-gold !py-1.5 !px-3 text-[13px] disabled:opacity-40"><i className="fas fa-plus mr-1.5" />Crear</button>
+            <button onClick={onGenerate} disabled={busy || offline} title="Genera una tienda con tendero IA (usa el nombre como pista, opcional)" className="btn-ghost !py-1.5 !px-3 text-[13px] disabled:opacity-40"><i className={`fas ${busy ? "fa-spinner fa-spin" : "fa-wand-magic-sparkles"} mr-1.5`} />IA</button>
+            <button onClick={onCreate} disabled={!newName.trim() || busy} className="btn-gold !py-1.5 !px-3 text-[13px] disabled:opacity-40"><i className="fas fa-plus mr-1.5" />Crear</button>
           </div>
+          {msg && <p className="text-[12px] italic" style={{ color: "var(--color-ember)" }}>{msg}</p>}
 
           {!ready ? <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>Cargando…</p>
             : shops.length === 0 ? <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>Sin tiendas en {poi}.</p>
