@@ -9,12 +9,13 @@ import {
   type JournalEntry, type Quest, type NpcMet,
 } from "@/lib/useChronicle";
 import { REGIONS } from "@/data/taldorei";
+import { useAtlas } from "@/lib/useAtlas";
 
 const QUEST_LABEL: Record<Quest["status"], string> = {
-  activa: "En curso", completada: "Completada", fallida: "Fallida", oculta: "Oculta",
+  oferta: "Oferta", activa: "En curso", completada: "Completada", fallida: "Fallida", oculta: "Oculta",
 };
 const QUEST_COLOR: Record<Quest["status"], string> = {
-  activa: "var(--color-bronze)", completada: "var(--color-primitivo)", fallida: "var(--color-ember)", oculta: "var(--color-dim)",
+  oferta: "var(--color-arcane)", activa: "var(--color-bronze)", completada: "var(--color-primitivo)", fallida: "var(--color-ember)", oculta: "var(--color-dim)",
 };
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors";
@@ -148,17 +149,23 @@ function DiarioSection({ entries }: { entries: JournalEntry[] }) {
 }
 
 /* ------------------------------ MISIONES ------------------------------ */
-const EMPTY_QUEST = { title: "", body: "", status: "activa" as Quest["status"] };
+const EMPTY_QUEST = { title: "", body: "", status: "activa" as Quest["status"], poi_name: "", reward: "" };
 
 function MisionesSection({ quests }: { quests: Quest[] }) {
+  const { atlas } = useAtlas();
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_QUEST);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // Nombres de todos los POIs del atlas → sugerencias exactas para el campo POI.
+  const poiNames = Array.from(
+    new Set(Object.values(atlas).flatMap((c) => Object.values(c.pois).flat().map((p) => p.name)))
+  ).sort((a, b) => a.localeCompare(b));
+
   function edit(q: Quest) {
     setEditing(q.id);
-    setForm({ title: q.title, body: q.body, status: q.status });
+    setForm({ title: q.title, body: q.body, status: q.status, poi_name: q.poi_name ?? "", reward: q.reward });
     setErr(null);
   }
   function reset() { setEditing(null); setForm(EMPTY_QUEST); }
@@ -166,7 +173,11 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
   async function save() {
     if (!form.title.trim() || busy) return;
     setBusy(true); setErr(null);
-    const patch = { ...(editing != null ? { id: editing } : {}), title: form.title.trim(), body: form.body, status: form.status };
+    const patch = {
+      ...(editing != null ? { id: editing } : {}),
+      title: form.title.trim(), body: form.body, status: form.status,
+      poi_name: form.poi_name.trim() || null, reward: form.reward.trim(),
+    };
     const { error } = await saveQuest(patch);
     setBusy(false);
     if (error) setErr(error); else reset();
@@ -191,6 +202,8 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
               <span className="font-ui text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ color: QUEST_COLOR[q.status], border: `1px solid ${QUEST_COLOR[q.status]}55` }}>
                 {QUEST_LABEL[q.status]}
               </span>
+              {q.poi_name && <span className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}><i className="fas fa-location-dot mr-1" />{q.poi_name}</span>}
+              {q.reward && <span className="font-ui text-[11px]" style={{ color: "var(--color-bronze)" }}><i className="fas fa-coins mr-1" />{q.reward}</span>}
             </div>
             <div className="flex gap-1.5 shrink-0">
               <button className="btn-ghost !py-1 !px-2.5 text-[11px]" onClick={() => edit(q)}><i className="fas fa-pen mr-1" />Editar</button>
@@ -209,6 +222,13 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
             className={inputCls} style={{ color: "var(--color-warm)" }}>
             {(Object.keys(QUEST_LABEL) as Quest["status"][]).map((s) => <option key={s} value={s}>{QUEST_LABEL[s]}</option>)}
           </select>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-2 mb-2">
+          <input value={form.poi_name} onChange={(ev) => setForm((f) => ({ ...f, poi_name: ev.target.value }))}
+            list="quest-poi-list" placeholder="POI del tablón (opcional)" className={inputCls} style={{ color: "var(--color-warm)" }} />
+          <datalist id="quest-poi-list">{poiNames.map((n) => <option key={n} value={n} />)}</datalist>
+          <input value={form.reward} onChange={(ev) => setForm((f) => ({ ...f, reward: ev.target.value }))}
+            placeholder="Recompensa (ej.: 50 po)" className={inputCls} style={{ color: "var(--color-warm)" }} />
         </div>
         <textarea value={form.body} onChange={(ev) => setForm((f) => ({ ...f, body: ev.target.value }))} rows={3}
           placeholder="Detalles de la misión…" className={`${inputCls} mb-3 resize-none`} style={{ color: "var(--color-warm)" }} />
