@@ -224,6 +224,39 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-17): Fase B — modo ubicación "Estás en…" 📍
+Rama `fase-b-modo-ubicacion`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-17-fase-b-modo-ubicacion*`. Ejecutado con
+subagentes (Task 6 docs inline). Base de las fases C–F.
+
+- **Ubicación del grupo**: `app_config.party_location` (JSON
+  `{ continent, regionSlug, poiName } | null`, **sin migración**) vía
+  `lib/usePartyLocation.ts` (**mutación optimista** — `app_config` no dispara
+  realtime, ver memoria del proyecto).
+- **El DM la fija** desde el editor de mapa (Panel DM › Mapa › POIs por región):
+  botón **"El grupo está aquí"** por POI (resalta el actual) + botón global
+  **"El grupo viaja"** (limpia). Guardado optimista.
+- **Widget en nav** (`PartyLocationWidget`, junto al reloj): "📍 {poiName}" →
+  `/lugar`; invisible si no hay ubicación.
+- **Página `/lugar`** (player+DM, sin gate): cabecera del POI (nombre/tipo/blurb
+  del atlas) + imagen del pueblo si `townMap(poiName)` + **secciones de
+  servicio**. Sin ubicación o POI no hallado → **"De camino…"** con la región y
+  el reloj.
+- **`Poi.services?`** (`{ tienda?: string[]; posada?: boolean; npcs?: string[];
+  tablon?: boolean }`, opcional, sin migración) editable en el form de POI del
+  DM (checkboxes posada/tablón, ids coma-separados tienda/npcs). Las **secciones
+  de servicio** en `/lugar` (`components/lugar/ServiceSections.tsx`) son
+  **placeholders "Próximamente (Fase C/D/E/F)"** — cada fase C–F sustituye el
+  cuerpo de su tarjeta sin tocar el resto.
+- **Fuera de alcance**: la funcionalidad real de tienda/posada/NPC/tablón (fases
+  C–F). B deja el hueco montado.
+- Verificado: `tsc --noEmit` + `next build` limpios en cada commit (5 tareas de
+  código); `/lugar` en la tabla de rutas. **Sin sesión en dev**: no se probó en
+  vivo (superficies DM y `/lugar` redirigen a `/login` sin sesión). **Prueba del
+  usuario**: fijar ubicación en un POI, ver el widget y `/lugar` con cabecera +
+  mapa de pueblo, marcar servicios y ver las tarjetas placeholder, "El grupo
+  viaja" → "De camino…". Sin migración.
+
 ## RESUELTO (2026-07-17): Fase H — subida de imágenes (Storage) 🖼️
 Rama `fase-h-subida-imagenes`. Spec en
 `docs/superpowers/specs/2026-07-17-fase-h-subida-imagenes-design.md`; plan en
