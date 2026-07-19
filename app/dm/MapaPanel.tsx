@@ -8,6 +8,7 @@ import { useAtlas, regionsOf, poisOf } from "@/lib/useAtlas";
 import { uniqueRegionSlug, type AtlasDefs } from "@/data/atlas";
 import { useRegions, setRegionPin } from "@/lib/useRegions";
 import { usePois, setPoiPos, setPoiRevealed } from "@/lib/usePois";
+import { usePartyLocation } from "@/lib/usePartyLocation";
 import PinDragMap, { type DragMarker } from "@/components/PinDragMap";
 import ImageUpload from "@/components/ImageUpload";
 import { slugify } from "@/lib/slug";
@@ -61,6 +62,7 @@ export default function MapaPanel() {
   const { atlas, save } = useAtlas();
   const { states: regionStates } = useRegions();
   const { states: poiStates, keyOf } = usePois();
+  const { location: partyLoc, setLocation: setPartyLoc } = usePartyLocation();
 
   const regions = regionsOf(atlas, continent);
   const region = regions.find((r) => r.slug === regionSlug) ?? regions[0];
@@ -236,7 +238,14 @@ export default function MapaPanel() {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="eyebrow">POIs de {region.name} ({pois.filter((p) => poiStates[keyOf(region.slug, p.name)]?.revealed).length}/{pois.length})</p>
-                  <button onClick={openNewPoi} className="btn-gold !py-1.5 !px-3 text-[12px]"><i className="fas fa-plus mr-1.5" />Añadir</button>
+                  <div className="flex items-center gap-2">
+                    {partyLoc && (
+                      <button onClick={() => setPartyLoc(null)} className="btn-ghost !py-1.5 !px-3 text-[12px]" title="El grupo deja de estar en un lugar">
+                        <i className="fas fa-route mr-1.5" />El grupo viaja
+                      </button>
+                    )}
+                    <button onClick={openNewPoi} className="btn-gold !py-1.5 !px-3 text-[12px]"><i className="fas fa-plus mr-1.5" />Añadir</button>
+                  </div>
                 </div>
                 {pEditing && (
                   <div className="panel-raised p-3 mb-4 space-y-2">
@@ -274,6 +283,18 @@ export default function MapaPanel() {
                           <span className="font-ui text-[13px] font-semibold truncate" style={{ color: "var(--color-warm)" }}>{p.name}</span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => setPartyLoc({ continent, regionSlug: region.slug, poiName: p.name })}
+                            title="El grupo está aquí"
+                            className="font-ui text-[11px] font-bold px-2 py-1 rounded-lg transition-colors"
+                            style={{
+                              color: partyLoc?.poiName === p.name && partyLoc?.regionSlug === region.slug ? "var(--color-ink)" : "var(--color-muted)",
+                              background: partyLoc?.poiName === p.name && partyLoc?.regionSlug === region.slug ? "var(--color-bronze)" : "transparent",
+                              border: `1px solid ${partyLoc?.poiName === p.name && partyLoc?.regionSlug === region.slug ? "var(--color-bronze)" : "var(--color-line)"}`,
+                            }}
+                          >
+                            <i className="fas fa-location-crosshairs" />
+                          </button>
                           <button onClick={() => setPoiRevealed(region.slug, p.name, !on)} title={on ? "Visible" : "Oculto"} className="font-ui text-[11px] font-bold px-2 py-1 rounded-lg transition-colors"
                             style={{ color: on ? "var(--color-ink)" : "var(--color-muted)", background: on ? "var(--color-primitivo)" : "transparent", border: `1px solid ${on ? "var(--color-primitivo)" : "var(--color-line)"}` }}>
                             <i className={`fas ${on ? "fa-eye" : "fa-eye-slash"}`} />
