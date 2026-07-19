@@ -230,6 +230,35 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-19): Fase N (partes 2 y 3) — saber + pistas 🌍
+Rama `fase-n-completa`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-19-fase-n-completar*`. **Completa la
+Fase N** (con la parte 1 de más abajo). **Sin migración** (todo `app_config` +
+la ficha).
+
+- **Saber del mundo por personaje**: sección nueva «Saber del mundo» en `/reino`
+  (`components/SaberSection.tsx`, client) sobre un dataset curado por niveles
+  (`data/loreTiers.ts`: `tier ∈ comun|erudito|secreto` + `unlockSkill`). **Común**
+  para todos; **erudito** si el PJ tiene la pericia (`loadActiveCharacter().skills`
+  → Historia/Arcanos/Religión/Naturaleza; si no, tarjeta bloqueada);
+  **secreto** revelado por el DM (`app_config.lore_revealed`,
+  `lib/useLoreRevealed.ts`, optimista) — los no revelados **no se listan** a los
+  jugadores, y el DM revela/oculta **inline**. **No se tocó** la lore estática
+  existente de `/reino`. **Diferido**: la **tirada de saber in situ** (dados +
+  persistencia por-POI estilo Fase K) — N-tirada.
+- **Pistas y rumores**: `app_config.clues` (`lib/useClues.ts`, optimista) —
+  `Clue {texto, mision?, lugar?, discovered, rumor}`. El DM las gestiona en la
+  sección «Pistas y rumores» de `CronicaPanel` (crear con datalists de
+  quests/POIs, revelar/ocultar, borrar). Las **descubiertas** salen en `/cronica`
+  (bloque «Pistas»). Las marcadas **rumor** y sin descubrir se **siembran en los
+  NPCs IA** de `/lugar` (se añaden al `ambient` de tendero/PNJ, filtradas al POI
+  actual o sin lugar); el DM las marca descubiertas a mano.
+- Verificado: `tsc --noEmit` + `next build` limpios. **Sin sesión en dev**: no
+  probado en vivo. **Prueba del usuario**: en `/reino`, un PJ con Historia ve la
+  lore de Historia y el resto bloqueado; el DM revela un secreto y el jugador lo
+  ve. Crear una pista, revelarla → sale en `/cronica`; una pista-rumor → un NPC
+  IA la deja caer.
+
 ## RESUELTO (2026-07-19): Fase N (parte 1) — clima por región y estación 🌦️
 Rama `fase-n-clima`. Spec/plan en
 `docs/superpowers/{specs,plans}/2026-07-19-fase-n-clima*`. **Sin migración.**
