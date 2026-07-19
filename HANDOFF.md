@@ -192,9 +192,10 @@ app_config.campaign_date — **PENDIENTE de ejecutar por el usuario**) ·
 `schema_v13.sql` (**stat_rolls** — Fase K: tirada única de aptitudes,
 inmutable por PK + sin policy de update; solo el DM borra = resetear — **ya
 ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** — ya ejecutada) ·
-`schema_v15.sql` (**tiendas**: shops/shop_items/shop_log — **PENDIENTE**) ·
-`schema_v16.sql` (**PNJs**: location_npcs — **PENDIENTE de ejecutar por el
-usuario**).
+`schema_v15.sql` (**tiendas**: shops/shop_items/shop_log — ya ejecutada) ·
+`schema_v16.sql` (**PNJs**: location_npcs — ya ejecutada). El bucket de Storage
+`assets` (`storage-assets.sql`, Fase H) también ejecutado. **Todas las
+migraciones al día a 2026-07-17.**
 
 > ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
 > columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
