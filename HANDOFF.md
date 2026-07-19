@@ -193,9 +193,11 @@ app_config.campaign_date — **PENDIENTE de ejecutar por el usuario**) ·
 inmutable por PK + sin policy de update; solo el DM borra = resetear — **ya
 ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** — ya ejecutada) ·
 `schema_v15.sql` (**tiendas**: shops/shop_items/shop_log — ya ejecutada) ·
-`schema_v16.sql` (**PNJs**: location_npcs — ya ejecutada). El bucket de Storage
-`assets` (`storage-assets.sql`, Fase H) también ejecutado. **Todas las
-migraciones al día a 2026-07-17.**
+`schema_v16.sql` (**PNJs**: location_npcs — ya ejecutada) · `schema_v17.sql`
+(**tablón**, Fase F: quests gana el estado `'oferta'` + columnas `poi_name`/
+`reward` — **PENDIENTE de ejecutar por el usuario**). El bucket de Storage
+`assets` (`storage-assets.sql`, Fase H) también ejecutado. **Todo al día a
+2026-07-17 salvo `schema_v17.sql` (Fase F, 2026-07-19).**
 
 > ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
 > columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
@@ -226,6 +228,44 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-19): Fase F — tablón de misiones 📜
+Rama `fase-f-tablon`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-19-fase-f-tablon*`. Vive en `/lugar`.
+
+- **Migración `schema_v17.sql`**: `quests` (schema_v12) gana el estado
+  `'oferta'` (recrea el CHECK de `status`) + columnas `poi_name text` (POI donde
+  se publica, casa con `Poi.name`) y `reward text` (recompensa en texto). RLS y
+  Realtime sin cambios (la policy de lectura ya dejaba ver todo lo que no es
+  `'oculta'`; `quests` ya estaba en la publicación). **PENDIENTE de ejecutar.**
+- **UI DM** (`app/dm/CronicaPanel.tsx`): el CRUD de misiones ya existía; se
+  amplía con `'oferta'` en `QUEST_LABEL`/`QUEST_COLOR` (el select de estado lo
+  recoge solo) + inputs **POI** (con `<datalist>` de todos los POIs del atlas
+  vía `useAtlas` → autocompleta exacto, evita typos) y **recompensa**. La lista
+  muestra POI + recompensa. Publicar una oferta = misión con estado `'oferta'`.
+- **UI jugador** (`components/lugar/TablonSection.tsx`, solo si
+  `poi.services.tablon`): lista las quests con `poi_name === poi.name` y
+  `status === 'oferta'` (vienen de `useChronicle`, ya realtime) → botón
+  **«Aceptar encargo»**. Se retiró la última tarjeta placeholder de
+  `ServiceSections.tsx`, que se queda sin cards y **se borra** (ya no se importa
+  en `/lugar`).
+- **Endpoint `app/api/aceptar-encargo/route.ts`** (`service_role`, patrón de
+  `/api/descanso`): la escritura en `quests` es DM-only por RLS, así que el
+  jugador acepta por servidor. Valida que sigue en `'oferta'` (anti-abuso: no
+  re-aceptar), pasa a `'activa'` y **appendea al body una nota de quién la
+  aceptó** (nombre del personaje activo) — cumple «con nota de quién lo aceptó»
+  sin columna nueva. Cliente en `lib/encargo.ts` (espejo de `lib/descanso.ts`).
+- **`/cronica` no se ensucia**: `CronicaView` ya filtra `status === 'activa'` /
+  `completada|fallida`, así que `'oferta'` cae fuera de ambas listas (solo se le
+  añadió el badge por completitud del `Record`). Aceptar → aparece como activa.
+- **Diferido**: recompensa **mecánica** (oro/XP automáticos al completar; hoy
+  `reward` es descriptivo, el DM la entrega a mano), caducidad/límite de ofertas,
+  nota automática en el diario más allá del append al body.
+- Verificado: `tsc --noEmit` + `next build` limpios (ruta `/api/aceptar-encargo`
+  y `/lugar` presentes). **Sin sesión en dev**: no probado en vivo. **Prueba del
+  usuario** (tras `schema_v17.sql`): en el POI donde esté el grupo, marcar
+  `tablón` en el POI, publicar una oferta con ese POI desde Panel DM › Crónica,
+  verla en `/lugar`, Aceptar, y que pase a activa en `/cronica` con la nota.
 
 ## RESUELTO (2026-07-17): Fase E — NPCs por ubicación 🗣️
 Rama `fase-e-npcs`. Spec en
