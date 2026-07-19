@@ -191,8 +191,9 @@ usuario**) · `schema_v12.sql` (journal_entries, quests, npcs_met,
 app_config.campaign_date — **PENDIENTE de ejecutar por el usuario**) ·
 `schema_v13.sql` (**stat_rolls** — Fase K: tirada única de aptitudes,
 inmutable por PK + sin policy de update; solo el DM borra = resetear — **ya
-ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** —
-**PENDIENTE de ejecutar por el usuario**).
+ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** — ya ejecutada) ·
+`schema_v15.sql` (**tiendas**: shops/shop_items/shop_log — **PENDIENTE de
+ejecutar por el usuario**).
 
 > ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
 > columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
@@ -223,6 +224,40 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-17): Fase C — tiendas con IA 🛒
+Rama `fase-c-tiendas`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-17-fase-c-tiendas*`. Vive en `/lugar`
+(Fase B). Ejecutado inline.
+
+- **Migración `schema_v15.sql`** (la guía la llamaba v13, ya usada): tablas
+  `shops` (poi_name, name, kind, npc_prompt, greeting), `shop_items` (shop_id,
+  name, price, stock nullable=∞, notes), `shop_log` (compra/venta, user_id
+  `default auth.uid()`). RLS: lectura autenticados; shops/items **crea/borra**
+  DM; **update de shop_items autenticados** (el jugador decrementa stock al
+  comprar — confianza de mesa); shop_log insert propio. Realtime en shop_items y
+  shop_log. **PENDIENTE de ejecutar por el usuario.**
+- **Compra/venta contra la ficha real** (`lib/shopTx.ts`): comprar = resta oro +
+  añade item (`mergeItem`) + decrementa stock + fila en `shop_log`; vender =
+  **mitad** del precio de catálogo (solo objetos que la tienda tiene por nombre).
+  Persiste con `saveCharacter` (sesión del jugador, RLS de propietario).
+  Validación en cliente (oro/stock), errores en español.
+- **Hook** `lib/useShops.ts` (carga por POI + realtime + CRUD del DM +
+  `seedCatalog`). Plantillas `data/shopTemplates.ts` (herrería/alquimista/general,
+  precios PHB).
+- **Editor DM** (`app/dm/TiendasPanel.tsx`, pestaña **«Tiendas»**): selector de
+  POI, crear/editar/borrar tienda, catálogo CRUD, botón **«Semilla {kind}»**.
+- **`/lugar`** (`components/lugar/ShopSection.tsx`): lista tiendas del POI →
+  catálogo (Comprar), Vender, y **chat del tendero IA** (`narrar` con persona =
+  prompt + catálogo). Muestra el oro del jugador. La tarjeta placeholder «Tienda»
+  de `ServiceSections` se retiró (ahora es real); posada/NPCs/tablón siguen
+  placeholder.
+- **Diferido (C2/Fase D)**: **regateo** (tirada de Persuasión con dados 3D +
+  descuento por tramos + una vez por descanso) — depende del control de descansos.
+- Verificado: `tsc --noEmit` + `next build` limpios en cada commit. **Sin sesión
+  en dev**: no probado en vivo. **Prueba del usuario** (tras `schema_v15.sql`):
+  crear tienda + semilla (DM), comprar/vender desde `/lugar` con un jugador y ver
+  oro/inventario/stock cambiar, y el chat del tendero.
 
 ## RESUELTO (2026-07-17): Fase B — modo ubicación "Estás en…" 📍
 Rama `fase-b-modo-ubicacion`. Spec/plan en
