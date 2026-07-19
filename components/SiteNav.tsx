@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import Emblem from "@/components/Emblem";
 import ClockWidget from "@/components/ClockWidget";
+import PartyLocationWidget from "@/components/PartyLocationWidget";
 import { createClient } from "@/lib/supabase/client";
 import type { Role } from "@/lib/auth";
 
@@ -58,6 +59,7 @@ export default function SiteNav({ role, username }: { role: Role; username: stri
         </ul>
 
         <div className="hidden md:flex items-center gap-3 shrink-0">
+          <PartyLocationWidget />
           <ClockWidget compact />
           <span className="font-ui text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ color: role === "dm" ? "var(--color-bronze-bright)" : "var(--color-arcane)", border: `1px solid ${role === "dm" ? "var(--color-bronze)" : "var(--color-arcane)"}55` }}>
             <i className={`fas ${role === "dm" ? "fa-crown" : "fa-user"} mr-1`} />{username}
@@ -83,7 +85,8 @@ export default function SiteNav({ role, username }: { role: Role; username: stri
               Salir <i className="fas fa-right-from-bracket ml-1" />
             </button>
           </div>
-          <div className="mb-2 px-1">
+          <div className="mb-2 px-1 flex items-center gap-2">
+            <PartyLocationWidget />
             <ClockWidget compact />
           </div>
           <ul className="flex flex-col gap-1">
