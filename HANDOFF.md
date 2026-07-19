@@ -195,9 +195,10 @@ ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** — ya ej
 `schema_v15.sql` (**tiendas**: shops/shop_items/shop_log — ya ejecutada) ·
 `schema_v16.sql` (**PNJs**: location_npcs — ya ejecutada) · `schema_v17.sql`
 (**tablón**, Fase F: quests gana el estado `'oferta'` + columnas `poi_name`/
-`reward` — **PENDIENTE de ejecutar por el usuario**). El bucket de Storage
+`reward` — **PENDIENTE de ejecutar**) · `schema_v18.sql` (**memoria de NPC**,
+Fase M: tabla `npc_memories` — **PENDIENTE de ejecutar**). El bucket de Storage
 `assets` (`storage-assets.sql`, Fase H) también ejecutado. **Todo al día a
-2026-07-17 salvo `schema_v17.sql` (Fase F, 2026-07-19).**
+2026-07-17 salvo `schema_v17.sql` y `schema_v18.sql` (2026-07-19).**
 
 > ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
 > columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
@@ -261,6 +262,31 @@ Alcance acotado a la pieza autocontenida; «saber del mundo por pericia» y
   clima en `/lugar` y el icono en el nav; que sea el mismo dentro del día de
   juego y cambie al avanzar el reloj a otro día; que difiera por región (una de
   montaña vs. la costa).
+
+## RESUELTO (2026-07-19): Fase M (partes 2 y 3) — documentos + memoria 🤖
+Rama `fase-m-completa`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-19-fase-m-completar*`. **Completa la
+Fase M** (con la parte 1 de más abajo). Migración `schema_v18` (memoria).
+
+- **Documentos in-game** (sin migración): `Item.doc?: {titulo,texto,imagen?}` en
+  el jsonb de `items` (`lib/character.ts`). El DM adjunta un documento a una
+  entrada del **Baúl** (`BaulPanel`, sección plegable + botón «✨ IA» →
+  `generarDocumento`) y lo entrega; `/api/dm/character` acepta `doc` en
+  `addItems` y **no fusiona** documentos por nombre (cada carta es única). El
+  jugador lo abre con **«Leer»** → `DocViewer` (modal pergamino) en
+  `CharacterSheet`, también en la hoja de solo-lectura.
+- **Memoria de NPC** (`schema_v18`): tabla `npc_memories (npc_ref, user_id,
+  summary, updated_at)`, PK compuesta, RLS (jugador la suya, DM todas), realtime.
+  `lib/useNpcMemory.ts`. `NpcChat` gana `memoryRef` (`npc:<id>`): carga el
+  resumen del jugador y lo **inyecta al system prompt**; al cerrar el chat con
+  conversación, la IA lo **resume** (integrando el previo) y lo persiste
+  (fire-and-forget en el cleanup del desmontaje). `NpcSection` lo pasa. El DM
+  lee/edita/olvida las memorias en el bloque «Memorias» de `NpcsPanel`. El
+  tendero (`ShopSection`) aún no lleva memoria (diferido si hace falta).
+- Verificado: `tsc --noEmit` + `next build` limpios. **Sin sesión ni túnel en
+  dev**: no probado en vivo. **Prueba del usuario** (tras `schema_v18.sql`, con
+  Ollama): adjuntar un documento en el Baúl y entregarlo → el jugador lo lee;
+  hablar con un PNJ, cerrar, volver → debe recordar; el DM ve la memoria.
 
 ## RESUELTO (2026-07-19): Fase M (parte 1) — generadores IA del DM 🤖
 Rama `fase-m-generadores-ia`. Spec/plan en
