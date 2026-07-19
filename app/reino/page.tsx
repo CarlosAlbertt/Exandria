@@ -5,6 +5,7 @@ import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS, type Deity } from "@/data/p
 import { CALENDAR, SEASONS, HOLIDAYS, MOONS, PLANES, WORLD_INTRO } from "@/data/cosmology";
 import { WILDEMOUNT_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "@/data/wildemount";
 import ReinoRegions from "@/components/ReinoRegions";
+import SaberSection from "@/components/SaberSection";
 
 export const metadata: Metadata = {
   title: "El Mundo",
@@ -54,6 +55,8 @@ export default function ReinoPage() {
         <h1 className="font-display text-4xl md:text-5xl font-extrabold gold-text">El Mundo de Exandria</h1>
         <p className="prose-lore lead max-w-2xl mx-auto mt-5">{WORLD_INTRO}</p>
       </header>
+
+      <SaberSection />
 
       {/* HISTORIA */}
       <section className="mb-20">
