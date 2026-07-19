@@ -10,6 +10,7 @@ import {
 } from "@/lib/useChronicle";
 import { REGIONS } from "@/data/taldorei";
 import { useAtlas } from "@/lib/useAtlas";
+import { generarEncargo } from "@/lib/generar";
 
 const QUEST_LABEL: Record<Quest["status"], string> = {
   oferta: "Oferta", activa: "En curso", completada: "Completada", fallida: "Fallida", oculta: "Oculta",
@@ -183,6 +184,16 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
     if (error) setErr(error); else reset();
   }
 
+  // Genera un encargo con IA y rellena el form (el DM ajusta estado/POI y guarda).
+  async function generate() {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    const r = await generarEncargo(form.title, form.poi_name);
+    if (r.ok) setForm((f) => ({ ...f, title: r.data.title, body: r.data.body, reward: r.data.reward, status: f.status === "activa" ? "oferta" : f.status }));
+    else setErr(r.error);
+    setBusy(false);
+  }
+
   async function remove(id: number) {
     if (!confirm("¿Borrar esta misión?")) return;
     const { error } = await deleteQuest(id);
@@ -235,6 +246,9 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
         <div className="flex gap-2 flex-wrap">
           <button className="btn-gold !py-2 !px-4 text-[12px]" onClick={save} disabled={busy || !form.title.trim()}>
             <i className="fas fa-floppy-disk mr-1.5" />{editing != null ? "Guardar cambios" : "Añadir misión"}
+          </button>
+          <button className="btn-ghost !py-2 !px-4 text-[12px]" onClick={generate} disabled={busy} title="Genera un encargo con IA y rellena el formulario">
+            <i className={`fas ${busy ? "fa-spinner fa-spin" : "fa-wand-magic-sparkles"} mr-1.5`} />Generar con IA
           </button>
           {editing != null && <button className="btn-ghost !py-2 !px-4 text-[12px]" onClick={reset}><i className="fas fa-xmark mr-1.5" />Cancelar</button>}
         </div>
