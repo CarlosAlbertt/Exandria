@@ -225,6 +225,30 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-17): Fase D — posada, descansos que mueven el reloj 🛏️
+Rama `fase-d-posada`. Spec en
+`docs/superpowers/specs/2026-07-17-fase-d-posada-design.md`. Vive en `/lugar`.
+**Sin migración** (usa `app_config` + `characters`).
+
+- **Endpoint `app/api/descanso/route.ts`** (`service_role`, como
+  `/api/dm/character`): el descanso del jugador necesita escribir el reloj
+  (`app_config.campaign_clock`, RLS DM-only), así que va por servidor. Jugador
+  autenticado → cobra el oro de su ficha activa + avanza el reloj (**+1 h corto**
+  / **+8 h largo**). **Anti-abuso**: ≥20 h de juego entre descansos largos
+  (`app_config.last_long_rest`).
+- **Precios FIJOS** (`lib/descanso.ts`): corto 0, cama común 5 po, habitación
+  20 po. *Configurable por POI → diferido* (no se tocó el tipo `services.posada`,
+  hoy booleano).
+- **UI** `components/lugar/PosadaSection.tsx` (solo si `poi.services.posada`):
+  botón corto; largo con selector común/habitación + confirmación; muestra y
+  actualiza el oro. Se retiró la tarjeta placeholder «Posada» de `ServiceSections`.
+- **Diferido**: nota automática en la Crónica ("pasó la noche en…"), reset del
+  flag de regateo (Fase C2), restaurar PG actuales (no se trackean aún).
+- Verificado: `tsc --noEmit` + `next build` limpios. **Sin sesión en dev**: no
+  probado en vivo. **Prueba del usuario**: en un POI con posada, descanso corto
+  (avanza 1 h), largo (cobra, avanza 8 h, bloquea el segundo seguido). Necesita
+  `SUPABASE_SERVICE_ROLE_KEY` en Vercel (ya está).
+
 ## RESUELTO (2026-07-17): Fase C — tiendas con IA 🛒
 Rama `fase-c-tiendas`. Spec/plan en
 `docs/superpowers/{specs,plans}/2026-07-17-fase-c-tiendas*`. Vive en `/lugar`
