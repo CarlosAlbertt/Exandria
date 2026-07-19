@@ -5,6 +5,7 @@ import { useTownMaps } from "@/lib/useTownMaps";
 import { POI_ICON, POI_COLOR } from "@/data/pois";
 import ClockWidget from "@/components/ClockWidget";
 import ServiceSections from "@/components/lugar/ServiceSections";
+import ShopSection from "@/components/lugar/ShopSection";
 
 export default function LugarPage() {
   const { location, ready } = usePartyLocation();
@@ -46,6 +47,7 @@ export default function LugarPage() {
         <img src={townImg} alt={poi.name} loading="lazy" className="w-full rounded-xl border border-[var(--color-line)] mb-2" />
       )}
 
+      <ShopSection poiName={poi.name} />
       <ServiceSections services={poi.services} />
     </main>
   );
