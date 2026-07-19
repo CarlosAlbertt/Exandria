@@ -64,7 +64,7 @@ create policy "items: el DM borra" on public.shop_items
 create table if not exists public.shop_log (
   id bigint generated always as identity primary key,
   shop_id bigint references public.shops(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   item text not null,
   price int not null default 0,
   kind text not null default 'compra' check (kind in ('compra', 'venta')),
