@@ -2,6 +2,9 @@
 import { usePartyLocation } from "@/lib/usePartyLocation";
 import { useAtlas, regionsOf, poisOf } from "@/lib/useAtlas";
 import { useTownMaps } from "@/lib/useTownMaps";
+import { useGameClock } from "@/lib/useGameClock";
+import { momentFromGameMin } from "@/lib/gameClock";
+import { weatherFor, ambientLine } from "@/lib/weather";
 import { POI_ICON, POI_COLOR } from "@/data/pois";
 import ClockWidget from "@/components/ClockWidget";
 import ShopSection from "@/components/lugar/ShopSection";
@@ -13,6 +16,7 @@ export default function LugarPage() {
   const { location, ready } = usePartyLocation();
   const { atlas } = useAtlas();
   const { townMap } = useTownMaps();
+  const { nowGameMin } = useGameClock();
 
   if (!ready) {
     return <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center"><p className="pulse font-ui text-[13px]" style={{ color: "var(--color-muted)" }}>Cargando…</p></main>;
@@ -36,6 +40,9 @@ export default function LugarPage() {
   }
 
   const townImg = townMap(poi.name);
+  const moment = momentFromGameMin(nowGameMin);
+  const weather = weatherFor(location.continent, location.regionSlug, region?.name, moment);
+  const ambient = ambientLine(weather, moment.season);
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
@@ -43,15 +50,22 @@ export default function LugarPage() {
       <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text mb-2">
         <i className={`fas ${POI_ICON[poi.type]} mr-3`} style={{ color: POI_COLOR[poi.type] }} />{poi.name}
       </h1>
-      <p className="font-body text-[15px] leading-relaxed mb-5" style={{ color: "var(--color-warm)" }}>{poi.blurb}</p>
+      <p className="font-body text-[15px] leading-relaxed mb-4" style={{ color: "var(--color-warm)" }}>{poi.blurb}</p>
+
+      <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5 font-ui text-[12px]"
+        style={{ color: "var(--color-warm)", border: "1px solid var(--color-line)", background: "var(--color-night)" }}>
+        <i className={`fas ${weather.icon}`} style={{ color: "var(--color-bronze)" }} />
+        <span className="font-semibold">{weather.condition}</span>
+        <span style={{ color: "var(--color-dim)" }}>· {weather.temp} · {moment.season}</span>
+      </div>
 
       {townImg && (
         <img src={townImg} alt={poi.name} loading="lazy" className="w-full rounded-xl border border-[var(--color-line)] mb-2" />
       )}
 
-      <ShopSection poiName={poi.name} />
+      <ShopSection poiName={poi.name} ambient={ambient} />
       <PosadaSection posada={!!poi.services?.posada} />
-      <NpcSection poiName={poi.name} />
+      <NpcSection poiName={poi.name} ambient={ambient} />
       {poi.services?.tablon && <TablonSection poiName={poi.name} />}
     </main>
   );

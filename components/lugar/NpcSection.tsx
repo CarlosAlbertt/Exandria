@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNpcs, type LocationNpc } from "@/lib/useNpcs";
 import NpcChat from "@/components/lugar/NpcChat";
 
-export default function NpcSection({ poiName }: { poiName: string }) {
+export default function NpcSection({ poiName, ambient }: { poiName: string; ambient?: string }) {
   const { npcs, ready } = useNpcs(poiName);
   const [openId, setOpenId] = useState<number | null>(null);
   if (!ready || npcs.length === 0) return null;
@@ -30,13 +30,13 @@ export default function NpcSection({ poiName }: { poiName: string }) {
             <p className="font-display font-extrabold text-[17px] gold-text">{open.name}{open.role ? <span className="font-ui text-[12px] ml-2" style={{ color: "var(--color-dim)" }}>· {open.role}</span> : null}</p>
             <button onClick={() => setOpenId(null)} className="btn-ghost !py-1 !px-2 text-[12px]"><i className="fas fa-arrow-left mr-1" />Volver</button>
           </div>
-          <NpcChat persona={personaFor(open)} placeholder={`Habla con ${open.name}…`} empty={`Salúdale o pregúntale por el lugar.`} />
+          <NpcChat persona={personaFor(open, ambient)} placeholder={`Habla con ${open.name}…`} empty={`Salúdale o pregúntale por el lugar.`} />
         </div>
       )}
     </section>
   );
 }
 
-function personaFor(n: LocationNpc): string {
-  return `${n.prompt || `Eres ${n.name}${n.role ? `, ${n.role}` : ""}, un personaje del mundo de Exandria.`}\nResponde SIEMPRE en personaje, con brevedad, sin romper la ficción ni revelar que eres una IA.`;
+function personaFor(n: LocationNpc, ambient?: string): string {
+  return `${n.prompt || `Eres ${n.name}${n.role ? `, ${n.role}` : ""}, un personaje del mundo de Exandria.`}\nResponde SIEMPRE en personaje, con brevedad, sin romper la ficción ni revelar que eres una IA.${ambient ? `\n${ambient}` : ""}`;
 }
