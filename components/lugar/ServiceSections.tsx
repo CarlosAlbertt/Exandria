@@ -5,7 +5,6 @@ import type { Poi } from "@/data/pois";
 export default function ServiceSections({ services }: { services?: Poi["services"] }) {
   if (!services) return null;
   const cards: { show: boolean; icon: string; title: string; fase: string; detail: string }[] = [
-    { show: !!services.posada, icon: "fa-bed", title: "Posada", fase: "Fase D", detail: "Descanso disponible" },
     { show: !!services.npcs?.length, icon: "fa-comments", title: "Gente del lugar", fase: "Fase E", detail: `${services.npcs?.length ?? 0} PNJ` },
     { show: !!services.tablon, icon: "fa-scroll", title: "Tablón de misiones", fase: "Fase F", detail: "Encargos disponibles" },
   ].filter((c) => c.show);

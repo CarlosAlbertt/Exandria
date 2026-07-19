@@ -6,6 +6,7 @@ import { POI_ICON, POI_COLOR } from "@/data/pois";
 import ClockWidget from "@/components/ClockWidget";
 import ServiceSections from "@/components/lugar/ServiceSections";
 import ShopSection from "@/components/lugar/ShopSection";
+import PosadaSection from "@/components/lugar/PosadaSection";
 
 export default function LugarPage() {
   const { location, ready } = usePartyLocation();
@@ -48,6 +49,7 @@ export default function LugarPage() {
       )}
 
       <ShopSection poiName={poi.name} />
+      <PosadaSection posada={!!poi.services?.posada} />
       <ServiceSections services={poi.services} />
     </main>
   );
