@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useChronicle, type Quest } from "@/lib/useChronicle";
+import { useClues } from "@/lib/useClues";
 import { REGIONS } from "@/data/taldorei";
 import { holidayFor } from "@/lib/gameDate";
 import { useGameClock } from "@/lib/useGameClock";
@@ -19,8 +20,10 @@ const regionName = (slug: string | null) => (slug ? REGIONS.find((r) => r.slug =
 
 export default function CronicaView() {
   const { entries, quests, npcs } = useChronicle();
+  const { clues } = useClues();
   const { nowGameMin, ready } = useGameClock();
   const [showClosed, setShowClosed] = useState(false);
+  const discovered = clues.filter((c) => c.discovered);
 
   const moment = momentFromGameMin(nowGameMin);
   const holiday = moment.holiday ? holidayFor(moment.dateStr) : null;
@@ -113,6 +116,28 @@ export default function CronicaView() {
           </div>
         )}
       </section>
+
+      {/* PISTAS */}
+      {discovered.length > 0 && (
+        <section className="mb-20">
+          <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
+            <i className="fas fa-magnifying-glass text-[var(--color-bronze)]" /> Pistas
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {discovered.map((c) => (
+              <div key={c.id} className="panel p-5">
+                <p className="prose-lore !text-[15px] !mb-0">{c.texto}</p>
+                {(c.mision || c.lugar) && (
+                  <p className="font-ui text-[11px] mt-2 flex items-center gap-2 flex-wrap" style={{ color: "var(--color-dim)" }}>
+                    {c.mision && <span><i className="fas fa-map mr-1" />{c.mision}</span>}
+                    {c.lugar && <span><i className="fas fa-location-dot mr-1" />{c.lugar}</span>}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* PNJ */}
       <section>
