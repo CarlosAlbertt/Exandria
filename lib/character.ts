@@ -6,7 +6,10 @@ import type { AbilityKey } from "@/data/rules";
 import type { Assign, StatMethod } from "@/lib/statRolls";
 import type { CharSlot } from "@/lib/archive";
 
-export type Item = { id: string; name: string; qty: number; notes?: string };
+// Documento in-game legible (Fase M): carta, contrato, página de diario, mapa…
+// Vive dentro del item (jsonb), sin migración. El jugador lo abre en un visor.
+export type ItemDoc = { titulo: string; texto: string; imagen?: string };
+export type Item = { id: string; name: string; qty: number; notes?: string; doc?: ItemDoc };
 
 export type Asi = Record<string, Partial<Record<AbilityKey, number>>>;
 

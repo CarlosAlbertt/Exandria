@@ -67,6 +67,20 @@ export function generarTienda(pista: string, kind: string, poi: string): Promise
   return generarJSON<TiendaGen>(persona, prompt);
 }
 
+/* ---------------------------- DOCUMENTO ---------------------------- */
+export type DocumentoGen = { titulo: string; texto: string };
+
+export function generarDocumento(pista: string): Promise<GenResult<DocumentoGen>> {
+  const persona =
+    "Eres un asistente de dirección de juego que redacta documentos in-game que los " +
+    "personajes encuentran y leen: cartas, contratos, páginas de diario, órdenes, notas de " +
+    'rescate, panfletos. Devuelve JSON con las claves: "titulo" (breve) y "texto" (el ' +
+    "contenido del documento, redactado EN PRIMERA PERSONA o como el propio documento, con " +
+    "voz de época; varias frases o párrafos cortos, sin meta-comentarios).";
+  const prompt = `Escribe un documento in-game. ${pistaLine(pista, "Invéntalo de cero, con algún gancho jugable.")}`;
+  return generarJSON<DocumentoGen>(persona, prompt);
+}
+
 /* ----------------------------- ENCARGO ----------------------------- */
 export type EncargoGen = { title: string; body: string; reward: string };
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParty } from "@/lib/character";
 import { useDmStash, saveStash, type StashType, type StashEntry } from "@/lib/useDmStash";
+import { generarDocumento } from "@/lib/generar";
 
 const TYPES: { id: StashType; label: string; icon: string }[] = [
   { id: "magico", label: "Mágico", icon: "fa-wand-sparkles" },
@@ -25,6 +26,24 @@ export default function BaulPanel() {
   const [qty, setQty] = useState(1);
   const [notes, setNotes] = useState("");
 
+  // Documento in-game opcional adjunto a la entrada (Fase M).
+  const [docOpen, setDocOpen] = useState(false);
+  const [docTitulo, setDocTitulo] = useState("");
+  const [docTexto, setDocTexto] = useState("");
+  const [docImagen, setDocImagen] = useState("");
+  const [genBusy, setGenBusy] = useState(false);
+  const [genErr, setGenErr] = useState<string | null>(null);
+  const [genOffline, setGenOffline] = useState(false);
+
+  async function genDoc() {
+    if (genBusy) return;
+    setGenBusy(true); setGenErr(null);
+    const r = await generarDocumento(docTitulo || name);
+    if (r.ok) { setDocTitulo(r.data.titulo); setDocTexto(r.data.texto); }
+    else { setGenErr(r.error); setGenOffline(!!r.offline); }
+    setGenBusy(false);
+  }
+
   // Estado por entrada: jugadores seleccionados, "quitar al entregar" y flag de ocupado.
   const [picks, setPicks] = useState<Record<string, string[]>>({});
   const [removeOnDeliver, setRemoveOnDeliver] = useState<Record<string, boolean>>({});
@@ -33,15 +52,20 @@ export default function BaulPanel() {
 
   function add() {
     if (!name.trim()) return;
+    const doc = docTitulo.trim() && docTexto.trim()
+      ? { titulo: docTitulo.trim(), texto: docTexto.trim(), imagen: docImagen.trim() || undefined }
+      : undefined;
     const entry: StashEntry = {
       id: crypto.randomUUID(),
       name: name.trim(),
       type,
       qty: Math.max(1, qty),
       notes: notes.trim() || undefined,
+      doc,
     };
     void saveStash([...stash, entry]);
     setName(""); setType("normal"); setQty(1); setNotes("");
+    setDocOpen(false); setDocTitulo(""); setDocTexto(""); setDocImagen(""); setGenErr(null);
   }
 
   function togglePick(entryId: string, userId: string) {
@@ -60,7 +84,7 @@ export default function BaulPanel() {
       for (const userId of targets) {
         const patch = entry.type === "oro"
           ? { addGold: entry.qty }
-          : { addItems: [{ name: entry.name, qty: entry.qty, notes: entry.notes }] };
+          : { addItems: [{ name: entry.name, qty: entry.qty, notes: entry.notes, doc: entry.doc }] };
         const res = await fetch("/api/dm/character", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -125,6 +149,30 @@ export default function BaulPanel() {
         <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalles, procedencia, requisitos de sintonía…"
           className={`${inputCls} mb-4`} style={{ color: "var(--color-warm)" }} />
 
+        {/* Documento in-game (opcional): carta, contrato, página de diario… */}
+        <div className="mb-4">
+          <button type="button" onClick={() => setDocOpen((o) => !o)} className="font-ui text-[13px] font-semibold flex items-center gap-2" style={{ color: "var(--color-bronze-bright)" }}>
+            <i className={`fas ${docOpen ? "fa-chevron-down" : "fa-chevron-right"}`} />
+            <i className="fas fa-scroll" />Documento in-game {docTitulo.trim() && docTexto.trim() ? "· adjunto" : "(opcional)"}
+          </button>
+          {docOpen && (
+            <div className="panel-raised p-4 mt-2 space-y-2">
+              <div className="flex gap-2">
+                <input value={docTitulo} onChange={(e) => setDocTitulo(e.target.value)} placeholder="Título del documento"
+                  className={inputCls} style={{ color: "var(--color-warm)", flex: "1 1 auto" }} />
+                <button type="button" onClick={genDoc} disabled={genBusy || genOffline} title="Generar el texto con la IA (usa el título/nombre como pista)"
+                  className="btn-ghost !py-2 !px-3 text-[13px] disabled:opacity-40 shrink-0"><i className={`fas ${genBusy ? "fa-spinner fa-spin" : "fa-wand-magic-sparkles"} mr-1.5`} />IA</button>
+              </div>
+              <textarea value={docTexto} onChange={(e) => setDocTexto(e.target.value)} rows={5} placeholder="Texto del documento (lo que el jugador leerá)…"
+                className={`${inputCls} resize-none`} style={{ color: "var(--color-warm)" }} />
+              <input value={docImagen} onChange={(e) => setDocImagen(e.target.value)} placeholder="URL de imagen (opcional)"
+                className={inputCls} style={{ color: "var(--color-warm)" }} />
+              {genErr && <p className="text-[12px] italic" style={{ color: "var(--color-ember)" }}>{genErr}</p>}
+              <p className="text-[11px] italic" style={{ color: "var(--color-dim)" }}>Se adjunta al objeto; el jugador lo abrirá desde su inventario.</p>
+            </div>
+          )}
+        </div>
+
         <button className="btn-gold w-full" onClick={add} disabled={!name.trim()}>
           <i className="fas fa-plus mr-2" />Añadir al baúl
         </button>
@@ -152,6 +200,7 @@ export default function BaulPanel() {
                       </span>
                       <h4 className="font-display text-lg font-bold" style={{ color: "var(--color-parch)" }}>{entry.name}</h4>
                       <span className="font-ui text-[12px] font-bold px-2 py-0.5 rounded-full" style={{ color: "var(--color-primitivo)", border: "1px solid var(--color-primitivo)55" }}>×{entry.qty}</span>
+                      {entry.doc && <span className="font-ui text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: "var(--color-arcane)", border: "1px solid var(--color-arcane)55" }} title={entry.doc.titulo}><i className="fas fa-scroll mr-1" />documento</span>}
                     </div>
                     {entry.notes && <p className="font-body text-[13px] mt-1 italic" style={{ color: "var(--color-muted)" }}>{entry.notes}</p>}
                   </div>

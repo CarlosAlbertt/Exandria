@@ -3,7 +3,8 @@ import { levelFromXp } from "@/data/leveling";
 
 export const runtime = "nodejs";
 
-type Item = { id: string; name: string; qty: number; notes?: string };
+type ItemDoc = { titulo: string; texto: string; imagen?: string };
+type Item = { id: string; name: string; qty: number; notes?: string; doc?: ItemDoc };
 
 // El DM edita/entrega en la hoja de cualquier jugador. Usa service_role en el
 // servidor para saltar la RLS (que solo permite escribir la fila propia).
@@ -39,9 +40,11 @@ export async function POST(req: Request) {
     if (Array.isArray(addItems)) {
       const items: Item[] = Array.isArray(row?.items) ? [...(row!.items as Item[])] : [];
       for (const it of addItems) {
-        const ex = items.find((x) => x.name === it.name);
+        // Un documento es único (una carta concreta): nunca se fusiona por
+        // nombre, siempre entra como objeto propio. El resto sí apila.
+        const ex = it.doc ? undefined : items.find((x) => x.name === it.name && !x.doc);
         if (ex) ex.qty += it.qty ?? 1;
-        else items.push({ id: crypto.randomUUID(), name: it.name, qty: it.qty ?? 1, notes: it.notes });
+        else items.push({ id: crypto.randomUUID(), name: it.name, qty: it.qty ?? 1, notes: it.notes, doc: it.doc });
       }
       update.items = items;
     }
