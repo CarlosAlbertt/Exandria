@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { useAtlas } from "@/lib/useAtlas";
 import { useNpcs, createNpc, updateNpc, deleteNpc, type LocationNpc } from "@/lib/useNpcs";
+import { generarNpc } from "@/lib/generar";
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
 
@@ -17,12 +18,30 @@ export default function NpcsPanel() {
   const { npcs, ready, reload } = useNpcs(poi || null);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
 
   async function onCreate() {
     if (!poi || !name.trim()) return;
     await createNpc(poi, name.trim(), role.trim());
     setName(""); setRole("");
     await reload();
+  }
+
+  async function onGenerate() {
+    if (!poi || busy) return;
+    setBusy(true); setMsg(null);
+    const r = await generarNpc(name, poi);
+    if (r.ok) {
+      const id = await createNpc(poi, r.data.name, r.data.role);
+      if (id != null) await updateNpc(id, { prompt: r.data.prompt });
+      setName(""); setRole("");
+      await reload();
+    } else {
+      setMsg(r.error); setOffline(!!r.offline);
+    }
+    setBusy(false);
   }
 
   return (
@@ -40,8 +59,10 @@ export default function NpcsPanel() {
           <div className="panel-raised p-3 flex flex-wrap items-end gap-2">
             <div className="flex-1 min-w-[140px]"><p className="eyebrow !text-[9px] mb-1">Nuevo PNJ en {poi}</p><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" className={inputCls} style={{ color: "var(--color-warm)" }} /></div>
             <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Rol (tabernero…)" className={inputCls} style={{ color: "var(--color-warm)", flex: "1 1 140px" }} />
-            <button onClick={onCreate} disabled={!name.trim()} className="btn-gold !py-1.5 !px-3 text-[13px] disabled:opacity-40"><i className="fas fa-plus mr-1.5" />Crear</button>
+            <button onClick={onGenerate} disabled={busy || offline} title="Genera un PNJ completo con la IA (usa el nombre como pista, opcional)" className="btn-ghost !py-1.5 !px-3 text-[13px] disabled:opacity-40"><i className={`fas ${busy ? "fa-spinner fa-spin" : "fa-wand-magic-sparkles"} mr-1.5`} />IA</button>
+            <button onClick={onCreate} disabled={!name.trim() || busy} className="btn-gold !py-1.5 !px-3 text-[13px] disabled:opacity-40"><i className="fas fa-plus mr-1.5" />Crear</button>
           </div>
+          {msg && <p className="text-[12px] italic" style={{ color: "var(--color-ember)" }}>{msg}</p>}
           {!ready ? <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>Cargando…</p>
             : npcs.length === 0 ? <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>Sin PNJs en {poi}.</p>
             : npcs.map((n) => <NpcEditor key={n.id} npc={n} onChange={reload} />)}
