@@ -192,8 +192,9 @@ app_config.campaign_date — **PENDIENTE de ejecutar por el usuario**) ·
 `schema_v13.sql` (**stat_rolls** — Fase K: tirada única de aptitudes,
 inmutable por PK + sin policy de update; solo el DM borra = resetear — **ya
 ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** — ya ejecutada) ·
-`schema_v15.sql` (**tiendas**: shops/shop_items/shop_log — **PENDIENTE de
-ejecutar por el usuario**).
+`schema_v15.sql` (**tiendas**: shops/shop_items/shop_log — **PENDIENTE**) ·
+`schema_v16.sql` (**PNJs**: location_npcs — **PENDIENTE de ejecutar por el
+usuario**).
 
 > ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
 > columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
@@ -224,6 +225,22 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-17): Fase E — NPCs por ubicación 🗣️
+Rama `fase-e-npcs`. Spec en
+`docs/superpowers/specs/2026-07-17-fase-e-npcs-design.md`. Vive en `/lugar`.
+
+- **Migración `schema_v16.sql`**: tabla `location_npcs` (poi_name, name, role,
+  prompt, public, portrait). RLS: jugadores ven los `public`, el DM todos;
+  escritura DM. Realtime. **PENDIENTE de ejecutar por el usuario.**
+- **Chat IA reutilizable** `components/lugar/NpcChat.tsx` (`narrar` con persona).
+  `lib/useNpcs.ts` (por POI, realtime, CRUD). `/lugar` › «Gente del lugar»
+  (`NpcSection`): lista NPCs visibles → chat en personaje. Editor DM: pestaña
+  **«PNJs»** (`NpcsPanel`).
+- **Diferido**: auto-insert en `npcs_met` (códice), chat grupal en vivo,
+  contexto de reloj en el prompt.
+- Verificado: `tsc` + `build` limpios. **Prueba del usuario** (tras
+  `schema_v16.sql`): crear un NPC en un POI y hablarle desde `/lugar`.
 
 ## RESUELTO (2026-07-17): Fase D — posada, descansos que mueven el reloj 🛏️
 Rama `fase-d-posada`. Spec en
