@@ -229,6 +229,35 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-19): Fase M (parte 1) — generadores IA del DM 🤖
+Rama `fase-m-generadores-ia`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-19-fase-m-generadores-ia*`. **Sin
+migración.** Alcance acotado a la pieza con superficie hoy (los tres formularios
+DM + `/api/ia` ya existen); documentos in-game y memoria de NPC **diferidos**.
+
+- **`lib/generar.ts`**: `generarJSON<T>(persona, prompt)` llama a `narrar()`
+  (`/api/ia` → Ollama) con un persona que **exige JSON puro en español
+  ambientado en Exandria** y **parsea con tolerancia** (quita vallas ```json,
+  recorta del primer `{` al último `}`). Propaga `offline` (túnel caído) para
+  desactivar los botones. Envoltorios: `generarNpc`→`{name,role,prompt}`,
+  `generarTienda`→`{name,greeting,npc_prompt}`, `generarEncargo`→
+  `{title,body,reward}`. La `pista` es el texto que el DM ya tenga escrito
+  (nombre a medias, «tabernero elfo gruñón»); vacía = la IA inventa de cero.
+- **Botón «✨ IA»** en tres formularios: `NpcsPanel` (crea el PNJ ya formado:
+  `createNpc`+`updateNpc` con el prompt), `TiendasPanel` (crea la tienda +
+  `greeting`/`npc_prompt`; el catálogo sigue en «Semilla»), `CronicaPanel`
+  (**rellena** el form de misiones sin escribir en BD y pone estado `oferta` si
+  estaba en `activa` → encaja con el tablón de la Fase F). Todos con
+  busy/spinner + aviso de error; se desactivan si `offline`.
+- **Diferido**: **documentos in-game** (campo `doc` en items + entrega por Baúl
+  + visor de pergamino — feature propia, M-docs), **memoria de NPC** (tabla
+  `npc_memories`, resumen al cerrar chat + inyección al prompt — **necesita
+  migración**, M-memory), y **catálogo de tienda por IA** (ya hay «Semilla»).
+- Verificado: `tsc --noEmit` + `next build` limpios. **Sin sesión DM ni túnel en
+  dev**: no probado en vivo. **Prueba del usuario** (con Ollama arriba y el túnel
+  fijado): pulsar «✨ IA» en cada formulario y ver que rellena/crea con JSON
+  coherente; con el túnel caído, el botón se desactiva.
+
 ## RESUELTO (2026-07-19): Fase F — tablón de misiones 📜
 Rama `fase-f-tablon`. Spec/plan en
 `docs/superpowers/{specs,plans}/2026-07-19-fase-f-tablon*`. Vive en `/lugar`.
