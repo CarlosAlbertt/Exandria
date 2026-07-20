@@ -141,6 +141,18 @@ export function momentFromGameMin(gameMinAbs: number): GameMoment {
   };
 }
 
+// Fase de Catha para un día ABSOLUTO (días desde el epoch: año*328 + doy-1).
+// Se expone para que el calendario pueda pintar la luna de cada día sin
+// duplicar el ciclo ni construir un GameMoment por celda.
+export function moonPhaseForDay(absDay: number): { name: string; icon: string } {
+  const cathaDay = ((absDay % CATHA_CYCLE_DAYS) + CATHA_CYCLE_DAYS) % CATHA_CYCLE_DAYS;
+  const idx = Math.floor((cathaDay / CATHA_CYCLE_DAYS) * 8) % 8;
+  return { name: MOON_PHASE_NAMES[idx], icon: MOON_PHASE_ICONS[idx] };
+}
+
+// Días del año (para aritmética de calendario fuera de este módulo).
+export const YEAR_DAYS_TOTAL = YEAR_DAYS;
+
 export function gameMinFromMoment(
   year: number,
   monthIndex: number,
