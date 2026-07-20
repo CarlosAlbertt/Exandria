@@ -277,8 +277,28 @@ calendario más animado».
   la roja da mala espina sigue siendo **común** (entrada `lunas-calendario` de
   `loreTiers`); lo que se sabe **de** ellas hay que ganárselo. La **fase lunar**
   del centro del calendario se queda: se ve mirando al cielo.
+- **Calendario ampliado** (rama `calendario-completo`, 2ª pasada a petición del
+  usuario: «me gusta lo nuevo pero no lo veo completo»):
+  - **Cabecera**: fecha larga, día de la semana, **hora** (con icono sol/luna),
+    **estación** + días que le quedan, **fase de Catha** y **cuenta atrás a la
+    próxima festividad** (+ chapa si hoy es fiesta).
+  - **Rueda**: **anillo de estaciones** etiquetado, los 11 meses por sus días
+    reales teñidos por estación (el actual **late** con `<animate>`),
+    festividades en el aro (la de hoy palpita), aguja en el día. **Los meses son
+    clicables.**
+  - **Vista de mes** (nueva): rejilla de semanas de 7 **alineada con el reloj**
+    (offset por día absoluto `año*328 + doy-1`), hoy resaltado, fin de semana
+    teñido, festividades marcadas y listadas debajo, y la **fase de Catha en cada
+    día** — `moonPhaseForDay(absDay)` se **exportó de `lib/gameClock.ts`** para no
+    duplicar el ciclo de 33 días. Botón «Mes actual».
+  - La lista suelta de festividades **sale de `/reino`**: la cubre la vista de mes.
+  - Verificado en navegador: 11 arcos de mes + 4 de estación, **29 celdas** en
+    Horisal y **32** al pulsar Sydenstar (con sus 2 fiestas), **día 1 en la
+    columna de Folsen**, igual que el `weekdayName` del reloj (la aritmética del
+    offset casa con `momentFromGameMin`), 29 lunas, y **cero decimales largos**
+    en el SSR.
 - **Estado final de `/reino`**: intro · historia breve · saber del PJ ·
-  `ReinoRegions` · calendario (rueda + festividades). Nada más.
+  `ReinoRegions` · calendario. Nada más.
 - **Pendiente de decidir**: `ReinoRegions` sigue mostrando las 8 regiones de
   Tal'Dorei con su blurb a todo el mundo (geografía a la vista). Si se quiere
   gatear también, la entrada `reg:<slug>` del saber ya existe.
