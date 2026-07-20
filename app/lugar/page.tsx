@@ -12,6 +12,7 @@ import ShopSection from "@/components/lugar/ShopSection";
 import PosadaSection from "@/components/lugar/PosadaSection";
 import NpcSection from "@/components/lugar/NpcSection";
 import TablonSection from "@/components/lugar/TablonSection";
+import SaberRoll from "@/components/lugar/SaberRoll";
 
 export default function LugarPage() {
   const { location, ready } = usePartyLocation();
@@ -78,6 +79,7 @@ export default function LugarPage() {
       <PosadaSection posada={!!poi.services?.posada} />
       <NpcSection poiName={poi.name} ambient={ambient} />
       {poi.services?.tablon && <TablonSection poiName={poi.name} />}
+      <SaberRoll poiName={poi.name} regionSlug={location.regionSlug} continent={location.continent} />
     </main>
   );
 }

@@ -12,6 +12,8 @@ import { REGIONS } from "@/data/taldorei";
 import { useAtlas } from "@/lib/useAtlas";
 import { generarEncargo } from "@/lib/generar";
 import { useClues } from "@/lib/useClues";
+import { useParty } from "@/lib/character";
+import LorePicker from "@/components/LorePicker";
 
 const QUEST_LABEL: Record<Quest["status"], string> = {
   oferta: "Oferta", activa: "En curso", completada: "Completada", fallida: "Fallida", oculta: "Oculta",
@@ -215,10 +217,11 @@ function DiarioSection({ entries }: { entries: JournalEntry[] }) {
 }
 
 /* ------------------------------ MISIONES ------------------------------ */
-const EMPTY_QUEST = { title: "", body: "", status: "activa" as Quest["status"], poi_name: "", reward: "" };
+const EMPTY_QUEST = { title: "", body: "", status: "activa" as Quest["status"], poi_name: "", reward: "", unlock_lore: [] as string[] };
 
 function MisionesSection({ quests }: { quests: Quest[] }) {
   const { atlas } = useAtlas();
+  const { party } = useParty();
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_QUEST);
   const [busy, setBusy] = useState(false);
@@ -231,7 +234,7 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
 
   function edit(q: Quest) {
     setEditing(q.id);
-    setForm({ title: q.title, body: q.body, status: q.status, poi_name: q.poi_name ?? "", reward: q.reward });
+    setForm({ title: q.title, body: q.body, status: q.status, poi_name: q.poi_name ?? "", reward: q.reward, unlock_lore: q.unlock_lore ?? [] });
     setErr(null);
   }
   function reset() { setEditing(null); setForm(EMPTY_QUEST); }
@@ -243,8 +246,17 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
       ...(editing != null ? { id: editing } : {}),
       title: form.title.trim(), body: form.body, status: form.status,
       poi_name: form.poi_name.trim() || null, reward: form.reward.trim(),
+      unlock_lore: form.unlock_lore,
     };
     const { error } = await saveQuest(patch);
+    if (!error && form.status === "completada" && form.unlock_lore.length > 0) {
+      // Al completarse, la misión enseña lo suyo a TODO el grupo (la escritura
+      // en fichas ajenas va por /api/dm/character, service_role).
+      await Promise.all(party.map((m) => fetch("/api/dm/character", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: m.user_id, patch: { unlockLore: form.unlock_lore } }),
+      })));
+    }
     setBusy(false);
     if (error) setErr(error); else reset();
   }
@@ -308,6 +320,9 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
         </div>
         <textarea value={form.body} onChange={(ev) => setForm((f) => ({ ...f, body: ev.target.value }))} rows={3}
           placeholder="Detalles de la misión…" className={`${inputCls} mb-3 resize-none`} style={{ color: "var(--color-warm)" }} />
+        <div className="mb-3">
+          <LorePicker value={form.unlock_lore} onChange={(ids) => setForm((f) => ({ ...f, unlock_lore: ids }))} label="Qué enseña al completarse" />
+        </div>
         <div className="flex gap-2 flex-wrap">
           <button className="btn-gold !py-2 !px-4 text-[12px]" onClick={save} disabled={busy || !form.title.trim()}>
             <i className="fas fa-floppy-disk mr-1.5" />{editing != null ? "Guardar cambios" : "Añadir misión"}

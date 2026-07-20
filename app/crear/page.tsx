@@ -48,7 +48,8 @@ const backgroundOptions: RailOption[] = BACKGROUNDS.map((g) => ({
 export default function CrearPage() {
   const [b, setB] = useState<Build>({
     name: "", species: null, lineage: null, cls: null, subclass: null,
-    background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0,
+    background: null, base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "",
+    originContinent: null, originRegion: null, deity: null, step: 0,
     statMethod: null, rolled: [], assign: { ...ASSIGN_EMPTY },
   });
   const [loaded, setLoaded] = useState(false);
@@ -127,6 +128,9 @@ export default function CrearPage() {
         bonus: row.bonus && Object.keys(row.bonus).length ? row.bonus : p.bonus,
         skills: Array.isArray(row.skills) ? row.skills : p.skills,
         lore: row.lore ?? p.lore,
+        originContinent: row.origin_continent ?? p.originContinent,
+        originRegion: row.origin_region ?? p.originRegion,
+        deity: row.deity ?? p.deity,
       }));
     });
   }, [loaded, userId]);
@@ -168,10 +172,11 @@ export default function CrearPage() {
       saveCharacter(characterId, {
         name: b.name, species: b.species, lineage: b.lineage, cls: b.cls, subclass: b.subclass,
         background: b.background, base: b.base, bonus: b.bonus, skills: b.skills, lore: b.lore,
+        origin_continent: b.originContinent, origin_region: b.originRegion, deity: b.deity,
       });
     }, 900);
     return () => clearTimeout(t);
-  }, [loaded, userId, characterId, b.name, b.species, b.lineage, b.cls, b.subclass, b.background, b.base, b.bonus, b.skills, b.lore]);
+  }, [loaded, userId, characterId, b.name, b.species, b.lineage, b.cls, b.subclass, b.background, b.base, b.bonus, b.skills, b.lore, b.originContinent, b.originRegion, b.deity]);
 
   const species = b.species ? getSpecies(b.species) : undefined;
   const cls = b.cls ? getClass(b.cls) : undefined;
@@ -212,7 +217,8 @@ export default function CrearPage() {
   function reset() {
     setB((p) => ({
       name: "", species: null, lineage: null, cls: null, subclass: null, background: null,
-      base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "", step: 0,
+      base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS }, skills: [], lore: "",
+      originContinent: null, originRegion: null, deity: null, step: 0,
       statMethod: p.statMethod, rolled: p.rolled, assign: { ...ASSIGN_EMPTY },
     }));
   }
@@ -250,6 +256,7 @@ export default function CrearPage() {
       await saveCharacter(id, {
         name: b.name, species: b.species, lineage: b.lineage, cls: b.cls, subclass: b.subclass,
         background: b.background, base: b.base, bonus: b.bonus, skills: b.skills, lore: b.lore, level: 1,
+        origin_continent: b.originContinent, origin_region: b.originRegion, deity: b.deity,
       });
       try { localStorage.removeItem(`${KEY}.${userId}`); } catch {}
     } else {
@@ -376,7 +383,9 @@ export default function CrearPage() {
       )}
 
       {b.step === 2 && (
-        <BackgroundScene options={backgroundOptions} bg={bg} selected={b.background} onPick={pickBackground} />
+        <BackgroundScene options={backgroundOptions} bg={bg} selected={b.background} onPick={pickBackground}
+          originContinent={b.originContinent} originRegion={b.originRegion} deity={b.deity}
+          onOrigin={(patch) => set(patch)} />
       )}
 
       {b.step === 3 && (

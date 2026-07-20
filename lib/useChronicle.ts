@@ -23,6 +23,8 @@ export type Quest = {
   status: "activa" | "completada" | "fallida" | "oculta" | "oferta";
   poi_name: string | null;
   reward: string;
+  // Ids de saber que la misión reparte al grupo al completarse (schema_v19).
+  unlock_lore: string[];
   created_at: string;
   updated_at: string;
 };
@@ -38,7 +40,7 @@ export type NpcMet = {
 };
 
 const ENTRY_FIELDS = "id, session_no, title, body, game_date, visible, created_at, updated_at";
-const QUEST_FIELDS = "id, title, body, status, poi_name, reward, created_at, updated_at";
+const QUEST_FIELDS = "id, title, body, status, poi_name, reward, unlock_lore, created_at, updated_at";
 const NPC_FIELDS = "id, name, role, notes, region, visible, created_at";
 
 // Crónica de campaña: diario de sesión, misiones y PNJ conocidos. Tres
