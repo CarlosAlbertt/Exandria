@@ -297,6 +297,20 @@ calendario más animado».
     columna de Folsen**, igual que el `weekdayName` del reloj (la aritmética del
     offset casa con `momentFromGameMin`), 29 lunas, y **cero decimales largos**
     en el SSR.
+- **Reloj de la barra desplegable** (rama `reloj-nav`): la chapa compacta del nav
+  pasa a **botón** → abre un panel (`components/ClockPopover.tsx`) con fecha
+  larga, día de la semana, hora, **estación + días que le quedan**, fase de
+  Catha, chapa si hoy es fiesta, la **rejilla del mes en curso** (hoy resaltado,
+  fin de semana, festividades marcadas), la **próxima fiesta con cuenta atrás** y
+  enlace al calendario completo. Cierra con **Escape** o **clic fuera**. Así no
+  hace falta entrar a `/reino` para mirar la hora o el mes.
+- **`lib/calendar.ts`** (nuevo): la aritmética del calendario (`STARTS`,
+  `doyFromDate`, `SEASON_RANGES`/`seasonOfDay`/`daysLeftInSeason`, `HOLIDAY_DOY`/
+  `nextHoliday`, `absDayOf`, `monthCells`, `isWeekend`, `holidayAt`) sale de
+  `CalendarWheel` a un **módulo puro compartido**, para que la rueda de `/reino`
+  y el desplegable del nav **no se separen**. `CalendarWheel` refactorizado
+  encima. `ClockWidget` pierde la variante `compact` (ya sin usuarios; sigue la
+  grande en `/lugar` «de camino» y Panel DM › Tiempo).
 - **Estado final de `/reino`**: intro · historia breve · saber del PJ ·
   `ReinoRegions` · calendario. Nada más.
 - **Pendiente de decidir**: `ReinoRegions` sigue mostrando las 8 regiones de
