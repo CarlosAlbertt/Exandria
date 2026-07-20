@@ -1,20 +1,17 @@
 "use client";
 import { useState } from "react";
-import { CALENDAR, SEASONS, HOLIDAYS } from "@/data/cosmology";
+import { CALENDAR } from "@/data/cosmology";
 import { useGameClock } from "@/lib/useGameClock";
 import { momentFromGameMin, moonPhaseForDay } from "@/lib/gameClock";
+import {
+  YEAR, WEEK, STARTS, SEASON_COLOR, SEASON_RANGES, seasonOfDay, daysLeftInSeason,
+  HOLIDAY_DOY, nextHoliday, absDayOf, monthCells, isWeekend, holidayAt,
+} from "@/lib/calendar";
 
 // Calendario exandrino: rueda del año (meses por sus días reales, teñidos por
 // estación, con anillo de estaciones y festividades en el aro) + vista de mes
 // con rejilla de días, fase de Catha por día y festividades marcadas.
 // La aguja se mueve con el reloj de campaña, que ya es realtime.
-
-const SEASON_COLOR: Record<string, string> = {
-  Primavera: "var(--color-primitivo)",
-  Verano: "var(--color-bronze)",
-  Otoño: "var(--color-ember)",
-  Invierno: "var(--color-arcane)",
-};
 
 const CX = 180;
 const CY = 180;
@@ -22,17 +19,6 @@ const R_SEASON_OUT = 172;
 const R_SEASON_IN = 156;
 const R_OUT = 150;
 const R_IN = 106;
-
-const YEAR = CALENDAR.yearDays;
-const WEEK = CALENDAR.weekdays.length;
-
-// Día-del-año (1-based) en que empieza cada mes.
-const STARTS: number[] = (() => {
-  const out: number[] = [];
-  let acc = 0;
-  for (const d of CALENDAR.monthDays) { out.push(acc + 1); acc += d; }
-  return out;
-})();
 
 // Las coordenadas se REDONDEAN a 2 decimales a propósito: Node y el navegador
 // no dan el mismo último bit en sin/cos, y sin esto React avisa de hydration
@@ -53,29 +39,6 @@ function arcPath(a0: number, a1: number, rOut: number, rIn: number): string {
   return `M ${x0} ${y0} A ${rOut} ${rOut} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${rIn} ${rIn} 0 ${large} 0 ${x3} ${y3} Z`;
 }
 
-// "13 de Dualahei" / "26 de Unndilar (el Cénit)" -> día-del-año.
-function doyFromDate(date: string): number | null {
-  const m = date.match(/^\s*(\d+)\s+de\s+([^\s(,]+)/i);
-  if (!m) return null;
-  const mi = CALENDAR.months.findIndex((x) => x.toLowerCase() === m[2].trim().toLowerCase());
-  if (mi < 0) return null;
-  return STARTS[mi] + (Number(m[1]) - 1);
-}
-
-// Rango [start, days) de cada estación, en día-del-año.
-const SEASON_RANGES = SEASONS.map((s) => ({ name: s.name, days: s.days, start: doyFromDate(s.start) ?? 1 }));
-
-function seasonOfDay(doy: number): string {
-  for (const s of SEASON_RANGES) {
-    const off = ((doy - s.start) % YEAR + YEAR) % YEAR;
-    if (off < s.days) return s.name;
-  }
-  return SEASON_RANGES[SEASON_RANGES.length - 1].name;
-}
-
-const HOLIDAY_DOY = HOLIDAYS.map((h) => ({ ...h, doy: doyFromDate(h.date) }))
-  .filter((h): h is typeof HOLIDAYS[number] & { doy: number } => h.doy != null);
-
 export default function CalendarWheel() {
   const { nowGameMin, ready } = useGameClock();
   const moment = momentFromGameMin(nowGameMin);
@@ -85,16 +48,8 @@ export default function CalendarWheel() {
   const hoy = moment.dayOfYear;
   const mesVisto = sel ?? moment.monthIndex;
 
-  // Próxima festividad (envolviendo el fin de año).
-  const next = HOLIDAY_DOY
-    .map((h) => ({ ...h, falta: ((h.doy - hoy) % YEAR + YEAR) % YEAR }))
-    .sort((a, b) => a.falta - b.falta)[0];
-
-  // Días que quedan de estación.
-  const estActual = SEASON_RANGES.find((s) => s.name === moment.season);
-  const restanEstacion = estActual
-    ? estActual.days - ((((hoy - estActual.start) % YEAR) + YEAR) % YEAR)
-    : null;
+  const next = nextHoliday(hoy);
+  const restanEstacion = daysLeftInSeason(hoy, moment.season);
 
   const hhmm = `${String(moment.hour).padStart(2, "0")}:${String(moment.minute).padStart(2, "0")}`;
   const esDeDia = moment.hour >= 6 && moment.hour < 20;
@@ -251,20 +206,11 @@ function MesDetalle({ mi, year, hoyDoy, esMesActual, onReset }: {
   mi: number; year: number; hoyDoy: number; esMesActual: boolean; onReset?: () => void;
 }) {
   const nombre = CALENDAR.months[mi];
-  const dias = CALENDAR.monthDays[mi];
-  const firstDoy = STARTS[mi];
-  // Día absoluto desde el epoch: con él salen el día de la semana y la luna.
-  const absFirst = year * YEAR + (firstDoy - 1);
-  const offset = ((absFirst % WEEK) + WEEK) % WEEK;
+  const { cells: celdas, firstDoy, days: dias } = monthCells(mi, year);
   const season = seasonOfDay(firstDoy + 1);
   const color = SEASON_COLOR[season] ?? "var(--color-bronze)";
 
   const fiestasMes = HOLIDAY_DOY.filter((h) => h.doy >= firstDoy && h.doy < firstDoy + dias);
-
-  const celdas: (number | null)[] = [
-    ...Array.from({ length: offset }, () => null),
-    ...Array.from({ length: dias }, (_, i) => i + 1),
-  ];
 
   return (
     <div className="panel p-5">
@@ -296,10 +242,10 @@ function MesDetalle({ mi, year, hoyDoy, esMesActual, onReset }: {
         {celdas.map((d, idx) => {
           if (d == null) return <div key={`b${idx}`} />;
           const doy = firstDoy + d - 1;
-          const abs = year * YEAR + (doy - 1);
+          const abs = absDayOf(year, doy);
           const esHoy = doy === hoyDoy;
-          const finde = CALENDAR.weekend.includes(CALENDAR.weekdays[((abs % WEEK) + WEEK) % WEEK]);
-          const fiesta = HOLIDAY_DOY.find((h) => h.doy === doy);
+          const finde = isWeekend(abs);
+          const fiesta = holidayAt(doy);
           const luna = moonPhaseForDay(abs);
           return (
             <div key={d} title={`${d} de ${nombre}${fiesta ? ` · ${fiesta.name}` : ""} · ${luna.name}`}
