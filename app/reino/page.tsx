@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { HOLIDAYS, WORLD_INTRO } from "@/data/cosmology";
+import { WORLD_INTRO } from "@/data/cosmology";
 import { HISTORIA_BREVE } from "@/data/loreTiers";
 import ReinoRegions from "@/components/ReinoRegions";
 import SaberSection from "@/components/SaberSection";
@@ -53,19 +53,6 @@ export default function ReinoPage() {
           <i className="fas fa-calendar-days text-[var(--color-bronze)]" /> El calendario
         </h2>
         <CalendarWheel />
-
-        <p className="eyebrow mb-3 mt-8" style={{ color: "var(--color-divino)" }}>Festividades</p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {HOLIDAYS.map((h) => (
-            <div key={h.name} className="panel-raised px-3 py-2">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="font-display font-semibold text-[14px]" style={{ color: "var(--color-parch)" }}>{h.name}</span>
-                <span className="font-ui text-[11px] whitespace-nowrap" style={{ color: "var(--color-bronze-bright)" }}>{h.date}</span>
-              </div>
-              <p style={{ color: "var(--color-muted)", fontSize: "12px", lineHeight: 1.45 }}>{h.blurb}</p>
-            </div>
-          ))}
-        </div>
       </section>
     </main>
   );
