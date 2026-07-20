@@ -232,6 +232,50 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-19): /reino deja de spoilear + calendario animado 🔒🗓️
+Rama `reino-oculto`. **Sin migración.** Petición del usuario: «quitar/ocultar el
+lore a los jugadores, dejar una historia más breve; el panteón solo para clases
+como paladín o clérigo; facciones y Wildemount, hasta que se descubran; y el
+calendario más animado».
+
+- **Ámbitos nuevos en el saber** (`data/saber.ts` + `lib/saber.ts`):
+  - **`deidad` gana `side`**: tu deidad **siempre**; del resto solo quien tiene
+    el oficio — **primarios** → `clerigo|paladin|druida`; **Traidores** →
+    `clerigo|paladin`; **Ídolos Menores** → `clerigo|paladin|brujo`. El ctx gana
+    `cls`.
+  - **`oculto`**: solo por descubrimiento. Ahí van **facciones de Tal'Dorei**,
+    **potencias/lenguas/vida cotidiana de Wildemount**.
+  - Las **regiones de Wildemount** son `continente:Wildemount` profundo → las
+    sabe quien **es de allí**. La **historia detallada** (`HISTORY`) y la
+    **cronología** (`HISTORY_TIMELINE`) piden **Historia**; los **planos**,
+    **Arcanos**.
+- **`isListed` cambia de criterio**: ya **no se lista lo que no se sabe**. Un
+  candado con el título puesto **ya spoilea** (ver «La Garra Carmesí» bloqueada
+  revela que la facción existe). El jugador ve **lo que sabe** + un **contador**
+  («te quedan N por descubrir»); el DM lo ve todo.
+- **`/reino` adelgazado**: se quedan **historia breve** (`HISTORIA_BREVE`, 3
+  párrafos de taberna), el **saber del PJ**, las **regiones**, el **calendario**
+  y las **lunas**. Fuera: el volcado de eras, cronología, panteón, facciones,
+  Wildemount y planos — todo eso vive ahora en el saber y se descubre.
+- **`components/reino/CalendarWheel.tsx`**: rueda SVG del año — los 11 meses
+  repartidos por sus **días reales**, teñidos por **estación**, festividades como
+  marcas en el aro (la de hoy **late**), **aguja** en el día de campaña (gira con
+  el reloj) y luna+fecha en el centro; semana con el día actual resaltado.
+  **Trampa cazada**: las coordenadas van **redondeadas a 2 decimales** a
+  propósito — Node y el navegador no dan el mismo último bit en `sin/cos` y sin
+  eso React lanzaba **hydration mismatch** en cada arco.
+- Verificado: `tsc --noEmit` + `next build` limpios **y prueba real en el
+  navegador** (excluyendo `reino` del matcher de `proxy.ts` temporalmente, **ya
+  revertido**): 11 arcos sin `NaN`, etiquetas de los 11 meses, centro con «1 de
+  Horisal · 836 PD · Invierno · Cuarto creciente», SVG 340×340, y **HTML del
+  servidor idéntico al DOM** (cero decimales largos) → mismatch resuelto.
+  > Ojo: el buffer de consola del navegador **no se limpia** al recargar; los
+  > errores de hidratación seguían apareciendo con coordenadas que ya no existían
+  > en el DOM. Se confirmó comparando el HTML servido con `fetch`.
+- **Pendiente de decidir**: `ReinoRegions` sigue mostrando las 8 regiones de
+  Tal'Dorei con su blurb a todo el mundo (geografía a la vista). Si se quiere
+  gatear también, la entrada `reg:<slug>` del saber ya existe.
+
 ## RESUELTO (2026-07-19): Saber por origen 📚 (rediseño del saber)
 Rama `fase-n-saber-origen`. Spec/plan en
 `docs/superpowers/{specs,plans}/2026-07-19-saber-por-origen*`. Migración

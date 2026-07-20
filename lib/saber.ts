@@ -8,15 +8,30 @@ export type SaberCtx = {
   originContinent: string | null;
   originRegion: string | null;   // slug de subregión (solo Tal'Dorei)
   deity: string | null;          // slug de pantheon
+  cls: string | null;            // slug de clase (para el saber del panteón)
   skills: string[];              // pericias del PJ
   unlocked: string[];            // ids aprendidos por ESTE personaje
   revealed: string[];            // ids de secretos que el DM ha revelado
 };
 
 export const EMPTY_CTX: SaberCtx = {
-  isDm: false, originContinent: null, originRegion: null, deity: null,
+  isDm: false, originContinent: null, originRegion: null, deity: null, cls: null,
   skills: [], unlocked: [], revealed: [],
 };
+
+// Quién conoce el panteón. Los dioses existen para todos, pero saber de ellos
+// es oficio: los primarios los estudian las clases de fe; los Traidores y los
+// Ídolos Menores, solo las más versadas (y el brujo, que trata con patrones).
+const PANTEON_PRIME = ["clerigo", "paladin", "druida"];
+const PANTEON_TRAIDOR = ["clerigo", "paladin"];
+const PANTEON_IDOLO = ["clerigo", "paladin", "brujo"];
+
+function conoceElPanteon(cls: string | null, side: "prime" | "betrayer" | "idol"): boolean {
+  if (!cls) return false;
+  if (side === "prime") return PANTEON_PRIME.includes(cls);
+  if (side === "betrayer") return PANTEON_TRAIDOR.includes(cls);
+  return PANTEON_IDOLO.includes(cls);
+}
 
 // ¿Conoce el personaje esta entrada?
 //
@@ -41,21 +56,25 @@ export function knows(entry: SaberEntry, ctx: SaberCtx): boolean {
     case "region":
       return ctx.originRegion === entry.scope.regionSlug;
     case "deidad":
-      return ctx.deity === entry.scope.deitySlug;
+      // Tu deidad siempre; del resto, solo quien tiene el oficio.
+      return ctx.deity === entry.scope.deitySlug || conoceElPanteon(ctx.cls, entry.scope.side);
     case "erudito":
       return ctx.skills.includes(entry.scope.skill);
     case "secreto":
       return ctx.revealed.includes(entry.id);
+    case "oculto":
+      return false; // solo por descubrimiento (ya cubierto por `unlocked` arriba)
   }
 }
 
-// ¿Debe siquiera LISTARSE la entrada (aunque sea bloqueada)?
-// Los secretos no revelados no se insinúan a los jugadores: ni su título. El
-// resto sí se muestra con candado, para que se vea que hay mundo por descubrir.
+// ¿Debe siquiera LISTARSE la entrada?
+//
+// NO se listan las que no se conocen: un candado con el título puesto ya
+// spoilea (ver "La Garra Carmesí" en una tarjeta bloqueada revela que la
+// facción existe). El jugador ve lo que sabe y un CONTADOR de lo que le falta;
+// el DM lo ve todo.
 export function isListed(entry: SaberEntry, ctx: SaberCtx): boolean {
-  if (ctx.isDm) return true;
-  if (entry.scope.kind === "secreto") return knows(entry, ctx);
-  return true;
+  return ctx.isDm || knows(entry, ctx);
 }
 
 // Motivo del candado, para explicar al jugador qué le falta.
@@ -66,5 +85,6 @@ export function lockReason(entry: SaberEntry): string {
     case "deidad": return "No es tu fe: los templos y los tratados guardan estas cosas.";
     case "erudito": return `Conocimiento erudito · requiere ${entry.scope.skill}`;
     case "secreto": return "Aún por descubrir.";
+    case "oculto": return "Solo se aprende jugando: tomos, misiones o quien lo sepa.";
   }
 }
