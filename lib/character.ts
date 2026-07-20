@@ -29,6 +29,10 @@ export type Build = {
   bonus: Record<AbilityKey, number>;
   skills: string[];
   lore: string;
+  // Origen y fe (saber por origen). Opcionales: sin ellos sabes solo lo básico.
+  originContinent: string | null;
+  originRegion: string | null;
+  deity: string | null;
   step: number;
   statMethod: StatMethod | null;
   rolled: number[];   // los 6 valores (dados/array); vacío en point-buy
@@ -54,10 +58,16 @@ export type CharacterData = {
   xp: number;
   gold: number;
   lore: string;
+  // Saber por origen (schema_v19): de dónde es y en qué cree, y lo que ha
+  // aprendido jugando. origin_region solo aplica a Tal'Dorei; deity null = sin fe.
+  origin_continent: string | null;
+  origin_region: string | null;
+  deity: string | null;
+  lore_unlocked: string[];
 };
 
 const FIELDS =
-  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, xp, gold, lore";
+  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, xp, gold, lore, origin_continent, origin_region, deity, lore_unlocked";
 
 // La ficha activa del jugador, con su id. null si no tiene ninguna en juego
 // (p. ej. acaba de archivar la suya y aún no se ha hecho otra).
