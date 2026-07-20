@@ -12,7 +12,7 @@ import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS, type Deity, type DeitySide 
 import { REGIONS, FACTIONS, HISTORY } from "@/data/taldorei";
 import { HISTORY_TIMELINE } from "@/data/history";
 import { WORLD_POIS } from "@/data/world";
-import { PLANES } from "@/data/cosmology";
+import { PLANES, MOONS } from "@/data/cosmology";
 import { WILDEMOUNT_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "@/data/wildemount";
 import { LORE_TIERS, type LoreSkill } from "@/data/loreTiers";
 
@@ -159,6 +159,19 @@ function historyEntries(): SaberEntry[] {
   return out;
 }
 
+// --- LUNAS: que hay dos se ve desde cualquier parte (entrada común de
+// loreTiers); lo que se sabe DE ellas ya no, se descubre. -------------------
+function moonEntries(): SaberEntry[] {
+  return MOONS.map((m) => ({
+    id: `luna:${slugKey(m.name)}`,
+    scope: { kind: "oculto" as const },
+    depth: "profundo" as const,
+    topic: "Las lunas",
+    title: m.name,
+    text: m.blurb,
+  }));
+}
+
 // --- PLANOS: cosa de arcanistas --------------------------------------------
 function planeEntries(): SaberEntry[] {
   return PLANES.map((p) => ({
@@ -199,6 +212,7 @@ export const SABER: SaberEntry[] = [
   ...factionEntries(),
   ...wildemountEntries(),
   ...historyEntries(),
+  ...moonEntries(),
   ...planeEntries(),
   ...curatedEntries(),
 ];

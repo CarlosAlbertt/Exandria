@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { MOONS, HOLIDAYS, WORLD_INTRO } from "@/data/cosmology";
+import { HOLIDAYS, WORLD_INTRO } from "@/data/cosmology";
 import { HISTORIA_BREVE } from "@/data/loreTiers";
 import ReinoRegions from "@/components/ReinoRegions";
 import SaberSection from "@/components/SaberSection";
@@ -63,21 +63,6 @@ export default function ReinoPage() {
                 <span className="font-ui text-[11px] whitespace-nowrap" style={{ color: "var(--color-bronze-bright)" }}>{h.date}</span>
               </div>
               <p style={{ color: "var(--color-muted)", fontSize: "12px", lineHeight: 1.45 }}>{h.blurb}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* LUNAS — se ven desde cualquier parte */}
-      <section>
-        <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-moon text-[var(--color-bronze)]" /> Las dos lunas
-        </h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          {MOONS.map((m) => (
-            <div key={m.name} className="panel-raised px-4 py-3">
-              <p className="font-display font-semibold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{m.name}</p>
-              <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{m.blurb}</p>
             </div>
           ))}
         </div>
