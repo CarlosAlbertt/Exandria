@@ -1,52 +1,21 @@
 import type { Metadata } from "next";
-import { HISTORY, FACTIONS } from "@/data/taldorei";
-import { HISTORY_TIMELINE } from "@/data/history";
-import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS, type Deity } from "@/data/pantheon";
-import { CALENDAR, SEASONS, HOLIDAYS, MOONS, PLANES, WORLD_INTRO } from "@/data/cosmology";
-import { WILDEMOUNT_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "@/data/wildemount";
+import { MOONS, HOLIDAYS, WORLD_INTRO } from "@/data/cosmology";
+import { HISTORIA_BREVE } from "@/data/loreTiers";
 import ReinoRegions from "@/components/ReinoRegions";
 import SaberSection from "@/components/SaberSection";
+import CalendarWheel from "@/components/reino/CalendarWheel";
 
 export const metadata: Metadata = {
-  title: "El Mundo",
-  description: "Historia, continentes, panteón, calendario y cosmología de Exandria. La campaña transcurre en Tal'Dorei.",
+  title: "El Mundo de Exandria",
+  description: "Compendio del mundo: lo que tu personaje sabe, y lo que le queda por descubrir.",
 };
 
-function DeityCard({ deity, accent }: { deity: Deity; accent: string }) {
-  return (
-    <li
-      className="panel-raised px-4 py-3.5"
-      style={{ borderColor: `color-mix(in srgb, ${accent} 30%, var(--color-line))` }}
-    >
-      <div className="flex items-baseline justify-between gap-3 mb-1">
-        <span className="font-display font-semibold text-[15px]" style={{ color: "var(--color-parch)" }}>
-          {deity.name}
-        </span>
-        <span className="font-ui text-[11px] font-bold uppercase tracking-wide" style={{ color: accent }}>
-          {deity.alignment}
-        </span>
-      </div>
-      <p className="font-ui text-[12px] italic mb-2" style={{ color: "var(--color-muted)" }}>{deity.epithet}</p>
-      <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.55 }} className="mb-2">{deity.blurb}</p>
-      <div className="font-ui text-[11px] mb-2" style={{ color: "var(--color-dim)" }}>
-        <p><strong style={{ color: "var(--color-warm)" }}>Esfera:</strong> {deity.province}</p>
-        <p><strong style={{ color: "var(--color-warm)" }}>Símbolo:</strong> {deity.symbol}</p>
-        {deity.holyDay && (
-          <p><strong style={{ color: "var(--color-warm)" }}>Día santo:</strong> {deity.holyDay.name} — {deity.holyDay.date}</p>
-        )}
-        {deity.patron && (
-          <p><strong style={{ color: "var(--color-warm)" }}>Patrón de brujo:</strong> {deity.patron}</p>
-        )}
-      </div>
-      <ul className="list-disc list-inside space-y-0.5">
-        {deity.commandments.map((c) => (
-          <li key={c} className="font-ui text-[12px]" style={{ color: "var(--color-muted)" }}>{c}</li>
-        ))}
-      </ul>
-    </li>
-  );
-}
-
+// /reino ya NO es un volcado de lore. Lo que se sabe del mundo depende del
+// personaje (origen, fe, clase, pericias y lo aprendido jugando) y vive en
+// `SaberSection`; aquí solo quedan las cosas que cualquiera sabría: una
+// historia breve, la geografía a la vista, el calendario y las lunas.
+// El detalle —eras, cronología, panteón, facciones, Wildemount, planos— se
+// deriva a `data/saber.ts` y se descubre poco a poco.
 export default function ReinoPage() {
   return (
     <main className="max-w-5xl mx-auto px-6 py-16">
@@ -56,258 +25,61 @@ export default function ReinoPage() {
         <p className="prose-lore lead max-w-2xl mx-auto mt-5">{WORLD_INTRO}</p>
       </header>
 
+      {/* HISTORIA BREVE — lo que cualquiera sabe */}
+      <section className="mb-20">
+        <h2 className="font-display text-2xl font-bold mb-6 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
+          <i className="fas fa-hourglass-half text-[var(--color-bronze)]" /> Lo que todo el mundo sabe
+        </h2>
+        <div className="panel p-6 space-y-3 max-w-3xl">
+          {HISTORIA_BREVE.map((p, i) => (
+            <p key={i} className="prose-lore !text-[15px] !mb-0">{p}</p>
+          ))}
+          <p className="font-ui text-[12px] pt-2 italic" style={{ color: "var(--color-dim)" }}>
+            <i className="fas fa-circle-info mr-1.5" />
+            Lo demás —las eras, el panteón, las facciones, otras tierras— no se sabe por nacer: se estudia, se viaja o se descubre jugando.
+          </p>
+        </div>
+      </section>
+
+      {/* SABER DEL MUNDO — lo que TU personaje sabe */}
       <SaberSection />
 
-      {/* HISTORIA */}
-      <section className="mb-20">
-        <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-hourglass-half text-[var(--color-bronze)]" /> Una historia de Exandria
-        </h2>
-        <ol className="relative border-l-2 border-[var(--color-line)] ml-2 space-y-8">
-          {HISTORY.map((e, i) => (
-            <li key={i} className="relative pl-8">
-              <span className="absolute -left-[11px] top-1 w-5 h-5 rounded-full border-2 border-[var(--color-bronze)] bg-[var(--color-night)]" />
-              <p className="eyebrow mb-1" style={{ color: "var(--color-arcane)" }}>{e.year}</p>
-              <h3 className="font-display text-lg font-bold mb-1" style={{ color: "var(--color-parch)" }}>{e.title}</h3>
-              <p className="prose-lore !text-[15px] !mb-0">{e.text}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* CRONOLOGÍA AMPLIADA */}
-      <section className="mb-20">
-        <h2 className="font-display text-2xl font-bold mb-2 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-scroll text-[var(--color-bronze)]" /> Cronología ampliada: de la Fundación a la Guerra de la Ceniza y la Luz
-        </h2>
-        <p className="prose-lore !text-[14px] mb-8" style={{ color: "var(--color-muted)" }}>
-          Los mitos compartidos de Exandria y, tras la Divergencia, el rastro detallado de Wildemount: el ascenso del Imperio Dwendaliano, la Dinastía Kryn y la guerra que hoy los enfrenta.
-        </p>
-        <ol className="relative border-l-2 border-[var(--color-line)] ml-2 space-y-8">
-          {HISTORY_TIMELINE.map((e, i) => (
-            <li key={i} className="relative pl-8">
-              <span className="absolute -left-[11px] top-1 w-5 h-5 rounded-full border-2 border-[var(--color-bronze)] bg-[var(--color-night)]" />
-              <div className="flex items-center gap-2 mb-1">
-                <p className="eyebrow" style={{ color: "var(--color-arcane)" }}>{e.year}</p>
-                {e.continent && (
-                  <span className="font-ui text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ color: "var(--color-ember)", border: "1px solid var(--color-ember)" }}>
-                    {e.continent}
-                  </span>
-                )}
-              </div>
-              <h3 className="font-display text-lg font-bold mb-1" style={{ color: "var(--color-parch)" }}>{e.title}</h3>
-              <p className="prose-lore !text-[15px] !mb-0">{e.text}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* REGIONES (filtradas por exploración) */}
+      {/* GEOGRAFÍA A LA VISTA */}
       <ReinoRegions />
-
-      {/* PANTEON */}
-      <section className="mb-20">
-        <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-sun text-[var(--color-bronze)]" /> Panteón de Exandria
-        </h2>
-        <div className="grid md:grid-cols-2 gap-8 mb-10">
-          <div>
-            <p className="eyebrow mb-4" style={{ color: "var(--color-divino)" }}>Deidades primarias</p>
-            <ul className="space-y-3">
-              {PRIME_DEITIES.map((d) => (
-                <DeityCard key={d.slug} deity={d} accent="var(--color-divino)" />
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="eyebrow mb-4" style={{ color: "var(--color-ember)" }}>Dioses traidores</p>
-            <ul className="space-y-3">
-              {BETRAYER_GODS.map((d) => (
-                <DeityCard key={d.slug} deity={d} accent="var(--color-ember)" />
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div>
-          <p className="eyebrow mb-4" style={{ color: "var(--color-violet)" }}>Ídolos menores</p>
-          <ul className="grid md:grid-cols-2 gap-3">
-            {LESSER_IDOLS.map((d) => (
-              <DeityCard key={d.slug} deity={d} accent="var(--color-violet)" />
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* FACCIONES */}
-      <section className="mb-20">
-        <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-flag text-[var(--color-bronze)]" /> Facciones y sociedades
-        </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {FACTIONS.map((f) => (
-            <div key={f.name} className="panel p-5" style={{ borderColor: "var(--color-line)" }}>
-              <h3 className="font-display font-bold text-[15px] mb-1.5" style={{ color: "var(--color-bronze-bright)" }}>{f.name}</h3>
-              <p style={{ color: "var(--color-muted)", fontSize: "14px", lineHeight: 1.55 }}>{f.blurb}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* WILDEMOUNT */}
-      <section className="mb-20">
-        <h2 className="font-display text-2xl font-bold mb-2 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-map text-[var(--color-bronze)]" /> Wildemount — al otro lado del Mar Lucidiano
-        </h2>
-        <p className="prose-lore !text-[14px] mb-8" style={{ color: "var(--color-muted)" }}>
-          Un continente en guerra: el Imperio Dwendaliano y la Dinastía Kryn se disputan las balizas del Luxon
-          mientras ciudades-estado, culto y crimen organizado tejen su propio destino a los márgenes del conflicto.
-        </p>
-
-        <div className="rounded-xl overflow-hidden mb-10 panel" style={{ borderColor: "var(--color-line)" }}>
-          <img src="/maps/wildemount.jpg" alt="Mapa del continente de Wildemount" className="w-full h-auto object-cover" />
-        </div>
-
-        <p className="eyebrow mb-4" style={{ color: "var(--color-arcane)" }}>Regiones</p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {WILDEMOUNT_REGIONS.map((r) => (
-            <div key={r.slug} className="panel overflow-hidden" style={{ borderColor: `color-mix(in srgb, ${r.accent} 30%, var(--color-line))` }}>
-              {r.image && (
-                <img src={r.image} alt={`Mapa de ${r.name}`} className="w-full h-32 object-cover" />
-              )}
-              <div className="p-5">
-                <h3 className="font-display font-bold text-[16px] mb-1" style={{ color: "var(--color-bronze-bright)" }}>{r.name}</h3>
-                <p className="font-ui text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: r.accent }}>{r.feature}</p>
-                <p className="font-ui text-[12px] mb-2" style={{ color: "var(--color-dim)" }}><strong style={{ color: "var(--color-warm)" }}>Capital:</strong> {r.capital}</p>
-                <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.55 }}>{r.blurb}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <p className="eyebrow mb-4" style={{ color: "var(--color-ember)" }}>Facciones y sociedades</p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-          {WILDEMOUNT_FACTIONS.map((f) => (
-            <div key={f.name} className="panel p-5" style={{ borderColor: "var(--color-line)" }}>
-              <h3 className="font-display font-bold text-[15px] mb-1.5" style={{ color: "var(--color-bronze-bright)" }}>{f.name}</h3>
-              <p style={{ color: "var(--color-muted)", fontSize: "14px", lineHeight: 1.55 }}>{f.blurb}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <p className="eyebrow mb-4" style={{ color: "var(--color-divino)" }}>Idiomas</p>
-            <ul className="space-y-3">
-              {LANGUAGES.map((l) => (
-                <li key={l.name} className="panel-raised px-4 py-3">
-                  <p className="font-display font-semibold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{l.name}</p>
-                  <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{l.blurb}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="eyebrow mb-4" style={{ color: "var(--color-divino)" }}>Vida diaria</p>
-            <ul className="space-y-3">
-              {DAILY_LIFE.map((n) => (
-                <li key={n.title} className="panel-raised px-4 py-3">
-                  <p className="font-display font-semibold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{n.title}</p>
-                  <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{n.body}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
 
       {/* CALENDARIO */}
       <section className="mb-20">
         <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-calendar-days text-[var(--color-bronze)]" /> El calendario de Exandria
+          <i className="fas fa-calendar-days text-[var(--color-bronze)]" /> El calendario
         </h2>
-        <div className="grid md:grid-cols-[1fr_1fr] gap-8">
-          <div className="panel p-6">
-            <p className="prose-lore !text-[15px] !mb-4">
-              El año exandrino dura <strong>{CALENDAR.yearDays} días</strong> en <strong>{CALENDAR.months.length} meses</strong>. Los años se cuentan desde la Divergencia, en formato <strong>{CALENDAR.era}</strong> (Post-Divergencia). La campaña transcurre hacia el año <strong>{CALENDAR.currentYear} {CALENDAR.era}</strong>.
-            </p>
-            <p className="eyebrow mb-2" style={{ color: "var(--color-divino)" }}>Los meses</p>
-            <div className="flex flex-wrap gap-1.5 mb-5">
-              {CALENDAR.months.map((m) => (
-                <span key={m} className="font-ui text-[12px] font-semibold px-2.5 py-1 rounded-lg" style={{ color: "var(--color-warm)", background: "rgba(0,0,0,0.25)", border: "1px solid var(--color-line)" }}>{m}</span>
-              ))}
-            </div>
-            <p className="eyebrow mb-2" style={{ color: "var(--color-divino)" }}>La semana (7 días)</p>
-            <div className="flex flex-wrap gap-1.5">
-              {CALENDAR.weekdays.map((d) => (
-                <span key={d} className="font-ui text-[12px] font-semibold px-2.5 py-1 rounded-lg" style={{ color: CALENDAR.weekend.includes(d) ? "var(--color-bronze-bright)" : "var(--color-muted)", background: "rgba(0,0,0,0.25)", border: `1px solid ${CALENDAR.weekend.includes(d) ? "var(--color-bronze)" : "var(--color-line)"}` }}>{d}</span>
-              ))}
-            </div>
-            <p className="font-ui text-[11px] mt-2" style={{ color: "var(--color-dim)" }}>Yulisen y Da'leysen forman el fin de semana.</p>
-          </div>
-          <div>
-            <p className="eyebrow mb-3" style={{ color: "var(--color-divino)" }}>Festividades</p>
-            <ul className="space-y-2">
-              {HOLIDAYS.map((h) => (
-                <li key={h.name} className="panel-raised px-4 py-3">
-                  <div className="flex items-center justify-between gap-3 mb-1">
-                    <span className="font-display font-semibold text-[15px]" style={{ color: "var(--color-parch)" }}>{h.name}</span>
-                    <span className="font-ui text-[11px] whitespace-nowrap" style={{ color: "var(--color-bronze-bright)" }}>{h.date}</span>
-                  </div>
-                  <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{h.blurb}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+        <CalendarWheel />
 
-      {/* ESTACIONES */}
-      <section className="mb-20">
-        <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-cloud-sun-rain text-[var(--color-bronze)]" /> Las estaciones
-        </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {SEASONS.map((s) => (
-            <div key={s.name} className="panel p-5">
-              <div className="flex items-baseline justify-between mb-2">
-                <h3 className="font-display font-bold text-[16px]" style={{ color: "var(--color-bronze-bright)" }}>{s.name}</h3>
-                <span className="font-ui text-[12px] font-bold" style={{ color: "var(--color-arcane)" }}>{s.days} días</span>
+        <p className="eyebrow mb-3 mt-8" style={{ color: "var(--color-divino)" }}>Festividades</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {HOLIDAYS.map((h) => (
+            <div key={h.name} className="panel-raised px-3 py-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-display font-semibold text-[14px]" style={{ color: "var(--color-parch)" }}>{h.name}</span>
+                <span className="font-ui text-[11px] whitespace-nowrap" style={{ color: "var(--color-bronze-bright)" }}>{h.date}</span>
               </div>
-              <p className="font-ui text-[11px] mb-2" style={{ color: "var(--color-dim)" }}>Empieza: {s.start}</p>
-              <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{s.blurb}</p>
+              <p style={{ color: "var(--color-muted)", fontSize: "12px", lineHeight: 1.45 }}>{h.blurb}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* LUNAS Y PLANOS */}
+      {/* LUNAS — se ven desde cualquier parte */}
       <section>
         <h2 className="font-display text-2xl font-bold mb-8 flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
-          <i className="fas fa-moon text-[var(--color-bronze)]" /> Lunas y planos
+          <i className="fas fa-moon text-[var(--color-bronze)]" /> Las dos lunas
         </h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <p className="eyebrow mb-4" style={{ color: "var(--color-violet)" }}>Las dos lunas</p>
-            <ul className="space-y-3">
-              {MOONS.map((m) => (
-                <li key={m.name} className="panel-raised px-4 py-3">
-                  <p className="font-display font-semibold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{m.name}</p>
-                  <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{m.blurb}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="eyebrow mb-4" style={{ color: "var(--color-arcane)" }}>Planos de existencia</p>
-            <ul className="space-y-2">
-              {PLANES.map((p) => (
-                <li key={p.name} className="panel-raised px-4 py-2.5">
-                  <p className="font-display font-semibold text-[14px]" style={{ color: "var(--color-parch)" }}>{p.name}</p>
-                  <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.45 }}>{p.blurb}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {MOONS.map((m) => (
+            <div key={m.name} className="panel-raised px-4 py-3">
+              <p className="font-display font-semibold text-[15px] mb-1" style={{ color: "var(--color-parch)" }}>{m.name}</p>
+              <p style={{ color: "var(--color-muted)", fontSize: "13px", lineHeight: 1.5 }}>{m.blurb}</p>
+            </div>
+          ))}
         </div>
       </section>
     </main>

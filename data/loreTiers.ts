@@ -19,6 +19,15 @@ export type LoreEntry = {
   text: string;
 };
 
+// Historia BREVE: lo que cualquier habitante de Exandria sabría contarte en una
+// taberna. El detalle (eras, Calamidad, cronología) ya no se regala en /reino:
+// vive en el saber y se descubre estudiando, leyendo o jugando.
+export const HISTORIA_BREVE = [
+  "Hubo un tiempo en que los dioses caminaban por el mundo. Se pelearon, y su guerra dejó cicatrices que todavía se ven en el mapa.",
+  "Al final de aquella guerra los dioses se retiraron tras una barrera, y el mundo empezó a contar los años de nuevo: eso es la Divergencia, el año 0.",
+  "Desde entonces han pasado más de ocho siglos. Han caído imperios, se han fundado repúblicas y la mayoría de la gente vive sin pensar mucho en todo aquello.",
+];
+
 export const LORE_TIERS: LoreEntry[] = [
   // --- COMÚN -------------------------------------------------------------
   {

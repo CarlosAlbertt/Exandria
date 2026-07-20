@@ -28,6 +28,7 @@ export default function SaberSection() {
         originContinent: c?.origin_continent ?? null,
         originRegion: c?.origin_region ?? null,
         deity: c?.deity ?? null,
+        cls: c?.cls ?? null,
         skills: c?.skills ?? [],
         unlocked: Array.isArray(c?.lore_unlocked) ? c!.lore_unlocked : [],
         revealed: [],
@@ -47,7 +48,8 @@ export default function SaberSection() {
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g)!.push(e);
   }
-  const known = listed.filter((e) => knows(e, full)).length;
+  const known = SABER.filter((e) => knows(e, full)).length;
+  const porDescubrir = SABER.length - known;
 
   return (
     <section className="mb-20 reveal">
@@ -61,11 +63,14 @@ export default function SaberSection() {
 
       <div className="flex items-center gap-3 flex-wrap mb-6">
         <span className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>
-          Conoces <strong style={{ color: "var(--color-bronze-bright)" }}>{known}</strong> de {listed.length} entradas
+          Sabes <strong style={{ color: "var(--color-bronze-bright)" }}>{known}</strong> cosas
+          {porDescubrir > 0 && <> · te quedan <strong style={{ color: "var(--color-arcane)" }}>{porDescubrir}</strong> por descubrir</>}
         </span>
-        <button onClick={() => setOnlyKnown((v) => !v)} className="btn-ghost !py-1 !px-2.5 text-[11px]">
-          <i className={`fas ${onlyKnown ? "fa-eye" : "fa-filter"} mr-1`} />{onlyKnown ? "Ver todo" : "Solo lo que sé"}
-        </button>
+        {isDm && (
+          <button onClick={() => setOnlyKnown((v) => !v)} className="btn-ghost !py-1 !px-2.5 text-[11px]">
+            <i className={`fas ${onlyKnown ? "fa-eye" : "fa-filter"} mr-1`} />{onlyKnown ? "Ver todo" : "Solo lo sabido"}
+          </button>
+        )}
       </div>
 
       {[...groups.entries()].map(([group, entries]) => (
