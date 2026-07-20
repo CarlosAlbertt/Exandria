@@ -232,6 +232,39 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-19): el clima extremo pasa factura ❄️🔥
+Rama `clima-efectos`. **Sin migración.** Amplía el clima de la Fase N (que ya
+estaba completa) con **consecuencias de mesa**.
+
+- **`Weather` gana `efectos`** (`lib/weather.ts`): `frio_extremo`,
+  `calor_extremo`, `viento_fuerte`, `lluvia_intensa`, `niebla_densa`. `EFECTOS`
+  guarda la **regla** de cada uno (salvación de Constitución por hora de
+  exposición → agotamiento; desventaja en ataques a distancia y Percepción por
+  oído; desventaja en Percepción por vista; zona muy oscurecida). Reglas de
+  entorno estándar, redacción propia. Etiquetados **~35** climas duros de la
+  tabla; el resto queda llevadero (`esDuro()`).
+- **Exenciones por personaje** — **convención de mesa de esta campaña**, no RAW,
+  en una tabla editable de un vistazo: **Explorador** (clase) y **Guía**
+  (trasfondo) se libran de **todo**; **Bárbaro** y **Goliat**, del **frío**;
+  **Marinero**, de **viento y lluvia**; la pericia **Supervivencia**, de **frío y
+  calor**. `exencionPara(efecto, pj)` devuelve el **motivo** escrito, y
+  `efectosPara(weather, pj)` reparte en `afectan` / `exentos`.
+- **UI**: `components/lugar/ClimaEfectos.tsx` bajo el badge de `/lugar` — lista
+  lo que te pega (con su regla) y, aparte, **lo que te saltas y por qué**; si no
+  hay ficha en juego lo dice. El icono del **nav** (`PartyLocationWidget`) se
+  pone en **color de alarma** cuando el tiempo aprieta. `ambientLine` avisa a los
+  NPCs IA de que el tiempo es duro.
+- Verificado: `tsc` + `next build` limpios **y `npx tsx scripts/check-clima.ts`
+  con 32 comprobaciones en verde** — determinismo del clima, zonas y heurística,
+  que todo efecto de la tabla exista en `EFECTOS`, y el reparto afectan/exentos
+  por tipo de personaje (al Goliat le pegan 2 de 3 en una ventisca y se libra del
+  frío; al Explorador ninguno; sin ficha, nadie exento).
+
+> Nota de higiene: el cuerpo del commit `feat(clima)` perdió la palabra
+> «efectos» porque los backticks del mensaje se ejecutaron como sustitución de
+> comandos en bash. Sin efecto en el código; para mensajes con backticks, usar
+> heredoc.
+
 ## RESUELTO (2026-07-19): /reino deja de spoilear + calendario animado 🔒🗓️
 Rama `reino-oculto`. **Sin migración.** Petición del usuario: «quitar/ocultar el
 lore a los jugadores, dejar una historia más breve; el panteón solo para clases
