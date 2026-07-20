@@ -15,18 +15,14 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-// Reloj de campaña: icono de luna + fecha/hora, derivados de `useGameClock` +
-// `momentFromGameMin`. Variante `compact` para la barra de navegación;
-// variante grande (por defecto) para paneles (p. ej. /reino, panel DM).
-export default function ClockWidget({ compact = false }: { compact?: boolean }) {
+// Reloj de campaña en grande, para paneles (`/lugar` de camino, Panel DM ›
+// Tiempo). La variante compacta de la barra de navegación vive ahora en
+// `ClockPopover`, que además despliega el mes.
+export default function ClockWidget() {
   const { nowGameMin, ready } = useGameClock();
 
   if (!ready) {
-    return compact ? (
-      <span className="font-ui text-[11px] shrink-0" style={{ color: "var(--color-dim)" }}>
-        <i className="fas fa-clock" />
-      </span>
-    ) : (
+    return (
       <div className="panel p-4">
         <p className="eyebrow mb-1">Calendario de Exandria</p>
         <p className="text-[13px]" style={{ color: "var(--color-dim)" }}>
@@ -41,21 +37,6 @@ export default function ClockWidget({ compact = false }: { compact?: boolean }) 
   const hh = pad(m.hour);
   const mm = pad(m.minute);
 
-  if (compact) {
-    return (
-      <span
-        className="font-ui text-[11px] font-semibold flex items-center gap-1.5 shrink-0"
-        style={{ color: m.holiday ? "var(--color-bronze-bright)" : "var(--color-muted)" }}
-        title={m.dateStr}
-      >
-        <i className={`fas ${m.moonIcon}`} />
-        <span>
-          {m.day} {m.monthName} · {hh}:{mm}
-        </span>
-        {m.holiday && <i className="fas fa-star" style={{ color: "var(--color-bronze-bright)" }} />}
-      </span>
-    );
-  }
 
   return (
     <div className="panel p-5">
