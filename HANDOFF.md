@@ -196,9 +196,11 @@ ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** — ya ej
 `schema_v16.sql` (**PNJs**: location_npcs — ya ejecutada) · `schema_v17.sql`
 (**tablón**, Fase F: quests gana el estado `'oferta'` + columnas `poi_name`/
 `reward` — **PENDIENTE de ejecutar**) · `schema_v18.sql` (**memoria de NPC**,
-Fase M: tabla `npc_memories` — **PENDIENTE de ejecutar**). El bucket de Storage
-`assets` (`storage-assets.sql`, Fase H) también ejecutado. **Todo al día a
-2026-07-17 salvo `schema_v17.sql` y `schema_v18.sql` (2026-07-19).**
+Fase M: tabla `npc_memories` — **PENDIENTE de ejecutar**) · `schema_v19.sql`
+(**saber por origen**: origen/deidad/`lore_unlocked` en `characters`,
+`quests.unlock_lore`, tabla `lore_rolls` — **PENDIENTE de ejecutar**). El bucket
+de Storage `assets` (`storage-assets.sql`, Fase H) también ejecutado. **Todo al
+día a 2026-07-17 salvo v17, v18 y v19 (2026-07-19).**
 
 > ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
 > columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
@@ -229,6 +231,61 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-19): Saber por origen 📚 (rediseño del saber)
+Rama `fase-n-saber-origen`. Spec/plan en
+`docs/superpowers/{specs,plans}/2026-07-19-saber-por-origen*`. Migración
+`schema_v19`. **Sustituye el modelo de saber que la Fase N había dejado**
+(era solo por pericia): ahora cada PJ **sabe lo suyo** y descubre el resto.
+
+**Decisiones del usuario** (preguntadas antes de implementar): base por
+**origen + deidad** y **además** la pericia sigue abriendo lo erudito; región =
+**continente Y subregión** (subregión solo en Tal'Dorei); deidad **opcional**
+(«sin fe»); y **las cuatro vías** de descubrimiento.
+
+- **Derivar, no duplicar**: la lore base **no se reescribe**. `data/saber.ts`
+  la **deriva** de lo que ya había — `pantheon.ts` (33 deidades: blurb,
+  preceptos, símbolo, día santo), `taldorei.ts` (`REGIONS`) y `world.ts`
+  (continentes). A mano solo queda la capa curada de `loreTiers.ts` (erudito +
+  secretos), que se **reencaja** en el modelo nuevo (sus `comun` pasan a saber
+  básico de continente).
+- **Modelo**: `SaberEntry { id, scope, depth, topic, title, text, poi? }` con
+  `scope ∈ continente | region | deidad | erudito | secreto`.
+  `lib/saber.ts` es **puro**: `knows(entry, ctx)` con
+  `ctx = { isDm, originContinent, originRegion, deity, skills, unlocked, revealed }`.
+  Reglas: continente **básico** lo sabe todo el mundo («un poco»); continente
+  **profundo** solo si es el tuyo; región solo si es la tuya; deidad solo si es
+  la tuya; erudito por pericia; secreto si el DM lo reveló. **`unlocked` abre
+  cualquier entrada** — es la puerta común de las cuatro vías.
+- **Migración `schema_v19`** (agrupada): `characters` gana `origin_continent`,
+  `origin_region`, `deity`, `lore_unlocked jsonb`; `quests` gana `unlock_lore
+  jsonb`; y tabla **`lore_rolls`** (character_id, poi_name, total) con PK
+  compuesta — una tirada de saber por lugar y personaje (filosofía Fase K).
+- **Creador**: origen y fe se piden en el paso **Trasfondo** (`BackgroundScene`),
+  no en una runa nueva, para **no tocar el gate de 6 pasos**. Continente → si es
+  Tal'Dorei, subregión → deidad. Todo opcional.
+- **`/reino`**: `SaberSection` reescrito sobre el modelo — agrupa por ámbito,
+  cuenta «conoces N de M», filtro «solo lo que sé», candado con el motivo
+  (`lockReason`), y el DM revela/oculta secretos inline. Los secretos no
+  revelados **no se listan** al jugador.
+- **Las cuatro vías de descubrimiento**:
+  1. **Tomos**: `ItemDoc.unlockLore` — al abrir el documento en el visor, esas
+     entradas se añaden al saber **de ese personaje** (solo en la ficha propia).
+     El DM elige qué enseña desde el Baúl con `LorePicker` (buscador+casillas).
+  2. **Misiones**: `quests.unlock_lore`; al pasar la misión a `completada`, el
+     DM la reparte **a todo el grupo** vía `/api/dm/character` (op `unlockLore`).
+  3. **DM a mano**: bloque «Enseñar saber» por jugador en Panel DM › Grupo.
+  4. **Tirada in situ**: `SaberRoll` en `/lugar` — «¿Qué sé de esto?» con
+     Historia/Arcanos/Religión (mod y competencia de `derive`), dados 3D, tramos
+     **10/15/20** → 1/2/3 entradas del lugar (su región, su continente a fondo,
+     lo ligado al POI). **Una por lugar y PJ**; repetir exige que el DM borre la
+     fila de `lore_rolls`.
+- Verificado: `tsc --noEmit` + `next build` limpios **por etapa** (4 etapas).
+  **Sin sesión en dev**: no probado en vivo. **Prueba del usuario** (tras
+  `schema_v19.sql`): crear/editar PJ con origen y deidad → en `/reino` ves tu
+  región, tu continente a fondo y tu deidad, y el resto con candado; entregar un
+  tomo que enseñe algo y leerlo; completar una misión con saber; enseñar a mano;
+  y tirar «¿Qué sé de esto?» en `/lugar`.
 
 ## RESUELTO (2026-07-19): Fase N (partes 2 y 3) — saber + pistas 🌍
 Rama `fase-n-completa`. Spec/plan en
