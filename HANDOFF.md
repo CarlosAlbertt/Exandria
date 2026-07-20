@@ -272,6 +272,13 @@ calendario más animado».
   > Ojo: el buffer de consola del navegador **no se limpia** al recargar; los
   > errores de hidratación seguían apareciendo con coordenadas que ya no existían
   > en el DOM. Se confirmó comparando el HTML servido con `fetch`.
+- **Lunas también ocultas** (ajuste posterior, rama `reino-lunas`): `MOONS` pasa
+  al saber con ámbito **`oculto`** y sale de `/reino`. Que **hay dos lunas** y que
+  la roja da mala espina sigue siendo **común** (entrada `lunas-calendario` de
+  `loreTiers`); lo que se sabe **de** ellas hay que ganárselo. La **fase lunar**
+  del centro del calendario se queda: se ve mirando al cielo.
+- **Estado final de `/reino`**: intro · historia breve · saber del PJ ·
+  `ReinoRegions` · calendario (rueda + festividades). Nada más.
 - **Pendiente de decidir**: `ReinoRegions` sigue mostrando las 8 regiones de
   Tal'Dorei con su blurb a todo el mundo (geografía a la vista). Si se quiere
   gatear también, la entrada `reg:<slug>` del saber ya existe.
