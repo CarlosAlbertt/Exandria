@@ -10,6 +10,7 @@ import { ABILITIES, fmtMod } from "@/data/rules";
 import { xpForNext } from "@/data/leveling";
 import { derive } from "@/lib/derive";
 import { createClient } from "@/lib/supabase/client";
+import LorePicker from "@/components/LorePicker";
 
 const YA_TIENE_ACTIVO = "Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este.";
 
@@ -191,6 +192,8 @@ export default function GrupoPanel() {
               </Link>
             </div>
 
+            <EnsenarSaber userId={c.user_id} nombre={c.username} />
+
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
               <div className="flex items-center gap-2">
                 <p className="eyebrow !text-[9px]">Nivel</p>
@@ -362,6 +365,35 @@ export default function GrupoPanel() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Enseñar saber a mano: la vía de escape del DM para cualquier situación de
+// mesa ("eso tu personaje lo sabría"). Va por /api/dm/character (service_role).
+function EnsenarSaber({ userId, nombre }: { userId: string; nombre: string }) {
+  const [ids, setIds] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function give() {
+    if (ids.length === 0 || busy) return;
+    setBusy(true); setMsg(null);
+    await dmPatch(userId, { unlockLore: ids });
+    setMsg(`${nombre} ha aprendido ${ids.length} entrada${ids.length === 1 ? "" : "s"}.`);
+    setIds([]);
+    setBusy(false);
+  }
+
+  return (
+    <div className="mt-4 pt-3 border-t border-[var(--color-line)] space-y-2">
+      <LorePicker value={ids} onChange={setIds} label="Enseñar saber" />
+      {ids.length > 0 && (
+        <button className="btn-gold !py-1.5 !px-3 text-[12px]" onClick={give} disabled={busy}>
+          <i className="fas fa-graduation-cap mr-1.5" />Enseñar {ids.length} a {nombre}
+        </button>
+      )}
+      {msg && <p className="font-ui text-[12px] italic" style={{ color: "var(--color-primitivo)" }}>{msg}</p>}
     </div>
   );
 }

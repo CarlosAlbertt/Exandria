@@ -96,6 +96,23 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
 
   const [cat, setCat] = useState<ItemCat>("Aventura");
   const [openDoc, setOpenDoc] = useState<Item | null>(null); // documento in-game abierto (Fase M)
+  const [loreUnlocked, setLoreUnlocked] = useState<string[]>([]); // saber aprendido por este PJ
+  const [loreMsg, setLoreMsg] = useState<string | null>(null);
+
+  // Leer un tomo ENSEÑA: al abrir un documento con `unlockLore`, esas entradas
+  // se añaden al saber del personaje (solo en la ficha propia; si el DM está
+  // mirando la hoja de otro, no se le concede nada a nadie).
+  function openDocument(it: Item) {
+    setOpenDoc(it);
+    const ids = it.doc?.unlockLore ?? [];
+    if (saveMode !== "self" || !characterId || ids.length === 0) return;
+    const nuevos = ids.filter((id) => !loreUnlocked.includes(id));
+    if (nuevos.length === 0) return;
+    const next = [...loreUnlocked, ...nuevos];
+    setLoreUnlocked(next);
+    void saveCharacter(characterId, { lore_unlocked: next });
+    setLoreMsg(`Has aprendido ${nuevos.length} cosa${nuevos.length === 1 ? "" : "s"} nueva${nuevos.length === 1 ? "" : "s"}. Míralo en El Mundo de Exandria.`);
+  }
   const [custom, setCustom] = useState("");
   const [rollErr, setRollErr] = useState<string | null>(null); // error de publishRoll (salvación/pericia)
 
@@ -125,6 +142,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           if (row.equipment) setEquipment(row.equipment);
           if (row.hp_rolls) setHpRolls(row.hp_rolls);
           if (Array.isArray(row.skills)) setSkills(row.skills);
+          if (Array.isArray(row.lore_unlocked)) setLoreUnlocked(row.lore_unlocked);
         }
       } else {
         try {
@@ -731,7 +749,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                       </span>
                       {it.doc && (
                         <button className="btn-ghost !py-1 !px-2.5 text-[12px]" style={{ color: "var(--color-arcane-bright)" }}
-                          onClick={(e) => { e.stopPropagation(); setOpenDoc(it); }}><i className="fas fa-book-open mr-1" />Leer</button>
+                          onClick={(e) => { e.stopPropagation(); openDocument(it); }}><i className="fas fa-book-open mr-1" />Leer</button>
                       )}
                       {!readOnly && (
                         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -781,13 +799,13 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
 
       {personajesPanel}
 
-      {openDoc?.doc && <DocViewer item={openDoc} onClose={() => setOpenDoc(null)} />}
+      {openDoc?.doc && <DocViewer item={openDoc} note={loreMsg} onClose={() => { setOpenDoc(null); setLoreMsg(null); }} />}
     </>
   );
 }
 
 // Visor de documento in-game: pergamino a pantalla completa (carta, contrato…).
-function DocViewer({ item, onClose }: { item: Item; onClose: () => void }) {
+function DocViewer({ item, note, onClose }: { item: Item; note?: string | null; onClose: () => void }) {
   const doc = item.doc!;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }} onClick={onClose}>
@@ -800,6 +818,11 @@ function DocViewer({ item, onClose }: { item: Item; onClose: () => void }) {
         </div>
         {doc.imagen && <img src={doc.imagen} alt="" className="w-full rounded-lg mb-4 border" style={{ borderColor: "#3a2a1533" }} />}
         <p className="font-body text-[16px] leading-relaxed whitespace-pre-wrap" style={{ color: "#2a2018" }}>{doc.texto}</p>
+        {note && (
+          <p className="font-ui text-[13px] mt-5 pt-4 flex items-start gap-2" style={{ color: "#5a3a15", borderTop: "1px solid #3a2a1533" }}>
+            <i className="fas fa-book-open mt-0.5" />{note}
+          </p>
+        )}
       </div>
     </div>
   );

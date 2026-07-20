@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParty } from "@/lib/character";
 import { useDmStash, saveStash, type StashType, type StashEntry } from "@/lib/useDmStash";
 import { generarDocumento } from "@/lib/generar";
+import LorePicker from "@/components/LorePicker";
 
 const TYPES: { id: StashType; label: string; icon: string }[] = [
   { id: "magico", label: "Mágico", icon: "fa-wand-sparkles" },
@@ -31,6 +32,7 @@ export default function BaulPanel() {
   const [docTitulo, setDocTitulo] = useState("");
   const [docTexto, setDocTexto] = useState("");
   const [docImagen, setDocImagen] = useState("");
+  const [docLore, setDocLore] = useState<string[]>([]);
   const [genBusy, setGenBusy] = useState(false);
   const [genErr, setGenErr] = useState<string | null>(null);
   const [genOffline, setGenOffline] = useState(false);
@@ -53,7 +55,11 @@ export default function BaulPanel() {
   function add() {
     if (!name.trim()) return;
     const doc = docTitulo.trim() && docTexto.trim()
-      ? { titulo: docTitulo.trim(), texto: docTexto.trim(), imagen: docImagen.trim() || undefined }
+      ? {
+          titulo: docTitulo.trim(), texto: docTexto.trim(),
+          imagen: docImagen.trim() || undefined,
+          unlockLore: docLore.length ? docLore : undefined,
+        }
       : undefined;
     const entry: StashEntry = {
       id: crypto.randomUUID(),
@@ -65,7 +71,7 @@ export default function BaulPanel() {
     };
     void saveStash([...stash, entry]);
     setName(""); setType("normal"); setQty(1); setNotes("");
-    setDocOpen(false); setDocTitulo(""); setDocTexto(""); setDocImagen(""); setGenErr(null);
+    setDocOpen(false); setDocTitulo(""); setDocTexto(""); setDocImagen(""); setDocLore([]); setGenErr(null);
   }
 
   function togglePick(entryId: string, userId: string) {
@@ -168,7 +174,8 @@ export default function BaulPanel() {
               <input value={docImagen} onChange={(e) => setDocImagen(e.target.value)} placeholder="URL de imagen (opcional)"
                 className={inputCls} style={{ color: "var(--color-warm)" }} />
               {genErr && <p className="text-[12px] italic" style={{ color: "var(--color-ember)" }}>{genErr}</p>}
-              <p className="text-[11px] italic" style={{ color: "var(--color-dim)" }}>Se adjunta al objeto; el jugador lo abrirá desde su inventario.</p>
+              <LorePicker value={docLore} onChange={setDocLore} label="Qué enseña al leerlo" />
+              <p className="text-[11px] italic" style={{ color: "var(--color-dim)" }}>Se adjunta al objeto; el jugador lo abrirá desde su inventario y aprenderá lo marcado.</p>
             </div>
           )}
         </div>

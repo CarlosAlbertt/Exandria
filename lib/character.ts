@@ -8,7 +8,8 @@ import type { CharSlot } from "@/lib/archive";
 
 // Documento in-game legible (Fase M): carta, contrato, página de diario, mapa…
 // Vive dentro del item (jsonb), sin migración. El jugador lo abre en un visor.
-export type ItemDoc = { titulo: string; texto: string; imagen?: string };
+// unlockLore: ids de entradas de saber que este tomo ENSEÑA al leerlo.
+export type ItemDoc = { titulo: string; texto: string; imagen?: string; unlockLore?: string[] };
 export type Item = { id: string; name: string; qty: number; notes?: string; doc?: ItemDoc };
 
 export type Asi = Record<string, Partial<Record<AbilityKey, number>>>;
