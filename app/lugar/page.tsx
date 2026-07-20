@@ -13,6 +13,7 @@ import PosadaSection from "@/components/lugar/PosadaSection";
 import NpcSection from "@/components/lugar/NpcSection";
 import TablonSection from "@/components/lugar/TablonSection";
 import SaberRoll from "@/components/lugar/SaberRoll";
+import ClimaEfectos from "@/components/lugar/ClimaEfectos";
 
 export default function LugarPage() {
   const { location, ready } = usePartyLocation();
@@ -70,6 +71,8 @@ export default function LugarPage() {
         <span className="font-semibold">{weather.condition}</span>
         <span style={{ color: "var(--color-dim)" }}>· {weather.temp} · {moment.season}</span>
       </div>
+
+      <ClimaEfectos weather={weather} />
 
       {townImg && (
         <img src={townImg} alt={poi.name} loading="lazy" className="w-full rounded-xl border border-[var(--color-line)] mb-2" />
