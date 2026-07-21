@@ -1,6 +1,6 @@
 // Comprobación manual de la lore de continentes y de la fusión del atlas.
 // Uso: npx tsx scripts/check-lore.ts
-import { SABER } from "../data/saber";
+import { SABER, PLACES, PLACE_ACCENT, CATEGORIES } from "../data/saber";
 import { knows, type SaberCtx } from "../lib/saber";
 import { CONTINENT_LORE } from "../data/continentes";
 import { REGIONS_BY_CONTINENT, WORLD_POIS, CONTINENTS } from "../data/world";
@@ -91,6 +91,23 @@ check("la fusión no duplica POIs", new Set(nombresPoiFusion).size === nombresPo
 // Fusionar dos veces no debe cambiar nada más (idempotente).
 const segunda = mergeAtlas(fusionado);
 check("mergeAtlas es idempotente", segunda.changed === false);
+
+// --- Reparto por lugar y categoría -----------------------------------------
+const lugaresValidos = new Set<string>(PLACES);
+const categoriasValidas = new Set<string>(CATEGORIES);
+check("toda entrada tiene un lugar válido", SABER.every((e) => lugaresValidos.has(e.place)));
+check("toda entrada tiene una categoría válida", SABER.every((e) => categoriasValidas.has(e.category)));
+check("todo lugar tiene color", PLACES.every((p) => !!PLACE_ACCENT[p]));
+check("ningún lugar se queda vacío", PLACES.every((p) => SABER.some((e) => e.place === p)));
+
+for (const cont of ["Marquet", "Issylra", "Dientes Rotos"]) {
+  const suyas = SABER.filter((e) => e.id.startsWith(`cl:${cont.toLowerCase().replace(/ /g, "-")}:`));
+  check(`${cont}: su lore va a su lugar`, suyas.length > 0 && suyas.every((e) => e.place === cont));
+}
+check("las deidades van a Exandria", SABER.filter((e) => e.id.startsWith("dei:")).every((e) => e.place === "Exandria" && e.category === "Fe"));
+check("las facciones de Tal'Dorei van a Potencias", SABER.filter((e) => e.id.startsWith("fac:")).every((e) => e.place === "Tal'Dorei" && e.category === "Potencias"));
+check("lo de Wildemount va a Wildemount", SABER.filter((e) => e.id.startsWith("wmreg:") || e.id.startsWith("wmfac:")).every((e) => e.place === "Wildemount"));
+check("los secretos van a la categoría Secretos", SABER.filter((e) => e.scope.kind === "secreto").every((e) => e.category === "Secretos"));
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);

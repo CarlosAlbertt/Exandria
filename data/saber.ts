@@ -29,6 +29,33 @@ export type SaberScope =
   // No se deduce de quién eres; hay que ganárselo jugando.
   | { kind: "oculto" };
 
+export const PLACES = ["Exandria", "Tal'Dorei", "Marquet", "Issylra", "Wildemount", "Dientes Rotos"] as const;
+export type SaberPlace = (typeof PLACES)[number];
+
+export const CATEGORIES = ["Geografía", "Historia", "Fe", "Potencias", "Vida y lenguas", "Cosmos", "Secretos"] as const;
+export type SaberCategory = (typeof CATEGORIES)[number];
+
+// Color por LUGAR (no por categoría): de un vistazo sabes de qué tierra hablas.
+// Mismas variables que WORLD_COLOR; los acentos son datos en este proyecto
+// (precedente: Region.accent en data/taldorei.ts).
+export const PLACE_ACCENT: Record<SaberPlace, string> = {
+  "Exandria": "var(--color-gold)",
+  "Tal'Dorei": "var(--color-bronze-bright)",
+  "Marquet": "var(--color-ember)",
+  "Issylra": "var(--color-arcane)",
+  "Wildemount": "var(--color-violet)",
+  "Dientes Rotos": "var(--color-primitivo)",
+};
+
+export const PLACE_ICON: Record<SaberPlace, string> = {
+  "Exandria": "fa-globe",
+  "Tal'Dorei": "fa-tree",
+  "Marquet": "fa-sun",
+  "Issylra": "fa-snowflake",
+  "Wildemount": "fa-mountain",
+  "Dientes Rotos": "fa-water",
+};
+
 export type SaberEntry = {
   id: string;
   scope: SaberScope;
@@ -38,6 +65,10 @@ export type SaberEntry = {
   title: string;
   text: string;
   poi?: string; // lugar ligado (para la tirada de saber in situ)
+  /** tierra a la que pertenece; "Exandria" = lo que no es de ningún continente */
+  place: SaberPlace;
+  /** eje transversal al ámbito, para agrupar dentro de cada lugar */
+  category: SaberCategory;
 };
 
 // Primera frase de un texto (para la versión "un poco" de los continentes).
@@ -60,8 +91,8 @@ function deityText(d: Deity): string {
 }
 
 // --- CONTINENTES: básico para todos, profundo para quien es de allí ---------
-function continentEntries(): SaberEntry[] {
-  const out: SaberEntry[] = [];
+function continentEntries(): Omit<SaberEntry, "place" | "category">[] {
+  const out: Omit<SaberEntry, "place" | "category">[] = [];
   for (const p of WORLD_POIS.filter((w) => w.type === "continente")) {
     out.push({
       id: `cont:${p.continent}:basico`,
@@ -84,7 +115,7 @@ function continentEntries(): SaberEntry[] {
 }
 
 // --- SUBREGIONES DE TAL'DOREI: solo la tuya (o descubierta) -----------------
-function regionEntries(): SaberEntry[] {
+function regionEntries(): Omit<SaberEntry, "place" | "category">[] {
   return REGIONS.map((r) => ({
     id: `reg:${r.slug}`,
     scope: { kind: "region" as const, regionSlug: r.slug },
@@ -100,7 +131,7 @@ function regionEntries(): SaberEntry[] {
 }
 
 // --- DEIDADES: solo la tuya (o descubierta) ---------------------------------
-function deityEntries(): SaberEntry[] {
+function deityEntries(): Omit<SaberEntry, "place" | "category">[] {
   return ALL_DEITIES.map((d) => ({
     id: `dei:${d.slug}`,
     scope: { kind: "deidad" as const, deitySlug: d.slug, side: d.side },
@@ -112,7 +143,7 @@ function deityEntries(): SaberEntry[] {
 }
 
 // --- FACCIONES Y SOCIEDADES: no se saben de nacimiento, se descubren --------
-function factionEntries(): SaberEntry[] {
+function factionEntries(): Omit<SaberEntry, "place" | "category">[] {
   return FACTIONS.map((f) => ({
     id: `fac:${slugKey(f.name)}`,
     scope: { kind: "oculto" as const },
@@ -124,8 +155,8 @@ function factionEntries(): SaberEntry[] {
 }
 
 // --- WILDEMOUNT: sus regiones las conoce quien es de allí; el resto, no -----
-function wildemountEntries(): SaberEntry[] {
-  const out: SaberEntry[] = [];
+function wildemountEntries(): Omit<SaberEntry, "place" | "category">[] {
+  const out: Omit<SaberEntry, "place" | "category">[] = [];
   for (const r of WILDEMOUNT_REGIONS) {
     out.push({
       id: `wmreg:${r.slug}`,
@@ -160,7 +191,7 @@ function scopeOfContinentLore(e: ContinentLoreEntry): SaberScope {
   }
 }
 
-function continentLoreEntries(): SaberEntry[] {
+function continentLoreEntries(): Omit<SaberEntry, "place" | "category">[] {
   return CONTINENT_LORE.map((e) => ({
     id: `cl:${slugKey(e.continent)}:${e.id}`,
     scope: scopeOfContinentLore(e),
@@ -173,8 +204,8 @@ function continentLoreEntries(): SaberEntry[] {
 }
 
 // --- HISTORIA DETALLADA: la breve la sabe todo el mundo; el detalle, no -----
-function historyEntries(): SaberEntry[] {
-  const out: SaberEntry[] = [];
+function historyEntries(): Omit<SaberEntry, "place" | "category">[] {
+  const out: Omit<SaberEntry, "place" | "category">[] = [];
   for (const e of HISTORY) {
     out.push({ id: `hist:${slugKey(e.year + e.title)}`, scope: { kind: "erudito", skill: "Historia" }, depth: "profundo", topic: `Historia · ${e.year}`, title: e.title, text: e.text });
   }
@@ -186,7 +217,7 @@ function historyEntries(): SaberEntry[] {
 
 // --- LUNAS: que hay dos se ve desde cualquier parte (entrada común de
 // loreTiers); lo que se sabe DE ellas ya no, se descubre. -------------------
-function moonEntries(): SaberEntry[] {
+function moonEntries(): Omit<SaberEntry, "place" | "category">[] {
   return MOONS.map((m) => ({
     id: `luna:${slugKey(m.name)}`,
     scope: { kind: "oculto" as const },
@@ -198,7 +229,7 @@ function moonEntries(): SaberEntry[] {
 }
 
 // --- PLANOS: cosa de arcanistas --------------------------------------------
-function planeEntries(): SaberEntry[] {
+function planeEntries(): Omit<SaberEntry, "place" | "category">[] {
   return PLANES.map((p) => ({
     id: `plano:${slugKey(p.name)}`,
     scope: { kind: "erudito" as const, skill: "Arcanos" as const },
@@ -215,8 +246,8 @@ function slugKey(s: string): string {
 }
 
 // --- CAPA CURADA: erudito (por pericia) y secreto (lo revela el DM) ---------
-function curatedEntries(): SaberEntry[] {
-  const out: SaberEntry[] = [];
+function curatedEntries(): Omit<SaberEntry, "place" | "category">[] {
+  const out: Omit<SaberEntry, "place" | "category">[] = [];
   for (const e of LORE_TIERS) {
     if (e.tier === "erudito" && e.unlockSkill) {
       out.push({ id: e.id, scope: { kind: "erudito", skill: e.unlockSkill }, depth: "profundo", topic: e.topic, title: e.title, text: e.text });
@@ -230,7 +261,46 @@ function curatedEntries(): SaberEntry[] {
   return out;
 }
 
-export const SABER: SaberEntry[] = [
+// El lugar sale del ORIGEN de la entrada (su prefijo de id o su ámbito). Lo que
+// no es de ningún continente —panteón, eras, lunas, planos— cae en "Exandria",
+// que hace de cajón del mundo.
+function placeOf(e: Omit<SaberEntry, "place" | "category">): SaberPlace {
+  if (e.scope.kind === "continente" && (PLACES as readonly string[]).includes(e.scope.continent)) {
+    return e.scope.continent as SaberPlace;
+  }
+  if (e.id.startsWith("reg:") || e.id.startsWith("fac:")) return "Tal'Dorei";
+  if (e.id.startsWith("wm") || e.id.startsWith("lang:") || e.id.startsWith("vida:")) return "Wildemount";
+  if (e.id.startsWith("cl:")) {
+    const found = PLACES.find((p) => e.id.startsWith(`cl:${slugKey(p)}:`));
+    if (found) return found;
+  }
+  return "Exandria";
+}
+
+// La categoría cruza el ámbito: un secreto de Marquet es "Secretos" de Marquet.
+function categoryOf(e: Omit<SaberEntry, "place" | "category">): SaberCategory {
+  if (e.scope.kind === "secreto") return "Secretos";
+  if (e.scope.kind === "deidad") return "Fe";
+  if (e.id.startsWith("lang:") || e.id.startsWith("vida:")) return "Vida y lenguas";
+  if (e.id.startsWith("luna:") || e.id.startsWith("plano:")) return "Cosmos";
+  if (e.id.startsWith("hist:") || e.id.startsWith("crono:")) return "Historia";
+  if (e.scope.kind === "erudito") {
+    if (e.scope.skill === "Historia") return "Historia";
+    if (e.scope.skill === "Religión") return "Fe";
+    if (e.scope.skill === "Arcanos") return "Cosmos";
+    return "Geografía"; // Naturaleza
+  }
+  if (e.scope.kind === "oculto") {
+    return e.topic.startsWith("Lenguas") || e.topic.startsWith("Vida") ? "Vida y lenguas" : "Potencias";
+  }
+  return "Geografía";
+}
+
+function tag(entries: Omit<SaberEntry, "place" | "category">[]): SaberEntry[] {
+  return entries.map((e) => ({ ...e, place: placeOf(e), category: categoryOf(e) }));
+}
+
+export const SABER: SaberEntry[] = tag([
   ...continentEntries(),
   ...regionEntries(),
   ...deityEntries(),
@@ -241,7 +311,7 @@ export const SABER: SaberEntry[] = [
   ...moonEntries(),
   ...planeEntries(),
   ...curatedEntries(),
-];
+]);
 
 export function saberById(id: string): SaberEntry | undefined {
   return SABER.find((e) => e.id === id);
