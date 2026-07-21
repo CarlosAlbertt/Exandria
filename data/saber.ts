@@ -15,6 +15,7 @@ import { WORLD_POIS } from "@/data/world";
 import { PLANES, MOONS } from "@/data/cosmology";
 import { WILDEMOUNT_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "@/data/wildemount";
 import { LORE_TIERS, type LoreSkill } from "@/data/loreTiers";
+import { CONTINENT_LORE, type ContinentLoreEntry } from "@/data/continentes";
 
 export type SaberScope =
   | { kind: "continente"; continent: string }
@@ -147,6 +148,30 @@ function wildemountEntries(): SaberEntry[] {
   return out;
 }
 
+// --- MARQUET, ISSYLRA Y LOS DIENTES ROTOS ----------------------------------
+// Igual que Wildemount: lo de tu continente lo sabes por ser de allí, lo
+// erudito por pericia, y las potencias/sociedades hay que descubrirlas.
+function scopeOfContinentLore(e: ContinentLoreEntry): SaberScope {
+  switch (e.tier) {
+    case "continente": return { kind: "continente", continent: e.continent };
+    case "erudito": return { kind: "erudito", skill: e.skill ?? "Historia" };
+    case "secreto": return { kind: "secreto" };
+    case "oculto": return { kind: "oculto" };
+  }
+}
+
+function continentLoreEntries(): SaberEntry[] {
+  return CONTINENT_LORE.map((e) => ({
+    id: `cl:${slugKey(e.continent)}:${e.id}`,
+    scope: scopeOfContinentLore(e),
+    depth: "profundo" as const,
+    topic: e.topic,
+    title: e.title,
+    text: e.text,
+    poi: e.poi,
+  }));
+}
+
 // --- HISTORIA DETALLADA: la breve la sabe todo el mundo; el detalle, no -----
 function historyEntries(): SaberEntry[] {
   const out: SaberEntry[] = [];
@@ -211,6 +236,7 @@ export const SABER: SaberEntry[] = [
   ...deityEntries(),
   ...factionEntries(),
   ...wildemountEntries(),
+  ...continentLoreEntries(),
   ...historyEntries(),
   ...moonEntries(),
   ...planeEntries(),
