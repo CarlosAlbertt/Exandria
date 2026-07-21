@@ -16,6 +16,7 @@ import { PLANES, MOONS } from "@/data/cosmology";
 import { WILDEMOUNT_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "@/data/wildemount";
 import { LORE_TIERS, type LoreSkill } from "@/data/loreTiers";
 import { CONTINENT_LORE, type ContinentLoreEntry } from "@/data/continentes";
+import { CALAMIDAD_LORE } from "@/data/calamidad";
 
 export type SaberScope =
   | { kind: "continente"; continent: string }
@@ -205,6 +206,20 @@ function continentLoreEntries(): Omit<SaberEntry, "place" | "category">[] {
   }));
 }
 
+// La Calamidad no es de ningún continente: su `place` cae en "Exandria" por
+// defecto, que es justo lo que se quiere.
+function calamidadEntries(): Omit<SaberEntry, "place" | "category">[] {
+  return CALAMIDAD_LORE.map((e) => ({
+    id: `cal:${e.id}`,
+    scope: scopeOfContinentLore(e),
+    depth: "profundo" as const,
+    topic: e.topic,
+    title: e.title,
+    text: e.text,
+    poi: e.poi,
+  }));
+}
+
 // --- HISTORIA DETALLADA: la breve la sabe todo el mundo; el detalle, no -----
 function historyEntries(): Omit<SaberEntry, "place" | "category">[] {
   const out: Omit<SaberEntry, "place" | "category">[] = [];
@@ -309,6 +324,7 @@ export const SABER: SaberEntry[] = tag([
   ...factionEntries(),
   ...wildemountEntries(),
   ...continentLoreEntries(),
+  ...calamidadEntries(),
   ...historyEntries(),
   ...moonEntries(),
   ...planeEntries(),

@@ -3,6 +3,7 @@
 import { SABER, PLACES, PLACE_ACCENT, CATEGORIES } from "../data/saber";
 import { knows, type SaberCtx } from "../lib/saber";
 import { CONTINENT_LORE } from "../data/continentes";
+import { CALAMIDAD_RELATO, CALAMIDAD_LORE } from "../data/calamidad";
 import { REGIONS_BY_CONTINENT, WORLD_POIS, CONTINENTS } from "../data/world";
 import { seedAtlas, mergeAtlas, type AtlasDefs } from "../data/atlas";
 
@@ -115,6 +116,16 @@ check("las deidades van a Exandria", SABER.filter((e) => e.id.startsWith("dei:")
 check("las facciones de Tal'Dorei van a Potencias", SABER.filter((e) => e.id.startsWith("fac:")).every((e) => e.place === "Tal'Dorei" && e.category === "Potencias"));
 check("lo de Wildemount va a Wildemount", SABER.filter((e) => e.id.startsWith("wmreg:") || e.id.startsWith("wmfac:")).every((e) => e.place === "Wildemount"));
 check("los secretos van a la categoría Secretos", SABER.filter((e) => e.scope.kind === "secreto").every((e) => e.category === "Secretos"));
+
+// --- Exandria y la Calamidad -----------------------------------------------
+check("el relato tiene cinco actos", CALAMIDAD_RELATO.length === 5);
+check("ningún acto vacío", CALAMIDAD_RELATO.every((a) => a.title.trim() && a.body.trim()));
+const cal = SABER.filter((e) => e.id.startsWith("cal:"));
+check("la lore de la Calamidad entra en el saber", cal.length === CALAMIDAD_LORE.length && cal.length >= 12);
+check("toda la Calamidad va al lugar Exandria", cal.every((e) => e.place === "Exandria"));
+check("la Calamidad no se sabe por origen", cal.filter((e) => e.scope.kind !== "continente").every((e) => !knows(e, { ...base, originContinent: "Tal'Dorei" })));
+const poisCal = CALAMIDAD_LORE.filter((e) => e.poi && !nombresPoi.has(e.poi)).map((e) => e.poi);
+check(`los poi de la Calamidad existen (${poisCal.join(", ") || "ninguno huérfano"})`, poisCal.length === 0);
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);
