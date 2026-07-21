@@ -152,3 +152,74 @@ export function seedAtlas(taldoreiOverride?: { regions: Region[]; pois: Record<s
 
   return atlas;
 }
+
+// --- FUSIÓN CON LO YA GUARDADO ---------------------------------------------
+// `seedAtlas` solo corre la PRIMERA vez (ver lib/useAtlas.ts): en cuanto existe
+// `atlas_defs` en app_config, ampliar data/world.ts no llegaba nunca a la mesa.
+// `mergeAtlas` arregla eso SUMANDO lo que falta y sin tocar nada de lo que el DM
+// ya tiene: regiones nuevas por nombre y POIs nuevos por nombre. No renombra, no
+// reposiciona y no borra — si el DM movió un pin o le cambió el blurb, se queda
+// como está. Un POI que ya exista en CUALQUIER región del continente cuenta como
+// presente (si el DM lo movió de región, no se duplica).
+export function mergeAtlas(stored: AtlasDefs): { atlas: AtlasDefs; changed: boolean } {
+  const atlas: AtlasDefs = { ...stored };
+  let changed = false;
+
+  const usedSlugs = new Set<string>(
+    Object.values(stored).flatMap((c) => (c?.regions ?? []).map((r) => r.slug))
+  );
+
+  // POIs por defecto de Tal'Dorei: van keyed por slug de región, no por nombre.
+  const addPois = (cont: ContinentAtlas, slug: string, incoming: Poi[]) => {
+    const known = new Set(Object.values(cont.pois).flat().map((p) => p.name));
+    const nuevos = incoming.filter((p) => !known.has(p.name));
+    if (!nuevos.length) return;
+    cont.pois = { ...cont.pois, [slug]: [...(cont.pois[slug] ?? []), ...nuevos] };
+    changed = true;
+  };
+
+  for (const contName of [...GENERATED_CONTINENTS, "Tal'Dorei"]) {
+    const prev = stored[contName];
+    // Continente que no estaba guardado (p. ej. atlas viejo): se siembra entero.
+    if (!prev) {
+      atlas[contName] = contName === "Tal'Dorei"
+        ? { regions: REGIONS, pois: POIS }
+        : seedContinent(contName, usedSlugs);
+      changed = true;
+      continue;
+    }
+
+    const cont: ContinentAtlas = { regions: [...prev.regions], pois: { ...prev.pois } };
+    atlas[contName] = cont;
+
+    if (contName === "Tal'Dorei") {
+      for (const r of REGIONS) {
+        if (!cont.regions.some((x) => x.slug === r.slug || x.name === r.name)) {
+          cont.regions.push(r);
+          usedSlugs.add(r.slug);
+          changed = true;
+        }
+        const slug = cont.regions.find((x) => x.name === r.name)?.slug ?? r.slug;
+        addPois(cont, slug, POIS[r.slug] ?? []);
+      }
+      continue;
+    }
+
+    const semilla = seedContinent(contName, new Set(usedSlugs));
+    for (const región of semilla.regions) {
+      const existente = cont.regions.find((x) => x.name === región.name);
+      if (existente) {
+        addPois(cont, existente.slug, semilla.pois[región.slug] ?? []);
+        continue;
+      }
+      // Región nueva: slug único frente a TODO lo que ya hay guardado.
+      const slug = uniqueRegionSlug(región.name, contName, usedSlugs);
+      usedSlugs.add(slug);
+      cont.regions.push({ ...región, slug });
+      cont.pois = { ...cont.pois, [slug]: semilla.pois[región.slug] ?? [] };
+      changed = true;
+    }
+  }
+
+  return { atlas, changed };
+}

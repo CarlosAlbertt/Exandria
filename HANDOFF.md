@@ -272,6 +272,60 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-21): lore de Marquet, Issylra y los Dientes Rotos 🌍📚
+Rama `lore-continentes`. **Sin migración.** Los tres continentes que solo eran
+pines sueltos pasan a tener mapa poblado y saber propio, al nivel de Wildemount.
+
+- **`data/world.ts` +50 pines y 3 regiones nuevas**: Marquet gana **Montañas
+  Aggrad** y **Arenas Panagrip** (Golfo de los Dones, Bóveda de Shumas,
+  Ascuacorona, Escaldaviento, Cael Morrow, La Falla, Caída del Rey, Loonpur,
+  Nadigarh, Heartmoor + aldea, Sendas Honradas, Evishi, Goradire, Otoladume,
+  Refugio Sapiro, Isla de Droojh, Valle Hundido, Eish Allay, Lago Koron,
+  Seminario Aydinlan, Turbión de Seda, Montañas Kaal, Canal Lapis, Gelvaan,
+  Sruwargas, Volcán Suuthan); Issylra gana **Alcance Caramarin** (Bosque Vesper,
+  Tundra Thorain, Muldire, Zenwick, Valle Cegado, Criptas de Thomara,
+  Marrowglade, Puente Ascendente, Shorecomb, Scaldseat, Yunque Primigenio,
+  Garganta Espectro, Camino Exterior, Hearthdell, Endovaar, Yermo Serratus,
+  Cañón Irriam, Lago Umamu); Dientes Rotos gana Igthuldus, Pico Athos, Slival,
+  Shardborne, arrecifes Utu y Bermellón, Monte Ygora, Kurunpa-Mina y Yutazo.
+  Mares gana el Mar Berilo. **`Ruukvaya` renombrada a `Ruukva`** (el nombre de
+  la ambientación).
+- **`mergeAtlas` en `data/atlas.ts` + `lib/useAtlas.ts`**: `seedAtlas` solo
+  corría la **primera** vez, así que ampliar `world.ts` no llegaba nunca a un
+  `atlas_defs` ya sembrado en Supabase. Ahora, al cargar, lo guardado **manda** y
+  se le **suman** las regiones y POIs que falten (por nombre). No renombra, no
+  reposiciona, no borra: blurbs editados, pines movidos y POIs inventados por el
+  DM se quedan como están. Un POI que ya exista en cualquier región del
+  continente cuenta como presente (si el DM lo movió, no se duplica). Persiste
+  solo si hubo cambios, y es **idempotente**.
+  > **Ojo con el rename**: la fusión suma, no renombra. En un atlas ya sembrado
+  > aparecerá **Ruukva** al lado de la vieja **Ruukvaya**; borrar la vieja a mano
+  > desde Panel DM › Mapa › POIs por región.
+- **`data/continentes.ts`** (nuevo, patrón de `data/wildemount.ts`): 45 entradas
+  de lore con redacción propia, cada una con su `tier` — `continente` (lo sabe
+  quien es de allí), `erudito` + pericia, `oculto` (potencias y sociedades, hay
+  que descubrirlas) y `secreto` (lo revela el DM). Cubre geografía, gentes,
+  lengua y cocina de Marquet; el golpe de Gruumsh/Alyxian que creó el Rumedam y
+  hundió Cael Morrow; la fundación de Ank'Harel por J'mon Sa Ord y el asedio de
+  Thordak; la Guerra Ápice y las cinco potencias marquesianas; el frío, la fe y
+  el recelo arcano de Issylra, Thomara, Marrowglade, el Yunque Primigenio y el
+  portal del Lago Umamu; y en los Dientes Rotos las islas que se mueven, la
+  Hueste Osendada y la Asamblea Wanderman, Domunas, el Monte Ygora, la noche que
+  Avalir rompió el continente, Evontra'vir y las Fauces de Chynes. Muchas llevan
+  `poi`, así que entran en la **tirada de saber in situ** de `/lugar`.
+- **`data/saber.ts`** las traduce a ámbitos con `scopeOfContinentLore`; ids
+  prefijados `cl:<continente>:<id>`.
+- Verificado: `tsc --noEmit` + `next build` limpios **y `npx tsx
+  scripts/check-lore.ts` con 35 comprobaciones en verde** — ids únicos, todo
+  `poi` citado existe en `WORLD_POIS`, las reglas del saber por origen (forastero
+  no sabe / nativo sí / erudito por pericia / oculto solo desbloqueado / secreto
+  solo revelado / el DM lo ve todo), slugs de región únicos globalmente y la
+  fusión del atlas (recupera lo que falta, respeta lo editado, no duplica, es
+  idempotente). **No probado en vivo.** **Prueba del usuario**: abrir `/mapa`,
+  entrar en Marquet/Issylra/Dientes Rotos y ver las regiones y POIs nuevos; crear
+  un PJ con origen en uno de esos continentes y comprobar en `/reino` que sabe lo
+  suyo y tiene el resto con candado.
+
 ## RESUELTO (2026-07-19): el clima extremo pasa factura ❄️🔥
 Rama `clima-efectos`. **Sin migración.** Amplía el clima de la Fase N (que ya
 estaba completa) con **consecuencias de mesa**.

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
-import { seedAtlas, type AtlasDefs } from "@/data/atlas";
+import { mergeAtlas, seedAtlas, type AtlasDefs } from "@/data/atlas";
 import type { Region } from "@/data/taldorei";
 import type { Poi } from "@/data/pois";
 
@@ -53,8 +53,13 @@ export function useAtlas() {
       if (!mounted) return;
       const parsed = parseAtlas(data?.value);
       if (parsed) {
-        setAtlas(parsed);
+        // Lo guardado manda, pero se le suma lo que haya entrado nuevo en
+        // data/world.ts desde la última vez (regiones y POIs que aún no
+        // existían). Nunca se pisa ni se borra nada editado por el DM.
+        const { atlas: merged, changed } = mergeAtlas(parsed);
+        setAtlas(merged);
         setReady(true);
+        if (changed) void persist(merged);
         return;
       }
 
