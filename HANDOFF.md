@@ -1,4 +1,4 @@
-# HANDOFF — Exandria, compañero de campaña D&D
+﻿# HANDOFF — Exandria, compañero de campaña D&D
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
@@ -11,13 +11,11 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > bloque para el DM. Ninguna de las dos tandas necesita migración. Ver las dos
 > secciones RESUELTO del 2026-07-21 más abajo.
 
-> [!danger] ⚠️ 3 MIGRACIONES PENDIENTES antes de nada
-> Ejecutar en el SQL Editor de Supabase, en orden: **`schema_v17.sql`**
-> (tablón), **`schema_v18.sql`** (memoria de NPC) y **`schema_v19.sql`** (saber
-> por origen). Las tres son idempotentes y **solo añaden** (no reestructuran como
-> la v14). **La v19 es la más urgente**: el saber por origen entero (creador con
-> origen/deidad, `/reino`, las 4 vías de descubrimiento) cuelga de ella; sin
-> correrla, `/reino` sale todo bloqueado y el creador no guarda origen/deidad.
+> [!tip] ✅ Migraciones al día
+> **No queda ninguna pendiente.** `schema_v17` (tablón), `schema_v18` (memoria de
+> NPC) y `schema_v19` (saber por origen) las ejecutó el usuario el **2026-07-21**.
+> Con la v19 dentro, el saber por origen funciona entero: el creador guarda
+> origen y deidad, y `/reino` deja de salir todo bloqueado.
 
 **Hecho y en `master` (pusheado, Vercel auto-despliega)** esta tanda:
 - Fases **F** (tablón), **M completa** (generadores IA + documentos in-game +
@@ -233,21 +231,20 @@ action_ready, npc_chat) · `schema_v3.sql` (pin_x/pin_y, poi_state) ·
 `schema_v6.sql` (group_action.speaker) · `schema_v7.sql` (world_poi, sin uso) ·
 `schema_v8.sql` (characters: level/gold/asi/equipment/items) · `schema_v9.sql`
 (characters.hp_rolls) · `schema_v10.sql` (characters.xp) · `schema_v11.sql`
-(dice_rolls, roll_requests, initiative — **PENDIENTE de ejecutar por el
-usuario**) · `schema_v12.sql` (journal_entries, quests, npcs_met,
-app_config.campaign_date — **PENDIENTE de ejecutar por el usuario**) ·
+(dice_rolls, roll_requests, initiative — ya ejecutada) · `schema_v12.sql`
+(journal_entries, quests, npcs_met, app_config.campaign_date — ya ejecutada) ·
 `schema_v13.sql` (**stat_rolls** — Fase K: tirada única de aptitudes,
 inmutable por PK + sin policy de update; solo el DM borra = resetear — **ya
 ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** — ya ejecutada) ·
 `schema_v15.sql` (**tiendas**: shops/shop_items/shop_log — ya ejecutada) ·
 `schema_v16.sql` (**PNJs**: location_npcs — ya ejecutada) · `schema_v17.sql`
 (**tablón**, Fase F: quests gana el estado `'oferta'` + columnas `poi_name`/
-`reward` — **PENDIENTE de ejecutar**) · `schema_v18.sql` (**memoria de NPC**,
-Fase M: tabla `npc_memories` — **PENDIENTE de ejecutar**) · `schema_v19.sql`
-(**saber por origen**: origen/deidad/`lore_unlocked` en `characters`,
-`quests.unlock_lore`, tabla `lore_rolls` — **PENDIENTE de ejecutar**). El bucket
-de Storage `assets` (`storage-assets.sql`, Fase H) también ejecutado. **Todo al
-día a 2026-07-17 salvo v17, v18 y v19 (2026-07-19).**
+`reward` — ya ejecutada) · `schema_v18.sql` (**memoria de NPC**, Fase M: tabla
+`npc_memories` — ya ejecutada) · `schema_v19.sql` (**saber por origen**:
+origen/deidad/`lore_unlocked` en `characters`, `quests.unlock_lore`, tabla
+`lore_rolls` — ya ejecutada). El bucket de Storage `assets`
+(`storage-assets.sql`, Fase H) también ejecutado. **Todo al día a 2026-07-21: el
+usuario confirmó que no queda ninguna migración pendiente.**
 
 > ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
 > columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
@@ -697,7 +694,7 @@ Rama `fase-f-tablon`. Spec/plan en
   `'oferta'` (recrea el CHECK de `status`) + columnas `poi_name text` (POI donde
   se publica, casa con `Poi.name`) y `reward text` (recompensa en texto). RLS y
   Realtime sin cambios (la policy de lectura ya dejaba ver todo lo que no es
-  `'oculta'`; `quests` ya estaba en la publicación). **PENDIENTE de ejecutar.**
+  `'oculta'`; `quests` ya estaba en la publicación). **Ya ejecutada** (2026-07-21).
 - **UI DM** (`app/dm/CronicaPanel.tsx`): el CRUD de misiones ya existía; se
   amplía con `'oferta'` en `QUEST_LABEL`/`QUEST_COLOR` (el select de estado lo
   recoge solo) + inputs **POI** (con `<datalist>` de todos los POIs del atlas
@@ -733,7 +730,7 @@ Rama `fase-e-npcs`. Spec en
 
 - **Migración `schema_v16.sql`**: tabla `location_npcs` (poi_name, name, role,
   prompt, public, portrait). RLS: jugadores ven los `public`, el DM todos;
-  escritura DM. Realtime. **PENDIENTE de ejecutar por el usuario.**
+  escritura DM. Realtime. **Ya ejecutada** (2026-07-21).
 - **Chat IA reutilizable** `components/lugar/NpcChat.tsx` (`narrar` con persona).
   `lib/useNpcs.ts` (por POI, realtime, CRUD). `/lugar` › «Gente del lugar»
   (`NpcSection`): lista NPCs visibles → chat en personaje. Editor DM: pestaña
@@ -778,7 +775,7 @@ Rama `fase-c-tiendas`. Spec/plan en
   `default auth.uid()`). RLS: lectura autenticados; shops/items **crea/borra**
   DM; **update de shop_items autenticados** (el jugador decrementa stock al
   comprar — confianza de mesa); shop_log insert propio. Realtime en shop_items y
-  shop_log. **PENDIENTE de ejecutar por el usuario.**
+  shop_log. **Ya ejecutada** (2026-07-21).
 - **Compra/venta contra la ficha real** (`lib/shopTx.ts`): comprar = resta oro +
   añade item (`mergeItem`) + decrementa stock + fila en `shop_log`; vender =
   **mitad** del precio de catálogo (solo objetos que la tienda tiene por nombre).
