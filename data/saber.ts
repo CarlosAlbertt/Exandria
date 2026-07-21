@@ -17,6 +17,7 @@ import { WILDEMOUNT_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "
 import { LORE_TIERS, type LoreSkill } from "@/data/loreTiers";
 import { CONTINENT_LORE, type ContinentLoreEntry } from "@/data/continentes";
 import { CALAMIDAD_LORE } from "@/data/calamidad";
+import { slugify } from "@/lib/slug";
 
 export type SaberScope =
   | { kind: "continente"; continent: string }
@@ -32,6 +33,17 @@ export type SaberScope =
 
 export const PLACES = ["Exandria", "Tal'Dorei", "Marquet", "Issylra", "Wildemount", "Dientes Rotos"] as const;
 export type SaberPlace = (typeof PLACES)[number];
+
+// Los cinco continentes con página propia (`/reino/[continente]`). "Exandria"
+// queda fuera: es el cajón del mundo, y su contenido ya vive en la sección de
+// la Calamidad de /reino.
+export const HABITADOS = PLACES.filter((p) => p !== "Exandria") as readonly SaberPlace[];
+
+// slug de URL → continente. Devuelve null para lo que no tiene página, para que
+// la ruta pueda llamar a notFound().
+export function continentBySlug(slug: string): SaberPlace | null {
+  return HABITADOS.find((p) => slugify(p) === slug) ?? null;
+}
 
 export const CATEGORIES = ["Geografía", "Historia", "Fe", "Potencias", "Vida y lenguas", "Cosmos", "Secretos"] as const;
 export type SaberCategory = (typeof CATEGORIES)[number];

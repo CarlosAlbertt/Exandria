@@ -1,11 +1,13 @@
 // Comprobación manual de la lore de continentes y de la fusión del atlas.
 // Uso: npx tsx scripts/check-lore.ts
-import { SABER, PLACES, PLACE_ACCENT, CATEGORIES } from "../data/saber";
+import { SABER, PLACES, PLACE_ACCENT, CATEGORIES, continentBySlug, HABITADOS } from "../data/saber";
 import { knows, type SaberCtx } from "../lib/saber";
 import { CONTINENT_LORE } from "../data/continentes";
 import { CALAMIDAD_RELATO, CALAMIDAD_LORE } from "../data/calamidad";
 import { REGIONS_BY_CONTINENT, WORLD_POIS, CONTINENTS } from "../data/world";
 import { seedAtlas, mergeAtlas, type AtlasDefs } from "../data/atlas";
+import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS } from "../data/pantheon";
+import { slugify } from "../lib/slug";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -126,6 +128,30 @@ check("toda la Calamidad va al lugar Exandria", cal.every((e) => e.place === "Ex
 check("la Calamidad no se sabe por origen", cal.filter((e) => e.scope.kind !== "continente").every((e) => !knows(e, { ...base, originContinent: "Tal'Dorei" })));
 const poisCal = CALAMIDAD_LORE.filter((e) => e.poi && !nombresPoi.has(e.poi)).map((e) => e.poi);
 check(`los poi de la Calamidad existen (${poisCal.join(", ") || "ninguno huérfano"})`, poisCal.length === 0);
+
+// --- Slugs de continente para /reino/[continente] --------------------------
+check("los cinco continentes habitados resuelven por slug", HABITADOS.every((p) => continentBySlug(slugify(p)) === p));
+check("un slug inventado no resuelve", continentBySlug("atlantida") === null);
+check("Exandria y Mares no tienen página", continentBySlug("exandria") === null && continentBySlug("mares") === null);
+
+// La sección abierta de la página de continente no puede salir vacía.
+const ABIERTAS = ["Geografía", "Vida y lenguas"];
+for (const p of HABITADOS) {
+  check(`${p}: tiene lore abierta que enseñar`, SABER.some((e) => e.place === p && ABIERTAS.includes(e.category)));
+}
+
+// --- Panteón ---------------------------------------------------------------
+const DIOSES = [...PRIME_DEITIES, ...BETRAYER_GODS, ...LESSER_IDOLS];
+// 32, no 33: 12 primarias + 9 traidores + 11 ídolos. La cifra la fija el
+// dataset, no al revés — si algún día se añade un ídolo, este check avisa.
+check("el panteón suma 32 dioses", DIOSES.length === 32);
+check("ningún slug de dios repetido", new Set(DIOSES.map((d) => d.slug)).size === DIOSES.length);
+check("toda deidad tiene ficha completa", DIOSES.every((d) => d.name && d.epithet && d.province && d.symbol && d.alignment && d.domains.length > 0));
+check("toda deidad tiene tres preceptos", DIOSES.every((d) => d.commandments.length === 3));
+// El Luxon es la excepción a propósito: se le venera, pero no es un patrón de
+// brujo — es una divinidad sin voluntad ni consciencia con la que pactar.
+check("todo ídolo declara su patrón, salvo el Luxon", LESSER_IDOLS.every((d) => d.slug === "luxon" || !!d.patron));
+check("cada dios lleva su bando", PRIME_DEITIES.every((d) => d.side === "prime") && BETRAYER_GODS.every((d) => d.side === "betrayer") && LESSER_IDOLS.every((d) => d.side === "idol"));
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);
