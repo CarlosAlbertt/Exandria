@@ -54,6 +54,13 @@ const secretas = SABER.filter((e) => e.id.startsWith("cl:") && e.scope.kind === 
 check("los secretos solo si el DM los revela", secretas.every((e) => !knows(e, base) && knows(e, { ...base, revealed: [e.id] })));
 check("el DM lo ve todo", SABER.filter((e) => e.id.startsWith("cl:")).every((e) => knows(e, { ...base, isDm: true })));
 
+// --- El DM puede poner a la vista cualquier cosa, no solo secretos ----------
+const unaHistoria = SABER.find((e) => e.scope.kind === "erudito" && e.scope.skill === "Historia")!;
+check("revealed abre también lo erudito", !knows(unaHistoria, base) && knows(unaHistoria, { ...base, revealed: [unaHistoria.id] }));
+const unaOculta = SABER.find((e) => e.scope.kind === "oculto")!;
+check("revealed abre también lo oculto", !knows(unaOculta, base) && knows(unaOculta, { ...base, revealed: [unaOculta.id] }));
+check("revelar una cosa no abre las demás", !knows(unaOculta, { ...base, revealed: [unaHistoria.id] }));
+
 // --- Atlas: la semilla recoge las regiones nuevas ---------------------------
 const semilla = seedAtlas();
 for (const cont of ["Marquet", "Issylra", "Dientes Rotos"]) {

@@ -39,15 +39,20 @@ function conoceElPanteon(cls: string | null, side: "prime" | "betrayer" | "idol"
 //  - el DM lo ve todo;
 //  - lo APRENDIDO (unlocked) abre cualquier entrada — es la puerta común de las
 //    cuatro vías de descubrimiento (tomos, misiones, DM a mano, tirada in situ);
+//  - lo REVELADO (revealed) también abre cualquier entrada — es el DM poniendo
+//    a la vista de todo el grupo una entrada suelta o una categoría entera;
 //  - continente básico: lo sabe cualquiera ("un poco de los continentes");
 //  - continente profundo: solo si es TU continente;
 //  - región: solo si es TU subregión;
 //  - deidad: solo si es TU deidad;
 //  - erudito: si tienes la pericia (esta vía convive con el origen);
-//  - secreto: solo si el DM lo ha revelado.
+//  - secreto: solo si el DM lo ha revelado (cubierto arriba por `revealed`).
 export function knows(entry: SaberEntry, ctx: SaberCtx): boolean {
   if (ctx.isDm) return true;
   if (ctx.unlocked.includes(entry.id)) return true;
+  // Lo que el DM ha puesto a la vista del grupo abre CUALQUIER entrada, no solo
+  // los secretos: es lo que permite revelar una categoría entera de golpe.
+  if (ctx.revealed.includes(entry.id)) return true;
 
   switch (entry.scope.kind) {
     case "continente":
@@ -61,6 +66,9 @@ export function knows(entry: SaberEntry, ctx: SaberCtx): boolean {
     case "erudito":
       return ctx.skills.includes(entry.scope.skill);
     case "secreto":
+      // Inalcanzable por la vía normal: `revealed` ya se comprueba arriba para
+      // CUALQUIER entrada. Se deja explícito por si alguien reordena las
+      // comprobaciones de más arriba y esta vuelve a ser necesaria.
       return ctx.revealed.includes(entry.id);
     case "oculto":
       return false; // solo por descubrimiento (ya cubierto por `unlocked` arriba)
