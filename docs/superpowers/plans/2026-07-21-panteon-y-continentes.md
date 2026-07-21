@@ -249,7 +249,7 @@ export default function PanteonBrowser() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar por nombre, epíteto o esfera…"
-          className="input-field !py-1.5 !px-3 text-[13px] max-w-xs"
+          className={inputCls}
         />
         {([["all", "Todos"], ["prime", "Primarias"], ["betrayer", "Traidores"], ["idol", "Ídolos"]] as const).map(([v, label]) => (
           <button
@@ -287,7 +287,13 @@ export default function PanteonBrowser() {
 }
 ```
 
-**Comprueba antes** que la clase `input-field` existe en `app/globals.css`. Si no, usa las clases del input más parecido que encuentres en el repo (mira `app/dm/CronicaPanel.tsx` o `app/crear/`), y ajusta.
+El repo **no** tiene clase `input-field` en `globals.css`: el patrón es una
+constante local con las clases de Tailwind (ver `app/dm/CronicaPanel.tsx:25`).
+Declara arriba del componente, antes de `export default`:
+
+```ts
+const inputCls = "bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors max-w-xs";
+```
 
 - [ ] **Step 3: `app/panteon/page.tsx`**
 
