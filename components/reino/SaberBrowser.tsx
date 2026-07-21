@@ -44,16 +44,22 @@ export default function SaberBrowser() {
 
   const full: SaberCtx = useMemo(() => ({ ...ctx, isDm, revealed }), [ctx, isDm, revealed]);
 
+  // La Calamidad tiene sección propia arriba (CalamidadSection): si además
+  // saliera aquí dentro de Exandria, el jugador leería lo mismo dos veces.
+  const delMundo = useMemo(() => SABER.filter((e) => !e.id.startsWith("cal:")), []);
+
   const porLugar = useMemo(() => {
     const m = new Map<SaberPlace, typeof SABER>();
     for (const p of PLACES) m.set(p, []);
-    for (const e of SABER) {
+    for (const e of delMundo) {
       if (onlyKnown && !knows(e, full)) continue;
       m.get(e.place)!.push(e);
     }
     return m;
-  }, [full, onlyKnown]);
+  }, [delMundo, full, onlyKnown]);
 
+  // Los contadores sí cuentan TODO lo que hay que saber, la Calamidad incluida:
+  // son el marcador del personaje, no el índice de esta sección.
   const known = SABER.filter((e) => knows(e, full)).length;
   const porDescubrir = SABER.length - known;
 
