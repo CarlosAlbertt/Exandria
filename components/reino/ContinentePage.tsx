@@ -46,6 +46,9 @@ export default function ContinentePage({ place }: { place: SaberPlace }) {
   const accent = PLACE_ACCENT[place];
   const suyas = SABER.filter((e) => e.place === place);
   const abiertas = suyas.filter((e) => ABIERTAS.includes(e.category));
+  const conCandado = suyas.filter((e) => !ABIERTAS.includes(e.category));
+  const gateadas = conCandado.filter((e) => isDm || knows(e, full));
+  const porGanar = conCandado.length - gateadas.length;
   const cabecera = WORLD_POIS.find((p) => p.type === "continente" && p.continent === place);
 
   return (
@@ -88,24 +91,34 @@ export default function ContinentePage({ place }: { place: SaberPlace }) {
           Historia, potencias, fe y secretos de esta tierra. Se abren estudiando, viajando o
           descubriéndolos en la mesa.
         </p>
-        {CATEGORIES.filter((c) => !ABIERTAS.includes(c)).map((c) => {
-          const entries = suyas.filter((e) => e.category === c && (isDm || knows(e, full)));
-          if (!entries.length) return null;
-          return (
-            <SaberCategory
-              key={c}
-              category={c}
-              entries={entries}
-              ctx={full}
-              accent={accent}
-              revealed={revealed}
-              onToggle={toggle}
-              onRevealMany={revealMany}
-              onHideMany={hideMany}
-              defaultOpen
-            />
-          );
-        })}
+        {/* Si no sabes nada de esta tierra, la sección se quedaba en un título
+            huérfano. Se dice CUÁNTO falta pero no el qué: un candado con el
+            título puesto ya spoilea (mismo criterio que SaberPlace). */}
+        {gateadas.length === 0 ? (
+          <p className="font-ui text-[12px] italic" style={{ color: "var(--color-dim)" }}>
+            <i className="fas fa-lock mr-1.5" />
+            De esto no sabes nada todavía · {porGanar} cosas por descubrir
+          </p>
+        ) : (
+          CATEGORIES.filter((c) => !ABIERTAS.includes(c)).map((c) => {
+            const entries = gateadas.filter((e) => e.category === c);
+            if (!entries.length) return null;
+            return (
+              <SaberCategory
+                key={c}
+                category={c}
+                entries={entries}
+                ctx={full}
+                accent={accent}
+                revealed={revealed}
+                onToggle={toggle}
+                onRevealMany={revealMany}
+                onHideMany={hideMany}
+                defaultOpen
+              />
+            );
+          })
+        )}
       </section>
     </main>
   );
