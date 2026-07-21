@@ -6,7 +6,7 @@ Fecha: 2026-07-21 · Rama prevista: `panteon-continentes` · **Sin migración.**
 
 Dos huecos que el usuario señala tras el rediseño de `/reino`:
 
-1. **El panteón no tiene sitio propio.** Los 33 dioses de `data/pantheon.ts`
+1. **El panteón no tiene sitio propio.** Los 32 dioses de `data/pantheon.ts`
    llevan ficha completa (alineamiento, esfera, dominios, símbolo, día santo,
    tres preceptos, blurb) pero hoy solo asoman como tarjetas sueltas dentro del
    saber, gateadas por clase, y sin distinguir de un vistazo quién defendió el
@@ -19,7 +19,7 @@ Dos huecos que el usuario señala tras el rediseño de `/reino`:
 
 Preguntadas antes de diseñar:
 
-1. **Panteón: abierto del todo.** Los 33 dioses visibles para cualquiera, ficha
+1. **Panteón: abierto del todo.** Los 32 dioses visibles para cualquiera, ficha
    completa. Que los dioses existen y cómo se llaman no es secreto en Exandria.
 2. **Continentes: una página por continente bajo `/reino`.** El navbar solo
    crece con «Panteón».
@@ -42,7 +42,7 @@ lo sabe y lo quiere así.
 base; el menú móvil ya itera la misma lista, así que no hace falta tocarlo.
 
 **Datos**: `data/pantheon.ts` tal cual, sin modificar. `PRIME_DEITIES` (12),
-`BETRAYER_GODS` (9), `LESSER_IDOLS` (12).
+`BETRAYER_GODS` (9), `LESSER_IDOLS` (11) — 32 en total.
 
 **Color por bando**, exportado desde el componente que lo usa:
 
@@ -62,7 +62,7 @@ base; el menú móvil ya itera la misma lista, así que no hace falta tocarlo.
   buscador (nombre, epíteto o esfera) y filtro de bando (Todos · Primarias ·
   Traidores · Ídolos). Pinta los tres bloques con su color y su contador.
 
-**Sin ruta por dios.** 33 rutas para un contenido que cabe en una tarjeta
+**Sin ruta por dios.** 32 rutas para un contenido que cabe en una tarjeta
 desplegable es coste sin beneficio (YAGNI).
 
 ### 2. `/reino/[continente]`
@@ -125,10 +125,10 @@ independiente de `knows`, así que la parte 3 pinta `SaberCard` directamente con
   inventado;
 - todo continente habitado tiene al menos una entrada de categoría abierta
   (Geografía o Vida y lenguas), para que la sección 3 nunca salga vacía;
-- los tres bandos del panteón suman 33 dioses y ningún `slug` repetido;
+- los tres bandos del panteón suman 32 dioses y ningún `slug` repetido;
 - todo dios tiene `name`, `epithet`, `province`, `symbol`, al menos un dominio y
   exactamente tres preceptos;
-- todo ídolo (`side: "idol"`) declara `patron`.
+- todo ídolo declara `patron`, salvo el Luxon, que no es un patrón de brujo sino una divinidad sin voluntad.
 
 Gate del proyecto: `tsc --noEmit` + `next build`. Prueba en navegador de
 `/panteon` y de una página de continente.

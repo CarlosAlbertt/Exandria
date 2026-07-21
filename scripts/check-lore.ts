@@ -142,11 +142,15 @@ for (const p of HABITADOS) {
 
 // --- Panteón ---------------------------------------------------------------
 const DIOSES = [...PRIME_DEITIES, ...BETRAYER_GODS, ...LESSER_IDOLS];
-check("el panteón suma 33 dioses", DIOSES.length === 33);
+// 32, no 33: 12 primarias + 9 traidores + 11 ídolos. La cifra la fija el
+// dataset, no al revés — si algún día se añade un ídolo, este check avisa.
+check("el panteón suma 32 dioses", DIOSES.length === 32);
 check("ningún slug de dios repetido", new Set(DIOSES.map((d) => d.slug)).size === DIOSES.length);
 check("toda deidad tiene ficha completa", DIOSES.every((d) => d.name && d.epithet && d.province && d.symbol && d.alignment && d.domains.length > 0));
 check("toda deidad tiene tres preceptos", DIOSES.every((d) => d.commandments.length === 3));
-check("todo ídolo declara su tipo de patrón", LESSER_IDOLS.every((d) => !!d.patron));
+// El Luxon es la excepción a propósito: se le venera, pero no es un patrón de
+// brujo — es una divinidad sin voluntad ni consciencia con la que pactar.
+check("todo ídolo declara su patrón, salvo el Luxon", LESSER_IDOLS.every((d) => d.slug === "luxon" || !!d.patron));
 check("cada dios lleva su bando", PRIME_DEITIES.every((d) => d.side === "prime") && BETRAYER_GODS.every((d) => d.side === "betrayer") && LESSER_IDOLS.every((d) => d.side === "idol"));
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");

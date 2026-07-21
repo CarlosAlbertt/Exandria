@@ -66,11 +66,14 @@ for (const p of HABITADOS) {
 
 // --- Panteón ---------------------------------------------------------------
 const DIOSES = [...PRIME_DEITIES, ...BETRAYER_GODS, ...LESSER_IDOLS];
-check("el panteón suma 33 dioses", DIOSES.length === 33);
+// 32, no 33: 12 primarias + 9 traidores + 11 ídolos.
+check("el panteón suma 32 dioses", DIOSES.length === 32);
 check("ningún slug de dios repetido", new Set(DIOSES.map((d) => d.slug)).size === DIOSES.length);
 check("toda deidad tiene ficha completa", DIOSES.every((d) => d.name && d.epithet && d.province && d.symbol && d.alignment && d.domains.length > 0));
 check("toda deidad tiene tres preceptos", DIOSES.every((d) => d.commandments.length === 3));
-check("todo ídolo declara su tipo de patrón", LESSER_IDOLS.every((d) => !!d.patron));
+// El Luxon es la excepción a propósito: se le venera, pero no es un patrón de
+// brujo — es una divinidad sin voluntad ni consciencia con la que pactar.
+check("todo ídolo declara su patrón, salvo el Luxon", LESSER_IDOLS.every((d) => d.slug === "luxon" || !!d.patron));
 check("cada dios lleva su bando", PRIME_DEITIES.every((d) => d.side === "prime") && BETRAYER_GODS.every((d) => d.side === "betrayer") && LESSER_IDOLS.every((d) => d.side === "idol"));
 ```
 
@@ -261,7 +264,7 @@ export default function PanteonBrowser() {
             {label}
           </button>
         ))}
-        <span className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>{total} de 33</span>
+        <span className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>{total} de 32</span>
       </div>
 
       {bloques.length === 0 && (
@@ -316,7 +319,7 @@ export default function PanteonPage() {
         <p className="eyebrow mb-3">Compendio del mundo</p>
         <h1 className="font-display text-4xl md:text-5xl font-extrabold gold-text">El Panteón</h1>
         <p className="prose-lore lead max-w-2xl mx-auto mt-5">
-          Treinta y tres nombres. Doce que defendieron el mundo, nueve que lo vendieron y doce que
+          Treinta y dos nombres. Doce que defendieron el mundo, nueve que lo vendieron y doce que
           nunca tuvieron trono pero siguen repartiendo poder. Tras la Divergencia ninguno puede pisar
           Exandria: solo hablan a través de quien les reza.
         </p>
