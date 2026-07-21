@@ -31,7 +31,7 @@ export default function ArtePanel() {
       <section>
         <p className="eyebrow mb-2">Clases ({CLASSES.length})</p>
         <div className="grid md:grid-cols-2 gap-2">
-          {CLASSES.map((c) => row("class", c.slug, c.name, "class", `/classes/${c.slug}.jpg`))}
+          {CLASSES.map((c) => row("class", c.slug, c.name, "class", `/classes/${c.slug}.png`))}
         </div>
       </section>
       <section>

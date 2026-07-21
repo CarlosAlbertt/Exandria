@@ -18,7 +18,7 @@ export type CharClass = {
   subclasses: { name: string; blurb: string }[];
   tagline: string;
   blurb: string;
-  image?: string;   // /classes/<slug>.jpg
+  image?: string;   // /classes/<slug>.png
 };
 
 export const CLASSES: CharClass[] = [

@@ -27,7 +27,7 @@ function Thumb({ cls, on, onClick }: { cls: CharClass; on: boolean; onClick: () 
         <span className="ph">◆</span>
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/classes/${cls.slug}.jpg`} alt={cls.name} onError={() => setFailed(true)} />
+        <img src={`/classes/${cls.slug}.png`} alt={cls.name} onError={() => setFailed(true)} />
       )}
       <span className="cls-thumb-nm">{cls.name}</span>
     </button>
@@ -66,7 +66,7 @@ export default function ClassScene({
       <div className="cls-stage">
         <button type="button" className="cls-arrow" onClick={() => go(-1)} aria-label="Clase anterior">◀</button>
 
-        <ArtPanel src={artSrc("class", shown.slug, `/classes/${shown.slug}.jpg`) ?? null} alt={shown.name} />
+        <ArtPanel src={artSrc("class", shown.slug, `/classes/${shown.slug}.png`) ?? null} alt={shown.name} />
 
         <div className="scene-detail">
           <p className="eyebrow mb-1">{GROUP_LABEL[shown.group]} · Clase {idx + 1} de {ORDERED.length}</p>

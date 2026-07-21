@@ -12,12 +12,14 @@ export const metadata: Metadata = {
 
 // /reino ya NO es un volcado de lore. Lo que se sabe del mundo depende del
 // personaje (origen, fe, clase, pericias y lo aprendido jugando). El orden de
-// la página: cabecera · `CalamidadSection` (el relato de la Calamidad, abierto
-// a todo el mundo, con su detalle gateado por pericia o descubrimiento) ·
-// `SaberBrowser` (el resto del saber, agrupado por lugar y, dentro, por
-// categoría) · la geografía a la vista · el calendario y las lunas.
-// El detalle —eras, cronología, panteón, facciones, Wildemount, planos— se
-// deriva a `data/saber.ts` y se descubre poco a poco.
+// la página: cabecera · `ReinoRegions` (las puertas a la página de cada
+// continente) · `CalamidadSection` (el relato de la Calamidad, abierto a todo
+// el mundo, con su detalle gateado) · `SaberBrowser` (el resto del saber, por
+// lugar y categoría) · el calendario y las lunas.
+//
+// `ReinoRegions` va ARRIBA a propósito: es el índice de las páginas por
+// continente, y enterrado bajo la Calamidad y los seis bloques del saber no lo
+// encontraba nadie (lo reportó el usuario el 2026-07-21).
 export default function ReinoPage() {
   return (
     <main className="max-w-5xl mx-auto px-6 py-16">
@@ -27,14 +29,14 @@ export default function ReinoPage() {
         <p className="prose-lore lead max-w-2xl mx-auto mt-5">{WORLD_INTRO}</p>
       </header>
 
+      {/* LAS TIERRAS — puerta a la página de lore de cada continente */}
+      <ReinoRegions />
+
       {/* EXANDRIA Y LA CALAMIDAD — relato abierto + detalle gateado */}
       <CalamidadSection />
 
       {/* SABER DEL MUNDO — por lugar y categoría */}
       <SaberBrowser />
-
-      {/* GEOGRAFÍA A LA VISTA */}
-      <ReinoRegions />
 
       {/* CALENDARIO */}
       <section className="mb-20">
