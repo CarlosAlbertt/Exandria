@@ -42,5 +42,20 @@ export function useLoreRevealed() {
     return next;
   });
 
-  return { revealed, ready, toggle };
+  // Revelado en BLOQUE (una categoría, un lugar entero). Afecta a todo el
+  // grupo; lo individual va por `lore_unlocked` desde Panel DM › Grupo.
+  const revealMany = (ids: string[]) => setRevealed((prev) => {
+    const next = [...new Set([...prev, ...ids])];
+    void persist(next);
+    return next;
+  });
+
+  const hideMany = (ids: string[]) => setRevealed((prev) => {
+    const quitar = new Set(ids);
+    const next = prev.filter((x) => !quitar.has(x));
+    void persist(next);
+    return next;
+  });
+
+  return { revealed, ready, toggle, revealMany, hideMany };
 }

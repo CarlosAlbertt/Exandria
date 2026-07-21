@@ -1,8 +1,9 @@
 // Comprobación manual de la lore de continentes y de la fusión del atlas.
 // Uso: npx tsx scripts/check-lore.ts
-import { SABER } from "../data/saber";
+import { SABER, PLACES, PLACE_ACCENT, CATEGORIES } from "../data/saber";
 import { knows, type SaberCtx } from "../lib/saber";
 import { CONTINENT_LORE } from "../data/continentes";
+import { CALAMIDAD_RELATO, CALAMIDAD_LORE } from "../data/calamidad";
 import { REGIONS_BY_CONTINENT, WORLD_POIS, CONTINENTS } from "../data/world";
 import { seedAtlas, mergeAtlas, type AtlasDefs } from "../data/atlas";
 
@@ -54,6 +55,13 @@ const secretas = SABER.filter((e) => e.id.startsWith("cl:") && e.scope.kind === 
 check("los secretos solo si el DM los revela", secretas.every((e) => !knows(e, base) && knows(e, { ...base, revealed: [e.id] })));
 check("el DM lo ve todo", SABER.filter((e) => e.id.startsWith("cl:")).every((e) => knows(e, { ...base, isDm: true })));
 
+// --- El DM puede poner a la vista cualquier cosa, no solo secretos ----------
+const unaHistoria = SABER.find((e) => e.scope.kind === "erudito" && e.scope.skill === "Historia")!;
+check("revealed abre también lo erudito", !knows(unaHistoria, base) && knows(unaHistoria, { ...base, revealed: [unaHistoria.id] }));
+const unaOculta = SABER.find((e) => e.scope.kind === "oculto")!;
+check("revealed abre también lo oculto", !knows(unaOculta, base) && knows(unaOculta, { ...base, revealed: [unaOculta.id] }));
+check("revelar una cosa no abre las demás", !knows(unaOculta, { ...base, revealed: [unaHistoria.id] }));
+
 // --- Atlas: la semilla recoge las regiones nuevas ---------------------------
 const semilla = seedAtlas();
 for (const cont of ["Marquet", "Issylra", "Dientes Rotos"]) {
@@ -91,6 +99,33 @@ check("la fusión no duplica POIs", new Set(nombresPoiFusion).size === nombresPo
 // Fusionar dos veces no debe cambiar nada más (idempotente).
 const segunda = mergeAtlas(fusionado);
 check("mergeAtlas es idempotente", segunda.changed === false);
+
+// --- Reparto por lugar y categoría -----------------------------------------
+const lugaresValidos = new Set<string>(PLACES);
+const categoriasValidas = new Set<string>(CATEGORIES);
+check("toda entrada tiene un lugar válido", SABER.every((e) => lugaresValidos.has(e.place)));
+check("toda entrada tiene una categoría válida", SABER.every((e) => categoriasValidas.has(e.category)));
+check("todo lugar tiene color", PLACES.every((p) => !!PLACE_ACCENT[p]));
+check("ningún lugar se queda vacío", PLACES.every((p) => SABER.some((e) => e.place === p)));
+
+for (const cont of ["Marquet", "Issylra", "Dientes Rotos"]) {
+  const suyas = SABER.filter((e) => e.id.startsWith(`cl:${cont.toLowerCase().replace(/ /g, "-")}:`));
+  check(`${cont}: su lore va a su lugar`, suyas.length > 0 && suyas.every((e) => e.place === cont));
+}
+check("las deidades van a Exandria", SABER.filter((e) => e.id.startsWith("dei:")).every((e) => e.place === "Exandria" && e.category === "Fe"));
+check("las facciones de Tal'Dorei van a Potencias", SABER.filter((e) => e.id.startsWith("fac:")).every((e) => e.place === "Tal'Dorei" && e.category === "Potencias"));
+check("lo de Wildemount va a Wildemount", SABER.filter((e) => e.id.startsWith("wmreg:") || e.id.startsWith("wmfac:")).every((e) => e.place === "Wildemount"));
+check("los secretos van a la categoría Secretos", SABER.filter((e) => e.scope.kind === "secreto").every((e) => e.category === "Secretos"));
+
+// --- Exandria y la Calamidad -----------------------------------------------
+check("el relato tiene cinco actos", CALAMIDAD_RELATO.length === 5);
+check("ningún acto vacío", CALAMIDAD_RELATO.every((a) => a.title.trim() && a.body.trim()));
+const cal = SABER.filter((e) => e.id.startsWith("cal:"));
+check("la lore de la Calamidad entra en el saber", cal.length === CALAMIDAD_LORE.length && cal.length >= 12);
+check("toda la Calamidad va al lugar Exandria", cal.every((e) => e.place === "Exandria"));
+check("la Calamidad no se sabe por origen", cal.filter((e) => e.scope.kind !== "continente").every((e) => !knows(e, { ...base, originContinent: "Tal'Dorei" })));
+const poisCal = CALAMIDAD_LORE.filter((e) => e.poi && !nombresPoi.has(e.poi)).map((e) => e.poi);
+check(`los poi de la Calamidad existen (${poisCal.join(", ") || "ninguno huérfano"})`, poisCal.length === 0);
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);

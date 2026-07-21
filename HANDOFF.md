@@ -2,7 +2,14 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-19)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-21)
+
+> **Lo último (2026-07-21)**: se amplió el mundo (Marquet, Issylra y los Dientes
+> Rotos con mapa y saber propios, +50 pines) y se **reorganizó `/reino`**: el
+> saber va por **lugar → categoría**, cada lugar con su color, en bloques
+> plegables, con sección propia para **Exandria y la Calamidad** y revelado en
+> bloque para el DM. Ninguna de las dos tandas necesita migración. Ver las dos
+> secciones RESUELTO del 2026-07-21 más abajo.
 
 > [!danger] ⚠️ 3 MIGRACIONES PENDIENTES antes de nada
 > Ejecutar en el SQL Editor de Supabase, en orden: **`schema_v17.sql`**
@@ -271,6 +278,73 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-21): /reino organizado por lugar, color y categoría 🎨
+Rama `reino-saber-organizado`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-21-reino-saber-organizado*`. Petición del
+usuario: «no me gusta cómo está organizado el lore» — separarlo por región y por
+colores, una sección para Exandria y la Calamidad, y poder ir mostrando u
+ocultando por continentes / regiones / historia / secretos.
+
+- **El saber se etiqueta en los datos** (`data/saber.ts`): `SaberEntry` gana
+  `place` (Exandria · Tal'Dorei · Marquet · Issylra · Wildemount · Dientes
+  Rotos) y `category` (Geografía · Historia · Fe · Potencias · Vida y lenguas ·
+  Cosmos · Secretos), derivados **una sola vez** en `tag()` a partir del prefijo
+  del id y del ámbito. Las generadoras devuelven ahora
+  `Omit<SaberEntry, "place"|"category">[]`. «Exandria» es el cajón de lo que no
+  es de ningún continente: panteón, eras, lunas, planos, la Calamidad.
+- **Un color por lugar** (`PLACE_ACCENT` + `PLACE_ICON`), no por categoría: tiñe
+  el borde del bloque, la chapa de categoría y el filo de cada tarjeta.
+  > **Trampa cazada**: `var(--color-gold)` **no existe** en `globals.css` (el
+  > alias legacy es `--gold` → `--color-bronze`). `WORLD_COLOR` de
+  > `data/world.ts` la usa, así que **los pines de continente de `/mapa` salen
+  > sin color** — fallo previo, no arreglado aquí (queda pendiente). En
+  > `PLACE_ACCENT` se usan solo variables reales: Exandria `--color-divino`,
+  > Tal'Dorei `--color-bronze`. Verificado en navegador: los seis resuelven.
+- **Cambio de regla en `lib/saber.ts`**: `revealed` abre **cualquier** entrada,
+  no solo las de ámbito `secreto` — es lo que permite revelar una categoría
+  entera. El `case "secreto"` se deja en el switch (ya inalcanzable) como
+  documentación y por si alguien reordena las comprobaciones.
+- **Revelado en bloque**: `useLoreRevealed` gana `revealMany`/`hideMany`
+  (optimistas, mismo patrón que `toggle`). El DM tiene «Revelar todo / Ocultar
+  todo» en cada **categoría** y «Revelar el bloque / Ocultarlo» en cada
+  **lugar**. Sigue todo en `app_config.lore_revealed`, sin migración. **Afecta a
+  todo el grupo**; lo individual sigue en `lore_unlocked` (Panel DM › Grupo).
+- **`components/SaberSection.tsx` (112 líneas) se parte en cuatro**, en
+  `components/reino/`: `SaberCard` (tarjeta) · `SaberCategory` (subgrupo
+  plegable + botones DM de bloque) · `SaberPlace` (bloque de lugar con su color)
+  · `SaberBrowser` (orquestador: ctx, agrupación, contadores y qué acordeones
+  están abiertos — el **único** con estado). El viejo se borró.
+- **Acordeones**: al entrar se abren tu tierra y Exandria; el DM entra con todo
+  plegado. No se persiste. Barra con «solo lo que sé» (ahora también para el
+  jugador), «desplegar/plegar todo» y el contador global.
+- **Bloque de un lugar del que no sabes nada**: se lista igual, pero **sin
+  tarjetas** — «De estas tierras no sabes nada todavía · N cosas por descubrir».
+  Mantiene el principio de que un candado con el título puesto ya spoilea.
+- **`data/calamidad.ts`** (nuevo) + `components/reino/CalamidadSection.tsx`:
+  `CALAMIDAD_RELATO`, cinco actos **abiertos a todo el mundo** (la Fundación · la
+  Era de los Arcanos · Vespin Chloras · dos siglos de guerra · la Divergencia), y
+  `CALAMIDAD_LORE`, **14 entradas gateadas** (ids `cal:*`, reutilizan
+  `ContinentLoreEntry`): Ritual de Siembra, Vespin Chloras, Ghor Dranas, asalto a
+  Vasselheim, ciudades voladoras, Trono del Archicorazón, Vestigios, Puerta
+  Divina, Sarenrae, Ioun, cómo cambió el mapa, lo que se perdió, y dos secretos
+  (Aeor bajo el hielo, Alyxian). Sustituye al bloque «Lo que todo el mundo sabe»;
+  **`HISTORIA_BREVE` no se borra** de `loreTiers.ts` (la usa el narrador IA).
+  Las `cal:*` se **excluyen** del navegador del saber para no leerse dos veces,
+  pero **sí cuentan** en el contador global (es el marcador del personaje).
+- **Orden final de `/reino`**: cabecera · Exandria y la Calamidad · Saber del
+  mundo · `ReinoRegions` · calendario.
+- **Limitación conocida**: `CalamidadSection` y `SaberBrowser` montan cada uno su
+  `useLoreRevealed`. Como `app_config` no dispara realtime para quien escribe, si
+  el DM revela algo en una sección la otra no se entera hasta recargar.
+- Verificado: `tsc --noEmit` + `next build` limpios · **`npx tsx
+  scripts/check-lore.ts` con 55 comprobaciones en verde** · y **prueba real en el
+  navegador** (excluyendo `reino` del matcher de `proxy.ts` temporalmente, **ya
+  revertido**): los seis bloques con sus colores resueltos, Exandria mostrando la
+  línea de «no sabes nada» con cero tarjetas, y el resto listando solo lo sabido.
+  **Falta probar con sesión**: **Prueba del usuario** — entrar con un PJ y ver que
+  se abren tu tierra y Exandria; entrar como DM y probar «Revelar todo» de una
+  categoría y ver que al jugador le aparece.
 
 ## RESUELTO (2026-07-21): lore de Marquet, Issylra y los Dientes Rotos 🌍📚
 Rama `lore-continentes`. **Sin migración.** Los tres continentes que solo eran
