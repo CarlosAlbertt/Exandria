@@ -2,6 +2,46 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-19)
+
+> [!danger] ⚠️ 3 MIGRACIONES PENDIENTES antes de nada
+> Ejecutar en el SQL Editor de Supabase, en orden: **`schema_v17.sql`**
+> (tablón), **`schema_v18.sql`** (memoria de NPC) y **`schema_v19.sql`** (saber
+> por origen). Las tres son idempotentes y **solo añaden** (no reestructuran como
+> la v14). **La v19 es la más urgente**: el saber por origen entero (creador con
+> origen/deidad, `/reino`, las 4 vías de descubrimiento) cuelga de ella; sin
+> correrla, `/reino` sale todo bloqueado y el creador no guarda origen/deidad.
+
+**Hecho y en `master` (pusheado, Vercel auto-despliega)** esta tanda:
+- Fases **F** (tablón), **M completa** (generadores IA + documentos in-game +
+  memoria de NPC), **N completa** (clima + saber + pistas).
+- **Rediseño «saber por origen»**: cada PJ sabe lo suyo (continente, región,
+  deidad) y descubre el resto por tomos, misiones, DM a mano o tirada in situ.
+- **`/reino` dejó de volcar lore** (panteón por clase, facciones/Wildemount/planos/
+  lunas ocultos) + **calendario nuevo** (rueda + vista de mes) replicado en el
+  **reloj desplegable del nav**.
+- **Clima extremo con efectos de mesa** (desventajas, salvo personajes curtidos).
+- **Vault Obsidian actualizado** por completo (Migraciones, Modelo de datos,
+  Panel DM, Crónica, Baúl, Componentes, Rutas, Cosmología, Realtime, Glosario…).
+
+**Nada pendiente en el working tree** (`git status` limpio, todo mergeado a
+`master`). Verificación: `tsc --noEmit` + `next build` limpios en cada rama;
+`scripts/check-clima.ts` verde. **NADA probado en vivo** (sin sesión ni túnel en
+dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
+
+**Siguiente sugerido** (elige uno): **Fase O — libro de conjuros SRD 5.2** (el
+hueco mecánico más grande; media base ya en `data/classdata/`), **Fase P**
+(downtime + minijuegos), **Fase Q** (misiones personales con IA), **C2** (regateo
+con dados 3D), **I** (tablero de batalla), **G** (capa gráfica). Detalle y orden
+en `docs/superpowers/specs/2026-07-12-campana-semivirtual-guia.md`.
+
+**Convenciones de trabajo**: rama feature por tarea → gate `tsc --noEmit` +
+`next build` (no hay tests; ese es el gate real) → commit por tarea con trailer
+`Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>` y autor
+`CarlosAlbertt` → HANDOFF + vault → merge a `master` + push. **Ojo**: para
+mensajes de commit con backticks, usar heredoc (`git commit -F -`), que si no
+bash los ejecuta. Clon canónico: `C:\Users\carlo\Downloads\dnd-campaign-app`.
+
 ## Qué es
 App web multijugador en tiempo real para una campaña de **D&D 2024** en el mundo
 de **Exandria**, ambientada en el continente de **Tal'Dorei**. Roles **DM**
