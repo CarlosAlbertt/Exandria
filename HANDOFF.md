@@ -4,12 +4,17 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-21)
 
-> **Lo último (2026-07-21)**: se amplió el mundo (Marquet, Issylra y los Dientes
-> Rotos con mapa y saber propios, +50 pines) y se **reorganizó `/reino`**: el
-> saber va por **lugar → categoría**, cada lugar con su color, en bloques
-> plegables, con sección propia para **Exandria y la Calamidad** y revelado en
-> bloque para el DM. Ninguna de las dos tandas necesita migración. Ver las dos
-> secciones RESUELTO del 2026-07-21 más abajo.
+> **Lo último (2026-07-21)**, tres tandas seguidas, **ninguna con migración**:
+> 1. Se amplió el mundo — Marquet, Issylra y los Dientes Rotos con mapa y saber
+>    propios, +50 pines, y `mergeAtlas` para que lo nuevo llegue a un
+>    `atlas_defs` ya sembrado sin pisar las ediciones del DM.
+> 2. Se **reorganizó `/reino`**: el saber va por **lugar → categoría**, cada
+>    lugar con su color, en bloques plegables, con sección propia para
+>    **Exandria y la Calamidad** y revelado en bloque para el DM.
+> 3. **`/panteon`** (abierta, 32 dioses por bando) y **`/reino/[continente]`**
+>    (una página de lore por continente, geografía abierta y el resto gateado).
+>
+> Ver las tres secciones RESUELTO del 2026-07-21 más abajo.
 
 > [!tip] ✅ Migraciones al día
 > **No queda ninguna pendiente.** `schema_v17` (tablón), `schema_v18` (memoria de
@@ -275,6 +280,62 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-21): panteón propio y una página por continente 🕯️🗺️
+Rama `panteon-continentes`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-21-panteon-y-continentes*`. Petición del
+usuario: sacar el panteón a un botón del navbar con los dioses separados por
+bando y detallados, y tener el lore de **cada continente por separado**, aparte
+de los desplegables.
+
+- **`/panteon`** (`app/panteon/page.tsx` + `components/panteon/`): **abierta, sin
+  candados** — decisión del usuario. `PanteonBrowser` pinta tres bloques por
+  bando, cada uno con su color y su blurb: **Deidades Primarias** (12,
+  `--color-divino`), **Dioses Traidores** (9, `--color-ember`) e **Ídolos
+  Menores** (11, `--color-violet`). Buscador por nombre/epíteto/esfera (sin
+  acentos) y filtro de bando. `DeityCard` se despliega con la ficha entera:
+  alineamiento, esfera, dominios, símbolo, día santo, los tres preceptos, el
+  blurb y el tipo de patrón si es un ídolo. **Sin ruta por dios** (32 rutas para
+  lo que cabe en una tarjeta, no compensa). `SiteNav` gana el botón tras «Reino».
+  > **Consecuencia asumida**: los Dioses Traidores y sus preceptos pasan a ser de
+  > consulta pública. En `/reino` siguen gateados por clase de fe; esta página no
+  > los sustituye, los añade.
+  > **Corrección de datos**: el panteón son **32** dioses, no 33 — los Ídolos
+  > Menores son 11. Y el **Luxon no declara `patron`** a propósito: se le venera,
+  > pero no es un patrón de brujo con quien pactar. Las comprobaciones se
+  > ajustaron a los datos, no al revés.
+- **`/reino/[continente]`** (`app/reino/[continente]/page.tsx`): ruta dinámica
+  sobre los **cinco continentes habitados**. `generateStaticParams` desde
+  `HABITADOS`; slug desconocido → `notFound()`. Slugs reales: `tal-dorei`,
+  `marquet`, `issylra`, `wildemount`, `dientes-rotos`. En Next 16 `params` es una
+  **promesa** y hay que esperarla (confirmado en `node_modules/next/dist/docs/`).
+- **`data/saber.ts`** gana `HABITADOS` (PLACES sin «Exandria») y
+  `continentBySlug(slug): SaberPlace | null`.
+- **Reparto abierto/gateado** en la página de continente, decidido con el
+  usuario: **geografía y cultura abiertas** (categorías `Geografía` y `Vida y
+  lenguas` — se compran en cualquier puerto), **historia, fe, potencias, cosmos y
+  secretos gateados** por el saber por origen. Cuando no sabes nada de lo
+  gateado, se muestra el contador «N cosas por descubrir» sin listar títulos.
+- **`ContinenteGeografia`** saca regiones y POIs del **atlas** (`useAtlas`), no de
+  `data/world.ts`, para que refleje las ediciones del DM. Los POIs van agrupados
+  por tipo (ciudades, fortalezas, ruinas, parajes, peligros).
+- **`ReinoRegions`**: cada tarjeta de continente es ahora un enlace a su página.
+  El slug sale de `c.continent` (canónico, «Dientes Rotos»), **no** de `c.name`
+  («Los Dientes Rotos»). Se respeta la niebla: solo se enlazan los continentes
+  revelados. De paso, el punto de color pasa de `var(--color-gold)` (inexistente,
+  salía sin fondo) a `var(--color-bronze)`.
+  > **Limitación conocida**: la página no bloquea por niebla, solo deja de
+  > enlazarse. Quien teclee la URL puede abrirla; lo abierto es geografía y lo
+  > sensible sigue gateado.
+- Verificado: `tsc --noEmit` + `next build` limpios · **`scripts/check-lore.ts`
+  con 69 comprobaciones en verde** (14 nuevas: slugs de continente, que ninguna
+  página se quede sin sección abierta, y la integridad del panteón) · y **prueba
+  real en navegador** (excluyendo `reino` y `panteon` del matcher de `proxy.ts`,
+  **ya revertido**): `/panteon` con sus 3 bloques 12/9/11, 32 tarjetas, colores
+  correctos y la ficha completa al desplegar; `/reino/marquet` con sus 7 regiones
+  y `/reino/dientes-rotos` con el contador «8 cosas por descubrir».
+  **Prueba del usuario**: entrar con un PJ y ver que su continente le abre más
+  cosas, y como DM que los botones de revelar funcionan también aquí.
 
 ## RESUELTO (2026-07-21): /reino organizado por lugar, color y categoría 🎨
 Rama `reino-saber-organizado`. **Sin migración.** Spec y plan en
