@@ -11,11 +11,24 @@ import { xpForNext } from "@/data/leveling";
 import { derive } from "@/lib/derive";
 import { createClient } from "@/lib/supabase/client";
 import LorePicker from "@/components/LorePicker";
+import PozosClase from "@/components/personaje/PozosClase";
+import type { PlayState } from "@/lib/recursos";
 
 const YA_TIENE_ACTIVO = "Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este.";
 
 async function dmPatch(userId: string, patch: Record<string, unknown>) {
   await fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, patch }) });
+}
+
+// El DM ajusta un pozo a mano (devolver una furia, vaciar el foco): se manda
+// solo la clave que cambió (setUses), no todo el play_state — el endpoint la
+// fusiona con el resto del jsonb (donde la Fase O2 guardará los conjuros).
+function dmSetUses(userId: string, prevPlay: PlayState, next: PlayState) {
+  const prevUsos = prevPlay.usos ?? {};
+  const nextUsos = next.usos ?? {};
+  const key = Object.keys(nextUsos).find((k) => (nextUsos[k] ?? 0) !== (prevUsos[k] ?? 0));
+  if (!key) return;
+  dmPatch(userId, { setUses: { key, gastados: nextUsos[key] } });
 }
 
 // Borra la tirada de aptitudes guardada del jugador (RLS solo permite al DM
@@ -302,6 +315,18 @@ export default function GrupoPanel() {
                   <Stat icon="fa-dice-d20" label="Dado" value={cls ? `d${cls.hitDie}` : "—"} color="var(--color-arcane)" />
                   <Stat icon="fa-bag-shopping" label="Objetos" value={Array.isArray(c.inventory) ? c.inventory.length : 0} color="var(--color-primitivo)" />
                 </div>
+
+                {c.cls && (
+                  <>
+                    <p className="eyebrow mb-2">Pozos de clase</p>
+                    <PozosClase
+                      clsSlug={c.cls}
+                      level={c.level ?? 1}
+                      play={(c.play_state as PlayState) ?? {}}
+                      onChange={(next) => dmSetUses(c.user_id, (c.play_state as PlayState) ?? {}, next)}
+                    />
+                  </>
+                )}
 
                 <p className="eyebrow mb-2">Pericias</p>
                 <div className="flex flex-wrap gap-2 mb-5">
