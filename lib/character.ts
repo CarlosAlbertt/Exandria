@@ -70,21 +70,52 @@ export type CharacterData = {
   play_state: Record<string, unknown>;
 };
 
+// Columnas de la ficha. `FIELDS_BASE` son las que existen desde hace tiempo;
+// `FIELDS` añade las de las migraciones recientes. Si alguna de esas últimas
+// falta porque la migración no se ha ejecutado, `loadActiveCharacter` reintenta
+// con las base en vez de dejar al jugador sin hoja.
+const FIELDS_BASE =
+  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, xp, gold, lore";
 const FIELDS =
-  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, xp, gold, lore, origin_continent, origin_region, deity, lore_unlocked, play_state";
+  `${FIELDS_BASE}, origin_continent, origin_region, deity, lore_unlocked, play_state`;
 
 // La ficha activa del jugador, con su id. null si no tiene ninguna en juego
 // (p. ej. acaba de archivar la suya y aún no se ha hecho otra).
 export async function loadActiveCharacter(userId: string): Promise<(Partial<CharacterData> & { id: string }) | null> {
   if (!supabaseConfigured || !userId) return null;
-  const { data } = await createClient()
+  const supabase = createClient();
+  // El `select` va con una lista de columnas dinámica, así que el cliente
+  // tipado no puede inferir la forma: se acota a mano al mínimo que se usa.
+  type Fila = (Partial<CharacterData> & { id: string }) | null;
+  type Resultado = { data: Fila; error: { code?: string; message: string } | null };
+  const query = (fields: string) => supabase
     .from("characters")
-    .select(`id, ${FIELDS}`)
+    .select(`id, ${fields}`)
     .eq("user_id", userId)
     .is("archived_at", null)
-    .maybeSingle();
+    .maybeSingle() as unknown as Promise<Resultado>;
+
+  let { data, error } = await query(FIELDS);
+
+  // Migración pendiente: si falta una columna (42703), Postgres tumba la
+  // consulta ENTERA y sin esto devolvíamos null, que la hoja interpreta como
+  // "no tienes personaje" — la ficha desaparecía estando intacta en la base.
+  // Se reintenta sin las columnas nuevas para que la app siga usable, y se
+  // avisa por consola de qué migración falta.
+  if (error?.code === "42703") {
+    console.error(
+      `[Exandria] Falta una columna en 'characters' (${error.message}). ` +
+      `¿Queda alguna migración de supabase/ por ejecutar? Se carga la ficha sin las columnas nuevas.`
+    );
+    ({ data, error } = await query(FIELDS_BASE));
+  }
+
+  if (error) {
+    console.error("[Exandria] No se pudo cargar la ficha activa:", error.message);
+    return null;
+  }
   if (!data) return null;
-  const row = data as Partial<CharacterData> & { id: string };
+  const row = data;
   if ((!row.items || row.items.length === 0) && Array.isArray(row.inventory) && row.inventory.length) {
     row.items = row.inventory.map((name, i) => ({ id: `legacy-${i}`, name, qty: 1 }));
   }
@@ -168,17 +199,30 @@ export function useParty() {
     let mounted = true;
 
     const load = async () => {
-      const [chars, profs] = await Promise.all([
-        // Solo los que están EN JUEGO: sin este filtro, los archivados
-        // reaparecerían en la iniciativa, los dados y la crónica.
-        supabase.from("characters").select(`user_id, ${FIELDS}`).is("archived_at", null),
-        supabase.from("profiles").select("id, username, role"),
-      ]);
+      // Solo los que están EN JUEGO: sin este filtro, los archivados
+      // reaparecerían en la iniciativa, los dados y la crónica.
+      const cargarChars = (fields: string) =>
+        supabase.from("characters").select(`user_id, ${fields}`).is("archived_at", null);
+
+      let [chars, profs] = await Promise.all([cargarChars(FIELDS), supabase.from("profiles").select("id, username, role")]);
+      // Misma red de seguridad que loadActiveCharacter: con una migración sin
+      // ejecutar, la columna que falta tumbaba la consulta entera y el DM veía
+      // el grupo VACÍO, sin pista de por qué.
+      if (chars.error?.code === "42703") {
+        console.error(
+          `[Exandria] Falta una columna en 'characters' (${chars.error.message}). ` +
+          `¿Queda alguna migración de supabase/ por ejecutar? Se carga el grupo sin las columnas nuevas.`
+        );
+        chars = await cargarChars(FIELDS_BASE);
+      }
+      if (chars.error) console.error("[Exandria] No se pudo cargar el grupo:", chars.error.message);
       if (!mounted) return;
       const names: Record<string, string> = {};
       const roles: Record<string, string> = {};
       for (const p of (profs.data ?? []) as { id: string; username: string; role: string }[]) { names[p.id] = p.username; roles[p.id] = p.role; }
-      const rows = ((chars.data ?? []) as (CharacterData & { user_id: string })[])
+      // `as unknown` primero: con la lista de columnas dinámica, el cliente
+      // tipado infiere un ParserError y no deja convertir directamente.
+      const rows = ((chars.data ?? []) as unknown as (CharacterData & { user_id: string })[])
         .filter((c) => roles[c.user_id] !== "dm")
         .map((c) => ({ ...c, username: names[c.user_id] ?? "jugador" }));
       setParty(rows);
