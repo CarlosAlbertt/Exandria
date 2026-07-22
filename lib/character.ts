@@ -65,10 +65,13 @@ export type CharacterData = {
   origin_region: string | null;
   deity: string | null;
   lore_unlocked: string[];
+  // Estado de juego (Fase O1): usos gastados de los pozos de clase. La Fase O2
+  // reutilizará esta misma columna para huecos de conjuro y preparados.
+  play_state: Record<string, unknown>;
 };
 
 const FIELDS =
-  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, xp, gold, lore, origin_continent, origin_region, deity, lore_unlocked";
+  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, xp, gold, lore, origin_continent, origin_region, deity, lore_unlocked, play_state";
 
 // La ficha activa del jugador, con su id. null si no tiene ninguna en juego
 // (p. ej. acaba de archivar la suya y aún no se ha hecho otra).
