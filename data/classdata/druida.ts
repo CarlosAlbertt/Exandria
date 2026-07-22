@@ -120,7 +120,7 @@ export const DRUIDA: ClassMechanics = {
   resources: [
     { name: "Trucos", values: [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4] },
     { name: "Conjuros preparados", values: [4, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 16, 17, 17, 18, 18, 19, 20, 21, 22] },
-    { name: "Usos de Forma Salvaje", values: ["—", 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8, 8, 9, "Ilimitados"] },
+    { name: "Usos de Forma Salvaje", values: ["—", 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 8, 8, 8, 9, "Ilimitados"], spend: { key: "forma-salvaje", recharge: "corto" } },
     { name: "RD máximo de Forma Salvaje", values: ["—", "1/4", "1/4", "1/2", "1/2", "1/2", "1", "1", "1", "1", "1", "1", "2", "2", "2", "2", "2", "2", "3", "3"] },
   ],
 };

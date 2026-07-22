@@ -18,8 +18,13 @@ for (const c of clases) {
   for (const r of c.resources ?? []) {
     check(`${c.slug} · ${r.name}: 20 niveles`, r.values.length === 20);
     if (!r.spend) continue;
-    check(`${c.slug} · ${r.name}: el pozo es numérico`, r.values.every((v) => typeof v === "number"));
-    const nums = r.values as number[];
+    // Las tablas usan dos centinelas además de los números: "—" para los
+    // niveles en que la clase aún no tiene el rasgo, e "Ilimitados" para la
+    // Forma Salvaje del druida a nv20. lib/recursos.ts los traduce.
+    const CENTINELAS = ["—", "Ilimitados"];
+    check(`${c.slug} · ${r.name}: valores numéricos o centinela conocido`,
+      r.values.every((v) => typeof v === "number" || CENTINELAS.includes(String(v))));
+    const nums = r.values.map((v) => (typeof v === "number" ? v : String(v) === "Ilimitados" ? Infinity : 0));
     check(`${c.slug} · ${r.name}: nunca decrece al subir`, nums.every((v, i) => i === 0 || v >= nums[i - 1]));
     check(`${c.slug} · ${r.name}: recarga declarada`, r.spend.recharge === "corto" || r.spend.recharge === "largo");
     check(`${c.slug} · ${r.name}: key en kebab-case`, /^[a-z0-9-]+$/.test(r.spend.key));
@@ -29,12 +34,17 @@ for (const c of clases) {
 }
 
 const todasLasKeys = clases.flatMap((c) => (c.resources ?? []).filter((r) => r.spend).map((r) => r.spend!.key));
-// Nota: el plan original decía "11 pozos". Clérigo (Usos de Canalizar
-// Divinidad), Druida (Usos de Forma Salvaje) y Paladín (Usos de Canalizar
-// Divinidad) traen "—"/"Ilimitados" en niveles donde aún no se tiene el
-// rasgo: no son 100% numéricos, así que NO se marcan como pozo en esta
-// tanda (ver informe). Quedan 8 pozos marcados.
-check("hay 8 pozos marcados en total", todasLasKeys.length === 8);
+check("hay 11 pozos marcados en total", todasLasKeys.length === 11);
+
+// Los tres pozos con centinela: que se resuelvan como toca.
+check("clérigo nv1 no tiene Canalizar Divinidad («—»)", pozosDe("clerigo", 1, {}).length === 0);
+check("clérigo nv2 sí lo tiene", pozosDe("clerigo", 2, {}).some((p) => p.key === "canalizar-divinidad" && p.max === 2));
+check("paladín nv2 aún no lo tiene", !pozosDe("paladin", 2, {}).some((p) => p.key === "canalizar-divinidad"));
+check("paladín nv3 sí, y con su reserva aparte", pozosDe("paladin", 3, {}).length === 2);
+const druida20 = pozosDe("druida", 20, {}).find((p) => p.key === "forma-salvaje");
+check("druida nv20 tiene forma salvaje ilimitada", !!druida20?.ilimitado);
+check("druida nv19 la tiene contada (9)", pozosDe("druida", 19, {}).find((p) => p.key === "forma-salvaje")?.max === 9);
+check("un pozo ilimitado no se puede vaciar", recargar(gastar({}, "forma-salvaje", 0), "druida", 20, "corto").usos?.["forma-salvaje"] === 0);
 
 // --- Capa pura de lib/recursos.ts ---
 const VACIO: PlayState = {};

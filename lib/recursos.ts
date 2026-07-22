@@ -19,7 +19,20 @@ export type Pozo = {
   gastados: number;
   quedan: number;
   recharge: "corto" | "largo";
+  /** Sin tope (Forma Salvaje del druida a nv20): no se cuenta, se usa y ya. */
+  ilimitado?: boolean;
 };
+
+// Las tablas de progresión no son solo números: usan "—" para los niveles en
+// que la clase AÚN NO tiene el rasgo, e "Ilimitados" para el caso del druida a
+// nivel 20. Se traducen aquí y no en los datos, porque la tabla es lo que
+// imprime el libro y se muestra tal cual como referencia.
+const SIN_TOPE = "ilimitados";
+
+function maxDeNivel(valor: number | string): { max: number; ilimitado: boolean } {
+  if (typeof valor === "string" && valor.trim().toLowerCase() === SIN_TOPE) return { max: 0, ilimitado: true };
+  return { max: Number(valor) || 0, ilimitado: false }; // "—" → NaN → 0: aún no lo tienes
+}
 
 /** Pozos de esa clase a ese nivel. Los que aún valen 0 NO se listan. */
 export function pozosDe(clsSlug: string, level: number, play: PlayState): Pozo[] {
@@ -29,10 +42,18 @@ export function pozosDe(clsSlug: string, level: number, play: PlayState): Pozo[]
   const out: Pozo[] = [];
   for (const r of m.resources) {
     if (!r.spend) continue;
-    const max = Number(r.values[i]) || 0;
-    if (max <= 0) continue;
-    const gastados = Math.min(max, Math.max(0, play.usos?.[r.spend.key] ?? 0));
-    out.push({ key: r.spend.key, name: r.name, max, gastados, quedan: max - gastados, recharge: r.spend.recharge });
+    const { max, ilimitado } = maxDeNivel(r.values[i]);
+    if (!ilimitado && max <= 0) continue;
+    const gastados = ilimitado ? 0 : Math.min(max, Math.max(0, play.usos?.[r.spend.key] ?? 0));
+    out.push({
+      key: r.spend.key,
+      name: r.name,
+      max,
+      gastados,
+      quedan: max - gastados,
+      recharge: r.spend.recharge,
+      ...(ilimitado ? { ilimitado: true } : {}),
+    });
   }
   return out;
 }
