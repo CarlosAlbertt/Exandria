@@ -16,7 +16,13 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >
 > Ver las tres secciones RESUELTO del 2026-07-21 más abajo.
 
-> [!tip] ✅ Migraciones al día
+> [!danger] ⚠️ 1 MIGRACIÓN PENDIENTE: `schema_v20.sql`
+> La Fase O1 (recursos de clase) añade `characters.play_state jsonb`. Es
+> **idempotente y solo añade** una columna con default `'{}'` — no reestructura
+> nada. **Sin ejecutarla, la hoja no guarda los usos gastados** y el descanso no
+> puede recargarlos. Ejecutar en el SQL Editor de Supabase.
+
+> [!tip] ✅ El resto de migraciones, al día
 > **No queda ninguna pendiente.** `schema_v17` (tablón), `schema_v18` (memoria de
 > NPC) y `schema_v19` (saber por origen) las ejecutó el usuario el **2026-07-21**.
 > Con la v19 dentro, el saber por origen funciona entero: el creador guarda
@@ -280,6 +286,75 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-21): Fase O1 — recursos de clase ⚔️
+Rama `fase-o1-recursos`. **Migración `schema_v20.sql` — PENDIENTE de ejecutar.**
+Spec y plan en `docs/superpowers/{specs,plans}/2026-07-21-fase-o1-recursos-de-clase*`.
+
+La **Fase O se parte en dos**: **O1** (esto) son los pozos de usos de clase;
+**O2** serán los conjuros por tramos, empezando por trucos y niveles 1–3. O1 va
+primero porque no depende de cargar el SRD, beneficia a las clases que hoy no
+tienen nada mecánico, y deja probado el motor de gasto y recarga que O2 usará.
+
+- **Qué columnas son pozos** (`data/classdata/types.ts`): `ClassResource` gana
+  `spend: { key, recharge: "corto"|"largo" }`. La tabla de progresión mezclaba
+  **pozos** (Furias, Puntos de foco) con **referencia** (Daño de furia, Dado de
+  Artes Marciales); ahora se distinguen. **11 pozos en 8 clases**:
+
+  | Clase | Pozo | key | Recarga |
+  |---|---|---|---|
+  | Bárbaro | Furias | `furias` | largo |
+  | Clérigo | Canalizar Divinidad | `canalizar-divinidad` | corto |
+  | Druida | Forma Salvaje | `forma-salvaje` | corto |
+  | Explorador | Enemigo Predilecto | `enemigo-predilecto` | largo |
+  | Guerrero | Segundo Aliento | `segundo-aliento` | corto |
+  | Guerrero | Acción Sorpresiva | `accion-sorpresiva` | corto |
+  | Guerrero | Indomable | `indomable` | largo |
+  | Hechicero | Puntos de hechicería | `puntos-de-hechiceria` | largo |
+  | Monje | Puntos de foco | `puntos-de-foco` | corto |
+  | Paladín | Canalizar Divinidad | `canalizar-divinidad` | corto |
+  | Paladín | Imposición de Manos | `imposicion-de-manos` | largo |
+
+  > **Trampa cazada**: las tablas usan **`"—"`** para los niveles en que aún no
+  > tienes el rasgo y **`"Ilimitados"`** para la Forma Salvaje del druida a
+  > nv20. Se traducen en `lib/recursos.ts`, **no en los datos**: la tabla es lo
+  > que imprime el libro y se muestra tal cual como referencia. `"—"` → 0 (no se
+  > lista); `"Ilimitados"` → `Pozo.ilimitado`, y la UI pone una chapa en vez de
+  > puntitos.
+- **Clases sin pozo en O1** (necesitan pozo derivado de característica o de
+  fórmula, pasada aparte): **bardo** (Inspiración Bárdica sale del mod. de
+  Carisma), **mago** (Recuperación Arcana), **pícaro**, **brujo** y **cazador de
+  sangre**. Los pozos de **subclase** también quedan fuera.
+- **`lib/recursos.ts`** (nuevo, puro como `derive.ts`/`gameClock.ts`):
+  `pozosDe`, `referenciasDe`, `gastar`, `devolver`, `recargar`. Se guarda **lo
+  GASTADO, no lo restante** — así, al subir de nivel, los usos nuevos llegan
+  solos en vez de quedarse un máximo desfasado.
+- **`schema_v20.sql`**: `characters.play_state jsonb default '{}'`. **Una sola
+  columna** para toda la Fase O: O2 le añadirá las claves `huecos`, `pacto` y
+  `preparados` sin otra migración. Todas las escrituras **fusionan**, nunca
+  reemplazan el jsonb entero.
+- **Hoja** (`components/personaje/PozosClase.tsx`): una fila por pozo con
+  **puntos pulsables** — un toque gasta, un toque en uno gastado lo devuelve —,
+  cuántos quedan y con qué descanso recarga. Debajo, las columnas de referencia
+  en una línea. Las **chapas estáticas de `resourceChips` se retiran**;
+  `spellSlotChips` se queda para O2. Guardado optimista con el patrón que ya
+  usaban `onRollHp`/`openDocument`.
+- **Descanso** (`app/api/descanso/route.ts`): corto recarga los pozos de descanso
+  corto, largo los recarga todos, y devuelve el `play_state` nuevo para que la
+  hoja se refresque sin recargar. **Ojo**: el `update` de la ficha antes se
+  saltaba cuando el descanso era gratis; ahora corre siempre (el oro solo se
+  escribe si cuesta), que si no el descanso corto no recargaría nada.
+- **DM**: `/api/dm/character` gana la operación `setUses` (fusiona sobre
+  `play_state`, con `play_state` añadido a su `select` para no pisar lo demás), y
+  Panel DM › Grupo monta los mismos contadores bajo cada jugador.
+- Verificado: `tsc --noEmit` + `next build` limpios · **`scripts/check-clases.ts`
+  con 116 comprobaciones en verde** (forma de las tablas, que los pozos no
+  decrezcan al subir, los centinelas por nivel, y que gastar/devolver/recargar
+  respeten topes y no toquen las claves de otras fases) · `check-lore.ts` sigue
+  en 69. **NO probado en vivo**: los contadores necesitan una ficha con sesión.
+  **Prueba del usuario** (tras `schema_v20.sql`): con un bárbaro, gastar una
+  furia y ver que persiste al recargar; descanso corto → no la devuelve; descanso
+  largo → sí. Con un monje, que el foco vuelva con el corto.
 
 ## RESUELTO (2026-07-21): panteón propio y una página por continente 🕯️🗺️
 Rama `panteon-continentes`. **Sin migración.** Spec y plan en

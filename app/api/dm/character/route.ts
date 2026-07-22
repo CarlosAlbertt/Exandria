@@ -23,8 +23,9 @@ export async function POST(req: Request) {
   if (!userId) return Response.json({ error: "Falta userId." }, { status: 400 });
 
   const admin = createAdminClient();
-  const { addItems, addGold, setLevel, addXp, unlockLore, ...direct } = patch as {
+  const { addItems, addGold, setLevel, addXp, unlockLore, setUses, ...direct } = patch as {
     addItems?: Item[]; addGold?: number; setLevel?: number; addXp?: number; unlockLore?: string[];
+    setUses?: { key: string; gastados: number };
   } & Record<string, unknown>;
   const update: Record<string, unknown> = { ...direct };
 
@@ -32,11 +33,13 @@ export async function POST(req: Request) {
     update.level = Math.max(1, Math.min(20, Math.floor(setLevel)));
   }
 
-  if (Array.isArray(addItems) || typeof addGold === "number" || typeof addXp === "number" || Array.isArray(unlockLore)) {
+  if (Array.isArray(addItems) || typeof addGold === "number" || typeof addXp === "number" || Array.isArray(unlockLore) || (setUses && typeof setUses.key === "string")) {
     // Solo el personaje EN JUEGO. Desde schema_v14 hay varias filas por jugador
     // (activo + archivados), así que sin este filtro `maybeSingle()` reventaría
-    // en cuanto alguien archivara algo.
-    const { data: row } = await admin.from("characters").select("items, gold, xp, level, lore_unlocked").eq("user_id", userId).is("archived_at", null).maybeSingle();
+    // en cuanto alguien archivara algo. Se trae play_state para poder fusionar
+    // el ajuste de setUses sin pisar el resto del jsonb (donde la Fase O2
+    // guardará los conjuros).
+    const { data: row } = await admin.from("characters").select("items, gold, xp, level, lore_unlocked, play_state").eq("user_id", userId).is("archived_at", null).maybeSingle();
     if (Array.isArray(addItems)) {
       const items: Item[] = Array.isArray(row?.items) ? [...(row!.items as Item[])] : [];
       for (const it of addItems) {
@@ -58,6 +61,12 @@ export async function POST(req: Request) {
       const newXp = Math.max(0, ((row?.xp as number) ?? 0) + addXp);
       update.xp = newXp;
       update.level = Math.max((row?.level as number) ?? 1, levelFromXp(newXp));
+    }
+    // El DM ajusta un pozo a mano: devolver una furia, vaciar el foco.
+    if (setUses && typeof setUses.key === "string") {
+      const prevPlay = (row?.play_state as Record<string, unknown>) ?? {};
+      const prevUsos = (prevPlay.usos as Record<string, number>) ?? {};
+      update.play_state = { ...prevPlay, usos: { ...prevUsos, [setUses.key]: Math.max(0, Math.floor(setUses.gastados)) } };
     }
   }
 

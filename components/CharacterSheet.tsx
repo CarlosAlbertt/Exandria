@@ -19,6 +19,8 @@ import { derive } from "@/lib/derive";
 import { getMechanics, type ClassFeature } from "@/data/classdata";
 import { useSession } from "@/components/SessionProvider";
 import { publishRoll } from "@/lib/useDiceFeed";
+import PozosClase from "@/components/personaje/PozosClase";
+import type { PlayState } from "@/lib/recursos";
 
 const BUILD_KEY = "taldorei.build.v1";
 const SHEET_KEY = "taldorei.sheet.v1";
@@ -83,6 +85,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const [items, setItems] = useState<Item[]>([]);
   const [equipment, setEquipment] = useState<Record<string, Item>>({});
   const [hpRolls, setHpRolls] = useState<Record<string, number>>({});
+  const [playState, setPlayState] = useState<PlayState>({}); // usos de los pozos de clase (Fase O1)
   const [skills, setSkills] = useState<string[]>([]); // pericias elegidas en /crear (solo lectura aquí)
   const [ac, setAc] = useState<number | null>(null); // CA: sesión-only (no se persiste)
   const [pickingSlot, setPickingSlot] = useState<string | null>(null);
@@ -143,6 +146,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           if (row.hp_rolls) setHpRolls(row.hp_rolls);
           if (Array.isArray(row.skills)) setSkills(row.skills);
           if (Array.isArray(row.lore_unlocked)) setLoreUnlocked(row.lore_unlocked);
+          if (row.play_state && typeof row.play_state === "object") setPlayState(row.play_state as PlayState);
         }
       } else {
         try {
@@ -164,13 +168,14 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           }
           const s = localStorage.getItem(SHEET_KEY);
           if (s) {
-            const sheet = JSON.parse(s) as { level?: number; gold?: number; asi?: Asi; items?: Item[]; equipment?: Record<string, Item>; hp_rolls?: Record<string, number> };
+            const sheet = JSON.parse(s) as { level?: number; gold?: number; asi?: Asi; items?: Item[]; equipment?: Record<string, Item>; hp_rolls?: Record<string, number>; play_state?: PlayState };
             if (typeof sheet.level === "number") setLevel(sheet.level);
             if (typeof sheet.gold === "number") setGold(sheet.gold);
             if (sheet.asi) setAsi(sheet.asi);
             if (Array.isArray(sheet.items)) setItems(sheet.items);
             if (sheet.equipment) setEquipment(sheet.equipment);
             if (sheet.hp_rolls) setHpRolls(sheet.hp_rolls);
+            if (sheet.play_state) setPlayState(sheet.play_state);
           }
         } catch {}
       }
@@ -259,12 +264,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       .map(([lvl, feats]) => ({ level: lvl, feats }));
   }, [mechanics, level, build.subclass]);
 
-  const resourceChips = useMemo(() => {
-    if (!mechanics?.resources) return [] as { name: string; value: number | string }[];
-    const idx = Math.min(19, Math.max(0, level - 1));
-    return mechanics.resources.map((r) => ({ name: r.name, value: r.values[idx] }));
-  }, [mechanics, level]);
-
   const spellSlotChips = useMemo(() => {
     if (!d.spellSlots) return [] as { lvl: number; n: number }[];
     return d.spellSlots.map((n, i) => ({ lvl: i + 1, n })).filter((s) => s.n > 0);
@@ -318,6 +317,19 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       }
       return next;
     });
+  };
+
+  // Gastar/devolver un uso de un pozo de clase: refleja el cambio al instante
+  // (estado local) y lo persiste en paralelo, sin esperar la respuesta — mismo
+  // patrón que onRollHp.
+  const onPlayStateChange = (next: PlayState) => {
+    setPlayState(next);
+    if (targetUserId) {
+      if (saveMode === "self") { if (characterId) void saveCharacter(characterId, { play_state: next }); }
+      else void fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: targetUserId, patch: { play_state: next } }) });
+    } else {
+      try { const s = JSON.parse(localStorage.getItem(SHEET_KEY) ?? "{}"); localStorage.setItem(SHEET_KEY, JSON.stringify({ ...s, play_state: next })); } catch {}
+    }
   };
 
   /* --- oro --- */
@@ -616,15 +628,16 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
               )}
             </div>
 
-            {(resourceChips.length > 0 || spellSlotChips.length > 0) && (
+            {spellSlotChips.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-4">
-                {resourceChips.map((r) => (
-                  <span key={r.name} className="chip" data-on>{r.name} {r.value}</span>
-                ))}
                 {spellSlotChips.map((s) => (
                   <span key={s.lvl} className="chip" data-on>Espacios nv{s.lvl} ×{s.n}</span>
                 ))}
               </div>
+            )}
+
+            {build.cls && (
+              <PozosClase clsSlug={build.cls} level={level} play={playState} onChange={onPlayStateChange} readOnly={readOnly} />
             )}
 
             {!mechanics ? (

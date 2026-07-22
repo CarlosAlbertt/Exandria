@@ -139,6 +139,6 @@ export const EXPLORADOR: ClassMechanics = {
   ],
   resources: [
     { name: "Conjuros preparados", values: [2, 3, 4, 5, 6, 6, 7, 7, 9, 9, 10, 10, 11, 11, 12, 12, 14, 14, 15, 15] },
-    { name: "Usos de Enemigo Predilecto", values: [2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6] },
+    { name: "Usos de Enemigo Predilecto", values: [2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6], spend: { key: "enemigo-predilecto", recharge: "largo" } },
   ],
 };

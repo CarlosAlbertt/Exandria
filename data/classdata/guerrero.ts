@@ -148,10 +148,10 @@ export const GUERRERO: ClassMechanics = {
     },
   ],
   resources: [
-    { name: "Usos de Segundo Aliento", values: [2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4] },
+    { name: "Usos de Segundo Aliento", values: [2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], spend: { key: "segundo-aliento", recharge: "corto" } },
     { name: "Maestría con Armas", values: [3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6] },
-    { name: "Usos de Acción Sorpresiva", values: [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2] },
-    { name: "Usos de Indomable", values: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3] },
+    { name: "Usos de Acción Sorpresiva", values: [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2], spend: { key: "accion-sorpresiva", recharge: "corto" } },
+    { name: "Usos de Indomable", values: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], spend: { key: "indomable", recharge: "largo" } },
     { name: "Ataques por acción de Atacar", values: [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4] },
   ],
 };

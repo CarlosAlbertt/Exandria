@@ -12,6 +12,17 @@ export type ClassFeature = {
   subclass?: boolean;  // true si la otorga la subclase
 };
 
+export type ClassResource = {
+  name: string;
+  values: (number | string)[];
+  /**
+   * Solo los POZOS: columnas que se gastan y se recargan al descansar. Las que
+   * no lo declaran son de REFERENCIA (daño de furia, dado de artes marciales):
+   * se consultan al usar el rasgo, no se gastan.
+   */
+  spend?: { key: string; recharge: "corto" | "largo" };
+};
+
 export type ClassMechanics = {
   slug: string;                     // igual que data/classes.ts
   primaryAbility: AbilityKey[];     // p. ej. ["fue"]
@@ -25,5 +36,5 @@ export type ClassMechanics = {
   spellAbility?: AbilityKey;        // si caster !== "none"
   features: ClassFeature[];         // niveles 1-20, orden ascendente
   /** columnas extra de la tabla de progresión, por nivel 1-20 */
-  resources?: { name: string; values: (number | string)[] }[];
+  resources?: ClassResource[];
 };

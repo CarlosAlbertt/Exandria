@@ -163,6 +163,6 @@ export const MONJE: ClassMechanics = {
   ],
   resources: [
     { name: "Dado de Artes Marciales", values: ["1d6", "1d6", "1d6", "1d6", "1d8", "1d8", "1d8", "1d8", "1d8", "1d8", "1d10", "1d10", "1d10", "1d10", "1d10", "1d10", "1d12", "1d12", "1d12", "1d12"] },
-    { name: "Puntos de foco", values: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+    { name: "Puntos de foco", values: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], spend: { key: "puntos-de-foco", recharge: "corto" } },
   ],
 };

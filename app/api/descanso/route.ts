@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { recargar, type PlayState } from "@/lib/recursos";
 
 export const runtime = "nodejs";
 
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
 
   // 1. Ficha activa del jugador.
-  const { data: char } = await admin.from("characters").select("id, gold").eq("user_id", user.id).is("archived_at", null).maybeSingle();
+  const { data: char } = await admin.from("characters").select("id, gold, cls, level, play_state").eq("user_id", user.id).is("archived_at", null).maybeSingle();
   if (!char) return Response.json({ error: "No tienes un personaje en juego." }, { status: 400 });
   const gold = (char.gold as number) ?? 0;
   if (gold < coste) return Response.json({ error: "No tienes oro suficiente para descansar aquí." }, { status: 400 });
@@ -56,14 +57,21 @@ export async function POST(req: Request) {
     }
   }
 
-  // 4. Cobra + avanza el reloj.
+  // 4. Cobra + avanza el reloj + recarga los pozos de usos de la clase.
   const minutos = kind === "corto" ? 60 : 480;
   const nextClock: Clock = { ...clock, epochGameMin: gameMin + minutos, epochRealMs: now };
-  if (coste > 0) await admin.from("characters").update({ gold: gold - coste, updated_at: new Date().toISOString() }).eq("id", char.id);
+  const prevPlayState = (char.play_state as PlayState) ?? {};
+  // Ficha a medio crear (sin clase todavía): no falla, deja el play_state tal cual.
+  const nextPlayState = char.cls
+    ? recargar(prevPlayState, char.cls as string, (char.level as number) ?? 1, kind)
+    : prevPlayState;
+  const charUpdate: Record<string, unknown> = { updated_at: new Date().toISOString(), play_state: nextPlayState };
+  if (coste > 0) charUpdate.gold = gold - coste;
+  await admin.from("characters").update(charUpdate).eq("id", char.id);
   await admin.from("app_config").upsert({ key: CLOCK_KEY, value: JSON.stringify(nextClock), updated_at: new Date().toISOString() });
   if (kind === "largo") {
     await admin.from("app_config").upsert({ key: LAST_LONG_KEY, value: String(gameMin + minutos), updated_at: new Date().toISOString() });
   }
 
-  return Response.json({ ok: true, gold: gold - coste });
+  return Response.json({ ok: true, gold: gold - coste, play_state: nextPlayState });
 }

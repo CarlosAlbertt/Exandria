@@ -139,7 +139,7 @@ export const PALADIN: ClassMechanics = {
   ],
   resources: [
     { name: "Conjuros preparados", values: [2, 2, 4, 5, 6, 6, 7, 7, 9, 9, 10, 10, 11, 11, 12, 12, 14, 14, 15, 15] },
-    { name: "Usos de Canalizar Divinidad", values: ["—", "—", 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3] },
-    { name: "Reserva de Imposición de Manos", values: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100] },
+    { name: "Usos de Canalizar Divinidad", values: ["—", "—", 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], spend: { key: "canalizar-divinidad", recharge: "corto" } },
+    { name: "Reserva de Imposición de Manos", values: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100], spend: { key: "imposicion-de-manos", recharge: "largo" } },
   ],
 };
