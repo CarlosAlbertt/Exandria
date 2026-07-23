@@ -144,3 +144,43 @@ export function resultadoMuerte(play: PlayState): "estable" | "muerto" | "tirand
   if (ok >= 3) return "estable";
   return "tirando";
 }
+
+// --- Condiciones y agotamiento -----------------------------------------------
+
+/** Activa/desactiva una condición por su slug. */
+export function alternarCondicion(play: PlayState, slug: string): PlayState {
+  const conds = play.conds ?? [];
+  const next = conds.includes(slug) ? conds.filter((c) => c !== slug) : [...conds, slug];
+  return { ...play, conds: next };
+}
+
+/** Fija el nivel de agotamiento, acotado a [0, 6]. */
+export function setAgotamiento(play: PlayState, n: number): PlayState {
+  return { ...play, agotamiento: Math.max(0, Math.min(6, Math.floor(n))) };
+}
+
+// --- Resolvedor de ventaja/desventaja ---------------------------------------
+
+/**
+ * Dada la lista de condiciones activas, resuelve la (des)ventaja sobre un tipo
+ * de tirada PROPIA, con la regla de anulación 2024: si hay al menos una fuente
+ * de ventaja Y una de desventaja, tiras un solo d20 (`null`).
+ *
+ * En G1 casi todo son desventajas de condición; se escribe con las dos caras
+ * para que G2/G3 (esquivar, ayuda, cobertura) sumen fuentes sin reescribirlo.
+ * No muta `play`: es una consulta.
+ */
+export function ventajaDe(play: PlayState, tipo: TipoTirada): "adv" | "dis" | null {
+  const activas = new Set(play.conds ?? []);
+  let hayVent = false;
+  let hayDesv = false;
+  for (const c of CONDICIONES) {
+    if (!activas.has(c.slug)) continue;
+    if (c.desventaja?.includes(tipo)) hayDesv = true;
+    // (ninguna condición de G1 da ventaja propia; el gancho queda para G2/G3)
+  }
+  if (hayVent && hayDesv) return null;
+  if (hayDesv) return "dis";
+  if (hayVent) return "adv";
+  return null;
+}
