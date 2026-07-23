@@ -14,8 +14,8 @@ function check(label: string, cond: boolean) {
 }
 
 // --- Datos ---
-check("hay 15 condiciones", CONDICIONES.length === 15);
-check("slugs de condición únicos", new Set(CONDICIONES.map((c) => c.slug)).size === 15);
+check("hay 14 condiciones (agotamiento va aparte)", CONDICIONES.length === 14);
+check("slugs de condición únicos", new Set(CONDICIONES.map((c) => c.slug)).size === 14);
 check("toda condición tiene regla no vacía", CONDICIONES.every((c) => c.regla.trim().length > 0));
 check("agotamiento tiene 7 entradas (0–6)", AGOTAMIENTO.length === 7);
 check("nivel 6 de agotamiento es la muerte", /muer/i.test(AGOTAMIENTO[6]));

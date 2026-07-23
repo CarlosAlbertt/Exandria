@@ -14,9 +14,9 @@ export type Condicion = {
   desventaja?: TipoTirada[]; // desventaja en tus propias tiradas de estos tipos
 };
 
-// Las 15 condiciones de 2024. `desventaja` solo recoge lo EXACTO sin más
-// contexto (ver el spec): lo que la RAW acota a una característica, o lo que da
-// ventaja al atacante, no se modela aquí.
+// Las 14 condiciones de 2024 (el agotamiento es la 15ª y va aparte, con niveles).
+// `desventaja` solo recoge lo EXACTO sin más contexto (ver el spec): lo que la
+// RAW acota a una característica, o lo que da ventaja al atacante, no se modela aquí.
 export const CONDICIONES: Condicion[] = [
   { slug: "cegado", name: "Cegado", icon: "eye-slash",
     regla: "No ves: fallas cualquier prueba que dependa de la vista. Atacar es con desventaja y quien te ataca lo hace con ventaja." },
@@ -50,9 +50,6 @@ export const CONDICIONES: Condicion[] = [
     regla: "Estás incapacitado, no te mueves y hablas con dificultad. Fallas las salvaciones de Fuerza y Destreza. Quien te ataca lo hace con ventaja." },
   { slug: "inconsciente", name: "Inconsciente", icon: "bed",
     regla: "Estás incapacitado, tirado y sin saber qué pasa. Sueltas lo que llevas. Fallas las salvaciones de Fuerza y Destreza; quien te ataca lo hace con ventaja, y a menos de 1,5 m es crítico si acierta." },
-  { slug: "asqueado", name: "Asqueado", icon: "face-dizzy",
-    regla: "Tu estómago se revuelve. Tiras con desventaja las tiradas de ataque con armas cuerpo a cuerpo.",
-    desventaja: ["ataque"] },
 ];
 
 // Agotamiento 2024: cada nivel resta -2 acumulativo a las pruebas de d20 y
