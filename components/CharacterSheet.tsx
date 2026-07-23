@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import { loadActiveCharacter, saveCharacter, listCharacters, archiveCharacter, type Item, type CharacterData } from "@/lib/character";
 import type { Asi } from "@/lib/character";
 import { archivedOf, MAX_CHARACTERS } from "@/lib/archive";
@@ -20,6 +21,8 @@ import { getMechanics, type ClassFeature } from "@/data/classdata";
 import { useSession } from "@/components/SessionProvider";
 import { publishRoll } from "@/lib/useDiceFeed";
 import PozosClase from "@/components/personaje/PozosClase";
+import EstadoVivo from "@/components/personaje/EstadoVivo";
+import { ventajaDe } from "@/lib/estado";
 import type { PlayState } from "@/lib/recursos";
 
 const BUILD_KEY = "taldorei.build.v1";
@@ -85,7 +88,10 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const [items, setItems] = useState<Item[]>([]);
   const [equipment, setEquipment] = useState<Record<string, Item>>({});
   const [hpRolls, setHpRolls] = useState<Record<string, number>>({});
-  const [playState, setPlayState] = useState<PlayState>({}); // usos de los pozos de clase (Fase O1)
+  const [playState, setPlayState] = useState<PlayState>({}); // usos de los pozos de clase (Fase O1) + estado de combate (G1)
+  // Última play_state que ESTE cliente escribió: para ignorar el eco de Realtime
+  // de la propia escritura y no pisar un segundo toque rápido del jugador.
+  const lastWrittenPlay = useRef<string | null>(null);
   const [skills, setSkills] = useState<string[]>([]); // pericias elegidas en /crear (solo lectura aquí)
   const [ac, setAc] = useState<number | null>(null); // CA: sesión-only (no se persiste)
   const [pickingSlot, setPickingSlot] = useState<string | null>(null);
@@ -183,6 +189,33 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     })();
     return () => { done = true; };
   }, [targetUserId]);
+
+  // En vivo: si el DM (u otra pestaña) cambia mi ficha, reflejar el estado de
+  // combate sin recargar. Solo la ficha propia (self). `characters` ya está en
+  // la publicación realtime (schema_v4). Se refresca SOLO el estado de juego,
+  // no el build (que podría estarse editando en /crear).
+  useEffect(() => {
+    if (saveMode !== "self" || !targetUserId) return;
+    const supabase = createClient();
+    const ch = supabase
+      .channel(`sheet_rt_${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "characters", filter: `user_id=eq.${targetUserId}` },
+        (payload) => {
+          const row = payload.new as { play_state?: PlayState; gold?: number };
+          if (row.play_state && typeof row.play_state === "object") {
+            // Ignora el eco de mi propia escritura.
+            if (JSON.stringify(row.play_state) !== lastWrittenPlay.current) {
+              setPlayState(row.play_state as PlayState);
+            }
+          }
+          if (typeof row.gold === "number") setGold(row.gold);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [saveMode, targetUserId]);
 
   // Huecos (activo + archivados) para el bloque de retirada, solo en la ficha
   // propia: el DM editando a otro (?user=) no necesita esta lista aquí.
@@ -323,6 +356,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   // (estado local) y lo persiste en paralelo, sin esperar la respuesta — mismo
   // patrón que onRollHp.
   const onPlayStateChange = (next: PlayState) => {
+    lastWrittenPlay.current = JSON.stringify(next);
     setPlayState(next);
     if (targetUserId) {
       if (saveMode === "self") { if (characterId) void saveCharacter(characterId, { play_state: next }); }
@@ -558,6 +592,17 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             <p className="text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>CA editable para reflejar bonificadores temporales (p. ej. conjuros); no se guarda entre sesiones. El cálculo base se indica bajo el número.</p>
           </section>
 
+          {/* ESTADO DE COMBATE (PG, muerte, condiciones, agotamiento) */}
+          <section className="panel p-5">
+            <p className="eyebrow mb-3"><i className="fas fa-heart-pulse mr-1.5" style={{ color: "var(--color-ember)" }} />Estado de combate</p>
+            <EstadoVivo
+              play={playState}
+              maxHp={d.maxHp}
+              onChange={onPlayStateChange}
+              readOnly={readOnly && saveMode !== "self"}
+            />
+          </section>
+
           {/* SALVACIONES */}
           <section className="panel p-5">
             <p className="eyebrow mb-3">Salvaciones</p>
@@ -575,7 +620,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                         style={{ color: "var(--color-bronze)" }}
                         title={`Tirar salvación de ${a.name}`}
                         onClick={async () => {
-                          const { error } = await publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod });
+                          const { error } = await publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod, adv: ventajaDe(playState, "salvez") ?? undefined });
                           setRollErr(error);
                         }}
                       >
@@ -610,7 +655,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                         style={{ color: "var(--color-bronze)" }}
                         title={`Tirar ${s.name}`}
                         onClick={async () => {
-                          const { error } = await publishRoll(session!.id, "skill", s.name, "1d20", { mod: s.mod });
+                          const { error } = await publishRoll(session!.id, "skill", s.name, "1d20", { mod: s.mod, adv: ventajaDe(playState, "prueba") ?? undefined });
                           setRollErr(error);
                         }}
                       >

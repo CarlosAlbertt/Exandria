@@ -12,6 +12,8 @@ import { derive } from "@/lib/derive";
 import { createClient } from "@/lib/supabase/client";
 import LorePicker from "@/components/LorePicker";
 import PozosClase from "@/components/personaje/PozosClase";
+import EstadoVivo from "@/components/personaje/EstadoVivo";
+import { pgActuales } from "@/lib/estado";
 import type { PlayState } from "@/lib/recursos";
 
 const YA_TIENE_ACTIVO = "Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este.";
@@ -292,7 +294,7 @@ export default function GrupoPanel() {
             {/* Franja compacta: siempre visible, sin necesidad de desplegar la ficha */}
             <div className="mt-3 flex flex-wrap items-center gap-4">
               <Stat icon="fa-shield" label="CA" value={d.ac} color="var(--color-arcane-bright)" />
-              <Stat icon="fa-heart" label="PG máx" value={d.maxHp} color="var(--color-ember)" />
+              <Stat icon="fa-heart" label="PG" value={`${pgActuales((c.play_state as PlayState) ?? {}, d.maxHp)} / ${d.maxHp}`} color="var(--color-ember)" />
               <Stat icon="fa-bolt" label="Iniciativa" value={fmtMod(d.initiative)} color="var(--color-arcane)" />
               {typeof d.spellDc === "number" && <Stat icon="fa-wand-sparkles" label="CD" value={d.spellDc} color="var(--color-violet)" />}
             </div>
@@ -310,11 +312,18 @@ export default function GrupoPanel() {
                 </div>
 
                 <div className="flex flex-wrap gap-4 mb-5">
-                  <Stat icon="fa-heart" label="PG máx" value={d.maxHp} color="var(--color-ember)" />
+                  <Stat icon="fa-heart" label="PG" value={`${pgActuales((c.play_state as PlayState) ?? {}, d.maxHp)} / ${d.maxHp}`} color="var(--color-ember)" />
                   <Stat icon="fa-shield-halved" label="Comp." value={fmtMod(d.prof)} color="var(--color-bronze)" />
                   <Stat icon="fa-dice-d20" label="Dado" value={cls ? `d${cls.hitDie}` : "—"} color="var(--color-arcane)" />
                   <Stat icon="fa-bag-shopping" label="Objetos" value={Array.isArray(c.inventory) ? c.inventory.length : 0} color="var(--color-primitivo)" />
                 </div>
+
+                <p className="eyebrow mb-2">Estado de combate</p>
+                <EstadoVivo
+                  play={(c.play_state as PlayState) ?? {}}
+                  maxHp={d.maxHp}
+                  onChange={(next) => dmPatch(c.user_id, { play_state: next })}
+                />
 
                 {c.cls && (
                   <>
