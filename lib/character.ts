@@ -194,12 +194,39 @@ export async function createCharacter(userId: string): Promise<{ id: string } | 
 // puede seguir ignorando el retorno, pero el creador ya no lo hace.
 export async function saveCharacter(characterId: string, patch: Partial<CharacterData>): Promise<string | null> {
   if (!supabaseConfigured || !characterId) return null;
-  const { error } = await createClient()
-    .from("characters")
-    .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq("id", characterId);
-  if (error) console.error("[Exandria] No se pudo guardar la ficha:", error.message);
-  return error ? humanDbError(error) : null;
+  const supabase = createClient();
+  const campos: Record<string, unknown> = { ...patch };
+
+  // Mismo blindaje que al leer, y por el mismo motivo: si la tabla no tiene
+  // una columna del patch, Postgres rechaza el UPDATE ENTERO. Eso es lo que
+  // dejó una ficha vacía con el hueco gastado (una `characters` sin `lore`,
+  // 2026-07-22): se perdía el personaje entero por un campo. Ahora se quita el
+  // campo que sobra y se reintenta, así que se guarda todo lo demás.
+  for (let intento = 0; intento <= Object.keys(patch).length; intento++) {
+    const { error } = await supabase
+      .from("characters")
+      .update({ ...campos, updated_at: new Date().toISOString() })
+      .eq("id", characterId);
+
+    if (!error) return null;
+    if (error.code !== "42703") {
+      console.error("[Exandria] No se pudo guardar la ficha:", error.message);
+      return humanDbError(error);
+    }
+
+    const falta = missingColumn(error.message);
+    if (!falta || !(falta in campos)) {
+      console.error("[Exandria] No se pudo guardar la ficha:", error.message);
+      return humanDbError(error);
+    }
+    delete campos[falta];
+    console.error(
+      `[Exandria] La tabla 'characters' no tiene la columna '${falta}'. ` +
+      `Ejecuta supabase/schema_v21_reparar_characters.sql en el SQL Editor. ` +
+      `Mientras tanto se guarda el resto de la ficha, pero ese campo NO se conserva.`
+    );
+  }
+  return "No se pudo guardar la ficha: la tabla no tiene las columnas que la app necesita.";
 }
 
 // Retira un personaje del juego. El viaje de vuelta lo hace solo el DM (lo

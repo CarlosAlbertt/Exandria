@@ -104,7 +104,12 @@ export default function CrearPage() {
     cloudLoaded.current = true;
     listCharacters(userId).then(setSlots);
     loadActiveCharacter(userId).then((row) => {
-      if (!row) {
+      // Una fila SIN especie ni clase es una ficha a medio crear: se reservó el
+      // hueco pero el guardado no llegó a cuajar. Cuenta como "sin personaje"
+      // para restaurar el borrador — si no, se entraba a rellenar de cero
+      // teniendo el borrador ahí al lado.
+      const aMedias = !!row && !row.species && !row.cls;
+      if (!row || aMedias) {
         // Sin personaje activo (nuevo, o acaba de archivar): restaura el
         // borrador de ESTE usuario si lo dejó a medias. La fila no se crea aquí.
         try {
@@ -112,6 +117,9 @@ export default function CrearPage() {
           if (raw) setB((p) => ({ ...p, ...JSON.parse(raw) }));
         } catch {}
         setDraftReady(true); // ya leído el borrador: seguro persistir
+        // Con fila a medias hay que quedarse su id: así al terminar se rellena
+        // ESA, sin gastar otro hueco de los tres.
+        if (aMedias) setCharacterId(row.id);
         return;
       }
       setCharacterId(row.id);
