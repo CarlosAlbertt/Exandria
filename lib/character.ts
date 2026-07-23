@@ -70,14 +70,63 @@ export type CharacterData = {
   play_state: Record<string, unknown>;
 };
 
-// Columnas de la ficha. `FIELDS_BASE` son las que existen desde hace tiempo;
-// `FIELDS` añade las de las migraciones recientes. Si alguna de esas últimas
-// falta porque la migración no se ha ejecutado, `loadActiveCharacter` reintenta
-// con las base en vez de dejar al jugador sin hoja.
-const FIELDS_BASE =
-  "name, species, lineage, cls, subclass, background, base, bonus, skills, inventory, items, equipment, asi, hp_rolls, level, xp, gold, lore";
-const FIELDS =
-  `${FIELDS_BASE}, origin_continent, origin_region, deity, lore_unlocked, play_state`;
+// Columnas de la ficha, en una lista para poder QUITAR las que la base no
+// tenga. Sin `id`/`user_id`, que los pone cada consulta.
+const FIELD_LIST = [
+  "name", "species", "lineage", "cls", "subclass", "background", "base", "bonus",
+  "skills", "inventory", "items", "equipment", "asi", "hp_rolls", "level", "xp",
+  "gold", "lore", "origin_continent", "origin_region", "deity", "lore_unlocked",
+  "play_state",
+] as const;
+const FIELDS = FIELD_LIST.join(", ");
+
+// Nombre de la columna que Postgres dice que falta ("column characters.lore
+// does not exist" → "lore"). Devuelve null si el mensaje no es de ese tipo.
+function missingColumn(message: string): string | null {
+  return message.match(/column \w+\.(\w+) does not exist/)?.[1] ?? null;
+}
+
+// Reintento tolerante a migraciones a medias.
+//
+// Si falta UNA columna, Postgres tumba la consulta ENTERA (código 42703). Antes
+// eso devolvía null y la hoja lo leía como «no tienes personaje»: el personaje
+// parecía borrado estando intacto. Ahora se quita del `select` la columna que
+// el propio error nombra y se reintenta, hasta que la consulta pase o no quede
+// nada que quitar. Se degrada perdiendo campos, no la ficha entera.
+//
+// El primer intento va con TODO, así que una base al día no paga nada. Y el
+// aviso por consola dice exactamente qué falta, que es lo que costó ver la vez
+// que pasó (una `characters` sin `lore`, de una v4 que no llegó a correr).
+async function selectTolerante<T>(
+  run: (fields: string) => Promise<{ data: T; error: { code?: string; message: string } | null }>,
+  que: string,
+): Promise<{ data: T | null; error: { message: string } | null }> {
+  const campos = [...FIELD_LIST] as string[];
+  // Como mucho, una vuelta por columna: sin esto, un error 42703 que no nombre
+  // ninguna columna conocida daría un bucle infinito.
+  for (let intento = 0; intento <= FIELD_LIST.length; intento++) {
+    const { data, error } = await run(campos.join(", "));
+    if (!error) return { data, error: null };
+    if (error.code !== "42703") return { data: null, error };
+
+    const falta = missingColumn(error.message);
+    const i = falta ? campos.indexOf(falta) : -1;
+    if (i === -1) return { data: null, error };
+
+    campos.splice(i, 1);
+    console.error(
+      `[Exandria] La tabla 'characters' no tiene la columna '${falta}'. ` +
+      `Ejecuta supabase/schema_v21_reparar_characters.sql en el SQL Editor. ` +
+      `Mientras tanto se carga ${que} sin ese campo.`
+    );
+  }
+  return { data: null, error: { message: "No se pudo construir una consulta válida para 'characters'." } };
+}
+
+// Expuestos SOLO para scripts/check-ficha.ts: el reintento es lógica pura y
+// merece comprobación, pero no es API de este módulo. No usar en la app.
+export const __selectToleranteParaTests = selectTolerante;
+export const __FIELD_LIST = FIELD_LIST;
 
 // La ficha activa del jugador, con su id. null si no tiene ninguna en juego
 // (p. ej. acaba de archivar la suya y aún no se ha hecho otra).
@@ -95,20 +144,7 @@ export async function loadActiveCharacter(userId: string): Promise<(Partial<Char
     .is("archived_at", null)
     .maybeSingle() as unknown as Promise<Resultado>;
 
-  let { data, error } = await query(FIELDS);
-
-  // Migración pendiente: si falta una columna (42703), Postgres tumba la
-  // consulta ENTERA y sin esto devolvíamos null, que la hoja interpreta como
-  // "no tienes personaje" — la ficha desaparecía estando intacta en la base.
-  // Se reintenta sin las columnas nuevas para que la app siga usable, y se
-  // avisa por consola de qué migración falta.
-  if (error?.code === "42703") {
-    console.error(
-      `[Exandria] Falta una columna en 'characters' (${error.message}). ` +
-      `¿Queda alguna migración de supabase/ por ejecutar? Se carga la ficha sin las columnas nuevas.`
-    );
-    ({ data, error } = await query(FIELDS_BASE));
-  }
+  const { data, error } = await selectTolerante((fields) => query(fields), "la ficha");
 
   if (error) {
     console.error("[Exandria] No se pudo cargar la ficha activa:", error.message);
@@ -213,20 +249,17 @@ export function useParty() {
     const load = async () => {
       // Solo los que están EN JUEGO: sin este filtro, los archivados
       // reaparecerían en la iniciativa, los dados y la crónica.
+      // Misma red de seguridad que loadActiveCharacter: con una migración a
+      // medias, la columna que falta tumbaba la consulta entera y el DM veía el
+      // grupo VACÍO, sin pista de por qué.
       const cargarChars = (fields: string) =>
-        supabase.from("characters").select(`user_id, ${fields}`).is("archived_at", null);
+        supabase.from("characters").select(`user_id, ${fields}`).is("archived_at", null) as unknown as
+          Promise<{ data: unknown[]; error: { code?: string; message: string } | null }>;
 
-      let [chars, profs] = await Promise.all([cargarChars(FIELDS), supabase.from("profiles").select("id, username, role")]);
-      // Misma red de seguridad que loadActiveCharacter: con una migración sin
-      // ejecutar, la columna que falta tumbaba la consulta entera y el DM veía
-      // el grupo VACÍO, sin pista de por qué.
-      if (chars.error?.code === "42703") {
-        console.error(
-          `[Exandria] Falta una columna en 'characters' (${chars.error.message}). ` +
-          `¿Queda alguna migración de supabase/ por ejecutar? Se carga el grupo sin las columnas nuevas.`
-        );
-        chars = await cargarChars(FIELDS_BASE);
-      }
+      const [chars, profs] = await Promise.all([
+        selectTolerante(cargarChars, "el grupo"),
+        supabase.from("profiles").select("id, username, role"),
+      ]);
       if (chars.error) console.error("[Exandria] No se pudo cargar el grupo:", chars.error.message);
       if (!mounted) return;
       const names: Record<string, string> = {};
