@@ -20,6 +20,8 @@ import { getMechanics, type ClassFeature } from "@/data/classdata";
 import { useSession } from "@/components/SessionProvider";
 import { publishRoll } from "@/lib/useDiceFeed";
 import PozosClase from "@/components/personaje/PozosClase";
+import EstadoVivo from "@/components/personaje/EstadoVivo";
+import { ventajaDe } from "@/lib/estado";
 import type { PlayState } from "@/lib/recursos";
 
 const BUILD_KEY = "taldorei.build.v1";
@@ -558,6 +560,17 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             <p className="text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>CA editable para reflejar bonificadores temporales (p. ej. conjuros); no se guarda entre sesiones. El cálculo base se indica bajo el número.</p>
           </section>
 
+          {/* ESTADO DE COMBATE (PG, muerte, condiciones, agotamiento) */}
+          <section className="panel p-5">
+            <p className="eyebrow mb-3"><i className="fas fa-heart-pulse mr-1.5" style={{ color: "var(--color-ember)" }} />Estado de combate</p>
+            <EstadoVivo
+              play={playState}
+              maxHp={d.maxHp}
+              onChange={onPlayStateChange}
+              readOnly={readOnly && saveMode !== "self"}
+            />
+          </section>
+
           {/* SALVACIONES */}
           <section className="panel p-5">
             <p className="eyebrow mb-3">Salvaciones</p>
@@ -575,7 +588,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                         style={{ color: "var(--color-bronze)" }}
                         title={`Tirar salvación de ${a.name}`}
                         onClick={async () => {
-                          const { error } = await publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod });
+                          const { error } = await publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod, adv: ventajaDe(playState, "salvez") ?? undefined });
                           setRollErr(error);
                         }}
                       >
@@ -610,7 +623,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                         style={{ color: "var(--color-bronze)" }}
                         title={`Tirar ${s.name}`}
                         onClick={async () => {
-                          const { error } = await publishRoll(session!.id, "skill", s.name, "1d20", { mod: s.mod });
+                          const { error } = await publishRoll(session!.id, "skill", s.name, "1d20", { mod: s.mod, adv: ventajaDe(playState, "prueba") ?? undefined });
                           setRollErr(error);
                         }}
                       >
