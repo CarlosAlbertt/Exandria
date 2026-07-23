@@ -9,6 +9,16 @@ import { getMechanics } from "@/data/classdata";
 /** Estado de juego de la ficha. La Fase O2 añadirá `huecos`/`preparados`. */
 export type PlayState = {
   usos?: Record<string, number>;
+  /** PG actuales; ausente ⇒ el máximo (una ficha nueva está a tope). */
+  hp?: number;
+  /** PG temporales; se restan antes que `hp` y no exceden el daño recibido. */
+  tempHp?: number;
+  /** Salvaciones de muerte a 0 PG; presente solo mientras estás a 0. */
+  muerte?: { ok: number; fail: number };
+  /** Slugs de condición activa: ["envenenado", "derribado"]. */
+  conds?: string[];
+  /** Nivel de agotamiento 0–6. */
+  agotamiento?: number;
   [otros: string]: unknown;
 };
 
