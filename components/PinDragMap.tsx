@@ -95,7 +95,7 @@ export default function PinDragMap({
         className={full
           ? "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[90] overflow-hidden rounded-lg select-none touch-none"
           : "relative rounded-lg overflow-hidden select-none touch-none"}
-        style={{ aspectRatio: ratio, border: "1px solid var(--color-gold-line)", ...(full ? { width: `min(96vw, calc(92vh * ${rw} / ${rh}))`, maxHeight: "92vh" } : {}) }}
+        style={{ aspectRatio: ratio, border: "1px solid var(--color-bronze-deep)", ...(full ?{ width: `min(96vw, calc(92vh * ${rw} / ${rh}))`, maxHeight: "92vh" } : {}) }}
         onWheel={full ? (e) => { if (e.deltaY < 0) zoomIn(); else zoomOut(); } : undefined}>
 
         {/* Capa imagen + pines (referencia del arrastre; recibe el zoom) */}

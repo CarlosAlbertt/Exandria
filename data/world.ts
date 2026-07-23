@@ -33,7 +33,7 @@ export const WORLD_ICON: Record<WorldType, string> = {
 };
 
 export const WORLD_COLOR: Record<WorldType, string> = {
-  continente: "var(--color-gold)",
+  continente: "var(--color-bronze)",
   region: "var(--color-divino)",
   capital: "var(--color-bronze-bright)",
   ciudad: "var(--color-bronze)",

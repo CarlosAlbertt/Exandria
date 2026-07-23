@@ -50,9 +50,9 @@ export type SaberCategory = (typeof CATEGORIES)[number];
 
 // Color por LUGAR (no por categoría): de un vistazo sabes de qué tierra hablas.
 // Los acentos son datos en este proyecto (precedente: Region.accent en
-// data/taldorei.ts). OJO: todas las variables de aquí existen en globals.css —
-// `--color-gold`, que usa WORLD_COLOR en data/world.ts, NO existe (el alias
-// legacy es `--gold`), así que no se copia esa elección.
+// data/taldorei.ts). OJO: todas las variables de aquí existen en globals.css.
+// `--color-gold` NO existe (el alias legacy es `--gold`); WORLD_COLOR la usaba
+// y se corrigió a `--color-bronze` el 2026-07-23.
 export const PLACE_ACCENT: Record<SaberPlace, string> = {
   "Exandria": "var(--color-divino)",
   "Tal'Dorei": "var(--color-bronze)",
