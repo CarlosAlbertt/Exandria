@@ -22,7 +22,10 @@ import { useSession } from "@/components/SessionProvider";
 import { publishRoll } from "@/lib/useDiceFeed";
 import PozosClase from "@/components/personaje/PozosClase";
 import EstadoVivo from "@/components/personaje/EstadoVivo";
+import EconomiaTurno from "@/components/personaje/EconomiaTurno";
+import Ataques from "@/components/personaje/Ataques";
 import { ventajaDe } from "@/lib/estado";
+import { limpiarTurno } from "@/lib/turno";
 import type { PlayState } from "@/lib/recursos";
 
 const BUILD_KEY = "taldorei.build.v1";
@@ -92,6 +95,9 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   // Última play_state que ESTE cliente escribió: para ignorar el eco de Realtime
   // de la propia escritura y no pisar un segundo toque rápido del jugador.
   const lastWrittenPlay = useRef<string | null>(null);
+  // `active` previo de mi fila de iniciativa: el turno se limpia solo en la
+  // transición false→true (empieza mi turno), no en cada evento.
+  const prevActive = useRef(false);
   const [skills, setSkills] = useState<string[]>([]); // pericias elegidas en /crear (solo lectura aquí)
   const [ac, setAc] = useState<number | null>(null); // CA: sesión-only (no se persiste)
   const [pickingSlot, setPickingSlot] = useState<string | null>(null);
@@ -216,6 +222,36 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [saveMode, targetUserId]);
+
+  // Reset del turno: al pasar mi fila de iniciativa a `active` (empieza mi
+  // turno), limpiar la economía del turno. `initiative` ya está en la
+  // publicación realtime (schema_v11). Solo la ficha propia.
+  useEffect(() => {
+    if (saveMode !== "self" || !targetUserId) return;
+    const supabase = createClient();
+    const ch = supabase
+      .channel(`sheet_ini_${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "initiative", filter: `user_id=eq.${targetUserId}` },
+        (payload) => {
+          const active = !!(payload.new as { active?: boolean }).active;
+          if (active && !prevActive.current) {
+            // Empieza mi turno: limpiar la economía. Se usa el play_state más
+            // reciente vía el setter funcional para no depender de un cierre viejo.
+            setPlayState((prev) => {
+              const next = limpiarTurno(prev);
+              lastWrittenPlay.current = JSON.stringify(next);
+              if (characterId) void saveCharacter(characterId, { play_state: next });
+              return next;
+            });
+          }
+          prevActive.current = active;
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [saveMode, targetUserId, characterId]);
 
   // Huecos (activo + archivados) para el bloque de retirada, solo en la ficha
   // propia: el DM editando a otro (?user=) no necesita esta lista aquí.
@@ -598,6 +634,22 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             <EstadoVivo
               play={playState}
               maxHp={d.maxHp}
+              onChange={onPlayStateChange}
+              readOnly={readOnly && saveMode !== "self"}
+            />
+            <EconomiaTurno
+              play={playState}
+              velocidad={species?.speed ?? 9}
+              onChange={onPlayStateChange}
+              readOnly={readOnly && saveMode !== "self"}
+            />
+            <Ataques
+              play={playState}
+              items={items}
+              abilities={{ fue: d.abilities.fue.mod, des: d.abilities.des.mod }}
+              prof={d.prof}
+              classWeapons={mechanics?.weapons ?? []}
+              sessionId={isOwner ? session!.id : null}
               onChange={onPlayStateChange}
               readOnly={readOnly && saveMode !== "self"}
             />

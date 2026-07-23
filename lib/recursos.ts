@@ -19,6 +19,13 @@ export type PlayState = {
   conds?: string[];
   /** Nivel de agotamiento 0–6. */
   agotamiento?: number;
+  /** Economía del turno de combate actual (G2); ausente ⇒ turno fresco. */
+  turno?: {
+    accion?: boolean;      // acción gastada
+    adicional?: boolean;   // acción adicional gastada
+    reaccion?: boolean;    // reacción gastada
+    movGastado?: number;   // metros ya movidos este turno
+  };
   [otros: string]: unknown;
 };
 
