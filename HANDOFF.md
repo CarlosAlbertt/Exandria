@@ -2,9 +2,9 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-21)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-23)
 
-> **Lo último (2026-07-21)**, tres tandas seguidas, **ninguna con migración**:
+> **Lo último (2026-07-21 → 23)**:
 > 1. Se amplió el mundo — Marquet, Issylra y los Dientes Rotos con mapa y saber
 >    propios, +50 pines, y `mergeAtlas` para que lo nuevo llegue a un
 >    `atlas_defs` ya sembrado sin pisar las ediciones del DM.
@@ -13,20 +13,20 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >    **Exandria y la Calamidad** y revelado en bloque para el DM.
 > 3. **`/panteon`** (abierta, 32 dioses por bando) y **`/reino/[continente]`**
 >    (una página de lore por continente, geografía abierta y el resto gateado).
->
-> Ver las tres secciones RESUELTO del 2026-07-21 más abajo.
+> 4. **Fase O1 — recursos de clase**: 11 pozos que se gastan con un toque y los
+>    recarga el descanso. Migración `schema_v20`.
+> 5. **(2026-07-22) La ficha deja de desaparecer** por una migración a medias —
+>    cuatro arreglos y la reparación `schema_v21`. Es la tanda más importante de
+>    leer: ver su sección RESUELTO.
+> 6. **(2026-07-23)** `--color-gold` arreglado (pines de continente y marcos de
+>    mapa sin color).
 
-> [!danger] ⚠️ 1 MIGRACIÓN PENDIENTE: `schema_v20.sql`
-> La Fase O1 (recursos de clase) añade `characters.play_state jsonb`. Es
-> **idempotente y solo añade** una columna con default `'{}'` — no reestructura
-> nada. **Sin ejecutarla, la hoja no guarda los usos gastados** y el descanso no
-> puede recargarlos. Ejecutar en el SQL Editor de Supabase.
-
-> [!tip] ✅ El resto de migraciones, al día
-> **No queda ninguna pendiente.** `schema_v17` (tablón), `schema_v18` (memoria de
-> NPC) y `schema_v19` (saber por origen) las ejecutó el usuario el **2026-07-21**.
-> Con la v19 dentro, el saber por origen funciona entero: el creador guarda
-> origen y deidad, y `/reino` deja de salir todo bloqueado.
+> [!tip] ✅ Migraciones: todas al día, v1–v21
+> **No queda ninguna pendiente.** El usuario confirmó el **2026-07-23** que están
+> todas ejecutadas, incluidas `schema_v20` (Fase O1, `play_state`) y
+> `schema_v21_reparar_characters.sql` (la red de seguridad de `characters`).
+> Ante cualquier «column characters.X does not exist», reejecutar la **v21**: es
+> idempotente y solo añade.
 
 **Hecho y en `master` (pusheado, Vercel auto-despliega)** esta tanda:
 - Fases **F** (tablón), **M completa** (generadores IA + documentos in-game +
@@ -45,11 +45,16 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 `scripts/check-clima.ts` verde. **NADA probado en vivo** (sin sesión ni túnel en
 dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 
-**Siguiente sugerido** (elige uno): **Fase O — libro de conjuros SRD 5.2** (el
-hueco mecánico más grande; media base ya en `data/classdata/`), **Fase P**
-(downtime + minijuegos), **Fase Q** (misiones personales con IA), **C2** (regateo
-con dados 3D), **I** (tablero de batalla), **G** (capa gráfica). Detalle y orden
-en `docs/superpowers/specs/2026-07-12-campana-semivirtual-guia.md`.
+**Siguiente sugerido** (elige uno): **Fase O2 — conjuros** (la continuación
+natural de O1: preparar y gastar huecos, empezando por trucos y niveles 1–3 del
+SRD 5.2; el estado va en `characters.play_state`, **sin migración nueva**), los
+**pozos de las 5 clases que faltan** (bardo, mago, pícaro, brujo y cazador de
+sangre — sus usos salen de un modificador o una fórmula, no de una columna de la
+tabla, así que necesitan otro modelo), **Fase P** (downtime + minijuegos),
+**Fase Q** (misiones personales con IA), **C2** (regateo con Persuasión — quedó
+esperando al control de descansos, que ya existe), **I** (tablero de batalla),
+**G** (capa gráfica). Detalle y orden en
+`docs/superpowers/specs/2026-07-12-campana-semivirtual-guia.md`.
 
 **Convenciones de trabajo**: rama feature por tarea → gate `tsc --noEmit` +
 `next build` (no hay tests; ese es el gate real) → commit por tarea con trailer
@@ -253,9 +258,21 @@ ejecutada** el 2026-07-15) · `schema_v14.sql` (**archivar personaje** — ya ej
 `reward` — ya ejecutada) · `schema_v18.sql` (**memoria de NPC**, Fase M: tabla
 `npc_memories` — ya ejecutada) · `schema_v19.sql` (**saber por origen**:
 origen/deidad/`lore_unlocked` en `characters`, `quests.unlock_lore`, tabla
-`lore_rolls` — ya ejecutada). El bucket de Storage `assets`
-(`storage-assets.sql`, Fase H) también ejecutado. **Todo al día a 2026-07-21: el
-usuario confirmó que no queda ninguna migración pendiente.**
+`lore_rolls` — ya ejecutada) · `schema_v20.sql` (**Fase O1**:
+`characters.play_state jsonb default '{}'`, los usos gastados; **una sola
+columna para toda la Fase O** — O2 le añadirá `huecos`/`pacto`/`preparados` sin
+otra migración — ya ejecutada) · **`schema_v21_reparar_characters.sql`** (**no
+es una feature, es una red de seguridad**: declara de una vez las **25 columnas**
+que la app espera de `characters`, cada una con el tipo y el default de la
+migración que la introdujo. Idempotente y **solo añade** — ya ejecutada). El
+bucket de Storage `assets` (`storage-assets.sql`, Fase H) también ejecutado.
+**Todo al día a 2026-07-23: el usuario confirmó que no queda ninguna migración
+pendiente.**
+
+> [!tip] Ante cualquier «column characters.X does not exist», **reejecutar la
+> v21**. Una migración que no llegó a correr entera **no deja rastro**: `add
+> column if not exists` no falla, pero tampoco avisa de que en su día no corrió.
+> La v21 existe justo para eso y se puede reejecutar sin miedo.
 
 > ⚠️ **`schema_v14` no es como las anteriores.** Todas las demás creaban tablas o
 > columnas nuevas y vacías. **Esta reestructura `characters` y `stat_rolls` con
@@ -287,8 +304,78 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
 
+## RESUELTO (2026-07-23): los dorados que no existían 🎨
+Rama `fix-color-gold`. **Sin migración.** Ítem del backlog, más grande de lo que
+parecía: no era una línea, eran **seis usos en tres archivos** de **dos**
+variables que nunca se definieron.
+
+- `--color-gold` y `--color-gold-line` **no están en `globals.css`** (el alias
+  legacy es `--gold` → `--color-bronze`). Un `var()` sin definir **invalida la
+  declaración entera** (*invalid at computed-value time*), así que el color
+  cae al heredado y el borde desaparece — **en silencio**, sin error de build.
+- Arreglado: `WORLD_COLOR.continente` (`data/world.ts`) y los dos **eyebrow** de
+  `/mapa` («Continente» / «Exandria») → `--color-bronze`, el mismo tono que el
+  punto de continente de `ReinoRegions` desde el 2026-07-21. Los cuatro **marcos
+  de imagen** (mapa de pueblo en `/mapa`, `PinDragMap`, `RegionExplore` ×2) →
+  `--color-bronze-deep`, el borde metálico que ya usan las chapas `.tome-*`.
+- El comentario de `data/saber.ts` que documentaba el fallo se actualiza para no
+  quedar mintiendo.
+- Verificado: `tsc --noEmit` + `next build` limpios · `check-lore` 69 en verde.
+  **No probado en vivo**: `/mapa` pide sesión. **Prueba del usuario**: mirar los
+  pines de continente del mapa mundial (con color bronce) y el borde de los
+  mapas de pueblo y del arrastre del DM.
+
+## RESUELTO (2026-07-22): la ficha deja de desaparecer 🩹
+Sin rama propia (cuatro `fix` seguidos sobre `master`: `4689f98`, `2fc405c`,
+`9905c96`, `a898585`). **Migración `schema_v21_reparar_characters.sql`.**
+**La sección más importante de este documento**: es el caso real de las dos
+lecciones de arriba, y la razón de que exista la v21.
+
+**Síntoma**: la cuenta de DM crea un personaje, el contador dice «Tienes 1 de 3»
+y la hoja sale vacía, sin forma de salir. El personaje **estaba intacto en la
+base**.
+
+**Causa**: `loadActiveCharacter` pedía `play_state` (columna de la Fase O1) con
+la `schema_v20` **sin ejecutar**. Postgres tumba la consulta **entera**, y la
+función hacía `const { data } = await …` **descartando el error**: devolvía
+`null`, y la hoja lo leía como «no tienes personaje». El contador usa otra
+consulta más corta, sin esa columna, y por eso seguía diciendo la verdad — de
+ahí la contradicción. Luego apareció el mismo fallo con **`lore`** (columna de
+la `schema_v4`) en una base donde esa migración **no llegó a correr entera**.
+
+- **`selectTolerante`** (`lib/character.ts`): el primer intento va con todas las
+  columnas — una base al día no paga nada. Si Postgres devuelve **42703**, se lee
+  **del propio error qué columna falta**, se quita del `select` y se reintenta,
+  hasta que pase o no quede nada que quitar. Se degrada perdiendo campos, **nunca
+  la ficha entera**. Mismo trato en `useParty` (donde el síntoma habría sido el
+  DM viendo el grupo vacío sin ninguna pista).
+  > **Intento fallido, anotado a propósito**: el primer arreglo reintentaba con
+  > una lista fija `FIELDS_BASE` de columnas «viejas y seguras». `lore` estaba en
+  > esa lista, así que el reintento **volvía a pedir la columna que faltaba**.
+  > Suposición equivocada. Ahora no se supone nada: se lee el error.
+- **`saveCharacter` devuelve el error** en vez de tragárselo, y aplica el mismo
+  blindaje al escribir: si falta una columna, la quita del patch y reintenta, así
+  se guarda **todo lo demás** en vez de perderse el personaje por un campo.
+- **Ficha fantasma**: `createCharacter` inserta la fila **vacía** (solo
+  `user_id`) y el borrador se guarda **después**. Si ese guardado fallaba,
+  quedaba la fila sin especie ni clase, **el hueco gastado** y ni un aviso. Ahora
+  `/crear` comprueba el error, avisa, **no navega** y conserva el borrador de
+  localStorage; y una fila sin especie ni clase se trata como **«a medio crear»**
+  — se ofrece terminarla reutilizando la misma fila, sin gastar otro hueco de los
+  tres.
+- **`humanDbError`** traduce 42703 a «falta ejecutar una migración», que es
+  siempre lo que significa.
+- **`supabase/schema_v21_reparar_characters.sql`**: la solución de fondo. Las 25
+  columnas que la app espera de `characters`, declaradas de una vez, idempotente.
+- Verificado: `tsc --noEmit` + `next build` limpios · **`scripts/check-ficha.ts`
+  con 11 comprobaciones en verde** (el caso real sin `lore`, varias columnas
+  ausentes a la vez, y que un error que no sea 42703 **se propague** en vez de
+  entrar en bucle).
+
 ## RESUELTO (2026-07-21): Fase O1 — recursos de clase ⚔️
-Rama `fase-o1-recursos`. **Migración `schema_v20.sql` — PENDIENTE de ejecutar.**
+Rama `fase-o1-recursos`. **Migración `schema_v20.sql` — ya ejecutada** (el
+2026-07-22, después de que su ausencia hiciera desaparecer la ficha; ver la
+sección RESUELTO del 2026-07-22 arriba).
 Spec y plan en `docs/superpowers/{specs,plans}/2026-07-21-fase-o1-recursos-de-clase*`.
 
 La **Fase O se parte en dos**: **O1** (esto) son los pozos de usos de clase;
@@ -431,7 +518,8 @@ ocultando por continentes / regiones / historia / secretos.
   > **Trampa cazada**: `var(--color-gold)` **no existe** en `globals.css` (el
   > alias legacy es `--gold` → `--color-bronze`). `WORLD_COLOR` de
   > `data/world.ts` la usa, así que **los pines de continente de `/mapa` salen
-  > sin color** — fallo previo, no arreglado aquí (queda pendiente). En
+  > sin color** — fallo previo, no arreglado aquí (**ya arreglado el
+  > 2026-07-23**, ver su sección RESUELTO arriba: eran seis usos, no uno). En
   > `PLACE_ACCENT` se usan solo variables reales: Exandria `--color-divino`,
   > Tal'Dorei `--color-bronze`. Verificado en navegador: los seis resuelven.
 - **Cambio de regla en `lib/saber.ts`**: `revealed` abre **cualquier** entrada,
@@ -1221,10 +1309,13 @@ antes** del insert.
   `/crear` con una tirada hecha, `assign` vacío hacía `stepDone[3]` falso y el
   gate te obligaba a reasignar los 6 valores **siempre**. Sin migración.
 
-**Arte**: `public/classes/` sigue con **11 de 13** (faltan `bardo.jpg` y
-`paladin.jpg`) y `public/species/` sigue **vacío** → silueta. A 260px canta
-mucho más que en la miniatura de 30px de antes. Formato: vertical ~659×1025,
-<32 KB, en `public/species/<slug>.jpg` y `public/species/lineages/<slug>.jpg`.
+**Arte** (al escribir esto): `public/classes/` con **11 de 13** y
+`public/species/` **vacío** → silueta. A 260px canta mucho más que en la
+miniatura de 30px de antes. Formato: vertical ~659×1025, <32 KB, en
+`public/species/<slug>.jpg` y `public/species/lineages/<slug>.jpg`.
+> **Al día 2026-07-23**: `public/classes/` está **completo, 13 de 13 `.png`**
+> (el usuario subió las que faltaban el 2026-07-22). `public/species/` sigue
+> vacío.
 
 - Verificado: `tsc`, `build` y los 3 `check-*` limpios en **cada** commit; dos
   revisiones (spec + calidad) por tarea; **y prueba real en el navegador**
@@ -1651,9 +1742,11 @@ Spec y plan en `docs/superpowers/{specs,plans}/2026-07-06-exandria-rebrand-roste
 - **Mergear la rama** `exandria-rebrand-roster` a `master` y desplegar (Vercel).
 
 ## Backlog
-- **Retratos de personaje**: iconos de clase ya subidos (`public/classes/`,
-  ver «PENDIENTE de este milestone» arriba); siguen sin subir
-  `public/species/` y `public/species/lineages/`.
+- **Retratos de personaje**: `public/classes/` **completo (13 de 13 `.png`)**
+  desde el 2026-07-22. Siguen sin subir `public/species/` y
+  `public/species/lineages/` → silueta con marco (por diseño).
+- **Bestiario a medias**: 124 monstruos, solo **CR 0–1/2** completo.
+- **PG actuales y condiciones en vivo** en la ficha · **modo espectador/TV**.
 - **Spec de lore de Wildemount** (`docs/wildemount-lore-spec.md`): escrita,
   pendiente de ejecutar (ampliar la lore del segundo continente jugable).
 - Notas del DM: si algún día importa que sean *de verdad* privadas, moverlas
