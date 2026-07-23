@@ -13,7 +13,10 @@ import { createClient } from "@/lib/supabase/client";
 import LorePicker from "@/components/LorePicker";
 import PozosClase from "@/components/personaje/PozosClase";
 import EstadoVivo from "@/components/personaje/EstadoVivo";
+import EconomiaTurno from "@/components/personaje/EconomiaTurno";
+import Ataques from "@/components/personaje/Ataques";
 import { pgActuales } from "@/lib/estado";
+import { getMechanics } from "@/data/classdata";
 import type { PlayState } from "@/lib/recursos";
 
 const YA_TIENE_ACTIVO = "Ese jugador ya tiene un personaje en juego. Retíralo antes de devolver este.";
@@ -322,6 +325,20 @@ export default function GrupoPanel() {
                 <EstadoVivo
                   play={(c.play_state as PlayState) ?? {}}
                   maxHp={d.maxHp}
+                  onChange={(next) => dmPatch(c.user_id, { play_state: next })}
+                />
+                <EconomiaTurno
+                  play={(c.play_state as PlayState) ?? {}}
+                  velocidad={sp?.speed ?? 9}
+                  onChange={(next) => dmPatch(c.user_id, { play_state: next })}
+                />
+                <Ataques
+                  play={(c.play_state as PlayState) ?? {}}
+                  items={Array.isArray(c.items) ? c.items : []}
+                  abilities={{ fue: d.abilities.fue.mod, des: d.abilities.des.mod }}
+                  prof={d.prof}
+                  classWeapons={getMechanics(c.cls)?.weapons ?? []}
+                  sessionId={null}
                   onChange={(next) => dmPatch(c.user_id, { play_state: next })}
                 />
 
