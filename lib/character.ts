@@ -151,12 +151,19 @@ export async function createCharacter(userId: string): Promise<{ id: string } | 
 // Guarda la ficha POR ID. Ya no puede ser un upsert por user_id: el índice
 // único nuevo es PARCIAL (where archived_at is null) y un upsert necesita un
 // índice único que case con su target.
-export async function saveCharacter(characterId: string, patch: Partial<CharacterData>) {
-  if (!supabaseConfigured || !characterId) return;
-  await createClient()
+// Devuelve el error en español, o null si fue bien. Antes se descartaba, y eso
+// dejaba un agujero feo: si el guardado del creador fallaba (una migración sin
+// ejecutar basta), la fila se quedaba VACÍA pero el hueco ya gastado, y el
+// jugador acababa en «Aún no hay personaje» sin ninguna pista. Quien llame
+// puede seguir ignorando el retorno, pero el creador ya no lo hace.
+export async function saveCharacter(characterId: string, patch: Partial<CharacterData>): Promise<string | null> {
+  if (!supabaseConfigured || !characterId) return null;
+  const { error } = await createClient()
     .from("characters")
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", characterId);
+  if (error) console.error("[Exandria] No se pudo guardar la ficha:", error.message);
+  return error ? humanDbError(error) : null;
 }
 
 // Retira un personaje del juego. El viaje de vuelta lo hace solo el DM (lo
@@ -183,6 +190,11 @@ export async function archiveCharacter(characterId: string): Promise<string | nu
 // índice fue (eso sería sobre-ingeniería mientras solo haya uno).
 function humanDbError(error: { message: string; code: string }): string {
   if (error.code === "23505") return "Ya tienes un personaje en juego. Retíralo antes de crear otro.";
+  // 42703 = columna inexistente: siempre es una migración de supabase/ sin
+  // ejecutar. Se dice así para no mandar a nadie a leer un mensaje de Postgres.
+  if (error.code === "42703") {
+    return `La base de datos no tiene una columna que la app necesita (${error.message}). Falta ejecutar alguna migración de supabase/ en el SQL Editor.`;
+  }
   return error.message;
 }
 

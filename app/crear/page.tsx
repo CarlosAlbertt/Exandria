@@ -253,11 +253,16 @@ export default function CrearPage() {
         id = res.id;
         setCharacterId(id);
       }
-      await saveCharacter(id, {
+      // Si el guardado falla, NO seguimos a /personaje: la fila se quedaría
+      // vacía (sin especie ni clase) con el hueco ya gastado, y el jugador
+      // vería «Aún no hay personaje» sin saber por qué. Se avisa aquí y el
+      // borrador de localStorage se conserva para poder reintentar.
+      const err = await saveCharacter(id, {
         name: b.name, species: b.species, lineage: b.lineage, cls: b.cls, subclass: b.subclass,
         background: b.background, base: b.base, bonus: b.bonus, skills: b.skills, lore: b.lore, level: 1,
         origin_continent: b.originContinent, origin_region: b.originRegion, deity: b.deity,
       });
+      if (err) { setLimitError(`No se pudo guardar el personaje. ${err}`); return; }
       try { localStorage.removeItem(`${KEY}.${userId}`); } catch {}
     } else {
       try {

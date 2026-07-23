@@ -444,16 +444,29 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     </div>
   );
 
-  /* --- estado vacío --- */
+  /* --- estado vacío ---
+     Ojo con el caso raro pero real: `createCharacter` inserta la fila VACÍA y
+     solo después se guarda el borrador. Si ese guardado falló, queda una ficha
+     a medio crear — el hueco gastado y la hoja sin nada. Antes se decía "aún no
+     hay personaje", que es mentira y además dejaba al jugador sin salida
+     (el botón de retirar no se pinta aquí porque no siempre hay characterId).
+     Ahora se distingue el caso y se ofrece terminarla. */
   if (loaded && !build.species && !build.cls) {
+    const aMedias = saveMode === "self" && !!characterId;
     return (
       <main className="max-w-3xl mx-auto px-6 py-24 text-center">
-        <i className="fas fa-hat-wizard text-4xl mb-4" style={{ color: "var(--color-dim)" }} />
-        <h1 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>Aún no hay personaje</h1>
+        <i className={`fas ${aMedias ? "fa-triangle-exclamation" : "fa-hat-wizard"} text-4xl mb-4`} style={{ color: aMedias ? "var(--color-ember)" : "var(--color-dim)" }} />
+        <h1 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>
+          {aMedias ? "Tienes una ficha a medio crear" : "Aún no hay personaje"}
+        </h1>
         <p className="prose-lore !text-[15px] mb-6" style={{ color: "var(--color-muted)" }}>
-          Crea un personaje para abrir su hoja interactiva: nivel, aptitudes, oro, inventario y equipo.
+          {aMedias
+            ? "Se reservó el hueco pero los datos no llegaron a guardarse. Termina de crearla y se rellenará esta misma ficha, sin gastar otro hueco."
+            : "Crea un personaje para abrir su hoja interactiva: nivel, aptitudes, oro, inventario y equipo."}
         </p>
-        <Link href="/crear" className="btn-gold"><i className="fas fa-hat-wizard mr-2" />Crear personaje</Link>
+        <Link href="/crear" className="btn-gold">
+          <i className="fas fa-hat-wizard mr-2" />{aMedias ? "Terminar de crearla" : "Crear personaje"}
+        </Link>
         {personajesPanel}
       </main>
     );
