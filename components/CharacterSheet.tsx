@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import { loadActiveCharacter, saveCharacter, listCharacters, archiveCharacter, type Item, type CharacterData } from "@/lib/character";
 import type { Asi } from "@/lib/character";
 import { archivedOf, MAX_CHARACTERS } from "@/lib/archive";
@@ -87,7 +88,10 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const [items, setItems] = useState<Item[]>([]);
   const [equipment, setEquipment] = useState<Record<string, Item>>({});
   const [hpRolls, setHpRolls] = useState<Record<string, number>>({});
-  const [playState, setPlayState] = useState<PlayState>({}); // usos de los pozos de clase (Fase O1)
+  const [playState, setPlayState] = useState<PlayState>({}); // usos de los pozos de clase (Fase O1) + estado de combate (G1)
+  // Última play_state que ESTE cliente escribió: para ignorar el eco de Realtime
+  // de la propia escritura y no pisar un segundo toque rápido del jugador.
+  const lastWrittenPlay = useRef<string | null>(null);
   const [skills, setSkills] = useState<string[]>([]); // pericias elegidas en /crear (solo lectura aquí)
   const [ac, setAc] = useState<number | null>(null); // CA: sesión-only (no se persiste)
   const [pickingSlot, setPickingSlot] = useState<string | null>(null);
@@ -185,6 +189,33 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     })();
     return () => { done = true; };
   }, [targetUserId]);
+
+  // En vivo: si el DM (u otra pestaña) cambia mi ficha, reflejar el estado de
+  // combate sin recargar. Solo la ficha propia (self). `characters` ya está en
+  // la publicación realtime (schema_v4). Se refresca SOLO el estado de juego,
+  // no el build (que podría estarse editando en /crear).
+  useEffect(() => {
+    if (saveMode !== "self" || !targetUserId) return;
+    const supabase = createClient();
+    const ch = supabase
+      .channel(`sheet_rt_${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "characters", filter: `user_id=eq.${targetUserId}` },
+        (payload) => {
+          const row = payload.new as { play_state?: PlayState; gold?: number };
+          if (row.play_state && typeof row.play_state === "object") {
+            // Ignora el eco de mi propia escritura.
+            if (JSON.stringify(row.play_state) !== lastWrittenPlay.current) {
+              setPlayState(row.play_state as PlayState);
+            }
+          }
+          if (typeof row.gold === "number") setGold(row.gold);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [saveMode, targetUserId]);
 
   // Huecos (activo + archivados) para el bloque de retirada, solo en la ficha
   // propia: el DM editando a otro (?user=) no necesita esta lista aquí.
@@ -325,6 +356,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   // (estado local) y lo persiste en paralelo, sin esperar la respuesta — mismo
   // patrón que onRollHp.
   const onPlayStateChange = (next: PlayState) => {
+    lastWrittenPlay.current = JSON.stringify(next);
     setPlayState(next);
     if (targetUserId) {
       if (saveMode === "self") { if (characterId) void saveCharacter(characterId, { play_state: next }); }
