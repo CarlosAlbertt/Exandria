@@ -230,7 +230,7 @@ export default function MapaPage() {
             </>
           ) : focus ? (
             <>
-              <p className="eyebrow mb-2" style={{ color: "var(--color-gold)" }}><i className="fas fa-earth-americas mr-1.5" />Continente</p>
+              <p className="eyebrow mb-2" style={{ color: "var(--color-bronze)" }}><i className="fas fa-earth-americas mr-1.5" />Continente</p>
               <h2 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>{focusLabel}</h2>
               <p className="prose-lore !text-[15px] mb-4">{pinForField(focus)?.blurb}</p>
               <p className="eyebrow mb-3">Regiones</p>
@@ -242,7 +242,7 @@ export default function MapaPage() {
             </>
           ) : (
             <>
-              <p className="eyebrow mb-2" style={{ color: "var(--color-gold)" }}><i className="fas fa-earth-americas mr-1.5" />Exandria</p>
+              <p className="eyebrow mb-2" style={{ color: "var(--color-bronze)" }}><i className="fas fa-earth-americas mr-1.5" />Exandria</p>
               <h2 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>El mundo</h2>
               <p className="prose-lore !text-[15px] mb-4">Cinco masas de tierra bajo dos lunas. Clic en un continente para adentrarte en sus regiones y ciudades.</p>
               <p className="eyebrow mb-3">Continentes {isDM ? "" : "descubiertos"}</p>
@@ -274,7 +274,7 @@ export default function MapaPage() {
             <button className="btn-ghost !py-2 !px-4 text-[12px]" onClick={() => setTownOpen(null)}><i className="fas fa-xmark mr-1.5" />Cerrar</button>
           </div>
           <div className="flex-1 flex items-center justify-center p-4 overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <img src={townOpen.image} alt={`Mapa de ${townOpen.name}`} className="max-w-full max-h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-gold-line)" }} />
+            <img src={townOpen.image} alt={`Mapa de ${townOpen.name}`} className="max-w-full max-h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-bronze-deep)" }} />
           </div>
         </div>
       )}

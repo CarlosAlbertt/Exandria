@@ -42,7 +42,7 @@ export default function RegionExplore({
       <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
         <div className="relative" style={{ aspectRatio: ratio, maxWidth: "100%", maxHeight: "100%", width: "min(100%, 1200px)" }}>
           {image ? (
-            <img src={image} alt={`Mapa de ${name}`} className="absolute inset-0 w-full h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-gold-line)" }} />
+            <img src={image} alt={`Mapa de ${name}`} className="absolute inset-0 w-full h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-bronze-deep)" }} />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center rounded-lg" style={{ border: "1px dashed var(--color-line)", background: "rgba(0,0,0,0.3)" }}>
               <span className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}><i className="fas fa-image mr-1.5" />Región sin mapa propio</span>
@@ -106,7 +106,7 @@ export default function RegionExplore({
             <button className="btn-ghost !py-2 !px-4 text-[12px]" onClick={() => setTownOpen(null)}><i className="fas fa-xmark mr-1.5" />Cerrar</button>
           </div>
           <div className="flex-1 flex items-center justify-center p-4 overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <img src={townOpen.image} alt={`Mapa de ${townOpen.name}`} className="max-w-full max-h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-gold-line)" }} />
+            <img src={townOpen.image} alt={`Mapa de ${townOpen.name}`} className="max-w-full max-h-full object-contain rounded-lg" style={{ border: "1px solid var(--color-bronze-deep)" }} />
           </div>
         </div>
       )}
