@@ -22,7 +22,10 @@ import { useSession } from "@/components/SessionProvider";
 import { publishRoll } from "@/lib/useDiceFeed";
 import PozosClase from "@/components/personaje/PozosClase";
 import EstadoVivo from "@/components/personaje/EstadoVivo";
+import EconomiaTurno from "@/components/personaje/EconomiaTurno";
+import Ataques from "@/components/personaje/Ataques";
 import { ventajaDe } from "@/lib/estado";
+import { limpiarTurno } from "@/lib/turno";
 import type { PlayState } from "@/lib/recursos";
 
 const BUILD_KEY = "taldorei.build.v1";
@@ -598,6 +601,22 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             <EstadoVivo
               play={playState}
               maxHp={d.maxHp}
+              onChange={onPlayStateChange}
+              readOnly={readOnly && saveMode !== "self"}
+            />
+            <EconomiaTurno
+              play={playState}
+              velocidad={species?.speed ?? 9}
+              onChange={onPlayStateChange}
+              readOnly={readOnly && saveMode !== "self"}
+            />
+            <Ataques
+              play={playState}
+              items={items}
+              abilities={{ fue: d.abilities.fue.mod, des: d.abilities.des.mod }}
+              prof={d.prof}
+              classWeapons={mechanics?.weapons ?? []}
+              sessionId={isOwner ? session!.id : null}
               onChange={onPlayStateChange}
               readOnly={readOnly && saveMode !== "self"}
             />
