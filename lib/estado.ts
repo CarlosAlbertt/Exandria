@@ -50,6 +50,9 @@ export const CONDICIONES: Condicion[] = [
     regla: "Estás incapacitado, no te mueves y hablas con dificultad. Fallas las salvaciones de Fuerza y Destreza. Quien te ataca lo hace con ventaja." },
   { slug: "inconsciente", name: "Inconsciente", icon: "bed",
     regla: "Estás incapacitado, tirado y sin saber qué pasa. Sueltas lo que llevas. Fallas las salvaciones de Fuerza y Destreza; quien te ataca lo hace con ventaja, y a menos de 1,5 m es crítico si acierta." },
+  { slug: "asqueado", name: "Asqueado", icon: "face-dizzy",
+    regla: "Tu estómago se revuelve. Tiras con desventaja las tiradas de ataque con armas cuerpo a cuerpo.",
+    desventaja: ["ataque"] },
 ];
 
 // Agotamiento 2024: cada nivel resta -2 acumulativo a las pruebas de d20 y
