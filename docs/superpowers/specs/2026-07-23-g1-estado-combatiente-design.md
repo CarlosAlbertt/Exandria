@@ -27,7 +27,7 @@ no depende de ninguna:
 ## Decisiones del usuario
 
 1. **Alcance de G1**: PG actuales + temporales + **salvaciones de muerte** (con
-   estabilizar y caer) + las 15 condiciones de 2024 + agotamiento por niveles.
+   estabilizar y caer) + las 14 condiciones de 2024 + agotamiento (la 15a, aparte) por niveles.
    Los **dados de golpe** gastables se dejan para la losa del descanso completo.
 2. **Quién edita**: **jugador y DM**, ambos. El jugador en su ficha (guardado
    optimista, patrón O1); el DM sobre cualquiera desde Panel DM › Grupo (vía
@@ -90,11 +90,11 @@ export type Condicion = {
   regla: string;                  // resumen en prosa propia
   desventaja?: TipoTirada[];      // tiradas propias con desventaja
 };
-export const CONDICIONES: Condicion[];   // las 15 de 2024
+export const CONDICIONES: Condicion[];   // las 14 de 2024 (agotamiento aparte)
 export const AGOTAMIENTO: string[];       // regla de cada nivel 1–6
 ```
 
-Las 15: cegado, hechizado, ensordecido, asustado, apresado (grappled),
+Las 14: cegado, hechizado, ensordecido, asustado, apresado (grappled),
 incapacitado, invisible, paralizado, petrificado, envenenado, derribado,
 restringido (restrained), aturdido, inconsciente. Agotamiento aparte: cada nivel
 **−2 acumulativo a toda prueba de d20** y **−1,5 m de velocidad**; a **nivel 6,
