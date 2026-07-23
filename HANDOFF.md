@@ -20,6 +20,10 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >    leer: ver su sección RESUELTO.
 > 6. **(2026-07-23)** `--color-gold` arreglado (pines de continente y marcos de
 >    mapa sin color).
+> 7. **(2026-07-23) G1 — estado del combatiente**: PG actuales/temporales,
+>    salvaciones de muerte, 14 condiciones y agotamiento en la hoja y en el panel
+>    del DM, en vivo; las condiciones aplican ventaja/desventaja de verdad a las
+>    tiradas. Primera losa de la jugabilidad 2024. Ver su sección RESUELTO.
 
 > [!tip] ✅ Migraciones: todas al día, v1–v21
 > **No queda ninguna pendiente.** El usuario confirmó el **2026-07-23** que están
@@ -45,15 +49,19 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 `scripts/check-clima.ts` verde. **NADA probado en vivo** (sin sesión ni túnel en
 dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 
-**Siguiente sugerido** (elige uno): **Fase O2 — conjuros** (la continuación
-natural de O1: preparar y gastar huecos, empezando por trucos y niveles 1–3 del
-SRD 5.2; el estado va en `characters.play_state`, **sin migración nueva**), los
-**pozos de las 5 clases que faltan** (bardo, mago, pícaro, brujo y cazador de
-sangre — sus usos salen de un modificador o una fórmula, no de una columna de la
-tabla, así que necesitan otro modelo), **Fase P** (downtime + minijuegos),
-**Fase Q** (misiones personales con IA), **C2** (regateo con Persuasión — quedó
-esperando al control de descansos, que ya existe), **I** (tablero de batalla),
-**G** (capa gráfica). Detalle y orden en
+**Siguiente sugerido** (elige uno): la capa de **jugabilidad 2024** arrancó con
+**G1** (estado del combatiente, ya en `master`) y sigue por **G2 — economía de
+turno** (acción/adicional/reacción/movimiento por turno, ligado a la iniciativa;
+aquí entra la tirada de ataque desde la ficha, que G1 dejó cableada pero sin
+consumidor) y **G3 — tablero** (VTT ligero con tokens, la Fase I; ahí aterrizan
+el fallo automático de salvación y la ventaja para el atacante que G1 dejó
+documentados). En paralelo: **Fase O2 — conjuros** (preparar y gastar huecos,
+trucos y niveles 1–3 del SRD 5.2; el estado va en `characters.play_state`, **sin
+migración nueva**), los **pozos de las 5 clases que faltan** (bardo, mago,
+pícaro, brujo y cazador de sangre — usos derivados de un modificador o fórmula,
+otro modelo), **Fase P** (downtime + minijuegos), **Fase Q** (misiones
+personales con IA), **C2** (regateo con Persuasión — quedó esperando al control
+de descansos, que ya existe), **G** (capa gráfica). Detalle y orden en
 `docs/superpowers/specs/2026-07-12-campana-semivirtual-guia.md`.
 
 **Convenciones de trabajo**: rama feature por tarea → gate `tsc --noEmit` +
@@ -303,6 +311,42 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-23): G1 — estado del combatiente ⚔️❤️
+Rama `g1-estado-combatiente`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-23-g1-estado-combatiente*`. Primera losa
+de la jugabilidad de combate 2024 (siguen **G2** economía de turno, **G3**
+tablero, **O2** conjuros). La app está pensada para jugar autodidacta en casa:
+**aplica** la regla, no solo la recuerda.
+
+- **`lib/estado.ts`** (puro): PG actuales/temporales, salvaciones de muerte,
+  **14 condiciones** de 2024 (el agotamiento es la 15ª, va aparte con niveles
+  0–6), todo sobre `play_state` sin tocar `usos`. Se guarda el PG absoluto;
+  ausente = máximo. Daño come temporales primero; a 0 PG marca fallo de muerte
+  (2 si crítico); curar levanta y limpia.
+- **Las condiciones muerden la tirada**: `ventajaDe(conds, tipo)` resuelve
+  (des)ventaja con la anulación 2024, y los botones de salvación y pericia de la
+  hoja pasan ese `adv` a `publishRoll` (que ya lo aceptaba). Envenenado/asustado
+  ⇒ 2d20 la peor. Acotado con honestidad: fallo automático de salvación y ventaja
+  para el atacante necesitan otro combatiente → **G3**; la salvación de Des de
+  «restringido» se omite hasta que el botón pase la característica (mejor no
+  aplicar que aplicar de más).
+- **`EstadoVivo.tsx`**: barra de PG con daño/curar/temporales, salvaciones de
+  muerte a 0 PG, condiciones como chapas con la regla en el tooltip, agotamiento.
+  Montado en la hoja (sección «Estado de combate») y en Panel DM › Grupo (que
+  además muestra PG actual/máx). Contrato de `PozosClase`.
+- **En vivo**: la hoja `self` se suscribe a su fila (`characters` ya publica); el
+  DM te pega y lo ves sin recargar, con guard anti-eco para no pisar lo que estás
+  editando. Nota: jsonb reordena claves, así que el guard es best-effort — los
+  datos son los mismos y el realtime entrega en orden de commit, converge.
+- **Trampa cazada**: el spec decía «15 condiciones» por error (son 14 + el
+  agotamiento aparte); un subagente llegó a inventar una condición para cuadrar
+  el conteo. Se quitó y se corrigió el conteo a 14 en datos, script y spec.
+- Verificado: `tsc` + `next build` limpios · **`scripts/check-estado.ts` (35) en
+  verde** · check-clases (116) y check-lore (69) sin regresión. **No probado en
+  vivo sin sesión.** Prueba del usuario: bajar a 0 PG y ver las salvaciones;
+  3 fallos ⇒ «ha caído»; curar limpia; que el DM aplique daño y el jugador lo vea
+  sin recargar; activar envenenado, tirar una pericia y ver 2d20 con la peor.
 
 ## RESUELTO (2026-07-23): los dorados que no existían 🎨
 Rama `fix-color-gold`. **Sin migración.** Ítem del backlog, más grande de lo que
