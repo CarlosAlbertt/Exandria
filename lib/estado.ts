@@ -63,3 +63,84 @@ export const AGOTAMIENTO: string[] = [
   "Nivel 5: -10 a las pruebas de d20 y -7,5 m de velocidad.",
   "Nivel 6: mueres.",
 ];
+
+// --- PG ----------------------------------------------------------------------
+
+/** PG actuales; `hp` ausente ⇒ el máximo. Siempre en [0, maxHp]. */
+export function pgActuales(play: PlayState, maxHp: number): number {
+  const hp = typeof play.hp === "number" ? play.hp : maxHp;
+  return Math.max(0, Math.min(maxHp, Math.floor(hp)));
+}
+
+/** PG temporales, nunca negativos. */
+export function pgTemp(play: PlayState): number {
+  return Math.max(0, Math.floor(play.tempHp ?? 0));
+}
+
+/** ¿Está a 0 PG (caído, tirando salvaciones)? */
+export function estaAbajo(play: PlayState, maxHp: number): boolean {
+  return pgActuales(play, maxHp) === 0;
+}
+
+/**
+ * Aplica daño: come primero los temporales, luego los actuales, suelo 0.
+ * Si YA estaba a 0 PG, no baja de 0 pero marca un fallo de muerte (dos si el
+ * golpe fue crítico).
+ */
+export function aplicarDaño(play: PlayState, n: number, maxHp: number, critico = false): PlayState {
+  const dmg = Math.max(0, Math.floor(n));
+  if (estaAbajo(play, maxHp)) {
+    const fails = critico ? 2 : 1;
+    let next = play;
+    for (let i = 0; i < fails; i++) next = marcarMuerte(next, "fail");
+    return next;
+  }
+  const temp = pgTemp(play);
+  const usadoTemp = Math.min(temp, dmg);
+  const resto = dmg - usadoTemp;
+  const hp = pgActuales(play, maxHp) - resto;
+  return { ...play, tempHp: temp - usadoTemp, hp: Math.max(0, hp) };
+}
+
+/** Cura: sube los PG (techo maxHp). Levanta (borra `muerte`). No toca temporales. */
+export function curar(play: PlayState, n: number, maxHp: number): PlayState {
+  const cura = Math.max(0, Math.floor(n));
+  const hp = Math.min(maxHp, pgActuales(play, maxHp) + cura);
+  const next = { ...play, hp };
+  delete next.muerte;
+  return next;
+}
+
+/** Fija los PG temporales al valor dado (suelo 0). */
+export function setTemp(play: PlayState, n: number): PlayState {
+  return { ...play, tempHp: Math.max(0, Math.floor(n)) };
+}
+
+// --- Salvaciones de muerte ---------------------------------------------------
+
+function muerteDe(play: PlayState): { ok: number; fail: number } {
+  return { ok: play.muerte?.ok ?? 0, fail: play.muerte?.fail ?? 0 };
+}
+
+/** Marca un éxito o un fallo de salvación de muerte (tope 3). */
+export function marcarMuerte(play: PlayState, tipo: "ok" | "fail"): PlayState {
+  const m = muerteDe(play);
+  m[tipo] = Math.min(3, m[tipo] + 1);
+  return { ...play, muerte: m };
+}
+
+/** Desmarca un éxito o fallo (deshacer un toque, suelo 0). */
+export function desmarcarMuerte(play: PlayState, tipo: "ok" | "fail"): PlayState {
+  const m = muerteDe(play);
+  m[tipo] = Math.max(0, m[tipo] - 1);
+  return { ...play, muerte: m };
+}
+
+/** Veredicto de las salvaciones de muerte. `null` si no estás tirando. */
+export function resultadoMuerte(play: PlayState): "estable" | "muerto" | "tirando" | null {
+  if (!play.muerte) return null;
+  const { ok, fail } = muerteDe(play);
+  if (fail >= 3) return "muerto";
+  if (ok >= 3) return "estable";
+  return "tirando";
+}
