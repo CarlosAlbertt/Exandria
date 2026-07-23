@@ -2,7 +2,7 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-23)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-24)
 
 > **Lo último (2026-07-21 → 23)**:
 > 1. Se amplió el mundo — Marquet, Issylra y los Dientes Rotos con mapa y saber
@@ -24,6 +24,10 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >    salvaciones de muerte, 14 condiciones y agotamiento en la hoja y en el panel
 >    del DM, en vivo; las condiciones aplican ventaja/desventaja de verdad a las
 >    tiradas. Primera losa de la jugabilidad 2024. Ver su sección RESUELTO.
+> 8. **(2026-07-24) G2 — economía de turno y ataque**: marcador de acción/
+>    adicional/reacción/movimiento que se limpia solo al tocarte el turno, y
+>    tirada de ataque desde la ficha (tabla de armas, característica correcta,
+>    competencia derivada, ventaja de G1). Segunda losa. Ver su RESUELTO.
 
 > [!tip] ✅ Migraciones: todas al día, v1–v21
 > **No queda ninguna pendiente.** El usuario confirmó el **2026-07-23** que están
@@ -49,13 +53,12 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 `scripts/check-clima.ts` verde. **NADA probado en vivo** (sin sesión ni túnel en
 dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 
-**Siguiente sugerido** (elige uno): la capa de **jugabilidad 2024** arrancó con
-**G1** (estado del combatiente, ya en `master`) y sigue por **G2 — economía de
-turno** (acción/adicional/reacción/movimiento por turno, ligado a la iniciativa;
-aquí entra la tirada de ataque desde la ficha, que G1 dejó cableada pero sin
-consumidor) y **G3 — tablero** (VTT ligero con tokens, la Fase I; ahí aterrizan
-el fallo automático de salvación y la ventaja para el atacante que G1 dejó
-documentados). En paralelo: **Fase O2 — conjuros** (preparar y gastar huecos,
+**Siguiente sugerido** (elige uno): la capa de **jugabilidad 2024** ya tiene
+**G1** (estado del combatiente) y **G2** (economía de turno + ataque desde la
+ficha), ambos en `master`. Sigue **G3 — tablero** (VTT ligero con tokens, la Fase
+I; ahí aterrizan el fallo automático de salvación y la ventaja para el atacante
+que G1 dejó documentados, más el crítico auto y el alcance real que G2 dejó
+fuera). En paralelo: **Fase O2 — conjuros** (preparar y gastar huecos,
 trucos y niveles 1–3 del SRD 5.2; el estado va en `characters.play_state`, **sin
 migración nueva**), los **pozos de las 5 clases que faltan** (bardo, mago,
 pícaro, brujo y cazador de sangre — usos derivados de un modificador o fórmula,
@@ -311,6 +314,38 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-24): G2 — economía de turno y ataque desde la ficha ⚔️⏱️
+Rama `g2-economia-turno`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-24-g2-economia-de-turno*`. Segunda losa
+de la jugabilidad 2024, sobre G1.
+
+- **`data/weapons.ts`**: stats 2024 de las 12 armas del catálogo (dado, tipo,
+  alcance, sutil, versátil). `armaDe(nombre)`.
+- **`lib/turno.ts`** (puro): economía del turno sobre `play_state.turno` —
+  acción/adicional/reacción (booleanos) + movimiento en metros. `limpiarTurno`
+  borra la clave. No toca `usos`/`hp`/`conds`.
+- **`lib/ataque.ts`** (puro): `ataqueDe(arma, abilities, prof, classWeapons)` —
+  elige la característica (cuerpo→Fue, distancia→Des, sutil→la mejor), deriva la
+  competencia de `classdata.weapons` × la categoría del arma, y calcula impacto
+  (mod + competencia) y daño (dado + mod).
+- **`EconomiaTurno.tsx`** (chapas de acción/adicional/reacción + contador de
+  movimiento) y **`Ataques.tsx`** (lista las armas del inventario `c.items` que
+  existen en `ARMAS`; botón que tira impacto con la ventaja de G1 y daño, y gasta
+  la acción). Montados en la hoja y en Panel DM › Grupo.
+- **Reset automático**: la hoja `self` se suscribe a su fila de `initiative`; al
+  pasar a `active` (empieza tu turno) limpia el turno. `initiative` ya publica.
+- **Ataque = kinds existentes**: impacto con `"attack"` (ya en `D20_KINDS`, anima
+  como d20 y aplica adv), daño con `"custom"` (fórmula). Sin `RollKind` nuevos.
+- **Trampa cazada**: `c.inventory` en `useParty` es `string[]` **legado** (ya no
+  se escribe); el inventario real es `c.items` (`Item[]` con `.name`). `Ataques`
+  del DM usa `c.items`.
+- Verificado: `tsc` + `next build` limpios · **`check-turno` y `check-ataque` en
+  verde** · check-estado (35), check-clases (116), check-lore (69) sin regresión.
+  **No probado en vivo sin sesión.** Prueba del usuario: atacar y ver que gasta la
+  acción; «Siguiente turno» hasta que te toque y ver la economía limpia sin
+  recargar; arma competente vs no competente en el impacto; envenenado ⇒ 2d20 la
+  peor en el ataque.
 
 ## RESUELTO (2026-07-23): G1 — estado del combatiente ⚔️❤️
 Rama `g1-estado-combatiente`. **Sin migración.** Spec y plan en
