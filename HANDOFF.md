@@ -28,13 +28,21 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >    adicional/reacción/movimiento que se limpia solo al tocarte el turno, y
 >    tirada de ataque desde la ficha (tabla de armas, característica correcta,
 >    competencia derivada, ventaja de G1). Segunda losa. Ver su RESUELTO.
+> 9. **(2026-07-24) G3 — tablero de batalla**: rejilla con fichas que el DM y los
+>    jugadores mueven en vivo, con medición de distancia. Tercera losa.
+>    **Requiere ejecutar `schema_v22`** (2 tablas nuevas). Ver su RESUELTO.
 
-> [!tip] ✅ Migraciones: todas al día, v1–v21
-> **No queda ninguna pendiente.** El usuario confirmó el **2026-07-23** que están
-> todas ejecutadas, incluidas `schema_v20` (Fase O1, `play_state`) y
-> `schema_v21_reparar_characters.sql` (la red de seguridad de `characters`).
-> Ante cualquier «column characters.X does not exist», reejecutar la **v21**: es
-> idempotente y solo añade.
+> [!danger] ⚠️ 1 MIGRACIÓN PENDIENTE: `schema_v22.sql`
+> **G3 (tablero)** añade dos tablas nuevas — `battle_tokens` y `battle_board` —
+> con RLS y realtime. **Sin ejecutarla, el tablero no funciona**: `/tablero` y la
+> pestaña D› Tablero avisan «ejecuta `schema_v22`», pero **el resto de la app
+> sigue igual** (el hook `useBattle` detecta `42P01` y degrada). Ejecutar en el
+> SQL Editor de Supabase. Es idempotente y solo añade.
+
+> [!tip] ✅ El resto de migraciones, al día (v1–v21)
+> `schema_v20` (Fase O1, `play_state`) y `schema_v21_reparar_characters.sql` (red
+> de seguridad de `characters`) ejecutadas. Ante «column characters.X does not
+> exist», reejecutar la **v21** (idempotente).
 
 **Hecho y en `master` (pusheado, Vercel auto-despliega)** esta tanda:
 - Fases **F** (tablón), **M completa** (generadores IA + documentos in-game +
@@ -54,11 +62,15 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 
 **Siguiente sugerido** (elige uno): la capa de **jugabilidad 2024** ya tiene
-**G1** (estado del combatiente) y **G2** (economía de turno + ataque desde la
-ficha), ambos en `master`. Sigue **G3 — tablero** (VTT ligero con tokens, la Fase
-I; ahí aterrizan el fallo automático de salvación y la ventaja para el atacante
-que G1 dejó documentados, más el crítico auto y el alcance real que G2 dejó
-fuera). En paralelo: **Fase O2 — conjuros** (preparar y gastar huecos,
+**G1** (estado del combatiente), **G2** (economía de turno + ataque) y **G3**
+(tablero de batalla), los tres en `master` (**G3 necesita ejecutar `schema_v22`**).
+Sigue **G4 — targeting**: elegir el objetivo de un ataque sobre el tablero y, con
+eso, las reglas que lo necesitan y que G1/G2/G3 dejaron documentadas — **fallo
+automático de salvación** por estar paralizado/aturdido/inconsciente, **ventaja
+para el atacante** por cegado/derribado/restringido, **crítico automático** (20
+natural dobla dados) y el **alcance del arma** que bloquee el ataque si no llegas
+(la distancia ya se mide en G3). En paralelo: **Fase O2 — conjuros** (preparar y
+gastar huecos,
 trucos y niveles 1–3 del SRD 5.2; el estado va en `characters.play_state`, **sin
 migración nueva**), los **pozos de las 5 clases que faltan** (bardo, mago,
 pícaro, brujo y cazador de sangre — usos derivados de un modificador o fórmula,
@@ -276,9 +288,9 @@ otra migración — ya ejecutada) · **`schema_v21_reparar_characters.sql`** (**
 es una feature, es una red de seguridad**: declara de una vez las **25 columnas**
 que la app espera de `characters`, cada una con el tipo y el default de la
 migración que la introdujo. Idempotente y **solo añade** — ya ejecutada). El
-bucket de Storage `assets` (`storage-assets.sql`, Fase H) también ejecutado.
-**Todo al día a 2026-07-23: el usuario confirmó que no queda ninguna migración
-pendiente.**
+bucket de Storage `assets` (`storage-assets.sql`, Fase H) también ejecutado ·
+`schema_v22.sql` (**G3 tablero**: `battle_tokens` + `battle_board`). **v1–v21 al
+día a 2026-07-23; `schema_v22` PENDIENTE a 2026-07-24** (ver la cabecera).
 
 > [!tip] Ante cualquier «column characters.X does not exist», **reejecutar la
 > v21**. Una migración que no llegó a correr entera **no deja rastro**: `add
@@ -314,6 +326,42 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-24): G3 — tablero de batalla 🗺️♟️
+Rama `g3-tablero`. **Migración `schema_v22` — PENDIENTE de ejecutar.** Spec y plan
+en `docs/superpowers/{specs,plans}/2026-07-24-g3-tablero*`. Tercera losa de la
+jugabilidad 2024, sobre G1/G2. Primera con **estado compartido de verdad**.
+
+- **`schema_v22.sql`**: dos tablas nuevas con RLS y realtime — `battle_tokens`
+  (una ficha por combatiente: mover el DM cualquiera, el jugador la suya;
+  crear/borrar el DM) y `battle_board` (fila única: fondo, cols/filas, `active`;
+  editar el DM). `is_dm()` ya existía. **Primera pendiente desde la v21.**
+- **`lib/tablero.ts`** (puro): `celda(pos, cols, rows)` y `distanciaMetros`
+  (Chebyshev de casillas × 1,5 m, regla 2024 simplificada: toda casilla, también
+  la diagonal, es 1,5 m). Verificado por `check-tablero.ts`.
+- **`lib/useBattle.ts`**: hook realtime de ambas tablas + mutaciones (mover,
+  añadir PNJ/jugador, borrar, vaciar, config, poblar desde iniciativa). **Degrada
+  con elegancia**: si las tablas faltan (`42P01`, migración sin ejecutar) devuelve
+  `missing = true` y vacío, así la app **compila y arranca sin `schema_v22`**.
+- **`components/tablero/BattleBoard.tsx`**: rejilla cols×filas sobre fondo
+  opcional, fichas por %, **arrastre optimista** (patrón de `PinDragMap`) solo de
+  las que `canMove` permite, y **distancia en metros** a la ficha seleccionada.
+- **`/tablero`** (vista del jugador): mueve su ficha, ve distancias; avisa si no
+  hay combate o falta la migración. Enlace «Tablero» en `SiteNav`.
+- **Panel DM › Tablero** (`TableroPanel`): iniciar/pausar combate, fondo/cols/
+  filas, **poblar desde la iniciativa** (una ficha por combatiente), añadir/borrar
+  PNJ, vaciar, y el tablero con todas las fichas movibles.
+- **Fuera de G3 → G4**: el **targeting** (elegir objetivo) y con él el fallo
+  automático de salvación, la ventaja para el atacante, el crítico automático y el
+  alcance del arma que bloquee el ataque. G3 da posición y distancia; el resto lo
+  juzga la mesa con eso delante.
+- Verificado: `tsc` + `next build` limpios · **`check-tablero` en verde** ·
+  check-turno, check-ataque, check-estado (35), check-clases (116), check-lore
+  (69) sin regresión. **Nada probado en vivo** (sin sesión ni tablas en dev; el
+  hook degrada). **Prueba del usuario** (tras `schema_v22`): activar el combate,
+  poblar desde iniciativa, mover una ficha como DM y verla en la vista del
+  jugador sin recargar; como jugador mover la propia y no otra; seleccionar dos
+  fichas y ver la distancia.
 
 ## RESUELTO (2026-07-24): G2 — economía de turno y ataque desde la ficha ⚔️⏱️
 Rama `g2-economia-turno`. **Sin migración.** Spec y plan en
