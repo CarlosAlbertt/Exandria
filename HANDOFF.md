@@ -36,6 +36,10 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >     bloquea si no llegas, **ventaja del atacante** por la condición del objetivo,
 >     **crítico automático** (20 natural + proximidad) y **fallo automático de
 >     salvación** Fue/Des. Cuarta losa, **sin migración**. Ver su RESUELTO.
+> 11. **(2026-07-26) Fase O2 — conjuros**: preparar con tope, gastar y recuperar
+>     huecos, y **lanzar** (gasta el hueco, lo anuncia al feed y tira lo que el
+>     conjuro traiga). Cierra la Fase O. **Sin migración** (`play_state`). La
+>     biblioteca de conjuros arranca con **32** y crece. Ver su RESUELTO.
 
 > [!tip] ✅ Todas las migraciones al día (v1–v22)
 > `schema_v22` (G3 tablero: `battle_tokens` + `battle_board`) **ejecutada el
@@ -65,10 +69,10 @@ dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 **G1** (estado del combatiente), **G2** (economía de turno + ataque), **G3**
 (tablero de batalla) y **G4** (targeting: objetivo, alcance, ventaja del
 atacante, crítico y auto-fallo de salvación), los cuatro en `master`
-(`schema_v22` ya ejecutada). Con las cuatro losas de combate cerradas, lo que
-sigue es **Fase O2 — conjuros** (preparar y gastar huecos,
-trucos y niveles 1–3 del SRD 5.2; el estado va en `characters.play_state`, **sin
-migración nueva**), los **pozos de las 5 clases que faltan** (bardo, mago,
+(`schema_v22` ya ejecutada), y la **Fase O** está cerrada con **O1** (pozos de
+clase) y **O2** (conjuros). Lo que sigue: **ampliar la biblioteca de conjuros**
+(la semilla son 32 — 11 trucos y 21 de nivel 1–3 —, crece como el bestiario), los
+**pozos de las 5 clases que faltan** (bardo, mago,
 pícaro, brujo y cazador de sangre — usos derivados de un modificador o fórmula,
 otro modelo), **Fase P** (downtime + minijuegos), **Fase Q** (misiones
 personales con IA), **C2** (regateo con Persuasión — quedó esperando al control
@@ -322,6 +326,64 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-26): Fase O2 — conjuros 🔮
+Rama `o2-conjuros`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-26-o2-conjuros*`. **Cierra la Fase O**:
+O1 eran los pozos de usos de clase, O2 son los conjuros. El estado va en
+`characters.play_state` —la misma columna de O1/G1/G2— con tres claves nuevas:
+`huecos` (gastados por nivel), `preparados` (ids) y `concentrando`.
+
+- **Lo que ya existía y no se rehízo**: `slotsFor` (tablas full/half/pact de
+  `spellSlots.ts`), `derive` (que ya calculaba CD, ataque de conjuro y los
+  espacios máximos), y las columnas **«Trucos»** y **«Conjuros preparados»** que
+  las 8 clases conjuradoras ya declaraban. Los topes por nivel **ya eran datos**.
+- **`data/spells.ts`** (nuevo): tipo `Spell` con efecto **opcional**
+  (`attack`/`save`/`damage`/`heal`) y una **semilla de 32** conjuros —11 trucos y
+  21 de nivel 1–3— que cubre las 8 clases. **Crece sesión a sesión**, como el
+  bestiario y el atlas: no se escribió el SRD entero (habría acabado a medias como
+  el bestiario). Mecánicas = hechos; descripciones = redacción propia.
+  > **Regla del campo `damage`**: son los dados que se tiran **de una vez**. Por
+  > eso Proyectil Mágico lleva el total de sus tres dardos (impactan siempre) y
+  > Rayo Abrasador lleva el de **un** rayo (cada uno tiene su tirada de ataque).
+- **`lib/conjuros.ts`** (puro, molde de `recursos.ts`): `huecosDe`, `gastarHueco`,
+  `devolverHueco`, `recargarHuecos`, `topePreparados`/`topeTrucos` (leen las
+  columnas de la clase; **paladín y explorador no tienen trucos** ⇒ 0),
+  `cuentaTrucos`/`cuentaPreparados` (parten `preparados` por el nivel del
+  conjuro), `preparar`/`despreparar` (respetan el tope que toca) y
+  `setConcentracion`. Como en O1 se guarda **lo gastado**, así que al subir de
+  nivel los huecos nuevos llegan solos. Verificado por **`check-conjuros` (49)**.
+- **Lanzar**: gasta el hueco (el **upcast** lo eliges: cualquier nivel ≥ el del
+  conjuro), **anuncia al feed** y tira lo que traiga (ataque de conjuro, daño,
+  curación). Los **trucos** no gastan; los **rituales** tampoco (botón aparte, y
+  se anuncian como «(ritual)»). La **concentración** es una a la vez y la nueva
+  reemplaza a la anterior.
+- **Notas en el feed** (`publishNote`/`esNota` + `DicePanel`): una fila sin dados
+  para anunciar sin fingir una tirada; se pinta con una chapa **CONJURO** en vez
+  del «[] = 0» que habría salido. Reutilizable por lo que venga.
+- **`Conjuros.tsx`** (molde de `PozosClase`): CD y ataque, chapas de hueco
+  pulsables por nivel, marcador de concentración, trucos y preparados con
+  «Lanzar», y un selector para preparar hasta el tope. En la hoja y en Panel DM ›
+  Grupo (ahí `sessionId={null}`: el DM ajusta, no tira por el jugador).
+- **Descanso**: `/api/descanso` recarga los huecos junto a los pozos de O1 —
+  largo lo devuelve todo, corto solo los de **pacto** del brujo.
+- **Fuera (a propósito)**: el SRD entero (la semilla crece), un motor de efectos
+  por conjuro, el escalado automático (trucos por nivel y daño por upcast: lo dice
+  la descripción y lo aplica la mesa), y la **salvación de Constitución por daño**
+  de la concentración (marcador manual).
+- Verificado: `tsc` + `next build` limpios · **`check-spells` y `check-conjuros`
+  en verde** · check-targeting (49), check-estado (36), check-turno, check-ataque,
+  check-tablero, check-clases (116), check-lore (69), check-ficha (11), check-clima
+  sin regresión. Ejecutado con subagentes (implementador + revisión por tarea); se
+  cazaron y arreglaron **tres cosas**: dos errores de datos míos (Rayo de Escarcha
+  no es del brujo; Favor Divino es de Evocación, no Transmutación) y el ritual que
+  se anunciaba como «(nivel 0)». **Nada probado en vivo** (sin sesión en dev).
+  **Prueba del usuario**: con un mago nv3, preparar hasta el tope y ver que no deja
+  pasarse; gastar un hueco y ver que persiste al recargar; lanzar Rayo de Escarcha
+  y ver el anuncio + la tirada; Curar Heridas y ver la curación; lanzar un conjuro
+  de nivel 1 en un hueco de nivel 2 y comprobar que gasta el de 2; Detectar Magia
+  como ritual (no gasta); Bendición y luego Telaraña (la concentración se
+  reemplaza); descanso largo devuelve los huecos y el corto no, salvo con brujo.
 
 ## RESUELTO (2026-07-25): G4 — targeting 🎯⚔️
 Rama `g4-targeting`. **Sin migración.** Spec y plan en
