@@ -98,6 +98,7 @@ export type Spell = {
   attack?: boolean;                       // tirada de ataque de conjuro
   save?: AbilityKey;                      // salvación que provoca ("des"…)
   damage?: { dice: string; type: string }; // daño base, p. ej. { dice: "1d10", type: "fuego" }
+  heal?: string;                          // dados de curación, p. ej. "2d8"
 };
 
 export const SPELLS: Record<string, Spell> = { /* semilla curada */ };
