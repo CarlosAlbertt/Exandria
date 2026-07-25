@@ -336,7 +336,7 @@ siempre: la app **aplica** la regla, no solo la recuerda.
   `autoFallaSalvacion`, `ventajaSalvacion` (Des por restringido), `critProximidad`,
   y `formulaDaño` (dobla los **dados** en crítico, no el mod; reusa `parseFormula`
   de `dice.ts` en vez de un regex propio — un dado malformado no se dobla en
-  silencio). Verificado por **`check-targeting` (48)**.
+  silencio). Verificado por **`check-targeting` (49)**.
 - **El objetivo vive en la ficha, no en el lienzo**: `Ataques.tsx` gana un
   desplegable con las fichas del tablero (`useBattle`) y la **distancia en vivo**
   desde tu propia ficha. «Sobre el tablero» = usa sus posiciones, sin rehacer el
@@ -365,7 +365,7 @@ siempre: la app **aplica** la regla, no solo la recuerda.
   desde casa lo pedirán), toggle manual de ventaja, comparar la tirada con la CA
   (la mesa juzga el impacto, como desde G2), y el alcance normal/largo de las
   armas a distancia (el catálogo no trae esos metros).
-- Verificado: `tsc` + `next build` limpios · **`check-targeting` (48) en verde** ·
+- Verificado: `tsc` + `next build` limpios · **`check-targeting` (49) en verde** ·
   check-estado (36 — con el auto-fallo/restringido), check-turno, check-ataque,
   check-tablero, check-clases (116), check-lore (69) sin regresión. Ejecutado con
   subagentes (implementador + revisión de spec + revisión de calidad por tarea; se
