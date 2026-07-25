@@ -29,20 +29,20 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >    tirada de ataque desde la ficha (tabla de armas, característica correcta,
 >    competencia derivada, ventaja de G1). Segunda losa. Ver su RESUELTO.
 > 9. **(2026-07-24) G3 — tablero de batalla**: rejilla con fichas que el DM y los
->    jugadores mueven en vivo, con medición de distancia. Tercera losa.
->    **Requiere ejecutar `schema_v22`** (2 tablas nuevas). Ver su RESUELTO.
+>    jugadores mueven en vivo, con medición de distancia. Tercera losa
+>    (`schema_v22`, ya ejecutada). Ver su RESUELTO.
+> 10. **(2026-07-25) G4 — targeting**: elegir el objetivo del ataque desde la
+>     ficha (usando las posiciones del tablero), con **alcance del arma** que
+>     bloquea si no llegas, **ventaja del atacante** por la condición del objetivo,
+>     **crítico automático** (20 natural + proximidad) y **fallo automático de
+>     salvación** Fue/Des. Cuarta losa, **sin migración**. Ver su RESUELTO.
 
-> [!danger] ⚠️ 1 MIGRACIÓN PENDIENTE: `schema_v22.sql`
-> **G3 (tablero)** añade dos tablas nuevas — `battle_tokens` y `battle_board` —
-> con RLS y realtime. **Sin ejecutarla, el tablero no funciona**: `/tablero` y la
-> pestaña D› Tablero avisan «ejecuta `schema_v22`», pero **el resto de la app
-> sigue igual** (el hook `useBattle` detecta `42P01` y degrada). Ejecutar en el
-> SQL Editor de Supabase. Es idempotente y solo añade.
-
-> [!tip] ✅ El resto de migraciones, al día (v1–v21)
-> `schema_v20` (Fase O1, `play_state`) y `schema_v21_reparar_characters.sql` (red
-> de seguridad de `characters`) ejecutadas. Ante «column characters.X does not
-> exist», reejecutar la **v21** (idempotente).
+> [!tip] ✅ Todas las migraciones al día (v1–v22)
+> `schema_v22` (G3 tablero: `battle_tokens` + `battle_board`) **ejecutada el
+> 2026-07-25**. `schema_v20` (Fase O1, `play_state`) y
+> `schema_v21_reparar_characters.sql` (red de seguridad de `characters`)
+> ejecutadas. Ante «column characters.X does not exist», reejecutar la **v21**
+> (idempotente).
 
 **Hecho y en `master` (pusheado, Vercel auto-despliega)** esta tanda:
 - Fases **F** (tablón), **M completa** (generadores IA + documentos in-game +
@@ -62,15 +62,11 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 
 **Siguiente sugerido** (elige uno): la capa de **jugabilidad 2024** ya tiene
-**G1** (estado del combatiente), **G2** (economía de turno + ataque) y **G3**
-(tablero de batalla), los tres en `master` (**G3 necesita ejecutar `schema_v22`**).
-Sigue **G4 — targeting**: elegir el objetivo de un ataque sobre el tablero y, con
-eso, las reglas que lo necesitan y que G1/G2/G3 dejaron documentadas — **fallo
-automático de salvación** por estar paralizado/aturdido/inconsciente, **ventaja
-para el atacante** por cegado/derribado/restringido, **crítico automático** (20
-natural dobla dados) y el **alcance del arma** que bloquee el ataque si no llegas
-(la distancia ya se mide en G3). En paralelo: **Fase O2 — conjuros** (preparar y
-gastar huecos,
+**G1** (estado del combatiente), **G2** (economía de turno + ataque), **G3**
+(tablero de batalla) y **G4** (targeting: objetivo, alcance, ventaja del
+atacante, crítico y auto-fallo de salvación), los cuatro en `master`
+(`schema_v22` ya ejecutada). Con las cuatro losas de combate cerradas, lo que
+sigue es **Fase O2 — conjuros** (preparar y gastar huecos,
 trucos y niveles 1–3 del SRD 5.2; el estado va en `characters.play_state`, **sin
 migración nueva**), los **pozos de las 5 clases que faltan** (bardo, mago,
 pícaro, brujo y cazador de sangre — usos derivados de un modificador o fórmula,
@@ -289,8 +285,8 @@ es una feature, es una red de seguridad**: declara de una vez las **25 columnas*
 que la app espera de `characters`, cada una con el tipo y el default de la
 migración que la introdujo. Idempotente y **solo añade** — ya ejecutada). El
 bucket de Storage `assets` (`storage-assets.sql`, Fase H) también ejecutado ·
-`schema_v22.sql` (**G3 tablero**: `battle_tokens` + `battle_board`). **v1–v21 al
-día a 2026-07-23; `schema_v22` PENDIENTE a 2026-07-24** (ver la cabecera).
+`schema_v22.sql` (**G3 tablero**: `battle_tokens` + `battle_board`). **v1–v22 al
+día; `schema_v22` ejecutada el 2026-07-25.** G4 (targeting) no llevó migración.
 
 > [!tip] Ante cualquier «column characters.X does not exist», **reejecutar la
 > v21**. Una migración que no llegó a correr entera **no deja rastro**: `add
@@ -326,6 +322,61 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-25): G4 — targeting 🎯⚔️
+Rama `g4-targeting`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-25-g4-targeting*`. Cuarta losa de la
+jugabilidad 2024, sobre G1/G2/G3. Cierra las **cuatro reglas** que G1/G2/G3
+dejaron documentadas a propósito «para cuando haya objetivo». La idea rectora de
+siempre: la app **aplica** la regla, no solo la recuerda.
+
+- **`lib/targeting.ts`** (puro, molde de `estado.ts`/`ataque.ts`): `ventajaAtacante`
+  (condición del objetivo + distancia), `combinar` (anulación 2024 **global** sobre
+  todas las fuentes: la propia de G1 + la del objetivo), `enAlcance` (bloqueo),
+  `autoFallaSalvacion`, `ventajaSalvacion` (Des por restringido), `critProximidad`,
+  y `formulaDaño` (dobla los **dados** en crítico, no el mod; reusa `parseFormula`
+  de `dice.ts` en vez de un regex propio — un dado malformado no se dobla en
+  silencio). Verificado por **`check-targeting` (49)**.
+- **El objetivo vive en la ficha, no en el lienzo**: `Ataques.tsx` gana un
+  desplegable con las fichas del tablero (`useBattle`) y la **distancia en vivo**
+  desde tu propia ficha. «Sobre el tablero» = usa sus posiciones, sin rehacer el
+  board. Se descartó clicar el lienzo (duplicaría la UI de ataque con el DM
+  presente).
+- **Las cuatro reglas al atacar**: (1) **alcance duro** — daga a >1,5 m no deja
+  atacar ni gasta la acción; (2) **ventaja combinada** — la propia (envenenado…)
+  más la del objetivo (cegado/derribado/restringido/paralizado/aturdido/
+  inconsciente), con la anulación 2024; (3) **crítico** — 20 natural (vía
+  `dice.critState`) **o** proximidad (≤1,5 m vs paralizado/inconsciente, cualquier arma)
+  dobla los dados de daño; (4) las condiciones del objetivo solo se leen si es un
+  **jugador** legible por `useParty`; PNJ ⇒ el DM juzga (los lleva a mano).
+- **Salvaciones** (`CharacterSheet.tsx`): el botón ya tenía la característica
+  (`a.key`), solo faltaba usarla. Ahora con paralizado/aturdido/inconsciente/
+  petrificado, la salvación de **Fue/Des falla automáticamente** con un aviso en
+  línea (no se tira, no ensucia el feed: una salvación aquí es un d20 que la mesa
+  compara con la CD, y un auto-fallo no tiene ni dado ni CD; el DM ya ve las
+  condiciones en vivo). Y la de **Des estando restringido** se tira con
+  desventaja. **Cierra la omisión honesta que G1 anotó.**
+- **Degrada a G2 exacto**: sin tablero/objetivo (distancia desconocida) no hay
+  bloqueo de alcance ni ventaja de objetivo, solo la propia. Además, `Ataques` se
+  **parte en dos** (`Ataques` sin hooks + `AtaquesInteractivo`) para que el montaje
+  inerte del Panel DM › Grupo (N fichas con `sessionId=null`) **no abra N canales
+  realtime** inútiles.
+- **Fuera (a propósito)**: estado de PNJ en el tablero (la IA-Ollama o el juego
+  desde casa lo pedirán), toggle manual de ventaja, comparar la tirada con la CA
+  (la mesa juzga el impacto, como desde G2), y el alcance normal/largo de las
+  armas a distancia (el catálogo no trae esos metros).
+- Verificado: `tsc` + `next build` limpios · **`check-targeting` (49) en verde** ·
+  check-estado (36 — con el auto-fallo/restringido), check-turno, check-ataque,
+  check-tablero, check-clases (116), check-lore (69) sin regresión. Ejecutado con
+  subagentes (implementador + revisión de spec + revisión de calidad por tarea; se
+  cazaron y arreglaron dos cosas de calidad: `formulaDaño` que se tragaba un dado
+  malformado, y el `Ataques` que suscribía realtime estando inerte). **Nada
+  probado en vivo** (sin sesión ni fichas en el tablero en dev). **Prueba del
+  usuario**: daga a 6 m ⇒ bloqueado; acercar a ≤1,5 m ⇒ deja atacar; objetivo
+  jugador derribado a quemarropa ⇒ ventaja, a distancia ⇒ desventaja; 20 natural ⇒
+  daño doblado; cuerpo a un jugador inconsciente a quemarropa ⇒ daño doblado;
+  paralizado + salvación de Fuerza ⇒ fallo automático; restringido + salvación de
+  Destreza ⇒ desventaja.
 
 ## RESUELTO (2026-07-24): G3 — tablero de batalla 🗺️♟️
 Rama `g3-tablero`. **Migración `schema_v22` — PENDIENTE de ejecutar.** Spec y plan

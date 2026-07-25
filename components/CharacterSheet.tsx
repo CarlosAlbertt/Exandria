@@ -25,6 +25,7 @@ import EstadoVivo from "@/components/personaje/EstadoVivo";
 import EconomiaTurno from "@/components/personaje/EconomiaTurno";
 import Ataques from "@/components/personaje/Ataques";
 import { ventajaDe } from "@/lib/estado";
+import { autoFallaSalvacion, combinar, ventajaSalvacion } from "@/lib/targeting";
 import { limpiarTurno } from "@/lib/turno";
 import type { PlayState } from "@/lib/recursos";
 
@@ -130,6 +131,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   }
   const [custom, setCustom] = useState("");
   const [rollErr, setRollErr] = useState<string | null>(null); // error de publishRoll (salvación/pericia)
+  const [saveAuto, setSaveAuto] = useState<string | null>(null); // aviso de salvación auto-fallada (no se tira)
 
   // Carga: por targetUserId (nube/API), si no hay sesión → localStorage.
   useEffect(() => {
@@ -650,6 +652,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
               prof={d.prof}
               classWeapons={mechanics?.weapons ?? []}
               sessionId={isOwner ? session!.id : null}
+              ownUserId={targetUserId}
               onChange={onPlayStateChange}
               readOnly={readOnly && saveMode !== "self"}
             />
@@ -672,7 +675,19 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                         style={{ color: "var(--color-bronze)" }}
                         title={`Tirar salvación de ${a.name}`}
                         onClick={async () => {
-                          const { error } = await publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod, adv: ventajaDe(playState, "salvez") ?? undefined });
+                          const conds = playState.conds ?? [];
+                          if (autoFallaSalvacion(conds, a.key)) {
+                            const causa = ["paralizado", "aturdido", "inconsciente", "petrificado"].find((s) => conds.includes(s));
+                            setSaveAuto(`Salvación de ${a.name}: fallo automático (${causa}).`);
+                            setRollErr(null);
+                            return;
+                          }
+                          setSaveAuto(null);
+                          const adv = combinar(
+                            ventajaDe(playState, "salvez"),
+                            { adv: false, dis: ventajaSalvacion(conds, a.key) === "dis" },
+                          );
+                          const { error } = await publishRoll(session!.id, "save", `Salvación de ${a.name}`, "1d20", { mod: sv.mod, adv: adv ?? undefined });
                           setRollErr(error);
                         }}
                       >
@@ -688,6 +703,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
               })}
             </div>
             {rollErr && <p className="text-[12px] mt-2 italic" style={{ color: "var(--color-ember)" }}>{rollErr}</p>}
+            {saveAuto && <p className="text-[12px] mt-2 italic" style={{ color: "var(--color-ember)" }}>{saveAuto}</p>}
           </section>
 
           {/* PERICIAS */}
