@@ -72,11 +72,12 @@ export function ventajaSalvacion(conds: string[], caracteristica: string): "dis"
 }
 
 /**
- * ¿El ataque es crítico por proximidad? Cuerpo a ≤1,5 m contra objetivo
- * paralizado/inconsciente. (El 20 natural va aparte, vía dice.critState.)
+ * ¿El ataque es crítico por proximidad? Cualquier ataque a ≤1,5 m contra objetivo
+ * paralizado/inconsciente (RAW 2024: no distingue el arma — un ataque a distancia
+ * a quemarropa también). El 20 natural va aparte, vía dice.critState.
  */
-export function critProximidad(arma: Arma, condsObjetivo: string[], distanciaM: number): boolean {
-  if (arma.alcance !== "cuerpo" || distanciaM > 1.5) return false;
+export function critProximidad(condsObjetivo: string[], distanciaM: number): boolean {
+  if (distanciaM > 1.5) return false;
   const c = new Set(condsObjetivo);
   return c.has("paralizado") || c.has("inconsciente");
 }

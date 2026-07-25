@@ -52,11 +52,11 @@ check("restringido: salvación de Fue sin desventaja", ventajaSalvacion(["restri
 check("sin restringido: salvación de Des sin desventaja", ventajaSalvacion(["envenenado"], "des") === null);
 
 // --- critProximidad ------------------------------------------------------
-check("paralizado, cuerpo a ≤1,5 m: crítico por proximidad", critProximidad(ARMAS["Daga"], ["paralizado"], 1.5) === true);
-check("inconsciente, cuerpo a ≤1,5 m: crítico por proximidad", critProximidad(ARMAS["Daga"], ["inconsciente"], 1.5) === true);
-check("paralizado, cuerpo a 3 m: NO crítico (lejos)", critProximidad(ARMAS["Daga"], ["paralizado"], 3) === false);
-check("paralizado, distancia a 1,5 m: NO crítico (no cuerpo)", critProximidad(ARMAS["Arco corto"], ["paralizado"], 1.5) === false);
-check("cegado, cuerpo a ≤1,5 m: NO crítico (condición no aplica)", critProximidad(ARMAS["Daga"], ["cegado"], 1.5) === false);
+check("paralizado a ≤1,5 m: crítico por proximidad", critProximidad(["paralizado"], 1.5) === true);
+check("inconsciente a ≤1,5 m: crítico por proximidad", critProximidad(["inconsciente"], 1.5) === true);
+check("paralizado a 3 m: NO crítico (lejos)", critProximidad(["paralizado"], 3) === false);
+check("paralizado a ≤1,5 m con arma a distancia: crítico igual (RAW: cualquier ataque)", critProximidad(["paralizado"], 1.5) === true);
+check("cegado a ≤1,5 m: NO crítico (condición no aplica)", critProximidad(["cegado"], 1.5) === false);
 
 // --- formulaDaño ---------------------------------------------------------
 check("daño normal 1d8+3", formulaDaño("1d8", 3, false) === "1d8+3");

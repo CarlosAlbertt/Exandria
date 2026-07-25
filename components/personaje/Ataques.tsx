@@ -96,7 +96,7 @@ function AtaquesInteractivo({
   const accionGastada = turnoDe(play).accion;
 
   const miFicha = tokens.find((t) => t.user_id != null && t.user_id === ownUserId) ?? null;
-  const objetivos = tokens.filter((t) => !miFicha || t.id !== miFicha.id);
+  const objetivos = tokens.filter((t) => (!miFicha || t.id !== miFicha.id) && !t.dead);
   const objetivo = targetId !== null ? tokens.find((t) => t.id === targetId) ?? null : null;
 
   const distancia = miFicha && objetivo ? distanciaMetros(miFicha, objetivo, board.cols, board.rows) : null;
@@ -121,9 +121,9 @@ function AtaquesInteractivo({
     const etiquetaObj = objetivo ? ` → ${objetivo.label}` : "";
     const { error, result } = await publishRoll(sessionId, "attack", `Ataque: ${arma.nombre}${etiquetaObj}`, "1d20", { mod: atk.modImpacto, adv: adv ?? undefined });
     if (error) { setErr(error); return; }
-    // Crítico: 20 natural o proximidad (cuerpo ≤1,5 m vs paralizado/inconsciente).
+    // Crítico: 20 natural o proximidad (≤1,5 m vs paralizado/inconsciente).
     const critNat = !!result && critState(result.formula, result.rolls) === "crit";
-    const critProx = distancia !== null && critProximidad(arma, condsObjetivo, distancia);
+    const critProx = distancia !== null && critProximidad(condsObjetivo, distancia);
     const crit = critNat || critProx;
     const { error: e2 } = await publishRoll(sessionId, "custom", `Daño: ${arma.nombre}${crit ? " (crítico)" : ""}`, formulaDaño(arma.dado, atk.modDaño, crit));
     if (e2) { setErr(e2); return; }

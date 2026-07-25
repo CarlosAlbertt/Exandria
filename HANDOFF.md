@@ -346,7 +346,7 @@ siempre: la app **aplica** la regla, no solo la recuerda.
   atacar ni gasta la acción; (2) **ventaja combinada** — la propia (envenenado…)
   más la del objetivo (cegado/derribado/restringido/paralizado/aturdido/
   inconsciente), con la anulación 2024; (3) **crítico** — 20 natural (vía
-  `dice.critState`) **o** proximidad (cuerpo ≤1,5 m vs paralizado/inconsciente)
+  `dice.critState`) **o** proximidad (≤1,5 m vs paralizado/inconsciente, cualquier arma)
   dobla los dados de daño; (4) las condiciones del objetivo solo se leen si es un
   **jugador** legible por `useParty`; PNJ ⇒ el DM juzga (los lleva a mano).
 - **Salvaciones** (`CharacterSheet.tsx`): el botón ya tenía la característica
