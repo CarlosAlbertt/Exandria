@@ -3,6 +3,7 @@
 // ventaja del atacante por la condición del objetivo, alcance del arma, fallo
 // automático de salvación y crítico por proximidad. Mecánicas = hechos 2024.
 import type { Arma } from "@/data/weapons";
+import { parseFormula } from "@/lib/dice";
 
 /**
  * Ventaja/desventaja que gana EL ATACANTE por la condición del objetivo + la
@@ -82,10 +83,12 @@ export function critProximidad(arma: Arma, condsObjetivo: string[], distanciaM: 
 
 /**
  * Fórmula de daño del arma. En crítico se DOBLAN los dados, no el modificador:
- * "1d8" + mod 3 crítico ⇒ "2d8+3". Sin crítico conserva el "+0" (compat con G2).
+ * "1d8" + mod 3 crítico ⇒ "2d8+3". Reusa parseFormula (lib/dice) para no duplicar
+ * el parseo; si `dado` no es una fórmula NdM válida, cae al string tal cual (no
+ * finge un doblado sobre algo que no supo leer). Conserva el "+0" (compat con G2).
  */
 export function formulaDaño(dado: string, mod: number, crit: boolean): string {
-  const m = dado.match(/^(\d+)d(\d+)$/);
-  const dados = crit && m ? `${parseInt(m[1], 10) * 2}d${m[2]}` : dado;
+  const parsed = parseFormula(dado);
+  const dados = crit && parsed ? `${parsed.n * 2}d${parsed.die}` : dado;
   return `${dados}${mod >= 0 ? "+" : ""}${mod}`;
 }

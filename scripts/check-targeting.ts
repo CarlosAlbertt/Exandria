@@ -63,6 +63,7 @@ check("daño normal 1d8+3", formulaDaño("1d8", 3, false) === "1d8+3");
 check("daño crítico dobla dados 1d8 ⇒ 2d8+3", formulaDaño("1d8", 3, true) === "2d8+3");
 check("daño crítico mod negativo 1d6-1 ⇒ 2d6-1", formulaDaño("1d6", -1, true) === "2d6-1");
 check("daño mod 0 conserva +0", formulaDaño("1d4", 0, false) === "1d4+0");
+check("daño con dado malformado NO se dobla (cae al string)", formulaDaño("noesundado", 2, true) === "noesundado+2");
 
 if (failures) { console.log(`\n${failures} FALLos`); process.exit(1); }
 console.log("\nTodo en verde");
