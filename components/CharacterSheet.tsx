@@ -24,6 +24,7 @@ import PozosClase from "@/components/personaje/PozosClase";
 import EstadoVivo from "@/components/personaje/EstadoVivo";
 import EconomiaTurno from "@/components/personaje/EconomiaTurno";
 import Ataques from "@/components/personaje/Ataques";
+import Conjuros from "@/components/personaje/Conjuros";
 import { ventajaDe } from "@/lib/estado";
 import { autoFallaSalvacion, combinar, ventajaSalvacion } from "@/lib/targeting";
 import { limpiarTurno } from "@/lib/turno";
@@ -653,6 +654,17 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
               classWeapons={mechanics?.weapons ?? []}
               sessionId={isOwner ? session!.id : null}
               ownUserId={targetUserId}
+              onChange={onPlayStateChange}
+              readOnly={readOnly && saveMode !== "self"}
+            />
+            <Conjuros
+              clsSlug={build.cls ?? ""}
+              level={level}
+              caster={mechanics?.caster ?? "none"}
+              spellDc={d.spellDc ?? 0}
+              spellAttack={d.spellAttack ?? 0}
+              play={playState}
+              sessionId={isOwner ? session!.id : null}
               onChange={onPlayStateChange}
               readOnly={readOnly && saveMode !== "self"}
             />
