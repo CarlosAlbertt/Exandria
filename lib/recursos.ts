@@ -6,7 +6,7 @@
 
 import { getMechanics } from "@/data/classdata";
 
-/** Estado de juego de la ficha. La Fase O2 añadirá `huecos`/`preparados`. */
+/** Estado de juego de la ficha: usos (O1), combate (G1/G2) y conjuros (O2). */
 export type PlayState = {
   usos?: Record<string, number>;
   /** PG actuales; ausente ⇒ el máximo (una ficha nueva está a tope). */
@@ -26,6 +26,12 @@ export type PlayState = {
     reaccion?: boolean;    // reacción gastada
     movGastado?: number;   // metros ya movidos este turno
   };
+  /** Huecos de conjuro GASTADOS por nivel de espacio: { "1": 2, "3": 1 } (O2). */
+  huecos?: Record<string, number>;
+  /** Ids de conjuro preparados/conocidos, trucos incluidos (O2). */
+  preparados?: string[];
+  /** Id del conjuro de concentración activo; ausente ⇒ ninguno (O2). */
+  concentrando?: string;
   [otros: string]: unknown;
 };
 
