@@ -113,3 +113,33 @@ export async function publishRoll(
 
   return publishRollResult(userId, kind, label, result, { priv: opts?.priv, requestId: opts?.requestId });
 }
+
+/**
+ * Publica una NOTA en el feed: una fila sin dados (`rolls: []`, `total: 0`) que
+ * solo lleva etiqueta. La usa el lanzamiento de conjuros para anunciar «X lanza
+ * Bola de Fuego (nivel 3)» sin fingir una tirada. `DicePanel` las pinta sin
+ * desglose. Reutilizable por cualquier anuncio futuro.
+ */
+export async function publishNote(
+  userId: string,
+  label: string,
+  opts?: { priv?: boolean },
+): Promise<{ error: string | null }> {
+  if (!supabaseConfigured) return { error: "Supabase no configurado" };
+  const { error } = await createClient().from("dice_rolls").insert({
+    user_id: userId,
+    kind: "custom",
+    label,
+    formula: "",
+    rolls: [],
+    total: 0,
+    private: opts?.priv ?? false,
+    request_id: null,
+  });
+  return { error: error?.message ?? null };
+}
+
+/** ¿Esta fila del feed es una nota (anuncio sin dados) y no una tirada? */
+export function esNota(r: { rolls: number[]; formula: string }): boolean {
+  return r.rolls.length === 0 && r.formula === "";
+}
