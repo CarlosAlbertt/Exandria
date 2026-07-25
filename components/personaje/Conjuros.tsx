@@ -52,7 +52,15 @@ export default function Conjuros({
   async function lanzar(spell: Spell, nivelUsado: number) {
     if (!sessionId) return;
     setErr(null);
-    const etiqueta = spell.level === 0 ? `${spell.name} (truco)` : `${spell.name} (nivel ${nivelUsado})`;
+    // nivelUsado 0 en un conjuro de nivel ≥1 significa «lanzado como ritual»:
+    // no gasta hueco. Se hace explícito para no depender de que huecosDe nunca
+    // devuelva un nivel 0.
+    const comoRitual = spell.level > 0 && nivelUsado === 0;
+    const etiqueta = spell.level === 0
+      ? `${spell.name} (truco)`
+      : comoRitual
+        ? `${spell.name} (ritual)`
+        : `${spell.name} (nivel ${nivelUsado})`;
 
     // 1. Anuncio (con la CD si el conjuro pide salvación).
     const cd = spell.save ? ` · salvación de ${spell.save.toUpperCase()} CD ${spellDc}` : "";
@@ -76,7 +84,7 @@ export default function Conjuros({
 
     // 4. Gasto del hueco (los trucos no gastan) y concentración.
     let next = play;
-    if (spell.level > 0) {
+    if (spell.level > 0 && !comoRitual) {
       const fila = huecos.find((h) => h.nivel === nivelUsado);
       if (fila) next = gastarHueco(next, nivelUsado, fila.max);
     }
