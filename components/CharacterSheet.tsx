@@ -650,6 +650,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
               prof={d.prof}
               classWeapons={mechanics?.weapons ?? []}
               sessionId={isOwner ? session!.id : null}
+              ownUserId={targetUserId}
               onChange={onPlayStateChange}
               readOnly={readOnly && saveMode !== "self"}
             />
