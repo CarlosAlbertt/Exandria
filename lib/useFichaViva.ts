@@ -21,7 +21,14 @@ export type FichaViva = {
   derived: Derived;
   mechanics: ClassMechanics | null;
   onPlayStateChange: (next: PlayState) => void;
-  /** Error de carga, PROPAGADO. Nunca se traga: un error tragado disfraza el fallo. */
+  /**
+   * Error que sepamos NOMBRAR. Hoy siempre `null`: el único fallo posible es el
+   * de la carga, y `loadActiveCharacter` no lo distingue de «no hay ficha» —
+   * devuelve `null` en ambos casos y deja el error en la consola. Aquí no se
+   * inventa un mensaje que podría mentirle a quien solo está sin personaje; el
+   * campo queda para fallos futuros que sí se puedan nombrar. Si algo
+   * desaparece, la consola del navegador es donde mirar.
+   */
   error: string | null;
 };
 

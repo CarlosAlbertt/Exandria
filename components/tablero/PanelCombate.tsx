@@ -5,7 +5,8 @@ import EconomiaTurno from "@/components/personaje/EconomiaTurno";
 import Ataques, { type Objetivo } from "@/components/personaje/Ataques";
 import Conjuros from "@/components/personaje/Conjuros";
 import PozosClase from "@/components/personaje/PozosClase";
-import { pozosDe } from "@/lib/recursos";
+import { pozosDe, referenciasDe } from "@/lib/recursos";
+import { armaDe } from "@/data/weapons";
 import { distanciaMetros } from "@/lib/tablero";
 import type { Token, Board } from "@/lib/useBattle";
 import type { FichaViva } from "@/lib/useFichaViva";
@@ -46,7 +47,12 @@ export default function PanelCombate({
     : null;
 
   const esConjurador = (mechanics?.caster ?? "none") !== "none";
-  const tienePozos = !!clsSlug && pozosDe(clsSlug, level, play).length > 0;
+  // «Rasgos» no es solo pozos que se gastan: también las columnas de REFERENCIA
+  // (dado de ataque furtivo del pícaro, trucos y preparados del mago…). Hay
+  // clases con cero pozos y referencias que sí hacen falta en la mesa, así que
+  // se mira lo uno y lo otro — si no, el pícaro se queda sin su dado.
+  const tienePozos = !!clsSlug && (pozosDe(clsSlug, level, play).length > 0 || referenciasDe(clsSlug, level).length > 0);
+  const tieneArmas = items.some((it) => !!armaDe(it.name));
 
   const tabs: { id: Pestaña; icon: string; label: string }[] = [
     { id: "ataques", icon: "khanda", label: "Ataques" },
@@ -111,7 +117,12 @@ export default function PanelCombate({
           ))}
         </div>
 
-        {activa === "ataques" && (
+        {activa === "ataques" && !tieneArmas && (
+          <p className="font-ui text-[12px] italic" style={{ color: "var(--color-dim)" }}>
+            No llevas ningún arma del catálogo en el inventario.
+          </p>
+        )}
+        {activa === "ataques" && tieneArmas && (
           <Ataques
             play={play}
             items={items}
