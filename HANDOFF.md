@@ -40,6 +40,10 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >     huecos, y **lanzar** (gasta el hueco, lo anuncia al feed y tira lo que el
 >     conjuro traiga). Cierra la Fase O. **Sin migración** (`play_state`). La
 >     biblioteca de conjuros arranca con **32** y crece. Ver su RESUELTO.
+> 12. **(2026-07-26) El tablero es la pantalla de combate**: el combate se muda
+>     de `/personaje` a `/tablero` (iniciativa, rejilla, estado y turno fijos, y
+>     ataques/conjuros/rasgos en pestañas con **objetivo compartido**). La ficha
+>     queda para stats e inventario. **Sin migración.** Ver su RESUELTO.
 
 > [!tip] ✅ Todas las migraciones al día (v1–v22)
 > `schema_v22` (G3 tablero: `battle_tokens` + `battle_board`) **ejecutada el
@@ -106,9 +110,12 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
 
 ## Estructura
 - `app/` — páginas: `/` (home), `/reino` (lore), `/crear` (creador de
-  personaje), `/inventario`, `/mapa`, `/taberna` (NPC IA), `/narrador`
-  (chat IA personal), `/cronica` (diario/misiones/PNJ del grupo), `/login`,
-  `/dm` (panel DM).
+  personaje), **`/personaje`** (la ficha: aptitudes, salvaciones y pericias con
+  sus tiradas, equipo, inventario, nivel e historia — **el combate ya no vive
+  aquí**), **`/tablero`** (la **pantalla de combate**: iniciativa, rejilla,
+  estado, turno y las acciones en pestañas), `/inventario`, `/mapa`, `/taberna`
+  (NPC IA), `/narrador` (chat IA personal), `/cronica` (diario/misiones/PNJ del
+  grupo), `/login`, `/dm` (panel DM).
 - `app/dm/` — `DmDashboard.tsx` con pestañas: Narración (`NarracionPanel` +
   `AiConfigPanel`), Grupo (`GrupoPanel`), Baúl (`BaulPanel`), Dados
   (`DadosPanel`: pedir tiradas, iniciativa), Crónica (`CronicaPanel`: diario,
@@ -326,6 +333,70 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-26): el tablero es la pantalla de combate 🎮
+Rama `tablero-combate`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-26-tablero-combate*`. **No hay reglas
+nuevas**: G1–G4 y O2 ya estaban; esto es **mudanza y composición**.
+
+- **El porqué**: las cinco losas fueron aterrizando en la hoja porque era donde
+  vivía la ficha, y `/personaje` acabó haciendo dos trabajos que no se parecen
+  (consultar tu ficha y jugar el combate) mientras `/tablero` solo pintaba la
+  rejilla. Petición del usuario: la ficha para stats e inventario, y el combate
+  en el tablero.
+- **`lib/useFichaViva.ts`** (el único refactor): carga la ficha activa con el
+  `selectTolerante` de siempre, la deriva, escucha su fila en vivo, limpia el
+  turno cuando te toca y persiste `play_state` (self → `saveCharacter`, dm →
+  `/api/dm/character`). Es la **única fuente de `play_state`** para quien lo
+  consume; `character`/`items`/`level` van **solo de lectura**.
+  > **Trampa cazada**: `loadActiveCharacter` devuelve `null` **tanto** si no hay
+  > ficha **como** si la consulta falló, y no los distingue (el error ya queda en
+  > la consola). La primera versión afirmaba «no se ha podido cargar la ficha»
+  > también a quien simplemente no tiene personaje. Confundir dos estados
+  > distintos es la forma exacta del bug del 22-07: ahora no se afirma nada y la
+  > pantalla dice «no tienes un personaje en juego».
+- **La hoja no se tocó por dentro.** Al quitarle los componentes de combate,
+  `CharacterSheet` **deja de escribir** `play_state` (solo lo lee para la ventaja
+  de sus botones de salvación y pericia), así que su **carga se queda intacta** —
+  el archivo que provocó el bug de las fichas desaparecidas se toca lo mínimo. De
+  991 a 898 líneas, todo borrados salvo el enlace «Ir al tablero».
+  > **Segunda trampa**: el plan decía que se podía borrar la ref
+  > `lastWrittenPlay`. **Falso**: la lee también la suscripción realtime, que se
+  > queda. El subagente lo cazó antes de romperlo.
+- **`/tablero`**: iniciativa arriba (**sin `hideEmpty`**, así que un jugador ya
+  puede tirar iniciativa y **abrir la ronda él mismo** — antes tenía que abrirla
+  el DM), rejilla a la izquierda, `PanelCombate` a la derecha y `DiceFeedStrip`
+  abajo. **Ya no exige combate activo**: sin rejilla se puede curar, preparar
+  conjuros y gastar rasgos, que es lo que hace falta entre escenas. Distingue con
+  honestidad cuatro estados: cargando, falta `schema_v22` (solo se lo dice al
+  DM), no hay combate, y no tienes personaje.
+- **`components/tablero/PanelCombate.tsx`**: estado y turno **siempre visibles**,
+  el **objetivo en la cabecera compartido** por ataques y conjuros, y las
+  acciones en **pestañas** (⚔ Ataques · ✦ Conjuros · ◈ Rasgos) que solo se pintan
+  si la clase las tiene (un bárbaro no ve una pestaña de conjuros vacía).
+- **`Ataques`/`Conjuros`** reciben el objetivo por props (opcionales, así
+  `GrupoPanel` compiló sin tocarse). `Ataques` pierde su desplegable, sus hooks y
+  la partición en dos que hizo falta en G4 para no abrir canales realtime de más:
+  sin hooks propios ya no hay nada que ahorrar. **La lógica de G4 no cambió** —
+  mismo bloqueo de alcance, misma ventaja combinada, mismo crítico. `Conjuros`
+  solo **nombra** el objetivo en el anuncio: resolver el efecto de cada conjuro
+  quedó fuera de O2 y sigue fuera.
+- **Panel DM › Tablero** monta la misma pantalla junto a sus mandos de siempre;
+  si el DM no tiene personaje, el panel no se pinta y queda como antes. **Panel
+  DM › Grupo no se toca**: es su panel de control del grupo, no una pantalla de
+  juego.
+- **Fuera (a propósito)**: reglas nuevas, rediseñar `BattleBoard`, tocar
+  `GrupoPanel`, y mover las tiradas de pericia y salvación fuera de la ficha (son
+  de la ficha).
+- Verificado: `tsc` + `next build` limpios · **los 11 check-scripts en verde**
+  (incluido **`check-ficha` (11)**, que cubre justo la carga tolerante). Ejecutado
+  con subagentes; la revisión cazó las dos trampas de arriba, ambas mías.
+  **Nada probado en vivo.** **Prueba del usuario**: `/tablero` sin combate ⇒ se
+  ven estado, turno y pestañas; iniciar combate desde el DM y poblar ⇒ la rejilla
+  aparece sin recargar; elegir objetivo y atacar ⇒ gasta la acción y sale en la
+  tira; cambiar a Conjuros con el mismo objetivo y lanzar ⇒ el anuncio lo nombra;
+  **recargar la página** ⇒ no se pierde nada de `play_state`; `/personaje` sigue
+  entera y sin combate; el DM ve la misma pantalla con sus mandos.
 
 ## RESUELTO (2026-07-26): Fase O2 — conjuros 🔮
 Rama `o2-conjuros`. **Sin migración.** Spec y plan en
