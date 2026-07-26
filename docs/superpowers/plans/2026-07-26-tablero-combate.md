@@ -104,9 +104,14 @@ export function useFichaViva(targetUserId: string | null, saveMode: "self" | "dm
       if (!targetUserId) { if (!done) setReady(true); return; }
       const r = await loadActiveCharacter(targetUserId);
       if (done) return;
-      if (!r) {
-        setError("No se ha podido cargar la ficha.");
-      } else {
+      // `loadActiveCharacter` devuelve null en DOS casos que no puede distinguir:
+      // que no haya ficha activa, y que la consulta fallara (eso ya lo registra
+      // él en la consola). Así que aquí NO se afirma un fallo: se deja
+      // `characterId` a null y el consumidor dice «no tienes personaje en
+      // juego», que es el caso común. Si de verdad fue un error, está en la
+      // consola del navegador — que es donde hay que mirar cuando algo
+      // desaparece. `error` queda para fallos que sí sepamos nombrar.
+      if (r) {
         setRow(r as CharacterData & { id: string });
         if (r.play_state && typeof r.play_state === "object") setPlay(r.play_state as PlayState);
       }
@@ -856,6 +861,13 @@ export default function TableroPage() {
             <p className="text-center text-sm py-10" style={{ color: "var(--color-dim)" }}>Cargando tu ficha…</p>
           ) : ficha.error ? (
             <p className="text-center text-sm italic py-10" style={{ color: "var(--color-ember)" }}>{ficha.error}</p>
+          ) : !ficha.characterId ? (
+            <div className="panel p-6 text-center">
+              <i className="fas fa-hat-wizard text-2xl mb-2" style={{ color: "var(--color-dim)" }} />
+              <p className="font-ui text-[13px]" style={{ color: "var(--color-dim)" }}>
+                No tienes un personaje en juego.
+              </p>
+            </div>
           ) : (
             <PanelCombate
               ficha={ficha}
