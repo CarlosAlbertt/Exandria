@@ -15,19 +15,12 @@ import { CATALOG, ItemCat } from "@/data/equipment";
 import LevelPanel from "@/components/LevelPanel";
 import Paperdoll from "@/components/Paperdoll";
 import PortraitFrame from "@/components/PortraitFrame";
-import InitiativeTracker from "@/components/InitiativeTracker";
 import { derive } from "@/lib/derive";
 import { getMechanics, type ClassFeature } from "@/data/classdata";
 import { useSession } from "@/components/SessionProvider";
 import { publishRoll } from "@/lib/useDiceFeed";
-import PozosClase from "@/components/personaje/PozosClase";
-import EstadoVivo from "@/components/personaje/EstadoVivo";
-import EconomiaTurno from "@/components/personaje/EconomiaTurno";
-import Ataques from "@/components/personaje/Ataques";
-import Conjuros from "@/components/personaje/Conjuros";
 import { ventajaDe } from "@/lib/estado";
 import { autoFallaSalvacion, combinar, ventajaSalvacion } from "@/lib/targeting";
-import { limpiarTurno } from "@/lib/turno";
 import type { PlayState } from "@/lib/recursos";
 
 const BUILD_KEY = "taldorei.build.v1";
@@ -97,9 +90,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   // Última play_state que ESTE cliente escribió: para ignorar el eco de Realtime
   // de la propia escritura y no pisar un segundo toque rápido del jugador.
   const lastWrittenPlay = useRef<string | null>(null);
-  // `active` previo de mi fila de iniciativa: el turno se limpia solo en la
-  // transición false→true (empieza mi turno), no en cada evento.
-  const prevActive = useRef(false);
   const [skills, setSkills] = useState<string[]>([]); // pericias elegidas en /crear (solo lectura aquí)
   const [ac, setAc] = useState<number | null>(null); // CA: sesión-only (no se persiste)
   const [pickingSlot, setPickingSlot] = useState<string | null>(null);
@@ -225,36 +215,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [saveMode, targetUserId]);
-
-  // Reset del turno: al pasar mi fila de iniciativa a `active` (empieza mi
-  // turno), limpiar la economía del turno. `initiative` ya está en la
-  // publicación realtime (schema_v11). Solo la ficha propia.
-  useEffect(() => {
-    if (saveMode !== "self" || !targetUserId) return;
-    const supabase = createClient();
-    const ch = supabase
-      .channel(`sheet_ini_${Math.random().toString(36).slice(2)}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "initiative", filter: `user_id=eq.${targetUserId}` },
-        (payload) => {
-          const active = !!(payload.new as { active?: boolean }).active;
-          if (active && !prevActive.current) {
-            // Empieza mi turno: limpiar la economía. Se usa el play_state más
-            // reciente vía el setter funcional para no depender de un cierre viejo.
-            setPlayState((prev) => {
-              const next = limpiarTurno(prev);
-              lastWrittenPlay.current = JSON.stringify(next);
-              if (characterId) void saveCharacter(characterId, { play_state: next });
-              return next;
-            });
-          }
-          prevActive.current = active;
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [saveMode, targetUserId, characterId]);
 
   // Huecos (activo + archivados) para el bloque de retirada, solo en la ficha
   // propia: el DM editando a otro (?user=) no necesita esta lista aquí.
@@ -389,20 +349,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       }
       return next;
     });
-  };
-
-  // Gastar/devolver un uso de un pozo de clase: refleja el cambio al instante
-  // (estado local) y lo persiste en paralelo, sin esperar la respuesta — mismo
-  // patrón que onRollHp.
-  const onPlayStateChange = (next: PlayState) => {
-    lastWrittenPlay.current = JSON.stringify(next);
-    setPlayState(next);
-    if (targetUserId) {
-      if (saveMode === "self") { if (characterId) void saveCharacter(characterId, { play_state: next }); }
-      else void fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: targetUserId, patch: { play_state: next } }) });
-    } else {
-      try { const s = JSON.parse(localStorage.getItem(SHEET_KEY) ?? "{}"); localStorage.setItem(SHEET_KEY, JSON.stringify({ ...s, play_state: next })); } catch {}
-    }
   };
 
   /* --- oro --- */
@@ -564,12 +510,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           de la sesión, y aquí el mod de DES es el del personaje mostrado:
           mezclarlos (DM viendo ?user=) publicaría tiradas incoherentes. El
           DM tiene el tracker completo en su pestaña «Dados». */}
-      {isOwner && (
-        <div className="mb-6">
-          <InitiativeTracker mod={d.abilities.des.mod} hideEmpty />
-        </div>
-      )}
-
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-6">
           {/* NIVEL + ASI */}
@@ -631,43 +571,15 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             <p className="text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>CA editable para reflejar bonificadores temporales (p. ej. conjuros); no se guarda entre sesiones. El cálculo base se indica bajo el número.</p>
           </section>
 
-          {/* ESTADO DE COMBATE (PG, muerte, condiciones, agotamiento) */}
-          <section className="panel p-5">
-            <p className="eyebrow mb-3"><i className="fas fa-heart-pulse mr-1.5" style={{ color: "var(--color-ember)" }} />Estado de combate</p>
-            <EstadoVivo
-              play={playState}
-              maxHp={d.maxHp}
-              onChange={onPlayStateChange}
-              readOnly={readOnly && saveMode !== "self"}
-            />
-            <EconomiaTurno
-              play={playState}
-              velocidad={species?.speed ?? 9}
-              onChange={onPlayStateChange}
-              readOnly={readOnly && saveMode !== "self"}
-            />
-            <Ataques
-              play={playState}
-              items={items}
-              abilities={{ fue: d.abilities.fue.mod, des: d.abilities.des.mod }}
-              prof={d.prof}
-              classWeapons={mechanics?.weapons ?? []}
-              sessionId={isOwner ? session!.id : null}
-              ownUserId={targetUserId}
-              onChange={onPlayStateChange}
-              readOnly={readOnly && saveMode !== "self"}
-            />
-            <Conjuros
-              clsSlug={build.cls ?? ""}
-              level={level}
-              caster={mechanics?.caster ?? "none"}
-              spellDc={d.spellDc ?? 0}
-              spellAttack={d.spellAttack ?? 0}
-              play={playState}
-              sessionId={isOwner ? session!.id : null}
-              onChange={onPlayStateChange}
-              readOnly={readOnly && saveMode !== "self"}
-            />
+          {/* El combate se juega en el tablero (ver /tablero) */}
+          <section className="panel p-5 text-center">
+            <p className="eyebrow mb-2"><i className="fas fa-chess-board mr-1.5" style={{ color: "var(--color-bronze)" }} />Combate</p>
+            <p className="font-ui text-[13px] mb-3" style={{ color: "var(--color-muted)" }}>
+              Los puntos de golpe, las condiciones, el turno, los ataques y los conjuros se llevan desde el tablero.
+            </p>
+            <Link href="/tablero" className="btn-gold !py-1.5 !px-4 text-[13px]">
+              <i className="fas fa-chess-board mr-1.5" />Ir al tablero
+            </Link>
           </section>
 
           {/* SALVACIONES */}
@@ -772,10 +684,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                   <span key={s.lvl} className="chip" data-on>Espacios nv{s.lvl} ×{s.n}</span>
                 ))}
               </div>
-            )}
-
-            {build.cls && (
-              <PozosClase clsSlug={build.cls} level={level} play={playState} onChange={onPlayStateChange} readOnly={readOnly} />
             )}
 
             {!mechanics ? (
