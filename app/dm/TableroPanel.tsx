@@ -4,11 +4,22 @@ import { useBattle, moveToken, addNpcToken, removeToken, clearTokens, setBoardCo
 import { useInitiative } from "@/lib/useInitiative";
 import { useParty } from "@/lib/character";
 import BattleBoard from "@/components/tablero/BattleBoard";
+import { useSession } from "@/components/SessionProvider";
+import { useFichaViva } from "@/lib/useFichaViva";
+import PanelCombate from "@/components/tablero/PanelCombate";
+import type { Token } from "@/lib/useBattle";
+import type { PlayState } from "@/lib/recursos";
 
 export default function TableroPanel() {
   const { tokens, board, ready, missing } = useBattle();
   const { rows } = useInitiative();
   const { party } = useParty();
+  const session = useSession();
+  const ficha = useFichaViva(session?.id ?? null, "self");
+  const condsDe = (t: Token): string[] =>
+    t.user_id
+      ? ((party.find((p) => p.user_id === t.user_id)?.play_state as PlayState | undefined)?.conds ?? [])
+      : [];
   const [npc, setNpc] = useState("");
   const [bg, setBg] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -57,8 +68,20 @@ export default function TableroPanel() {
         {err && <p className="text-[12px] italic" style={{ color: "var(--color-ember)" }}>{err}</p>}
       </div>
 
-      {/* Tablero */}
-      <BattleBoard tokens={tokens} board={board} canMove={() => true} onMove={(id, x, y) => { void moveToken(id, x, y); }} />
+      {/* Tablero + panel de combate del propio DM */}
+      <div className="grid lg:grid-cols-[1.7fr_1fr] gap-5 items-start">
+        <BattleBoard tokens={tokens} board={board} canMove={() => true} onMove={(id, x, y) => { void moveToken(id, x, y); }} />
+        {ficha.ready && !ficha.error && ficha.characterId && (
+          <PanelCombate
+            ficha={ficha}
+            tokens={tokens}
+            board={board}
+            ownUserId={session?.id ?? null}
+            condsDe={condsDe}
+            sessionId={session?.id ?? null}
+          />
+        )}
+      </div>
 
       {/* Lista de fichas para borrar una */}
       {tokens.length > 0 && (
