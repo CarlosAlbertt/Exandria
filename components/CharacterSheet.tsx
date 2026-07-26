@@ -505,11 +505,10 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
         </div>
       </header>
 
-      {/* INICIATIVA EN VIVO: compacta, solo visible mientras hay ronda en
-          curso y solo en la ficha PROPIA — el tracker tira con la identidad
-          de la sesión, y aquí el mod de DES es el del personaje mostrado:
-          mezclarlos (DM viendo ?user=) publicaría tiradas incoherentes. El
-          DM tiene el tracker completo en su pestaña «Dados». */}
+      {/* La iniciativa se tira desde el tablero (/tablero) y desde Panel DM ›
+          Dados. Aquí no: el tracker tira con la identidad de la sesión, y el
+          mod de DES sería el del personaje mostrado, así que con el DM viendo
+          la ficha de otro (?user=) publicaría tiradas incoherentes. */}
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-6">
           {/* NIVEL + ASI */}

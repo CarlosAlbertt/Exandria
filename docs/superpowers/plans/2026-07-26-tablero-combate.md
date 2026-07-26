@@ -357,7 +357,15 @@ Borra el `useEffect` entero que se suscribe a `initiative` y llama a `limpiarTur
 - [ ] **Step 5: Quita `onPlayStateChange` y las importaciones que sobran**
 
 - Borra la función `onPlayStateChange` completa (con su comentario) — ya no la usa nadie en este archivo.
-- Borra la ref `lastWrittenPlay` y la ref `prevActive` (solo las usaban el efecto y la función que acabas de borrar).
+- Borra **solo** la ref `prevActive` (la usaba únicamente el efecto que acabas de borrar).
+  > **NO borres `lastWrittenPlay`**: además de `onPlayStateChange`, la lee la
+  > suscripción realtime a `characters`, que se queda. Al dejar la hoja de
+  > escribir `play_state`, su `.current` se queda en `null` para siempre y el
+  > guard anti-eco pasa a ser inocuo — que es justo lo que se quiere.
+- Borra también el comentario huérfano que quedaba sobre el montaje de
+  `InitiativeTracker` (el que empieza «INICIATIVA EN VIVO: compacta…»), y déjalo
+  diciendo la verdad nueva: que la iniciativa se tira desde `/tablero` y desde
+  Panel DM › Dados, y por qué no se tira desde la hoja.
 - Borra estos imports, que ya no se usan: `PozosClase`, `EstadoVivo`, `EconomiaTurno`, `Ataques`, `Conjuros`, `InitiativeTracker`, `limpiarTurno`.
 - **NO borres**: `playState`/`setPlayState`, la suscripción realtime a `characters` (mantiene las condiciones al día para los botones de tirada), `ventajaDe`, `autoFallaSalvacion`, `combinar`, `ventajaSalvacion`, ni el tipo `PlayState`.
 
