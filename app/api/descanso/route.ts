@@ -1,5 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { recargar, type PlayState } from "@/lib/recursos";
+import { recargarHuecos } from "@/lib/conjuros";
+import { getMechanics } from "@/data/classdata";
 
 export const runtime = "nodejs";
 
@@ -62,8 +64,15 @@ export async function POST(req: Request) {
   const nextClock: Clock = { ...clock, epochGameMin: gameMin + minutos, epochRealMs: now };
   const prevPlayState = (char.play_state as PlayState) ?? {};
   // Ficha a medio crear (sin clase todavía): no falla, deja el play_state tal cual.
+  // Los pozos de usos (O1) y los huecos de conjuro (O2) se recargan en la misma
+  // pasada: el descanso largo lo devuelve todo; el corto, solo los pozos de
+  // descanso corto y los huecos de pacto del brujo.
   const nextPlayState = char.cls
-    ? recargar(prevPlayState, char.cls as string, (char.level as number) ?? 1, kind)
+    ? recargarHuecos(
+        recargar(prevPlayState, char.cls as string, (char.level as number) ?? 1, kind),
+        getMechanics(char.cls as string)?.caster ?? "none",
+        kind,
+      )
     : prevPlayState;
   const charUpdate: Record<string, unknown> = { updated_at: new Date().toISOString(), play_state: nextPlayState };
   if (coste > 0) charUpdate.gold = gold - coste;

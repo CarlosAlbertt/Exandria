@@ -15,6 +15,7 @@ import PozosClase from "@/components/personaje/PozosClase";
 import EstadoVivo from "@/components/personaje/EstadoVivo";
 import EconomiaTurno from "@/components/personaje/EconomiaTurno";
 import Ataques from "@/components/personaje/Ataques";
+import Conjuros from "@/components/personaje/Conjuros";
 import { pgActuales } from "@/lib/estado";
 import { getMechanics } from "@/data/classdata";
 import type { PlayState } from "@/lib/recursos";
@@ -338,6 +339,16 @@ export default function GrupoPanel() {
                   abilities={{ fue: d.abilities.fue.mod, des: d.abilities.des.mod }}
                   prof={d.prof}
                   classWeapons={getMechanics(c.cls)?.weapons ?? []}
+                  sessionId={null}
+                  onChange={(next) => dmPatch(c.user_id, { play_state: next })}
+                />
+                <Conjuros
+                  clsSlug={c.cls ?? ""}
+                  level={c.level ?? 1}
+                  caster={getMechanics(c.cls)?.caster ?? "none"}
+                  spellDc={d.spellDc ?? 0}
+                  spellAttack={d.spellAttack ?? 0}
+                  play={(c.play_state as PlayState) ?? {}}
                   sessionId={null}
                   onChange={(next) => dmPatch(c.user_id, { play_state: next })}
                 />

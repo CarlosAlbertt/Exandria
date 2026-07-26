@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
 import { useParty } from "@/lib/character";
-import { useDiceFeed, publishRoll } from "@/lib/useDiceFeed";
+import { useDiceFeed, publishRoll, esNota } from "@/lib/useDiceFeed";
 import { useRollRequests } from "@/lib/useRollRequests";
 import { parseFormula, fmtRoll, critState } from "@/lib/dice";
 import { getDiceColor, setDiceColor, getDiceSound, setDiceSound } from "@/lib/diceBox";
@@ -55,7 +55,12 @@ export default function DicePanel() {
     const newest = rolls[0];
     if (lastSeenRef.current === null) { lastSeenRef.current = newest.id; return; } // ignora la carga inicial
     if (newest.id !== lastSeenRef.current && newest.user_id !== myId && !newest.private) {
-      setToast({ id: newest.id, text: `🎲 ${nameFor(newest.user_id)} ha sacado ${newest.total} en ${newest.label}` });
+      setToast({
+        id: newest.id,
+        text: esNota(newest)
+          ? `✨ ${nameFor(newest.user_id)} · ${newest.label}`
+          : `🎲 ${nameFor(newest.user_id)} ha sacado ${newest.total} en ${newest.label}`,
+      });
       const t = setTimeout(() => setToast(null), 3500);
       lastSeenRef.current = newest.id;
       return () => clearTimeout(t);
@@ -189,9 +194,12 @@ export default function DicePanel() {
               // No se guarda el modificador aparte: se reconstruye a partir de
               // rolls/total (total = suma(rolls) + modificador) para reutilizar
               // fmtRoll tal cual sin duplicar su lógica de formateo.
+              // Las notas (anuncios de conjuro) no llevan dados: se pintan solo
+              // con su etiqueta, sin el desglose «[] = 0» ni chapa de crítico.
+              const nota = esNota(r);
               const modifier = r.total - r.rolls.reduce((a, b) => a + b, 0);
-              const breakdown = fmtRoll({ formula: r.formula, rolls: r.rolls, modifier, total: r.total });
-              const crit = critState(r.formula, r.rolls);
+              const breakdown = nota ? "" : fmtRoll({ formula: r.formula, rolls: r.rolls, modifier, total: r.total });
+              const crit = nota ? null : critState(r.formula, r.rolls);
               return (
                 <div
                   key={r.id}
@@ -212,7 +220,11 @@ export default function DicePanel() {
                     {crit === "fumble" && (
                       <span className="font-ui text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--color-ember)", color: "var(--color-night)" }}>PIFIA</span>
                     )}
-                    <span className="font-ui text-[13px] font-bold" style={{ color: "var(--color-bronze-bright)" }}>{breakdown}</span>
+                    {nota ? (
+                      <span className="font-ui text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--color-arcane)", color: "var(--color-night)" }}>CONJURO</span>
+                    ) : (
+                      <span className="font-ui text-[13px] font-bold" style={{ color: "var(--color-bronze-bright)" }}>{breakdown}</span>
+                    )}
                     <span className="font-ui text-[10px]" style={{ color: "var(--color-dim)" }}>{fmtTime(r.created_at)}</span>
                   </div>
                 </div>
