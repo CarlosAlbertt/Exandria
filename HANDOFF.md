@@ -2,7 +2,22 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-24)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-28)
+
+> [!warning] 🎲 **Lo siguiente NO es código: es jugar una sesión.**
+> Hay **seis features seguidas en producción y nunca vistas en una partida**
+> (G4, O2, la mudanza a `/combate`, los objetivos múltiples, la retirada del
+> tablero y la documentación). Todas pasaron el gate; ninguna se ha jugado.
+> Esa deuda ya costó una: el **tablero de batalla** se construyó entero —rejilla,
+> fichas, medición, migración `schema_v22`— y se retiró **sin haberlo probado
+> nunca**, porque no encajaba con cómo se juega. Una sola partida lo habría
+> evitado.
+> **Las guías de qué probar y en qué pantalla están en cada sección `## RESUELTO`
+> de abajo.** Lo más sospechoso, por orden: que el `play_state` (PG, huecos,
+> condiciones) **sobreviva a recargar la página**; que el **contador de turno se
+> reinicie solo al tocarte**; y que el **realtime entregue sin recargar**.
+> La **fase 2** de los monstruos (la «arena») está **bloqueada a propósito** hasta
+> que eso pase.
 
 > **Lo último (2026-07-21 → 23)**:
 > 1. Se amplió el mundo — Marquet, Issylra y los Dientes Rotos con mapa y saber
@@ -79,18 +94,22 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
   Panel DM, Crónica, Baúl, Componentes, Rutas, Cosmología, Realtime, Glosario…).
 
 **Nada pendiente en el working tree** (`git status` limpio, todo mergeado a
-`master`). Verificación: `tsc --noEmit` + `next build` limpios en cada rama;
-`scripts/check-clima.ts` verde. **NADA probado en vivo** (sin sesión ni túnel en
-dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
+`master`). Verificación: `tsc --noEmit` + `next build` limpios en cada rama, y
+**los 19 `scripts/check-*.ts` en verde el 2026-07-28** (ver «Scripts de
+comprobación» abajo). **NADA probado en vivo** (sin sesión ni túnel en dev) —
+pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 
-**Siguiente sugerido** (elige uno): la capa de **jugabilidad 2024** ya tiene
-**G1** (estado del combatiente), **G2** (economía de turno + ataque), **G3**
-(tablero de batalla) y **G4** (targeting: objetivo, alcance, ventaja del
-atacante, crítico y auto-fallo de salvación), los cuatro en `master`
-(`schema_v22` ya ejecutada), la **Fase O** está cerrada con **O1** (pozos de
-clase) y **O2** (conjuros), y los **objetivos múltiples** ya permiten repartir
-golpes e instancias. **El tablero se retiró el 2026-07-26**: el combate se juega
-en **`/combate`**, con la iniciativa como lista de combatientes.
+**Dónde está la capa de jugabilidad 2024**: **G1** (estado del combatiente),
+**G2** (economía de turno + ataque) y **G4** (targeting: objetivo, ventaja del
+atacante, crítico y auto-fallo de salvación) están en `master`; la **Fase O**
+está cerrada con **O1** (pozos de clase) y **O2** (conjuros); y los **objetivos
+múltiples** ya permiten repartir golpes e instancias. **G3 (el tablero de
+batalla) ya no existe**: se retiró el 2026-07-26 y el combate se juega en
+**`/combate`**, con la iniciativa como lista de combatientes. Su migración
+`schema_v22` se ejecutó y quedó **retirada** (ver el aviso de migraciones).
+
+**Siguiente paso**: jugar una sesión con lo que ya hay (ver el aviso 🎲 de
+arriba). Solo después, la **fase 1** de los monstruos al combate.
 
 **Lo siguiente ya está diseñado y decidido, en dos fases** (spec completo en
 `docs/superpowers/specs/2026-07-28-monstruos-al-combate-design.md`):
@@ -316,7 +335,9 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
 trigger de perfil) · `schema_v2.sql` (target de narración, group_action,
 action_ready, npc_chat) · `schema_v3.sql` (pin_x/pin_y, poi_state) ·
 `schema_v4.sql` (characters + lore) · `schema_v5.sql` (app_config) ·
-`schema_v6.sql` (group_action.speaker) · `schema_v7.sql` (world_poi, sin uso) ·
+`schema_v6.sql` (group_action.speaker) · **`schema_v7` (world_poi) no existe**:
+se optó por `app_config` en su lugar y **el archivo no está en `supabase/`**, así
+que la numeración salta de la v6 a la v8 ·
 `schema_v8.sql` (characters: level/gold/asi/equipment/items) · `schema_v9.sql`
 (characters.hp_rolls) · `schema_v10.sql` (characters.xp) · `schema_v11.sql`
 (dice_rolls, roll_requests, initiative — ya ejecutada) · `schema_v12.sql`
@@ -375,6 +396,31 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## Scripts de comprobación
+No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
+`scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
+(no hay entrada en `package.json`). **Son 19**, y las secciones RESUELTO solo
+nombran los que tocó cada tanda — los demás siguen vivos aunque no se citen.
+Recuento del **2026-07-28, los 19 en verde**:
+
+| Script | OK | Script | OK |
+|---|---|---|---|
+| `check-archive` | 13 | `check-dicebox` | 19 |
+| `check-ataque` | 64 | `check-estado` | 35 |
+| `check-atlas` | 118 | `check-ficha` | 11 |
+| `check-bestiary` | 1617 | `check-lore` | 69 |
+| `check-clases` | 116 | `check-slots` | 15 |
+| `check-clima` | 32 | `check-spells` | 28 |
+| `check-clock` | 20 | `check-statrolls` | 15 |
+| `check-conjuros` | 49 | `check-targeting` | 51 |
+| `check-derive` | 35 | `check-turno` | 26 |
+| `check-dice` | 20 | | |
+
+> `check-tablero` se borró con el tablero el 2026-07-26. Las cuentas que citan
+> las secciones RESUELTO son las **del día que se escribieron** y algunas ya no
+> cuadran (p. ej. O2 dice «check-estado (36)» y «check-targeting (49)»); manda
+> esta tabla.
 
 ## RESUELTO (2026-07-26): fuera el tablero, la iniciativa es el combate ⚔️
 Rama `quitar-tablero`. **Sin migración.** Spec y plan en
@@ -486,6 +532,14 @@ suposición de **un solo objetivo** que arrastraba toda la capa desde G4.
   hueco; Proyectil Mágico ⇒ tres dardos de `1d4+1`, no un `3d4+3`.
 
 ## RESUELTO (2026-07-26): el tablero es la pantalla de combate 🎮
+
+> [!note] 🔀 **Léase `/combate` donde ponga `/tablero`.** Esta sección se escribió
+> antes de la retirada del tablero (ese mismo día): la mudanza del combate fuera
+> de `/personaje` **sigue vigente**, pero la ruta se renombró a **`/combate`** y
+> la rejilla ya no está. Su **prueba del usuario**, al final, hay que traducirla:
+> donde dice «abrir `/tablero`» es `/combate`, y donde dice «poblar la rejilla»
+> es «poblar la iniciativa».
+
 Rama `tablero-combate`. **Sin migración.** Spec y plan en
 `docs/superpowers/{specs,plans}/2026-07-26-tablero-combate*`. **No hay reglas
 nuevas**: G1–G4 y O2 ya estaban; esto es **mudanza y composición**.
@@ -662,10 +716,20 @@ siempre: la app **aplica** la regla, no solo la recuerda.
   paralizado + salvación de Fuerza ⇒ fallo automático; restringido + salvación de
   Destreza ⇒ desventaja.
 
-## RESUELTO (2026-07-24): G3 — tablero de batalla 🗺️♟️
-Rama `g3-tablero`. **Migración `schema_v22` — PENDIENTE de ejecutar.** Spec y plan
-en `docs/superpowers/{specs,plans}/2026-07-24-g3-tablero*`. Tercera losa de la
-jugabilidad 2024, sobre G1/G2. Primera con **estado compartido de verdad**.
+## RESUELTO (2026-07-24): G3 — tablero de batalla 🗺️♟️ (RETIRADO el 2026-07-26)
+
+> [!warning] ⚰️ **Esta sección es historia, no instrucciones.** El tablero se
+> **retiró entero** el 2026-07-26 (ver la sección «fuera el tablero» arriba).
+> Nada de lo que describe sigue en el código: `BattleBoard`, `useBattle`,
+> `lib/tablero.ts`, `check-tablero` y `/tablero` están **borrados**.
+> Su migración **`schema_v22` se ejecutó el 2026-07-25 y ya no hace falta**: sus
+> tablas quedaron vacías y sin uso, y **no hay que ejecutar nada**. Se conserva
+> el relato por el porqué de la retirada.
+
+Rama `g3-tablero`. **Migración `schema_v22` — ejecutada el 2026-07-25, hoy
+retirada.** Spec y plan
+en `docs/superpowers/{specs,plans}/2026-07-24-g3-tablero*`. Tercera losa
+de la jugabilidad 2024, sobre G1/G2. Primera con **estado compartido de verdad**.
 
 - **`schema_v22.sql`**: dos tablas nuevas con RLS y realtime — `battle_tokens`
   (una ficha por combatiente: mover el DM cualquiera, el jugador la suya;
