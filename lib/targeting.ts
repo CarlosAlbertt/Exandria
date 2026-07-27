@@ -2,26 +2,26 @@
 // lib/ataque.ts / lib/estado.ts. Junta estado (G1), ataque (G2) y posición (G3):
 // ventaja del atacante por la condición del objetivo, alcance del arma, fallo
 // automático de salvación y crítico por proximidad. Mecánicas = hechos 2024.
-import type { Arma } from "@/data/weapons";
 import { parseFormula } from "@/lib/dice";
 
 /**
- * Ventaja/desventaja que gana EL ATACANTE por la condición del objetivo + la
- * distancia. Devuelve flags crudos (sin colapsar) para que la anulación 2024 se
- * aplique una sola vez, global, en `combinar`.
+ * Ventaja/desventaja que gana EL ATACANTE por la condición del objetivo.
+ * `cuerpoACuerpo` se DEDUCE DEL ARMA (una daga se usa en cuerpo a cuerpo, un
+ * arco dispara), así que no hace falta medir nada sobre un tablero.
+ * Devuelve flags crudos: la anulación 2024 se aplica una sola vez en `combinar`.
  */
 export function ventajaAtacante(
   condsObjetivo: string[],
-  distanciaM: number,
+  cuerpoACuerpo: boolean,
 ): { adv: boolean; dis: boolean } {
   const c = new Set(condsObjetivo);
   let adv = false;
   let dis = false;
-  // Atacar a estos objetivos es con ventaja (RAW 2024):
+  // Atacar a estos objetivos es con ventaja (RAW 2024), se esté cerca o lejos:
   for (const s of ["cegado", "paralizado", "petrificado", "restringido", "aturdido", "inconsciente"])
     if (c.has(s)) adv = true;
-  // Derribado: ventaja a ≤1,5 m (cuerpo), desventaja a >1,5 m (distancia).
-  if (c.has("derribado")) { if (distanciaM <= 1.5) adv = true; else dis = true; }
+  // Derribado: ventaja cuerpo a cuerpo, desventaja a distancia.
+  if (c.has("derribado")) { if (cuerpoACuerpo) adv = true; else dis = true; }
   // apresado (grappled) NO da ventaja al atacante.
   return { adv, dis };
 }
@@ -45,15 +45,6 @@ export function combinar(
 }
 
 /**
- * ¿El arma llega a esa distancia? Cuerpo ⇒ ≤1,5 m (el catálogo no tiene armas de
- * alcance extendido). Distancia ⇒ siempre llega en el tablero (30 m × 18 m por
- * defecto; el catálogo no trae normal/largo).
- */
-export function enAlcance(arma: Arma, distanciaM: number): boolean {
-  return arma.alcance === "distancia" ? true : distanciaM <= 1.5;
-}
-
-/**
  * ¿Se auto-falla esta salvación por condición? Fue/Des con paralizado/aturdido/
  * inconsciente/petrificado ⇒ fallo automático (no se tira).
  */
@@ -72,12 +63,13 @@ export function ventajaSalvacion(conds: string[], caracteristica: string): "dis"
 }
 
 /**
- * ¿El ataque es crítico por proximidad? Cualquier ataque a ≤1,5 m contra objetivo
- * paralizado/inconsciente (RAW 2024: no distingue el arma — un ataque a distancia
- * a quemarropa también). El 20 natural va aparte, vía dice.critState.
+ * ¿El ataque es crítico por proximidad? Con un arma de CUERPO A CUERPO contra un
+ * objetivo paralizado o inconsciente (RAW 2024: cualquier ataque que acierte a
+ * ≤1,5 m, y con un arma de cuerpo estás ahí por definición). El 20 natural va
+ * aparte, vía dice.critState.
  */
-export function critProximidad(condsObjetivo: string[], distanciaM: number): boolean {
-  if (distanciaM > 1.5) return false;
+export function critProximidad(condsObjetivo: string[], cuerpoACuerpo: boolean): boolean {
+  if (!cuerpoACuerpo) return false;
   const c = new Set(condsObjetivo);
   return c.has("paralizado") || c.has("inconsciente");
 }

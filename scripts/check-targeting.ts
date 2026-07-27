@@ -1,9 +1,8 @@
 // Comprobación de las reglas de targeting. Uso: npx tsx scripts/check-targeting.ts
 import {
-  ventajaAtacante, combinar, enAlcance, autoFallaSalvacion,
+  ventajaAtacante, combinar, autoFallaSalvacion,
   ventajaSalvacion, critProximidad, formulaDaño,
 } from "../lib/targeting";
-import { ARMAS } from "../data/weapons";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -12,15 +11,18 @@ function check(label: string, cond: boolean) {
 }
 
 // --- ventajaAtacante -----------------------------------------------------
+// Ya no se mide: `cuerpoACuerpo` se deduce del arma (true = arma de cuerpo).
 for (const s of ["cegado", "paralizado", "petrificado", "restringido", "aturdido", "inconsciente"]) {
-  const v = ventajaAtacante([s], 1.5);
-  check(`${s}: atacante con ventaja`, v.adv === true && v.dis === false);
+  const v = ventajaAtacante([s], true);
+  check(`${s}: atacante con ventaja (cuerpo)`, v.adv === true && v.dis === false);
+  const vd = ventajaAtacante([s], false);
+  check(`${s}: atacante con ventaja también a distancia`, vd.adv === true && vd.dis === false);
 }
-check("apresado NO da ventaja al atacante", (() => { const v = ventajaAtacante(["apresado"], 1.5); return !v.adv && !v.dis; })());
-check("sin condiciones: ni ventaja ni desventaja", (() => { const v = ventajaAtacante([], 1.5); return !v.adv && !v.dis; })());
-check("derribado a ≤1,5 m: ventaja (cuerpo)", (() => { const v = ventajaAtacante(["derribado"], 1.5); return v.adv && !v.dis; })());
-check("derribado a >1,5 m: desventaja (distancia)", (() => { const v = ventajaAtacante(["derribado"], 3); return !v.adv && v.dis; })());
-check("cegado + derribado a distancia: ambas caras", (() => { const v = ventajaAtacante(["cegado", "derribado"], 6); return v.adv && v.dis; })());
+check("apresado NO da ventaja al atacante", (() => { const v = ventajaAtacante(["apresado"], true); return !v.adv && !v.dis; })());
+check("sin condiciones: ni ventaja ni desventaja", (() => { const v = ventajaAtacante([], true); return !v.adv && !v.dis; })());
+check("derribado, arma de cuerpo: ventaja", (() => { const v = ventajaAtacante(["derribado"], true); return v.adv && !v.dis; })());
+check("derribado, arma a distancia: desventaja", (() => { const v = ventajaAtacante(["derribado"], false); return !v.adv && v.dis; })());
+check("cegado + derribado a distancia: ambas caras", (() => { const v = ventajaAtacante(["cegado", "derribado"], false); return v.adv && v.dis; })());
 
 // --- combinar (anulación 2024, global) -----------------------------------
 check("combinar: solo ventaja objetivo ⇒ adv", combinar(null, { adv: true, dis: false }) === "adv");
@@ -30,12 +32,6 @@ check("combinar: propia dis + objetivo adv ⇒ null (anula)", combinar("dis", { 
 check("combinar: propia dis + objetivo dis ⇒ dis", combinar("dis", { adv: false, dis: true }) === "dis");
 check("combinar: objetivo con ambas caras ⇒ null", combinar(null, { adv: true, dis: true }) === null);
 check("combinar: propia adv + objetivo adv ⇒ adv", combinar("adv", { adv: true, dis: false }) === "adv");
-
-// --- enAlcance -----------------------------------------------------------
-check("daga (cuerpo) a 1,5 m: llega", enAlcance(ARMAS["Daga"], 1.5) === true);
-check("daga (cuerpo) a 3 m: NO llega", enAlcance(ARMAS["Daga"], 3) === false);
-check("arco corto (distancia) a 20 m: llega", enAlcance(ARMAS["Arco corto"], 20) === true);
-check("espada larga (cuerpo) a 0 m: llega", enAlcance(ARMAS["Espada larga"], 0) === true);
 
 // --- autoFallaSalvacion --------------------------------------------------
 for (const s of ["paralizado", "aturdido", "inconsciente", "petrificado"]) {
@@ -52,11 +48,11 @@ check("restringido: salvación de Fue sin desventaja", ventajaSalvacion(["restri
 check("sin restringido: salvación de Des sin desventaja", ventajaSalvacion(["envenenado"], "des") === null);
 
 // --- critProximidad ------------------------------------------------------
-check("paralizado a ≤1,5 m: crítico por proximidad", critProximidad(["paralizado"], 1.5) === true);
-check("inconsciente a ≤1,5 m: crítico por proximidad", critProximidad(["inconsciente"], 1.5) === true);
-check("paralizado a 3 m: NO crítico (lejos)", critProximidad(["paralizado"], 3) === false);
-check("paralizado a ≤1,5 m con arma a distancia: crítico igual (RAW: cualquier ataque)", critProximidad(["paralizado"], 1.5) === true);
-check("cegado a ≤1,5 m: NO crítico (condición no aplica)", critProximidad(["cegado"], 1.5) === false);
+check("paralizado, arma de cuerpo: crítico", critProximidad(["paralizado"], true) === true);
+check("inconsciente, arma de cuerpo: crítico", critProximidad(["inconsciente"], true) === true);
+check("paralizado, arma a distancia: NO crítico", critProximidad(["paralizado"], false) === false);
+check("cegado, arma de cuerpo: NO crítico (condición no aplica)", critProximidad(["cegado"], true) === false);
+check("sin condiciones: NO crítico", critProximidad([], true) === false);
 
 // --- formulaDaño ---------------------------------------------------------
 check("daño normal 1d8+3", formulaDaño("1d8", 3, false) === "1d8+3");
