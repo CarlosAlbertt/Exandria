@@ -4,97 +4,110 @@ CarlosAlbertt/Exandria, desplegada en exandria.vercel.app).
 
 **Lee primero `HANDOFF.md`** — es el documento de estado vivo. El vault de
 Obsidian (`C:\Users\carlo\Desktop\Exandria-Obsidian\Exandria`) está al día a
-2026-07-24 y explica el porqué de las decisiones.
+2026-07-28 y explica el porqué de las decisiones.
 
-## ⚠️ LO PRIMERO: ejecutar `schema_v22.sql`
+## ⚠️ LO PRIMERO: esta vez no es una migración, es PROBAR
 
-Hay **una migración pendiente**: `supabase/schema_v22.sql` (la Fase G3, el
-tablero). Crea dos tablas nuevas — `battle_tokens` y `battle_board` — con RLS y
-realtime. **Sin ejecutarla, `/tablero` y la pestaña Panel DM › Tablero avisan y no
-funcionan**, pero el resto de la app sigue igual (el hook `useBattle` detecta que
-las tablas faltan y degrada). La ejecuto yo en el SQL Editor de Supabase; es
-idempotente y solo añade. Es la primera pendiente desde la v21.
+**No hay ninguna migración pendiente de ejecutar** (v1–v22 al día; la v22 quedó
+*retirada*, ver abajo). Lo pendiente es otra cosa: hay **seis features seguidas
+desplegadas en producción y nunca vistas en una partida**. Las escribimos, pasaron
+el gate (`tsc`, `next build` y los scripts de comprobación) y se mergearon, pero
+**nadie las ha jugado**.
 
-## Dónde lo dejamos (24 de julio de 2026)
+Esa deuda ya me costó una: monté un **tablero de batalla** entero —rejilla, fichas
+arrastrables, medición de distancia, con su migración— y, al mirarlo con calma,
+decidí **retirarlo sin haberlo probado nunca**, porque no encajaba con cómo
+jugamos. Se tiró trabajo que una sola partida habría evitado.
 
-Estoy construyendo la **capa de jugabilidad de combate 2024**, en losas. Tres ya
-en `master` y desplegadas:
+**Si te pido código nuevo antes de contarte cómo fue una sesión de prueba,
+recuérdamelo.** Y la fase 2 del combate (la «arena») está **bloqueada a propósito**
+hasta que eso pase.
 
-1. **G1 — estado del combatiente**: PG actuales/temporales, salvaciones de muerte
-   (3 y 3), 14 condiciones y agotamiento, en la hoja y en el panel del DM, en
-   vivo. Las condiciones aplican **ventaja/desventaja de verdad** a las tiradas
-   (envenenado → 2d20 la peor). Sin migración (todo en `characters.play_state`).
-2. **G2 — economía de turno y ataque**: marcador de acción/adicional/reacción/
-   movimiento que se limpia solo al tocarte el turno (suscripción a la iniciativa),
-   y **tirada de ataque desde la ficha** (tabla de 12 armas, característica
-   correcta, competencia derivada de la clase, ventaja de G1). Sin migración.
-3. **G3 — tablero de batalla**: rejilla con una ficha por combatiente, que el DM y
-   los jugadores mueven **en vivo**, con **medición de distancia** (casillas ×
-   1,5 m). El DM inicia el combate, fija fondo/tamaño y **puebla desde la
-   iniciativa** de un clic. **Requiere `schema_v22`.**
+Las guías de qué probar y **en qué pantalla exactamente** están en cada sección
+`## RESUELTO` de `HANDOFF.md`. Lo más sospechoso, por orden: que el `play_state`
+(PG, huecos, condiciones) **sobreviva a recargar la página**; que el contador de
+turno se reinicie solo al tocarme; y que el realtime entregue sin recargar.
 
-La idea rectora: la app es para **jugar autodidacta en casa**, así que **aplica**
-las reglas, no solo las recuerda.
+## Dónde lo dejamos (28 de julio de 2026)
 
-## Lo que falta probar (es cosa mía, no tuya)
+Sesión larga. Seis cosas en `master`, en este orden:
 
-Nada de G1/G2/G3 se ha probado **con sesión real y varios jugadores**. Se verificó
-con `tsc`, `next build` y los scripts de comprobación. Si te pido que verifiques
-algo, ten en cuenta que no puedes entrar con credenciales ni tienes las tablas del
-tablero en dev.
+1. **G4 — targeting**: elegir objetivo y, con eso, ventaja del atacante por la
+   condición del objetivo, crítico automático (20 natural + proximidad) y fallo
+   automático de salvación de Fue/Des. Sin migración.
+2. **Fase O2 — conjuros**: preparar con tope, gastar y recuperar huecos, y lanzar
+   (gasta el hueco, lo anuncia al feed y tira lo que el conjuro traiga).
+   Biblioteca semilla de **32 conjuros que crece**, como el bestiario. Sin
+   migración.
+3. **El combate se muda de `/personaje` a su propia pantalla**: la ficha queda
+   para stats e inventario. Hook `useFichaViva`.
+4. **Objetivos múltiples**: la acción de Atacar da **N golpes** (eliges objetivo
+   entre golpe y golpe), ataque de **acción adicional** con dos armas ligeras, y
+   conjuros de **varias instancias** (Rayo Abrasador, Proyectil Mágico).
+5. **Fuera el tablero**: se retira la rejilla. **`/combate`** sustituye a
+   `/tablero` y **la iniciativa es la lista de combatientes**: tocas a alguien y
+   es tu objetivo. Las reglas que medían distancia **se deducen del arma** (con una
+   daga estás en cuerpo a cuerpo por definición), lo que dejó `lib/targeting.ts`
+   más simple que antes.
+6. **Documentación**: HANDOFF y vault al día con todo lo anterior.
 
-Pruebas mías pendientes:
-- **G1/G2**: bajar a 0 PG y ver las salvaciones; atacar y ver que gasta la acción;
-  «Siguiente turno» hasta que me toque y ver la economía limpia sin recargar; arma
-  competente vs no competente; envenenado → ataque a 2d20 la peor.
-- **G3** (tras `schema_v22`): activar el combate, poblar desde iniciativa, mover
-  una ficha como DM y verla en la vista del jugador sin recargar; como jugador
-  mover la propia y no otra; seleccionar dos fichas y ver la distancia.
+**`schema_v22` está RETIRADA**: se ejecutó para el tablero y, al quitarlo, sus
+tablas (`battle_tokens`, `battle_board`) quedaron vacías y sin uso. **No se han
+borrado a propósito** y **no hay que hacer nada con ellas**.
 
-## Qué queda por desarrollar
+## Lo siguiente, ya diseñado y sin código
 
-- **G4 — targeting** (la continuación natural de G3): elegir el **objetivo** de un
-  ataque sobre el tablero y, con eso, las reglas que lo necesitan y que G1/G2/G3
-  dejaron **documentadas a propósito**: **fallo automático de salvación** por
-  estar paralizado/aturdido/inconsciente/petrificado; **ventaja para el atacante**
-  por cegado/derribado/restringido; **crítico automático** (20 natural dobla los
-  dados de daño); y el **alcance del arma** que bloquee el ataque si no llegas (la
-  distancia ya se mide en G3).
-- **Fase O2 — conjuros**: motor de preparar y gastar huecos, empezando por trucos
-  y niveles 1–3 del SRD 5.2. El estado va en `characters.play_state` (las claves
-  `huecos`/`preparados`), la misma columna de O1/G1/G2, **sin migración nueva**.
-- **Pozos de las 5 clases que faltan**: bardo, mago, pícaro, brujo y cazador de
-  sangre (usos derivados de un modificador o fórmula, otro modelo).
-- **Fase P — downtime y minijuegos** · **Fase Q — misiones personales con IA**.
-- **Bestiario a medias**: 124 monstruos, solo CR 0–1/2 completo.
-- **C2 — regateo** con tirada de Persuasión.
-- **Backlog pequeño**: modo espectador/TV; retratos de especie
-  (`public/species/` sigue vacío → silueta).
+Spec completo en
+`docs/superpowers/specs/2026-07-28-monstruos-al-combate-design.md`, en dos fases:
+
+- **FASE 1 — los monstruos del bestiario entran al combate.** `initiative` gana
+  `monster_slug`/`hp`/`hp_max`/`conds` ⇒ **`schema_v23`** (la primera desde la
+  v22; **el archivo todavía no existe**). El DM añade monstruos desde un selector
+  del bestiario —con sus PG, su modificador de iniciativa y los personalizados—
+  **por tandas**, así que un jefe nunca comparte iniciativa con sus esbirros. El
+  DM ve `11/13`; los jugadores ven «malherido», no el número. **Arregla de paso**
+  que las reglas de G4 no funcionaban contra monstruos: sin `conds` en la fila, un
+  goblin derribado no daba ventaja a nadie. **Falta el plan y el código.**
+- **FASE 2 — la «arena»**: el combate «más gráfico, tipo Pokémon» que pedí. Dos
+  bandos enfrentados con retratos y barras de vida, menú de acciones tipo consola,
+  y caja de texto narrando las tiradas **y por qué** (la app calcula la ventaja
+  pero hoy no la explica). **Solo piel, cero reglas.** El reparto está maquetado,
+  validado y descrito al final de ese mismo spec, junto con el dato que manda
+  sobre él: hay **13 retratos de clase** pero **0 imágenes de monstruo**, así que
+  los 124 irán con **icono + color por tipo de criatura** hasta que haya arte.
+  **No empezar hasta haber jugado con la fase 1.**
+
+Otras cosas en el backlog: ampliar la biblioteca de conjuros (32 y creciendo), los
+**pozos de las 5 clases que faltan** (bardo, mago, pícaro, brujo, cazador de
+sangre), el **bestiario a medias** (124 monstruos, solo CR 0–1/2), Fase P
+(downtime + minijuegos), Fase Q (misiones con IA), C2 (regateo con Persuasión),
+modo espectador/TV y los retratos de especie (`public/species/lineages/` vacío).
 
 ## Cómo trabajamos
 
-- **Rama feature por tarea** → gate `npx tsc --noEmit` + `npx next build` (no hay
-  tests; ese es el gate real) + los scripts de comprobación que apliquen
-  (`check-tablero`, `check-turno`, `check-ataque`, `check-estado` 35, `check-lore`
-  69, `check-clases` 116, `check-ficha` 11, `check-clima` 32) → commit por tarea →
+- Rama feature por tarea → gate `npx tsc --noEmit` + `npx next build` (**no hay
+  tests; ese es el gate real**) + los scripts que apliquen → commit por tarea →
   actualizar `HANDOFF.md` y el vault → merge a `master` y push.
-- Para features nuevas, skills de superpowers: brainstorming → spec → plan →
-  ejecución. Specs y planes en `docs/superpowers/{specs,plans}/`. Los de las tres
-  losas: `2026-07-23-g1-estado-combatiente*`, `2026-07-24-g2-economia-de-turno*`,
-  `2026-07-24-g3-tablero*`.
+- **Los 10 scripts de comprobación**: `check-ficha` (11), `check-spells`,
+  `check-conjuros`, `check-targeting`, `check-estado`, `check-turno`,
+  `check-ataque`, `check-clases` (116), `check-lore` (69), `check-clima`.
+  (`check-tablero` se borró con el tablero.)
+- Para features nuevas: **brainstorming → spec → plan → ejecución** con las skills
+  de superpowers. Specs y planes en `docs/superpowers/{specs,plans}/`.
 - **La capa pura y su script primero, la UI después.** Cada capa nueva
-  (`lib/estado.ts`, `lib/turno.ts`, `lib/ataque.ts`, `lib/tablero.ts`) es pura,
-  fusiona `play_state` sin pisar las claves de las demás, y se verifica con un
-  `scripts/check-*.ts`.
+  (`lib/estado.ts`, `lib/turno.ts`, `lib/ataque.ts`, `lib/targeting.ts`,
+  `lib/conjuros.ts`) es pura, fusiona `play_state` sin pisar las claves de las
+  demás, y se verifica con un `scripts/check-*.ts`.
+- Ejecutar los planes **con subagentes** (implementador + revisión por tarea) va
+  bien: en esta sesión cazaron **cuatro fallos reales** que el gate no veía.
 - Commits acaban con `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
   Autor `CarlosAlbertt` (Vercel bloquea otros emails). Con backticks en el
-  mensaje, usa `git commit -F -` con heredoc.
+  mensaje, usar `git commit -F -` con heredoc, y **el bash tool** (el shell por
+  defecto es PowerShell).
 - **Nunca `git add -A` a ciegas**: añade los archivos que has tocado.
-- **Convención de contenido**: las mecánicas y los nombres son hechos de la
+- Convención de contenido: las mecánicas y los nombres son hechos de la
   ambientación; **todos los blurbs y descripciones son redacción original en
-  español**, nunca prosa de los libros. Herramienta de fans no oficial. (Las stats
-  de armas y las reglas de condición son hechos; sus textos de efecto, redacción
-  propia.)
+  español**, nunca prosa de los libros. Herramienta de fans no oficial.
 - `AGENTS.md`: este Next.js 16 tiene cambios rompedores. Ante dudas de API, lee
   `node_modules/next/dist/docs/`, no tires de memoria.
 
@@ -102,16 +115,28 @@ Pruebas mías pendientes:
 
 1. **Un error tragado disfraza el fallo.** `const { data } = await …` sin mirar
    `error` convirtió «falta una columna» en «no tienes personaje». Si algo
-   desaparece, sospecha de la consulta antes que del dato, y pídeme la consola del
-   navegador. (De ahí `schema_v21` y el `selectTolerante` de `lib/character.ts`.)
+   desaparece, sospecha de la consulta antes que del dato, y **pídeme la consola
+   del navegador**. (De ahí `schema_v21` y el `selectTolerante` de
+   `lib/character.ts`.)
 2. **El código y la migración aterrizan juntos.** Añadir una columna al `select`
-   antes de ejecutar la migración rompe la app. Por eso el hook del tablero
-   **degrada** si `schema_v22` no está, en vez de reventar.
-3. **En una app que impone reglas, sobre-aplicar es peor que no aplicar.** En G1
-   omití la desventaja de salvación de «restringido» (es solo Destreza, y el botón
-   no pasa la característica) en vez de aplicarla a todas. Un subagente llegó a
-   **inventarse una condición** («asqueado») para cuadrar un conteo mal puesto en
-   el spec: revisa lo que devuelven los subagentes.
+   antes de ejecutar la migración rompe la app.
+3. **Sobre-aplicar es peor que no aplicar.** En una app que impone reglas,
+   quedarse corto es preferible. Y **revisa lo que devuelven los subagentes**: uno
+   llegó a inventarse una condición para cuadrar un conteo mal puesto en un spec.
+4. **No confundas dos estados distintos.** `loadActiveCharacter` devuelve `null`
+   tanto si no hay ficha como si la consulta falló. Afirmar «no se ha podido
+   cargar la ficha» a quien simplemente no tiene personaje es el mismo error de
+   julio con otra cara.
+5. **Una regla que vive en un componente escapa al gate.** El botón de «dos armas»
+   nació muerto —contaba entradas del inventario en vez de cantidad, y la hoja
+   fusiona los objetos del mismo nombre subiendo `qty`— y **pasó el gate en
+   verde**, porque los scripts solo cubren funciones puras. Si es una regla, va a
+   `lib/` con su script.
+6. **`tsc` no ve un enlace muerto.** Al borrar `/tablero`, la hoja se quedó con un
+   botón «Ir al tablero» que no llevaba a ningún sitio: una ruta no es un símbolo.
+   Al borrar rutas, **grep de referencias**.
+7. **Un comentario que se queda mintiendo se arregla**, no se deja ahí.
+8. **La de esta sesión: construir seis cosas seguidas sin probar ninguna sale
+   caro.** El tablero se tiró entero por eso.
 
-Empieza leyendo `HANDOFF.md` y dime qué ves antes de proponer nada. Si vamos a por
-G4, usa brainstorming primero.
+Empieza leyendo `HANDOFF.md` y dime qué ves antes de proponer nada.
