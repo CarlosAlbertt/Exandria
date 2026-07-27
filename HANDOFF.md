@@ -92,12 +92,29 @@ clase) y **O2** (conjuros), y los **objetivos múltiples** ya permiten repartir
 golpes e instancias. **El tablero se retiró el 2026-07-26**: el combate se juega
 en **`/combate`**, con la iniciativa como lista de combatientes.
 
-La continuación natural son los **PG y las condiciones de los PNJ** en la
-iniciativa (`initiative` gana `hp`/`hp_max`/`conds` ⇒ **`schema_v23`**, la primera
-migración desde la v22): con eso el DM **deja de llevar la vida de los monstruos
-en papel** y todo el grupo ve la pelea entera de un vistazo. Es lo que de verdad
-hace la pelea interactiva ahora que no hay mapa. En paralelo:
-**ampliar la biblioteca de conjuros**
+**Lo siguiente ya está diseñado y decidido, en dos fases** (spec completo en
+`docs/superpowers/specs/2026-07-28-monstruos-al-combate-design.md`):
+
+1. **FASE 1 — los monstruos del bestiario entran al combate.** `initiative` gana
+   `monster_slug`/`hp`/`hp_max`/`conds` ⇒ **`schema_v23`**, la primera migración
+   desde la v22. El DM **añade monstruos desde el bestiario** (con sus PG, su
+   modificador de iniciativa y sus personalizados), **por tandas**, así que un
+   jefe nunca comparte iniciativa con sus esbirros. El DM ve `11/13`; los
+   jugadores ven «malherido». Deja de llevarse la vida en papel, y **arregla que
+   las reglas de G4 no funcionaban contra monstruos** (sin `conds` en la fila, un
+   goblin derribado no daba ventaja a nadie). **Spec escrito; sin plan todavía.**
+2. **FASE 2 — la «arena»** (el combate «más gráfico, tipo Pokémon» que pidió el
+   usuario): dos bandos enfrentados con retratos y barras de vida, menú de
+   acciones tipo consola y caja de texto narrando las tiradas. **Solo piel, cero
+   reglas.** El reparto de pantalla está **maquetado y validado**, y descrito al
+   final de ese mismo spec.
+
+> ⚠️ **La fase 2 NO se empieza hasta haber jugado una sesión con la fase 1.**
+> Decisión del usuario y del asistente, por una razón concreta: se llevan **seis
+> features seguidas sin probar en vivo**, y la arena es la primera cuyo acierto
+> depende de **cómo se siente jugando**, no de si el código es correcto.
+
+En paralelo: **ampliar la biblioteca de conjuros**
 (la semilla son 32 — 11 trucos y 21 de nivel 1–3 —, crece como el bestiario), los
 **pozos de las 5 clases que faltan** (bardo, mago,
 pícaro, brujo y cazador de sangre — usos derivados de un modificador o fórmula,
