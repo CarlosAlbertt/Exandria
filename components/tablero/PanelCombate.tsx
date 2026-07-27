@@ -8,6 +8,7 @@ import PozosClase from "@/components/personaje/PozosClase";
 import { pozosDe, referenciasDe } from "@/lib/recursos";
 import { armaDe } from "@/data/weapons";
 import { distanciaMetros } from "@/lib/tablero";
+import { ataquesPorAccion } from "@/lib/ataque";
 import type { Token, Board } from "@/lib/useBattle";
 import type { FichaViva } from "@/lib/useFichaViva";
 import type { PlayState } from "@/lib/recursos";
@@ -42,9 +43,17 @@ export default function PanelCombate({
   const distanciaA = (t: Token): number | null =>
     miFicha ? distanciaMetros(miFicha, t, board.cols, board.rows) : null;
 
-  const objetivo: Objetivo | null = token
-    ? { label: token.label, distancia: distanciaA(token), conds: condsDe(token) }
-    : null;
+  const comoObjetivo = (t: Token): Objetivo => ({
+    id: t.id,
+    label: t.label,
+    distancia: distanciaA(t),
+    conds: condsDe(t),
+  });
+  const objetivo: Objetivo | null = token ? comoObjetivo(token) : null;
+  // Todas las fichas apuntables, para los conjuros que golpean varias veces.
+  const objetivosDisponibles: Objetivo[] = objetivos.map(comoObjetivo);
+  // Cuántos golpes da la acción de Atacar a esta clase y nivel.
+  const maxAtaques = clsSlug ? ataquesPorAccion(clsSlug, level) : 1;
 
   const esConjurador = (mechanics?.caster ?? "none") !== "none";
   // «Rasgos» no es solo pozos que se gastan: también las columnas de REFERENCIA
@@ -131,6 +140,7 @@ export default function PanelCombate({
             classWeapons={mechanics?.weapons ?? []}
             sessionId={sessionId}
             objetivo={objetivo}
+            maxAtaques={maxAtaques}
             onChange={cambia}
             readOnly={readOnly}
           />
@@ -146,6 +156,7 @@ export default function PanelCombate({
             play={play}
             sessionId={sessionId}
             objetivo={objetivo}
+            objetivosDisponibles={objetivosDisponibles}
             onChange={cambia}
             readOnly={readOnly}
           />
