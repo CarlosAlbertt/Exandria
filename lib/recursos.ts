@@ -25,6 +25,7 @@ export type PlayState = {
     adicional?: boolean;   // acción adicional gastada
     reaccion?: boolean;    // reacción gastada
     movGastado?: number;   // metros ya movidos este turno
+    ataquesUsados?: number; // ataques ya gastados de la acción de Atacar (multiataque)
   };
   /** Huecos de conjuro GASTADOS por nivel de espacio: { "1": 2, "3": 1 } (O2). */
   huecos?: Record<string, number>;

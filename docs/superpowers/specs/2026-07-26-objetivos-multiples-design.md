@@ -80,9 +80,10 @@ catálogo: **Daga, Espada corta, Hacha de mano y Cimitarra**.
 > clásico. Tampoco lo son Maza, Bastón, Lanza, Martillo de guerra, Espada larga,
 > Arco corto ni Arco largo.
 
-**UI**: si llevas al menos un arma **ligera cuerpo a cuerpo** y la acción adicional
-está libre, aparece un botón aparte «**Otra mano**» que gasta la **adicional** en
-vez de un ataque de la acción. No consume `ataquesUsados`.
+**UI**: si llevas **dos armas ligeras cuerpo a cuerpo** —una en cada mano, que es
+lo que exige la regla: dos dagas valen, una no— y la acción adicional está libre,
+aparece un botón aparte «**Otra mano**» que gasta la **adicional** en vez de un
+ataque de la acción. No consume `ataquesUsados`.
 
 **Daño sin modificador**: el ataque de la otra mano **no suma el modificador de
 característica al daño** salvo que tengas el estilo de combate correspondiente, y

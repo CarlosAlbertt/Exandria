@@ -16,7 +16,7 @@ import type { Objetivo } from "@/components/personaje/Ataques";
 // preparar hasta el tope. Sin sesión (o en modo lectura del Panel DM) se ve
 // todo pero no se lanza.
 export default function Conjuros({
-  clsSlug, level, caster, spellDc, spellAttack, play, sessionId, objetivo, onChange, readOnly = false,
+  clsSlug, level, caster, spellDc, spellAttack, play, sessionId, objetivo, objetivosDisponibles = [], onChange, readOnly = false,
 }: {
   clsSlug: string;
   level: number;
@@ -26,12 +26,17 @@ export default function Conjuros({
   play: PlayState;
   sessionId: string | null;
   objetivo?: Objetivo | null;
+  /** Todas las fichas a las que se puede apuntar (para los conjuros de varias instancias). */
+  objetivosDisponibles?: Objetivo[];
   onChange: (next: PlayState) => void;
   readOnly?: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [nivelPara, setNivelPara] = useState<string | null>(null); // id del conjuro cuyo nivel se está eligiendo
+  // Conjuro de varias instancias cuyos objetivos se están declarando: qué
+  // conjuro, con qué nivel de hueco, y un objetivo (id de ficha) por instancia.
+  const [declarando, setDeclarando] = useState<{ spellId: string; nivel: number; targets: (number | null)[] } | null>(null);
 
   if (caster === "none") return null;
 
@@ -51,7 +56,7 @@ export default function Conjuros({
   const puedeLanzar = !!sessionId && !readOnly;
 
   // Publica el conjuro: anuncio + las tiradas que traiga (ataque, daño, curación).
-  async function lanzar(spell: Spell, nivelUsado: number) {
+  async function lanzar(spell: Spell, nivelUsado: number, targets?: (number | null)[]) {
     if (!sessionId) return;
     setErr(null);
     // nivelUsado 0 en un conjuro de nivel ≥1 significa «lanzado como ritual»:
@@ -66,23 +71,35 @@ export default function Conjuros({
 
     // 1. Anuncio (con la CD si el conjuro pide salvación).
     const cd = spell.save ? ` · salvación de ${spell.save.toUpperCase()} CD ${spellDc}` : "";
-    const haciaObjetivo = objetivo ? ` → ${objetivo.label}` : "";
+    // Con varias instancias, cada una lleva SU objetivo en su propia línea: aquí
+    // no se nombra ninguno, para no dar por bueno un objetivo al que quizá no le
+    // llega nada.
+    const variasInstancias = (spell.instancias ?? 1) > 1;
+    const haciaObjetivo = objetivo && !variasInstancias ? ` → ${objetivo.label}` : "";
     const { error: e0 } = await publishNote(sessionId, `Lanza ${etiqueta}${haciaObjetivo}${cd}`);
     if (e0) { setErr(e0); return; }
 
-    // 2. Tirada de ataque de conjuro, si la tiene.
-    if (spell.attack) {
-      const { error } = await publishRoll(sessionId, "attack", `Conjuro: ${spell.name}`, "1d20", { mod: spellAttack });
-      if (error) { setErr(error); return; }
-    }
-    // 3. Daño y/o curación, si los trae.
-    if (spell.damage) {
-      const { error } = await publishRoll(sessionId, "custom", `Daño: ${spell.name} (${spell.damage.type})`, spell.damage.dice);
-      if (error) { setErr(error); return; }
-    }
-    if (spell.heal) {
-      const { error } = await publishRoll(sessionId, "custom", `Curación: ${spell.name}`, spell.heal);
-      if (error) { setErr(error); return; }
+    // 2-3. Tiradas: una tanda por INSTANCIA (3 rayos, 3 dardos…). Cada
+    // instancia puede ir a un objetivo distinto, declarado antes de lanzar.
+    const n = Math.max(1, spell.instancias ?? 1);
+    for (let i = 0; i < n; i++) {
+      const t = targets?.[i] ?? null;
+      const nombreObj = t !== null ? objetivosDisponibles.find((o) => o.id === t)?.label : undefined;
+      const haciaEsta = nombreObj ? ` → ${nombreObj}` : "";
+      const cual = n > 1 ? ` (${i + 1} de ${n})` : "";
+
+      if (spell.attack) {
+        const { error } = await publishRoll(sessionId, "attack", `Conjuro: ${spell.name}${haciaEsta}${cual}`, "1d20", { mod: spellAttack });
+        if (error) { setErr(error); return; }
+      }
+      if (spell.damage) {
+        const { error } = await publishRoll(sessionId, "custom", `Daño: ${spell.name} (${spell.damage.type})${haciaEsta}${cual}`, spell.damage.dice);
+        if (error) { setErr(error); return; }
+      }
+      if (spell.heal) {
+        const { error } = await publishRoll(sessionId, "custom", `Curación: ${spell.name}${haciaEsta}${cual}`, spell.heal);
+        if (error) { setErr(error); return; }
+      }
     }
 
     // 4. Gasto del hueco (los trucos no gastan) y concentración.
@@ -94,6 +111,7 @@ export default function Conjuros({
     if (spell.concentration) next = setConcentracion(next, spell.id);
     onChange(next);
     setNivelPara(null);
+    setDeclarando(null);
   }
 
   // Niveles de hueco disponibles para lanzar ese conjuro (su nivel o superior).
@@ -101,9 +119,15 @@ export default function Conjuros({
 
   function BotonesLanzar({ spell }: { spell: Spell }) {
     if (!puedeLanzar) return null;
+    const n = Math.max(1, spell.instancias ?? 1);
+    // Empezar a lanzar: con varias instancias hay que declarar objetivos antes.
+    const arranca = (nivel: number) => {
+      if (n > 1) setDeclarando({ spellId: spell.id, nivel, targets: Array(n).fill(null) });
+      else void lanzar(spell, nivel);
+    };
     // Trucos: directo, sin hueco.
     if (spell.level === 0) {
-      return <button className="btn-gold !py-1 !px-3 text-[12px]" onClick={() => lanzar(spell, 0)}>Lanzar</button>;
+      return <button className="btn-gold !py-1 !px-3 text-[12px]" onClick={() => arranca(0)}>Lanzar</button>;
     }
     const opciones = nivelesPara(spell);
     return (
@@ -113,7 +137,7 @@ export default function Conjuros({
             className="panel-raised !py-1 !px-2 text-[11px] font-ui"
             style={{ color: "var(--color-muted)" }}
             title="Lanzar como ritual: tarda 10 minutos más, pero no gasta hueco"
-            onClick={() => lanzar(spell, 0)}
+            onClick={() => arranca(0)}
           >
             Ritual
           </button>
@@ -123,7 +147,7 @@ export default function Conjuros({
         ) : nivelPara === spell.id ? (
           <span className="flex items-center gap-1">
             {opciones.map((h) => (
-              <button key={h.nivel} className="btn-gold !py-1 !px-2 text-[11px]" title={`Gastar un hueco de nivel ${h.nivel}`} onClick={() => lanzar(spell, h.nivel)}>
+              <button key={h.nivel} className="btn-gold !py-1 !px-2 text-[11px]" title={`Gastar un hueco de nivel ${h.nivel}`} onClick={() => { setNivelPara(null); arranca(h.nivel); }}>
                 nv{h.nivel}
               </button>
             ))}
@@ -133,7 +157,7 @@ export default function Conjuros({
           <button
             className="btn-gold !py-1 !px-3 text-[12px]"
             title={opciones.length > 1 ? "Elegir el nivel del hueco (subir de nivel el conjuro)" : `Gastar un hueco de nivel ${opciones[0].nivel}`}
-            onClick={() => (opciones.length > 1 ? setNivelPara(spell.id) : lanzar(spell, opciones[0].nivel))}
+            onClick={() => (opciones.length > 1 ? setNivelPara(spell.id) : arranca(opciones[0].nivel))}
           >
             Lanzar
           </button>
@@ -143,27 +167,70 @@ export default function Conjuros({
   }
 
   function FilaConjuro({ spell }: { spell: Spell }) {
+    const declara = declarando?.spellId === spell.id ? declarando : null;
+    const n = Math.max(1, spell.instancias ?? 1);
     return (
-      <div className="panel-raised px-3 py-2 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-ui text-[13px] font-bold" style={{ color: "var(--color-parch)" }}>
-            {spell.name}
-            {spell.concentration && <i className="fas fa-brain ml-1.5 text-[10px]" style={{ color: "var(--color-arcane-bright)" }} title="Concentración" />}
-            {spell.ritual && <i className="fas fa-book ml-1.5 text-[10px]" style={{ color: "var(--color-muted)" }} title="Ritual" />}
-          </p>
-          <p className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>
-            {spell.level === 0 ? "Truco" : `Nivel ${spell.level}`} · {spell.school} · {spell.time} · {spell.range}
-          </p>
-          <p className="font-ui text-[11px] mt-0.5" style={{ color: "var(--color-muted)" }}>{spell.desc}</p>
+      <div className="panel-raised px-3 py-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="font-ui text-[13px] font-bold" style={{ color: "var(--color-parch)" }}>
+              {spell.name}
+              {n > 1 && <span className="font-ui text-[10px] ml-1.5 px-1.5 py-0.5 rounded" style={{ background: "var(--color-arcane)", color: "var(--color-night)" }}>×{n}</span>}
+              {spell.concentration && <i className="fas fa-brain ml-1.5 text-[10px]" style={{ color: "var(--color-arcane-bright)" }} title="Concentración" />}
+              {spell.ritual && <i className="fas fa-book ml-1.5 text-[10px]" style={{ color: "var(--color-muted)" }} title="Ritual" />}
+            </p>
+            <p className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>
+              {spell.level === 0 ? "Truco" : `Nivel ${spell.level}`} · {spell.school} · {spell.time} · {spell.range}
+            </p>
+            <p className="font-ui text-[11px] mt-0.5" style={{ color: "var(--color-muted)" }}>{spell.desc}</p>
+          </div>
+          <span className="shrink-0 flex flex-col items-end gap-1">
+            <BotonesLanzar spell={spell} />
+            {!readOnly && (
+              <button className="font-ui text-[10px]" style={{ color: "var(--color-dim)" }} title="Quitar de los preparados" onClick={() => onChange(despreparar(play, spell.id))}>
+                quitar
+              </button>
+            )}
+          </span>
         </div>
-        <span className="shrink-0 flex flex-col items-end gap-1">
-          <BotonesLanzar spell={spell} />
-          {!readOnly && (
-            <button className="font-ui text-[10px]" style={{ color: "var(--color-dim)" }} title="Quitar de los preparados" onClick={() => onChange(despreparar(play, spell.id))}>
-              quitar
-            </button>
-          )}
-        </span>
+
+        {/* Declaración de objetivos: uno por instancia, antes de resolver. */}
+        {declara && (
+          <div className="mt-2 pt-2" style={{ borderTop: "1px solid var(--color-line)" }}>
+            <p className="font-ui text-[11px] mb-1.5" style={{ color: "var(--color-dim)" }}>
+              Elige a quién va cada una (puedes repetir objetivo):
+            </p>
+            <div className="space-y-1">
+              {declara.targets.map((valor, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="font-ui text-[11px] w-12 shrink-0" style={{ color: "var(--color-muted)" }}>{i + 1} de {n}</span>
+                  <select
+                    className="flex-1 font-ui text-[11px] bg-transparent"
+                    style={{ color: "var(--color-parch)" }}
+                    value={valor ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value === "" ? null : Number(e.target.value);
+                      setDeclarando((d) => (d ? { ...d, targets: d.targets.map((x, j) => (j === i ? v : x)) } : d));
+                    }}
+                  >
+                    <option value="">Sin objetivo</option>
+                    {objetivosDisponibles.map((o) => (
+                      <option key={o.id} value={o.id}>{o.label}{o.distancia !== null ? ` · ${o.distancia} m` : ""}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <button className="btn-gold !py-1 !px-3 text-[12px]" onClick={() => void lanzar(spell, declara.nivel, declara.targets)}>
+                Lanzar
+              </button>
+              <button className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }} onClick={() => setDeclarando(null)}>
+                cancelar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

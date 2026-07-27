@@ -59,5 +59,16 @@ for (const c of ["bardo", "brujo", "clerigo", "druida", "explorador", "hechicero
   check(`${c}: la semilla le da al menos un conjuro`, spellsForClass(c).length > 0);
 }
 
+// --- Instancias (conjuros que golpean varias veces) -----------------------
+check("Rayo Abrasador tiene 3 instancias", SPELLS["rayo-abrasador"].instancias === 3);
+check("Proyectil Mágico tiene 3 instancias", SPELLS["proyectil-magico"].instancias === 3);
+// El daño es SIEMPRE por instancia: un dardo, no los tres juntos.
+check("Proyectil Mágico: daño de UN dardo", SPELLS["proyectil-magico"].damage?.dice === "1d4+1");
+check("Rayo Abrasador: daño de UN rayo", SPELLS["rayo-abrasador"].damage?.dice === "2d6");
+// Si está, es un entero ≥ 2 (poner 1 sería ruido).
+check("instancias, cuando está, es un entero ≥2", todos.every((s) => s.instancias === undefined || (Number.isInteger(s.instancias) && s.instancias >= 2)));
+// Un conjuro de área NO se modela con instancias (eso es la losa siguiente).
+check("Bola de Fuego no usa instancias", SPELLS["bola-de-fuego"].instancias === undefined);
+
 if (failures) { console.log(`\n${failures} FALLos`); process.exit(1); }
 console.log("\nTodo en verde");

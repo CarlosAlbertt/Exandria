@@ -1,5 +1,5 @@
 // Comprobación de la economía de turno. Uso: npx tsx scripts/check-turno.ts
-import { turnoDe, gastar, devolver, alternarRecurso, mover, movRestante, limpiarTurno } from "../lib/turno";
+import { turnoDe, gastar, devolver, alternarRecurso, mover, movRestante, limpiarTurno, gastarAtaque, ataquesRestantes } from "../lib/turno";
 import type { PlayState } from "../lib/recursos";
 
 let failures = 0;
@@ -39,6 +39,21 @@ check("limpiarTurno no toca conds", JSON.stringify(limpio.conds) === JSON.string
 const g = gastar({ usos: { foco: 2 }, hp: 5 }, "accion");
 check("gastar no toca usos", JSON.stringify(g.usos) === JSON.stringify({ foco: 2 }));
 check("gastar no toca hp", g.hp === 5);
+
+// --- Multiataque: contador de ataques de la acción de Atacar ---------------
+check("turno ausente: 0 ataques usados", turnoDe(vacio).ataquesUsados === 0);
+check("gastarAtaque suma uno", turnoDe(gastarAtaque(vacio, 2)).ataquesUsados === 1);
+check("gastarAtaque respeta el tope", turnoDe(gastarAtaque(gastarAtaque(gastarAtaque(vacio, 2), 2), 2)).ataquesUsados === 2);
+check("ataquesRestantes con 2 y ninguno usado", ataquesRestantes(vacio, 2) === 2);
+check("ataquesRestantes tras gastar uno", ataquesRestantes(gastarAtaque(vacio, 2), 2) === 1);
+check("ataquesRestantes nunca es negativo", ataquesRestantes({ turno: { ataquesUsados: 9 } }, 2) === 0);
+check("gastarAtaque no toca la accion", turnoDe(gastarAtaque(vacio, 2)).accion === false);
+check("gastar accion no toca los ataques", turnoDe(gastar(vacio, "accion")).ataquesUsados === 0);
+check("limpiarTurno borra tambien los ataques", turnoDe(limpiarTurno({ turno: { ataquesUsados: 2, accion: true } })).ataquesUsados === 0);
+check("gastarAtaque no toca usos ni hp", (() => {
+  const r = gastarAtaque({ usos: { furias: 1 }, hp: 7 }, 2);
+  return JSON.stringify(r.usos) === JSON.stringify({ furias: 1 }) && r.hp === 7;
+})());
 
 if (failures) { console.log(`\n${failures} FALLos`); process.exit(1); }
 console.log("\nTodo en verde");
