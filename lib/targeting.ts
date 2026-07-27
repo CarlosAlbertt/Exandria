@@ -1,7 +1,12 @@
 // Reglas de targeting de combate 2024, PURO (sin React ni Supabase). Molde de
-// lib/ataque.ts / lib/estado.ts. Junta estado (G1), ataque (G2) y posición (G3):
-// ventaja del atacante por la condición del objetivo, alcance del arma, fallo
-// automático de salvación y crítico por proximidad. Mecánicas = hechos 2024.
+// lib/ataque.ts / lib/estado.ts. Junta el estado del objetivo (G1) con el ataque
+// (G2): ventaja del atacante por la condición del objetivo, fallo automático de
+// salvación y crítico por proximidad. Mecánicas = hechos 2024.
+//
+// NO se mide distancia: se retiró el tablero y todo lo que dependía de metros se
+// deduce ahora del arma (`cuerpoACuerpo`). Por eso ya no existe `enAlcance`: sin
+// rejilla no hay nada que bloquear, y un absurdo lo corta el DM — igual que la
+// app tampoco compara la CA.
 import { parseFormula } from "@/lib/dice";
 
 /**
