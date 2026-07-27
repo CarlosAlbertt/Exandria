@@ -44,6 +44,11 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >     de `/personaje` a `/tablero` (iniciativa, rejilla, estado y turno fijos, y
 >     ataques/conjuros/rasgos en pestañas con **objetivo compartido**). La ficha
 >     queda para stats e inventario. **Sin migración.** Ver su RESUELTO.
+> 13. **(2026-07-26) Objetivos múltiples**: la acción de Atacar da **N golpes**
+>     (eliges objetivo entre golpe y golpe), con **dos armas ligeras** hay un
+>     ataque de acción adicional, y los conjuros de **varias instancias** (Rayo
+>     Abrasador, Proyectil Mágico) declaran un objetivo por cada una.
+>     **Sin migración.** Ver su RESUELTO.
 
 > [!tip] ✅ Todas las migraciones al día (v1–v22)
 > `schema_v22` (G3 tablero: `battle_tokens` + `battle_board`) **ejecutada el
@@ -73,8 +78,14 @@ dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 **G1** (estado del combatiente), **G2** (economía de turno + ataque), **G3**
 (tablero de batalla) y **G4** (targeting: objetivo, alcance, ventaja del
 atacante, crítico y auto-fallo de salvación), los cuatro en `master`
-(`schema_v22` ya ejecutada), y la **Fase O** está cerrada con **O1** (pozos de
-clase) y **O2** (conjuros). Lo que sigue: **ampliar la biblioteca de conjuros**
+(`schema_v22` ya ejecutada), la **Fase O** está cerrada con **O1** (pozos de
+clase) y **O2** (conjuros), el combate se juega en **`/tablero`**, y los
+**objetivos múltiples** ya permiten repartir golpes e instancias. La continuación
+natural es la losa de **áreas** (esfera, cono y línea sobre la rejilla): necesita
+geometría de casillas en `lib/tablero.ts`, un campo de área legible por máquina en
+`Spell` y que el tablero pinte la plantilla — y **encaja sin rehacer nada**,
+porque solo tiene que producir la misma lista de objetivos que ya existe. En
+paralelo: **ampliar la biblioteca de conjuros**
 (la semilla son 32 — 11 trucos y 21 de nivel 1–3 —, crece como el bestiario), los
 **pozos de las 5 clases que faltan** (bardo, mago,
 pícaro, brujo y cazador de sangre — usos derivados de un modificador o fórmula,
@@ -333,6 +344,66 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-26): objetivos múltiples 🎯🎯
+Rama `objetivos-multiples`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-26-objetivos-multiples*`. Rompe la
+suposición de **un solo objetivo** que arrastraba toda la capa desde G4.
+
+- **La idea rectora**: la selección deja de ser un objetivo y pasa a ser una
+  **lista**. Se modela ahora, aunque solo se llene a mano, **para que las áreas
+  encajen después sin rehacer nada** — un área no es un caso especial, es otra
+  forma de producir la misma lista.
+- **N ataques por acción** (`ataquesPorAccion` en `lib/ataque.ts`): **los datos ya
+  existían**. El guerrero tiene su columna «Ataques por acción de Atacar»
+  (1/2/3/4) y otras cinco clases el rasgo «Ataque Extra» a nv5 (bárbaro,
+  explorador, cazador de sangre, paladín, monje). El **primer** golpe paga la
+  acción; los siguientes solo gastan ataque. Se resuelven **uno a uno** para poder
+  **cambiar de objetivo entre golpe y golpe** — si el primero cae, rediriges.
+  Marcador «Ataque 1 de 2» y botón apagado al agotarlos.
+  > **Pícaro y bardo se quedan en 1, y es correcto**: en 2024 no tienen Ataque
+  > Extra (el escalado del pícaro es el Ataque Furtivo, una vez por turno). Hay
+  > comprobaciones que lo **fijan**, para que nadie les regale un ataque inventado.
+- **Contador** en `play_state.turno.ataquesUsados` — sin migración, y
+  `limpiarTurno` lo borra con el resto al tocarte el turno.
+- **Ataque de acción adicional** (dos armas): `Arma` gana `ligera` (Daga, Espada
+  corta, Hacha de mano, Cimitarra). Botón «Otra mano» que gasta la **adicional**,
+  no un ataque. Su daño **no suma el modificador** (regla base; los estilos de
+  combate no están modelados, y **quedarse corto es mejor que pasarse**).
+  > **Trampa cazada**: la **Ballesta ligera NO es un arma ligera** pese al nombre
+  > (sus propiedades son cargar, dos manos y munición). Hay comprobación.
+  > **Trampa peor, cazada en la revisión final**: el botón **no aparecía nunca**
+  > con dos armas iguales. La hoja **fusiona los objetos del mismo nombre subiendo
+  > `qty`**, así que dos dagas son **una** entrada con `qty: 2`, y el código
+  > contaba entradas. Nacía muerto en el caso más común. La regla se subió a la
+  > capa pura (`puedeDosArmas`) contando por **cantidad**, con su comprobación —
+  > el fallo había pasado el gate en verde porque los scripts solo cubrían
+  > funciones puras y esa cuenta vivía en el componente.
+- **Conjuros de varias instancias**: `Spell` gana `instancias` (Rayo Abrasador y
+  Proyectil Mágico, 3). Se declara **un objetivo por instancia** antes de
+  resolver, se gasta **un** hueco y salen N tandas de tiradas etiquetadas «(2 de
+  3)». Puedes repartir o concentrar, que es lo que dicen los conjuros.
+  > **Arregla una incoherencia de O2**: el campo `damage` significaba dos cosas
+  > distintas (Proyectil Mágico guardaba el agregado `3d4+3`, Rayo Abrasador un
+  > rayo `2d6`). Ahora es **siempre por instancia**: Proyectil Mágico tira
+  > `1d4+1` tres veces.
+- **Fuera (a propósito)**: **las áreas** (esfera, cono, línea — necesitan
+  geometría de casillas, área legible por máquina en `Spell` y que el tablero
+  pinte la plantilla; **es la losa siguiente** y encaja sin rehacer esto), la
+  Ráfaga de Golpes del monje (golpes sin arma + coste de foco), los estilos de
+  combate, y los conjuros de varios objetivos **sin tirada** (Bendición).
+- **Hueco conocido, no introducido aquí**: lanzar un conjuro **no gasta la
+  acción**. Se nota más ahora que la economía de ataque está apretada; anotado
+  para una tanda futura.
+- Verificado: `tsc` + `next build` limpios · **los 11 check-scripts en verde**
+  (check-ataque y check-turno ampliados con la derivación por clase, el contador
+  y el conteo por cantidad). **Nada probado en vivo.** **Prueba del usuario**:
+  guerrero nv5 ⇒ pegar, cambiar de objetivo, pegar, ver «2 de 2» y el botón
+  apagado, y que «Siguiente turno» lo reinicie; guerrero nv4 ⇒ un solo ataque, sin
+  marcador; pícaro con **dos dagas** ⇒ sale «Otra mano», gasta la adicional y el
+  daño va **sin** modificador; pícaro ⇒ **no** tiene segundo ataque de la acción;
+  mago ⇒ Rayo Abrasador repartido entre dos enemigos da tres tandas y gasta **un**
+  hueco; Proyectil Mágico ⇒ tres dardos de `1d4+1`, no un `3d4+3`.
 
 ## RESUELTO (2026-07-26): el tablero es la pantalla de combate 🎮
 Rama `tablero-combate`. **Sin migración.** Spec y plan en
