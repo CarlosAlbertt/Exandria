@@ -8,6 +8,7 @@ import {
 import { publishRoll, publishNote } from "@/lib/useDiceFeed";
 import type { CasterKind } from "@/data/classdata/types";
 import type { PlayState } from "@/lib/recursos";
+import type { Objetivo } from "@/components/personaje/Ataques";
 
 // Panel de conjuros de la ficha (Fase O2), molde de PozosClase: chapas
 // pulsables para los huecos (un toque gasta, un toque en una gastada la
@@ -15,7 +16,7 @@ import type { PlayState } from "@/lib/recursos";
 // preparar hasta el tope. Sin sesión (o en modo lectura del Panel DM) se ve
 // todo pero no se lanza.
 export default function Conjuros({
-  clsSlug, level, caster, spellDc, spellAttack, play, sessionId, onChange, readOnly = false,
+  clsSlug, level, caster, spellDc, spellAttack, play, sessionId, objetivo, onChange, readOnly = false,
 }: {
   clsSlug: string;
   level: number;
@@ -24,6 +25,7 @@ export default function Conjuros({
   spellAttack: number;
   play: PlayState;
   sessionId: string | null;
+  objetivo?: Objetivo | null;
   onChange: (next: PlayState) => void;
   readOnly?: boolean;
 }) {
@@ -64,7 +66,8 @@ export default function Conjuros({
 
     // 1. Anuncio (con la CD si el conjuro pide salvación).
     const cd = spell.save ? ` · salvación de ${spell.save.toUpperCase()} CD ${spellDc}` : "";
-    const { error: e0 } = await publishNote(sessionId, `Lanza ${etiqueta}${cd}`);
+    const haciaObjetivo = objetivo ? ` → ${objetivo.label}` : "";
+    const { error: e0 } = await publishNote(sessionId, `Lanza ${etiqueta}${haciaObjetivo}${cd}`);
     if (e0) { setErr(e0); return; }
 
     // 2. Tirada de ataque de conjuro, si la tiene.
