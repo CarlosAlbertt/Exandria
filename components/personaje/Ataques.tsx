@@ -4,7 +4,7 @@ import { armaDe, type Arma } from "@/data/weapons";
 import { ataqueDe, puedeDosArmas, type Ataque } from "@/lib/ataque";
 import { gastar, gastarAtaque, ataquesRestantes, turnoDe } from "@/lib/turno";
 import { ventajaDe } from "@/lib/estado";
-import { ventajaAtacante, combinar, enAlcance, critProximidad, formulaDaño } from "@/lib/targeting";
+import { ventajaAtacante, combinar, critProximidad, formulaDaño } from "@/lib/targeting";
 import { publishRoll } from "@/lib/useDiceFeed";
 import { critState } from "@/lib/dice";
 import { fmtMod } from "@/data/rules";
@@ -12,11 +12,9 @@ import type { PlayState } from "@/lib/recursos";
 
 /** El objetivo elegido en el tablero, ya resuelto por el padre. */
 export type Objetivo = {
-  /** id de la ficha del tablero, para distinguir objetivos repetidos por nombre. */
+  /** id de la fila de iniciativa, para distinguir objetivos repetidos por nombre. */
   id: number;
   label: string;
-  /** Distancia en metros desde la ficha propia, o null si no se puede medir. */
-  distancia: number | null;
   /** Condiciones del objetivo si es un jugador legible; PNJ ⇒ vacío. */
   conds: string[];
 };
@@ -64,7 +62,6 @@ export default function Ataques({
   const t = turnoDe(play);
   const restantes = ataquesRestantes(play, maxAtaques);
   const puedeAtacar = !!sessionId && !readOnly;
-  const distancia = objetivo?.distancia ?? null;
   const condsObjetivo = objetivo?.conds ?? [];
   // Luchar con dos armas exige una ligera cuerpo a cuerpo EN CADA MANO. La regla
   // (y el conteo por cantidad, que es lo que importa: dos dagas son UNA entrada
@@ -85,14 +82,11 @@ export default function Ataques({
       return;
     }
 
-    // Alcance (bloqueo duro): solo cuando hay distancia medida.
-    if (distancia !== null && !enAlcance(arma, distancia)) {
-      setErr(`Fuera de alcance (${distancia} m).`);
-      return;
-    }
-
-    // Ventaja combinada: la propia (G1) + la del objetivo (si hay distancia).
-    const advObjetivo = distancia !== null ? ventajaAtacante(condsObjetivo, distancia) : { adv: false, dis: false };
+    // Con un arma de cuerpo estás en cuerpo a cuerpo por definición; con una de
+    // distancia, no. Ya no hace falta medir.
+    const cuerpoACuerpo = arma.alcance === "cuerpo";
+    // Ventaja combinada: la propia (G1) + la del objetivo (solo si hay objetivo).
+    const advObjetivo = objetivo ? ventajaAtacante(condsObjetivo, cuerpoACuerpo) : { adv: false, dis: false };
     const adv = combinar(ventajaDe(play, "ataque"), advObjetivo);
 
     const etiquetaObj = objetivo ? ` → ${objetivo.label}` : "";
@@ -107,7 +101,7 @@ export default function Ataques({
 
     // Crítico: 20 natural o proximidad (≤1,5 m vs paralizado/inconsciente).
     const critNat = !!result && critState(result.formula, result.rolls) === "crit";
-    const critProx = distancia !== null && critProximidad(condsObjetivo, distancia);
+    const critProx = !!objetivo && critProximidad(condsObjetivo, cuerpoACuerpo);
     const crit = critNat || critProx;
 
     // El golpe de la otra mano no suma el modificador al daño (regla base).

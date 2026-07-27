@@ -49,10 +49,19 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >     ataque de acción adicional, y los conjuros de **varias instancias** (Rayo
 >     Abrasador, Proyectil Mágico) declaran un objetivo por cada una.
 >     **Sin migración.** Ver su RESUELTO.
+> 14. **(2026-07-26) Fuera el tablero**: se retira la rejilla. **`/combate`**
+>     sustituye a `/tablero` y **la iniciativa es la lista de combatientes**:
+>     tocas a alguien y es tu objetivo. Las reglas que medían **se deducen del
+>     arma**. **Sin migración**; las tablas del tablero quedan **retiradas, no
+>     borradas**. Ver su RESUELTO.
 
 > [!tip] ✅ Todas las migraciones al día (v1–v22)
-> `schema_v22` (G3 tablero: `battle_tokens` + `battle_board`) **ejecutada el
-> 2026-07-25**. `schema_v20` (Fase O1, `play_state`) y
+> **`schema_v22` está RETIRADA**: se ejecutó el 2026-07-25 para el tablero (G3),
+> y al quitar el tablero el 2026-07-26 sus tablas (`battle_tokens`,
+> `battle_board`) quedaron **vacías y sin uso**. **No se han borrado a
+> propósito**: borrar tablas es irreversible y no gana nada. No hay que hacer
+> nada con ellas.
+> `schema_v20` (Fase O1, `play_state`) y
 > `schema_v21_reparar_characters.sql` (red de seguridad de `characters`)
 > ejecutadas. Ante «column characters.X does not exist», reejecutar la **v21**
 > (idempotente).
@@ -79,13 +88,16 @@ dev) — pruebas del usuario anotadas en cada sección RESUELTA de abajo.
 (tablero de batalla) y **G4** (targeting: objetivo, alcance, ventaja del
 atacante, crítico y auto-fallo de salvación), los cuatro en `master`
 (`schema_v22` ya ejecutada), la **Fase O** está cerrada con **O1** (pozos de
-clase) y **O2** (conjuros), el combate se juega en **`/tablero`**, y los
-**objetivos múltiples** ya permiten repartir golpes e instancias. La continuación
-natural es la losa de **áreas** (esfera, cono y línea sobre la rejilla): necesita
-geometría de casillas en `lib/tablero.ts`, un campo de área legible por máquina en
-`Spell` y que el tablero pinte la plantilla — y **encaja sin rehacer nada**,
-porque solo tiene que producir la misma lista de objetivos que ya existe. En
-paralelo: **ampliar la biblioteca de conjuros**
+clase) y **O2** (conjuros), y los **objetivos múltiples** ya permiten repartir
+golpes e instancias. **El tablero se retiró el 2026-07-26**: el combate se juega
+en **`/combate`**, con la iniciativa como lista de combatientes.
+
+La continuación natural son los **PG y las condiciones de los PNJ** en la
+iniciativa (`initiative` gana `hp`/`hp_max`/`conds` ⇒ **`schema_v23`**, la primera
+migración desde la v22): con eso el DM **deja de llevar la vida de los monstruos
+en papel** y todo el grupo ve la pelea entera de un vistazo. Es lo que de verdad
+hace la pelea interactiva ahora que no hay mapa. En paralelo:
+**ampliar la biblioteca de conjuros**
 (la semilla son 32 — 11 trucos y 21 de nivel 1–3 —, crece como el bestiario), los
 **pozos de las 5 clases que faltan** (bardo, mago,
 pícaro, brujo y cazador de sangre — usos derivados de un modificador o fórmula,
@@ -123,8 +135,10 @@ Supabase (Auth + Postgres + Realtime) · IA local con **Ollama** vía túnel
 - `app/` — páginas: `/` (home), `/reino` (lore), `/crear` (creador de
   personaje), **`/personaje`** (la ficha: aptitudes, salvaciones y pericias con
   sus tiradas, equipo, inventario, nivel e historia — **el combate ya no vive
-  aquí**), **`/tablero`** (la **pantalla de combate**: iniciativa, rejilla,
-  estado, turno y las acciones en pestañas), `/inventario`, `/mapa`, `/taberna`
+  aquí**), **`/combate`** (la **pantalla de combate**: la iniciativa como lista
+  de combatientes a la izquierda —tocas a alguien y es tu objetivo—, estado,
+  turno y acciones en pestañas a la derecha, y la tira de tiradas abajo. **Sin
+  rejilla**: el tablero se retiró el 2026-07-26), `/inventario`, `/mapa`, `/taberna`
   (NPC IA), `/narrador` (chat IA personal), `/cronica` (diario/misiones/PNJ del
   grupo), `/login`, `/dm` (panel DM).
 - `app/dm/` — `DmDashboard.tsx` con pestañas: Narración (`NarracionPanel` +
@@ -344,6 +358,55 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 - Hooks Realtime usan nombre de canal único por montaje (React remonta 2×).
 - Descripciones de reglas/lore son **resúmenes propios**; los datos mecánicos
   y nombres son hechos. Herramienta de fans no oficial.
+
+## RESUELTO (2026-07-26): fuera el tablero, la iniciativa es el combate ⚔️
+Rama `quitar-tablero`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-26-quitar-tablero*`.
+
+- **Por qué se retira**, decidido por el usuario tras mirarlo con calma y **sin
+  haberlo probado nunca en vivo**: (1) **no encaja con cómo se juega** —están
+  todos en la mesa y el DM narra, así que colocar fichas y medir casillas es
+  fricción que no aporta nada que no esté ya sobre la mesa—, y (2) **no compensa
+  lo que cuesta mantener**: era la parte más enredada de la app.
+- **El hallazgo que lo abarató**: **casi ninguna regla necesitaba medir, se deduce
+  del arma**. Con una daga estás en cuerpo a cuerpo por definición; con un arco,
+  no. `lib/targeting.ts` cambia `distanciaM: number` por `cuerpoACuerpo: boolean`
+  y queda **más simple que antes**. `enAlcance` **se elimina**: sin rejilla no hay
+  nada que bloquear, y un absurdo lo corta el DM —igual que la app tampoco compara
+  la CA. **Derribado** sigue dando ventaja de cerca y desventaja de lejos, ahora
+  de forma directa.
+- **`/combate`** sustituye a `/tablero`: a la izquierda **la iniciativa como lista
+  de combatientes** (con PG y condiciones de los jugadores), y **tocar una fila la
+  convierte en tu objetivo**; a la derecha el `PanelCombate` de siempre, que ya no
+  elige objetivo —lo recibe resuelto y solo lo muestra, con botón de soltar—; y la
+  tira de tiradas abajo. **Tu propia fila no es elegible.**
+- **Un concepto que desapareció solo**: `battle_board.active` marcaba «hay
+  combate». Ahora **hay combate si la iniciativa tiene filas**, y vaciarla lo
+  termina con un botón que ya existía.
+- **Se reutilizó `InitiativeTracker`** en vez de escribir una lista nueva: ya
+  ordenaba, marcaba el turno y distinguía PNJ. Solo ganó props **opcionales**
+  (`onSelect`/`selectedId`/`conEstado`), así que su montaje en Panel DM › Dados
+  siguió igual sin tocarlo.
+- **Borrado**: `BattleBoard`, `useBattle`, `lib/tablero.ts`, `check-tablero`,
+  `app/tablero/page.tsx` y la pestaña Panel DM › Tablero (sus mandos útiles ya
+  estaban en Panel DM › Dados). **375 líneas fuera.** El gate baja de 11 scripts
+  a **10**.
+  > **Las tablas `battle_tokens`/`battle_board` NO se borran**: quedan vacías y
+  > sin uso. Borrar es irreversible y no gana nada; si vuelve el mapa, ahí están.
+  > **Trampa cazada**: la hoja seguía enlazando a `/tablero` con un botón que ya
+  > no llevaba a ningún sitio. **`tsc` no lo ve** —una ruta no es un símbolo—, lo
+  > cazó el `grep` de referencias que el plan pedía.
+- **Lo que se pierde, dicho claro**: la **medición de movimiento en metros** (el
+  contador de `EconomiaTurno` se queda, pero los metros los lleva el DM a ojo) y
+  el **mapa compartido**.
+- Verificado: `tsc` + `next build` limpios · **los 10 check-scripts en verde**
+  (`check-targeting` adaptado de metros a `cuerpoACuerpo`). **Nada probado en
+  vivo.** **Prueba del usuario**: `/combate` sin iniciativa ⇒ el panel derecho
+  sigue entero; el DM añade un PNJ desde Panel DM › Dados ⇒ aparece en la lista
+  del jugador sin recargar; tocar una fila la apunta y volver a tocarla la suelta;
+  **tu propia fila no se puede elegir**; con el objetivo **derribado**, arma de
+  cuerpo ⇒ ventaja y arco ⇒ desventaja; «Siguiente turno» mueve la marca y limpia
+  la economía; y ya no existe `/tablero` ni la pestaña del DM.
 
 ## RESUELTO (2026-07-26): objetivos múltiples 🎯🎯
 Rama `objetivos-multiples`. **Sin migración.** Spec y plan en

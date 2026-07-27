@@ -215,7 +215,7 @@ export default function Conjuros({
                   >
                     <option value="">Sin objetivo</option>
                     {objetivosDisponibles.map((o) => (
-                      <option key={o.id} value={o.id}>{o.label}{o.distancia !== null ? ` · ${o.distancia} m` : ""}</option>
+                      <option key={o.id} value={o.id}>{o.label}</option>
                     ))}
                   </select>
                 </div>

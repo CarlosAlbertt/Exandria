@@ -12,21 +12,44 @@ import {
   type InitiativeRow,
 } from "@/lib/useInitiative";
 import { publishRoll } from "@/lib/useDiceFeed";
+import { derive } from "@/lib/derive";
+import { pgActuales } from "@/lib/estado";
+import type { PlayState } from "@/lib/recursos";
 
 type Props = {
   mod?: number;      // modificador de Destreza para "Tirar iniciativa" (derive().abilities.des.mod)
   hideEmpty?: boolean; // no renderizar nada si no hay ronda en curso (uso embebido en la hoja)
+  /**
+   * Si se pasa, cada fila (menos la tuya) es pulsable y elige objetivo. Recibe
+   * el id de la fila, o null al deseleccionar tocando la ya elegida.
+   */
+  onSelect?: (id: number | null) => void;
+  /** Fila elegida ahora mismo como objetivo. */
+  selectedId?: number | null;
+  /** Muestra los PG y las condiciones de los jugadores en cada fila. */
+  conEstado?: boolean;
 };
 
 // Iniciativa en vivo, compartida por todo el grupo. RLS hace que las
 // mutaciones de DM (PNJ/turno/vaciar) sean no-op silenciosas para
 // jugadores, así que sus controles solo se muestran con role === "dm".
-export default function InitiativeTracker({ mod = 0, hideEmpty = false }: Props) {
+export default function InitiativeTracker({ mod = 0, hideEmpty = false, onSelect, selectedId = null, conEstado = false }: Props) {
   const session = useSession();
   const myId = session?.id ?? "";
   const isDM = session?.role === "dm";
   const { party } = useParty();
   const { rows } = useInitiative();
+
+  // Estado del jugador de una fila: PG actuales/máximos y condiciones. Los PNJ
+  // no tienen ficha, así que devuelven null (sus PG llegan en la losa siguiente).
+  const estadoDe = (r: InitiativeRow): { hp: number; maxHp: number; conds: string[] } | null => {
+    if (r.is_npc || !r.user_id) return null;
+    const p = party.find((x) => x.user_id === r.user_id);
+    if (!p) return null;
+    const play = (p.play_state as PlayState | undefined) ?? {};
+    const maxHp = derive(p).maxHp;
+    return { hp: pgActuales(play, maxHp), maxHp, conds: play.conds ?? [] };
+  };
 
   const [rolling, setRolling] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -86,22 +109,46 @@ export default function InitiativeTracker({ mod = 0, hideEmpty = false }: Props)
         <p className="font-ui text-[13px] text-center py-3" style={{ color: "var(--color-dim)" }}>Sin ronda de iniciativa en curso.</p>
       ) : (
         <div className="space-y-1.5 mb-1">
-          {rows.map((r) => (
-            <div
-              key={r.id}
-              className="panel-raised px-3 py-2 flex items-center justify-between gap-3"
-              style={r.active ? { borderColor: "var(--color-bronze)", boxShadow: "0 0 0 1px var(--color-bronze), 0 0 20px -4px rgba(201,163,92,0.5)" } : undefined}
-            >
-              <span className="font-ui text-[13px] font-semibold flex items-center gap-2" style={{ color: r.active ? "var(--color-bronze-bright)" : "var(--color-warm)" }}>
-                {r.active && <i className="fas fa-play text-[10px]" style={{ color: "var(--color-bronze)" }} />}
-                {r.is_npc && <i className="fas fa-dragon text-[11px]" style={{ color: "var(--color-dim)" }} />}
-                {nameFor(r)}
-              </span>
-              <span className="font-display font-extrabold text-[15px]" style={{ color: "var(--color-arcane-bright)" }}>
-                {r.value ?? "—"}
-              </span>
-            </div>
-          ))}
+          {rows.map((r) => {
+            const est = conEstado ? estadoDe(r) : null;
+            const esMia = !r.is_npc && r.user_id === myId;
+            const elegible = !!onSelect && !esMia;
+            const elegida = selectedId === r.id;
+            return (
+              <div
+                key={r.id}
+                onClick={elegible ? () => onSelect!(elegida ? null : r.id) : undefined}
+                className={`panel-raised px-3 py-2 flex items-center justify-between gap-3 ${elegible ? "cursor-pointer" : ""}`}
+                style={
+                  elegida
+                    ? { borderColor: "var(--color-ember)", boxShadow: "0 0 0 1px var(--color-ember)" }
+                    : r.active
+                      ? { borderColor: "var(--color-bronze)", boxShadow: "0 0 0 1px var(--color-bronze), 0 0 20px -4px rgba(201,163,92,0.5)" }
+                      : undefined
+                }
+              >
+                <span className="min-w-0">
+                  <span className="font-ui text-[13px] font-semibold flex items-center gap-2" style={{ color: r.active ? "var(--color-bronze-bright)" : "var(--color-warm)" }}>
+                    {r.active && <i className="fas fa-play text-[10px]" style={{ color: "var(--color-bronze)" }} />}
+                    {r.is_npc && <i className="fas fa-dragon text-[11px]" style={{ color: "var(--color-dim)" }} />}
+                    {nameFor(r)}
+                    {elegida && <i className="fas fa-crosshairs text-[11px]" style={{ color: "var(--color-ember)" }} title="Tu objetivo" />}
+                  </span>
+                  {est && (
+                    <span className="font-ui text-[11px] flex items-center gap-2 mt-0.5" style={{ color: "var(--color-dim)" }}>
+                      <span>PG {est.hp}/{est.maxHp}</span>
+                      {est.conds.length > 0 && (
+                        <span style={{ color: "var(--color-violet)" }}>{est.conds.join(" · ")}</span>
+                      )}
+                    </span>
+                  )}
+                </span>
+                <span className="font-display font-extrabold text-[15px] shrink-0" style={{ color: "var(--color-arcane-bright)" }}>
+                  {r.value ?? "—"}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 
