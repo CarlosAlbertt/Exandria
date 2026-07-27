@@ -71,7 +71,11 @@ export default function Conjuros({
 
     // 1. Anuncio (con la CD si el conjuro pide salvación).
     const cd = spell.save ? ` · salvación de ${spell.save.toUpperCase()} CD ${spellDc}` : "";
-    const haciaObjetivo = objetivo ? ` → ${objetivo.label}` : "";
+    // Con varias instancias, cada una lleva SU objetivo en su propia línea: aquí
+    // no se nombra ninguno, para no dar por bueno un objetivo al que quizá no le
+    // llega nada.
+    const variasInstancias = (spell.instancias ?? 1) > 1;
+    const haciaObjetivo = objetivo && !variasInstancias ? ` → ${objetivo.label}` : "";
     const { error: e0 } = await publishNote(sessionId, `Lanza ${etiqueta}${haciaObjetivo}${cd}`);
     if (e0) { setErr(e0); return; }
 

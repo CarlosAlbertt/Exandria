@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { armaDe, type Arma } from "@/data/weapons";
-import { ataqueDe, type Ataque } from "@/lib/ataque";
+import { ataqueDe, puedeDosArmas, type Ataque } from "@/lib/ataque";
 import { gastar, gastarAtaque, ataquesRestantes, turnoDe } from "@/lib/turno";
 import { ventajaDe } from "@/lib/estado";
 import { ventajaAtacante, combinar, enAlcance, critProximidad, formulaDaño } from "@/lib/targeting";
@@ -42,7 +42,7 @@ export default function Ataques({
   play, items, abilities, prof, classWeapons, sessionId, objetivo, maxAtaques = 1, onChange, readOnly = false,
 }: {
   play: PlayState;
-  items: { name: string }[];
+  items: { name: string; qty?: number }[];
   abilities: { fue: number; des: number };
   prof: number;
   classWeapons: string[];
@@ -66,9 +66,10 @@ export default function Ataques({
   const puedeAtacar = !!sessionId && !readOnly;
   const distancia = objetivo?.distancia ?? null;
   const condsObjetivo = objetivo?.conds ?? [];
-  // Luchar con dos armas exige una arma LIGERA cuerpo a cuerpo EN CADA MANO, así
-  // que se cuentan sobre `armas` (sin deduplicar): dos dagas valen, una no.
-  const hayDosLigeras = armas.filter((a) => a.ligera && a.alcance === "cuerpo").length >= 2;
+  // Luchar con dos armas exige una ligera cuerpo a cuerpo EN CADA MANO. La regla
+  // (y el conteo por cantidad, que es lo que importa: dos dagas son UNA entrada
+  // con qty 2) vive en lib/ataque.ts, con su comprobación.
+  const hayDosLigeras = puedeDosArmas(items);
 
   async function atacar(arma: Arma, atk: Ataque, modo: Modo) {
     if (!sessionId || readOnly) return;

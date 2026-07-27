@@ -1,7 +1,7 @@
 // Cálculo PURO de un ataque con arma (2024). Traduce un arma + la ficha derivada
 // en los números de la tirada: característica usada, modificador de impacto,
 // competencia y dado/modificador de daño. Sin React ni Supabase.
-import type { Arma } from "@/data/weapons";
+import { armaDe, type Arma } from "@/data/weapons";
 import { getMechanics } from "@/data/classdata";
 
 export type Ataque = {
@@ -59,6 +59,25 @@ const RASGO_ATAQUE_EXTRA = /^ataques? extra$/i;
  * Pícaro y bardo caen en el caso 3 y es CORRECTO: en 2024 no tienen Ataque
  * Extra. El escalado del pícaro es el Ataque Furtivo, una vez por turno.
  */
+/**
+ * ¿Se puede luchar con dos armas? Hace falta un arma LIGERA cuerpo a cuerpo
+ * **en cada mano**: dos dagas valen, una sola no.
+ *
+ * Cuenta por CANTIDAD, no por entradas del inventario: la hoja **fusiona los
+ * objetos del mismo nombre** en una sola entrada subiendo `qty`, así que dos
+ * dagas son `{ name: "Daga", qty: 2 }` y contar entradas daría 1. Ese error
+ * dejaría la regla sin dispararse nunca en el caso más común.
+ */
+export function puedeDosArmas(items: { name: string; qty?: number }[]): boolean {
+  let ligeras = 0;
+  for (const it of items) {
+    const a = armaDe(it.name);
+    if (a?.ligera && a.alcance === "cuerpo") ligeras += Math.max(1, Math.floor(it.qty ?? 1));
+    if (ligeras >= 2) return true;
+  }
+  return false;
+}
+
 export function ataquesPorAccion(clsSlug: string, level: number): number {
   const m = getMechanics(clsSlug);
   if (!m) return 1;

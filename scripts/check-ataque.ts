@@ -1,5 +1,5 @@
 // Comprobación del cálculo de ataque. Uso: npx tsx scripts/check-ataque.ts
-import { ataqueDe, ataquesPorAccion } from "../lib/ataque";
+import { ataqueDe, ataquesPorAccion, puedeDosArmas } from "../lib/ataque";
 import { ARMAS } from "../data/weapons";
 
 let failures = 0;
@@ -84,6 +84,20 @@ for (const n of ["Espada larga", "Maza", "Bastón", "Lanza", "Martillo de guerra
 }
 // Para luchar con dos armas hacen falta ligeras CUERPO A CUERPO.
 check("todas las ligeras del catálogo son cuerpo a cuerpo", Object.values(ARMAS).filter((a) => a.ligera).every((a) => a.alcance === "cuerpo"));
+
+// --- Luchar con dos armas (una ligera en CADA mano) -----------------------
+// La hoja fusiona objetos del mismo nombre subiendo `qty`, así que dos dagas
+// son UNA entrada con qty 2. Contar entradas dejaría la regla sin dispararse
+// nunca en el caso más común: se cuenta por cantidad.
+check("dos dagas en una entrada (qty 2): sí se puede", puedeDosArmas([{ name: "Daga", qty: 2 }]) === true);
+check("una sola daga: no se puede", puedeDosArmas([{ name: "Daga", qty: 1 }]) === false);
+check("daga sin qty: cuenta como una, no se puede", puedeDosArmas([{ name: "Daga" }]) === false);
+check("daga + hacha de mano (dos entradas): sí se puede", puedeDosArmas([{ name: "Daga", qty: 1 }, { name: "Hacha de mano", qty: 1 }]) === true);
+check("daga + espada larga: no (la larga no es ligera)", puedeDosArmas([{ name: "Daga", qty: 1 }, { name: "Espada larga", qty: 1 }]) === false);
+check("dos ballestas ligeras: no (ni son ligeras ni cuerpo a cuerpo)", puedeDosArmas([{ name: "Ballesta ligera", qty: 2 }]) === false);
+check("inventario vacío: no se puede", puedeDosArmas([]) === false);
+check("objetos que no son armas: no se puede", puedeDosArmas([{ name: "Cuerda de cáñamo", qty: 5 }]) === false);
+check("tres dagas: sí se puede", puedeDosArmas([{ name: "Daga", qty: 3 }]) === true);
 
 if (failures) { console.log(`\n${failures} FALLos`); process.exit(1); }
 console.log("\nTodo en verde");
