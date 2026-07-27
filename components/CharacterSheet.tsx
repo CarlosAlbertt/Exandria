@@ -505,10 +505,10 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
         </div>
       </header>
 
-      {/* La iniciativa se tira desde el tablero (/tablero) y desde Panel DM ›
-          Dados. Aquí no: el tracker tira con la identidad de la sesión, y el
-          mod de DES sería el del personaje mostrado, así que con el DM viendo
-          la ficha de otro (?user=) publicaría tiradas incoherentes. */}
+      {/* La iniciativa se tira en /combate y en Panel DM › Dados. Aquí no: el
+          tracker tira con la identidad de la sesión, y el mod de DES sería el
+          del personaje mostrado, así que con el DM viendo la ficha de otro
+          (?user=) publicaría tiradas incoherentes. */}
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-6">
           {/* NIVEL + ASI */}
@@ -570,14 +570,14 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             <p className="text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>CA editable para reflejar bonificadores temporales (p. ej. conjuros); no se guarda entre sesiones. El cálculo base se indica bajo el número.</p>
           </section>
 
-          {/* El combate se juega en el tablero (ver /tablero) */}
+          {/* El combate se juega en /combate */}
           <section className="panel p-5 text-center">
-            <p className="eyebrow mb-2"><i className="fas fa-chess-board mr-1.5" style={{ color: "var(--color-bronze)" }} />Combate</p>
+            <p className="eyebrow mb-2"><i className="fas fa-khanda mr-1.5" style={{ color: "var(--color-bronze)" }} />Combate</p>
             <p className="font-ui text-[13px] mb-3" style={{ color: "var(--color-muted)" }}>
-              Los puntos de golpe, las condiciones, el turno, los ataques y los conjuros se llevan desde el tablero.
+              Los puntos de golpe, las condiciones, el turno, los ataques y los conjuros se llevan desde la pantalla de combate.
             </p>
-            <Link href="/tablero" className="btn-gold !py-1.5 !px-4 text-[13px]">
-              <i className="fas fa-chess-board mr-1.5" />Ir al tablero
+            <Link href="/combate" className="btn-gold !py-1.5 !px-4 text-[13px]">
+              <i className="fas fa-khanda mr-1.5" />Ir al combate
             </Link>
           </section>
 

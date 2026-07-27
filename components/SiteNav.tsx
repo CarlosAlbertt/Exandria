@@ -18,7 +18,7 @@ const BASE_LINKS = [
   { href: "/crear", label: "Crear" },
   { href: "/inventario", label: "Inventario" },
   { href: "/mapa", label: "Mapa" },
-  { href: "/tablero", label: "Tablero" },
+  { href: "/combate", label: "Combate" },
 ];
 
 export default function SiteNav({ role, username }: { role: Role; username: string }) {
