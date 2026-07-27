@@ -4,14 +4,15 @@ import type { PlayState } from "@/lib/recursos";
 
 export type Recurso = "accion" | "adicional" | "reaccion";
 
-/** Lee la economía del turno; ausente ⇒ todo libre, movGastado 0. */
-export function turnoDe(play: PlayState): { accion: boolean; adicional: boolean; reaccion: boolean; movGastado: number } {
+/** Lee la economía del turno; ausente ⇒ todo libre, contadores a 0. */
+export function turnoDe(play: PlayState): { accion: boolean; adicional: boolean; reaccion: boolean; movGastado: number; ataquesUsados: number } {
   const t = play.turno ?? {};
   return {
     accion: !!t.accion,
     adicional: !!t.adicional,
     reaccion: !!t.reaccion,
     movGastado: Math.max(0, Math.floor(t.movGastado ?? 0)),
+    ataquesUsados: Math.max(0, Math.floor(t.ataquesUsados ?? 0)),
   };
 }
 
@@ -44,6 +45,20 @@ export function mover(play: PlayState, metros: number, velocidad: number): PlayS
 /** Metros que quedan por mover este turno. */
 export function movRestante(play: PlayState, velocidad: number): number {
   return Math.max(0, velocidad - turnoDe(play).movGastado);
+}
+
+/**
+ * Marca un ataque más de los que da la acción de Atacar (tope `max`).
+ * Ojo: NO gasta la acción — la acción de Atacar se paga una vez, en el primer
+ * golpe, y de ahí salen todos los ataques del turno.
+ */
+export function gastarAtaque(play: PlayState, max: number): PlayState {
+  return conTurno(play, { ataquesUsados: Math.min(max, turnoDe(play).ataquesUsados + 1) });
+}
+
+/** Ataques que quedan de la acción de Atacar este turno. */
+export function ataquesRestantes(play: PlayState, max: number): number {
+  return Math.max(0, max - turnoDe(play).ataquesUsados);
 }
 
 /** Limpia el turno (empieza tu turno): borra la clave `turno`. */

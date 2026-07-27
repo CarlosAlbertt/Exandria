@@ -2,6 +2,7 @@
 // en los números de la tirada: característica usada, modificador de impacto,
 // competencia y dado/modificador de daño. Sin React ni Supabase.
 import type { Arma } from "@/data/weapons";
+import { getMechanics } from "@/data/classdata";
 
 export type Ataque = {
   caracteristica: "fue" | "des";
@@ -41,4 +42,30 @@ export function ataqueDe(
     dadoDaño: arma.dado,
     modDaño: mod,
   };
+}
+
+// Nombre EXACTO de la columna del guerrero y del rasgo que dan multiataque.
+const COLUMNA_ATAQUES = "Ataques por acción de Atacar";
+const RASGO_ATAQUE_EXTRA = /^ataques? extra$/i;
+
+/**
+ * Cuántos ataques da la acción de Atacar a esa clase y nivel. Los datos YA
+ * existen, no se inventa nada:
+ *  1. El guerrero tiene su propia columna de progresión (1/2/3/4) ⇒ se lee.
+ *  2. Si no, ¿tiene el rasgo «Ataque Extra» a un nivel ya alcanzado? ⇒ 2.
+ *     (bárbaro, explorador, cazador de sangre, paladín y monje, todos a nv5)
+ *  3. Si no ⇒ 1.
+ *
+ * Pícaro y bardo caen en el caso 3 y es CORRECTO: en 2024 no tienen Ataque
+ * Extra. El escalado del pícaro es el Ataque Furtivo, una vez por turno.
+ */
+export function ataquesPorAccion(clsSlug: string, level: number): number {
+  const m = getMechanics(clsSlug);
+  if (!m) return 1;
+  const i = Math.max(0, Math.min(19, Math.floor(level) - 1));
+  const col = m.resources?.find((r) => r.name === COLUMNA_ATAQUES);
+  if (col) return Math.max(1, Number(col.values[i]) || 1);
+  const nivel = Math.max(1, Math.floor(level));
+  const extra = m.features.some((f) => RASGO_ATAQUE_EXTRA.test(f.name) && f.level <= nivel);
+  return extra ? 2 : 1;
 }

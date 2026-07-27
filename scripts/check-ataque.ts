@@ -1,5 +1,5 @@
 // Comprobación del cálculo de ataque. Uso: npx tsx scripts/check-ataque.ts
-import { ataqueDe } from "../lib/ataque";
+import { ataqueDe, ataquesPorAccion } from "../lib/ataque";
 import { ARMAS } from "../data/weapons";
 
 let failures = 0;
@@ -42,6 +42,34 @@ check("daga modDaño = 4", daga.modDaño === 4);
 // Daga (sutil) con Fue > Des ⇒ elige Fue.
 const dagaFuerte = ataqueDe(ARMAS["Daga"], fuerte, 2, mago);
 check("daga sutil elige Fue cuando es mejor", dagaFuerte.caracteristica === "fue");
+
+// --- Ataques por acción de Atacar -----------------------------------------
+// El guerrero tiene columna propia: 1 hasta nv4, 2 desde nv5, 3 desde nv11, 4 a nv20.
+check("guerrero nv1: 1 ataque", ataquesPorAccion("guerrero", 1) === 1);
+check("guerrero nv4: 1 ataque", ataquesPorAccion("guerrero", 4) === 1);
+check("guerrero nv5: 2 ataques", ataquesPorAccion("guerrero", 5) === 2);
+check("guerrero nv10: 2 ataques", ataquesPorAccion("guerrero", 10) === 2);
+check("guerrero nv11: 3 ataques", ataquesPorAccion("guerrero", 11) === 3);
+check("guerrero nv19: 3 ataques", ataquesPorAccion("guerrero", 19) === 3);
+check("guerrero nv20: 4 ataques", ataquesPorAccion("guerrero", 20) === 4);
+
+// Las otras cinco clases con «Ataque Extra» a nivel 5: 1 antes, 2 desde nv5.
+for (const c of ["barbaro", "explorador", "cazador-de-sangre", "paladin", "monje"]) {
+  check(`${c} nv4: 1 ataque`, ataquesPorAccion(c, 4) === 1);
+  check(`${c} nv5: 2 ataques`, ataquesPorAccion(c, 5) === 2);
+  check(`${c} nv20: 2 ataques`, ataquesPorAccion(c, 20) === 2);
+}
+
+// Pícaro y bardo NO tienen Ataque Extra en 2024: siempre 1. Esta comprobación
+// existe para que nadie les regale un ataque que la clase no tiene.
+for (const c of ["picaro", "bardo"]) {
+  check(`${c} nv5: sigue con 1 ataque`, ataquesPorAccion(c, 5) === 1);
+  check(`${c} nv20: sigue con 1 ataque`, ataquesPorAccion(c, 20) === 1);
+}
+
+check("clase desconocida: 1 ataque", ataquesPorAccion("no-existe", 20) === 1);
+check("nivel fuera de rango se acota por arriba", ataquesPorAccion("guerrero", 99) === 4);
+check("nivel fuera de rango se acota por abajo", ataquesPorAccion("guerrero", 0) === 1);
 
 if (failures) { console.log(`\n${failures} FALLos`); process.exit(1); }
 console.log("\nTodo en verde");
