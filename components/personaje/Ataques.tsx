@@ -12,11 +12,9 @@ import type { PlayState } from "@/lib/recursos";
 
 /** El objetivo elegido en el tablero, ya resuelto por el padre. */
 export type Objetivo = {
-  /** id de la ficha del tablero, para distinguir objetivos repetidos por nombre. */
+  /** id de la fila de iniciativa, para distinguir objetivos repetidos por nombre. */
   id: number;
   label: string;
-  /** Distancia en metros desde la ficha propia, o null si no se puede medir. */
-  distancia: number | null;
   /** Condiciones del objetivo si es un jugador legible; PNJ ⇒ vacío. */
   conds: string[];
 };
