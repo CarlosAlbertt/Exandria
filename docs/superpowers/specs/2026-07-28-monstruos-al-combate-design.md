@@ -2,6 +2,18 @@
 
 Fecha: 2026-07-28 · Rama prevista: `monstruos-al-combate` · **Migración `schema_v23`.**
 
+> **Esto es la FASE 1 de dos.** El usuario quiere además que el combate sea
+> **más gráfico, «tipo Pokémon»**. Se decidió partirlo: **primero la sustancia**
+> (esta losa: los monstruos entran de verdad, con la lista de combatientes tal y
+> como está), **se prueba en una partida**, y **después la piel** (la «arena»,
+> descrita al final de este documento). Ninguna de las dos tira trabajo de la
+> otra: la fase 2 solo cambia **cómo se pinta** lo que la fase 1 ya calcula.
+>
+> El motivo de partirlo: se llevan **seis features seguidas sin probar en vivo**,
+> y la arena es la primera cuyo acierto depende de **cómo se siente jugando**, no
+> de si el código es correcto. Diseñarla a ciegas es apostar el trabajo más
+> grande a una intuición sin verificar.
+
 ## Contexto
 
 Con el tablero retirado, `/combate` se apoya en la iniciativa: una fila por
@@ -143,3 +155,72 @@ a cuerpo. Hasta ahora eso solo pasaba entre jugadores.
   número; marcarle **derribado** y atacarle con un arma de cuerpo ⇒ **ventaja**, y
   con un arco ⇒ **desventaja**; y que el goblin aparezca **descubierto** en
   `/bestiario` para los jugadores.
+
+---
+
+# Fase 2 (DESPUÉS de probar la fase 1) — la «arena»
+
+Queda escrito aquí porque se maquetó y se validó con el usuario en el navegador, y
+las maquetas viven en `.superpowers/`, que **está gitignorado**: si no se apunta,
+se pierde.
+
+**No empezar esto hasta haber jugado una sesión con la fase 1.**
+
+## El inventario de arte, que es lo que manda
+
+| | |
+|---|---|
+| ✅ **13 retratos de clase** | `public/classes/*.png`, uno por clase. Sirven para el bando de los jugadores **hoy**. |
+| ❌ **0 imágenes de monstruo** | De los 124 del bestiario, **ninguno** tiene `image` (el campo existe y el bucket de Storage también; están vacíos). |
+| ❌ **0 retratos de especie** | `public/species/lineages/` está vacío. |
+
+**La salida sin dibujar 124 monstruos**: el bestiario ya guarda el **tipo** de cada
+criatura (`Monster.type`: «Dragón», «No muerto», «Bestia», «Humanoide»,
+«Aberración», «Elemental»…). Un **icono + color por tipo** les da cara a los 124
+sin arte nueva, y el día que se suba una imagen a `image`, la sustituye sin tocar
+la lógica. Es lo primero que hay que construir de la fase 2.
+
+## La adaptación que hay que hacer
+
+**Pokémon es 1 contra 1. La mesa es 4 contra 6.** En Pokémon caben dos criaturas
+enormes porque solo hay dos; con un grupo entero y cinco goblins, no. Por eso la
+arena no copia el formato: lo adapta a **dos bandos**.
+
+## El reparto de la pantalla (validado en maqueta)
+
+De arriba abajo:
+
+1. **Bando enemigo**: los PNJ como retratos redondos en fila, cada uno con nombre,
+   **barra de vida** y **estado en palabras** (el jugador no ve el número: ver la
+   tabla de `saludDe` arriba). Las **condiciones** como chapas bajo el retrato. El
+   objetivo elegido va **resaltado con halo** y una diana. Los caídos, atenuados y
+   con «fuera de combate».
+2. **Tira de iniciativa** en el centro, estrecha, **separando los dos bandos**: el
+   orden y de quién es el turno.
+3. **Tu grupo**: igual, pero **tú más grande y con halo dorado**, y con tus **PG
+   exactos** (los tuyos sí se ven). Los demás jugadores, más pequeños.
+4. **Menú de acciones** al pie, cuatro botones grandes tipo consola: **⚔ ATACAR**
+   (con «1 de 2» si hay multiataque) · **✦ CONJUROS** · **◈ RASGOS** (con los usos
+   que queden) · **❤️ ESTADO**. Encima, la línea del objetivo y las chapas de
+   acción / adicional / reacción.
+5. **Caja de texto** bajo el menú, estilo consola, narrando la última tirada **y
+   por qué**: «Kael ataca a Goblin 1 con Espada larga… [18]+5 = 23» / «Ventaja: el
+   objetivo está derribado y atacas cuerpo a cuerpo». Es el `DiceFeedStrip` con
+   otra piel, **más la explicación de la ventaja** — que hoy la app calcula pero no
+   cuenta a nadie.
+
+**El objetivo se elige tocando la cara del bicho**, no una fila de lista.
+
+## Lo que la fase 2 NO cambia
+
+**Ninguna regla.** Ataques, conjuros, ventaja, crítico, economía de turno,
+multiataque: está todo hecho, y solo cambia **dónde se pulsa** y **cómo se ve**. Es
+piel, no motor. Si al montarla hiciera falta tocar una regla, es señal de que algo
+se ha colado de alcance.
+
+## Riesgo conocido de la fase 2
+
+Con **8 o más enemigos** los retratos no caben en una fila. Al maquetar habrá que
+decidir: encogerlos, envolver en dos filas, o scroll horizontal. No se resolvió en
+la maqueta porque depende de cuántos bichos saque el DM de verdad — **otra cosa que
+la partida de prueba contestará**.
