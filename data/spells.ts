@@ -24,13 +24,17 @@ export type Spell = {
   attack?: boolean;                        // tirada de ataque de conjuro
   save?: AbilityKey;                       // salvación que provoca
   /**
-   * Daño base, al nivel mínimo del conjuro. Regla del campo: son los dados que
-   * se tiran DE UNA VEZ, en un solo paso de resolución. Por eso Proyectil
-   * Mágico lleva el total de sus tres dardos ("3d4+3": impactan siempre, se
-   * tiran juntos) y Rayo Abrasador lleva el de UN rayo ("2d6": cada rayo tiene
-   * su propia tirada de ataque, así que se lanza una vez por rayo que acierte).
+   * Daño base al nivel mínimo del conjuro, SIEMPRE por instancia: lo que tira
+   * UN rayo o UN dardo, no la suma. Los conjuros de varias instancias lo
+   * declaran en `instancias` y se tira una vez por cada una.
    */
   damage?: { dice: string; type: string };
+  /**
+   * Cuántas veces golpea el conjuro con una sola lanzada: 3 rayos del Rayo
+   * Abrasador, 3 dardos del Proyectil Mágico. Ausente ⇒ 1. Cada instancia
+   * puede ir a un objetivo distinto y se resuelve por separado.
+   */
+  instancias?: number;
   heal?: string;                           // dados de curación
 };
 
@@ -129,7 +133,7 @@ export const SPELLS: Record<string, Spell> = {
     classes: ["hechicero", "mago"],
     time: "1 acción", range: "36 m", components: "V, S", duration: "Instantáneo",
     desc: "Tres dardos de fuerza que **siempre aciertan**: no hay tirada de ataque ni salvación. Cada dardo hace 1d4+1 y puedes repartirlos entre varios objetivos.",
-    damage: { dice: "3d4+3", type: "fuerza" },
+    damage: { dice: "1d4+1", type: "fuerza" }, instancias: 3,
   },
   "manos-ardientes": {
     id: "manos-ardientes", name: "Manos Ardientes", level: 1, school: "Evocación",
@@ -193,7 +197,7 @@ export const SPELLS: Record<string, Spell> = {
     classes: ["hechicero", "mago"],
     time: "1 acción", range: "36 m", components: "V, S", duration: "Instantáneo",
     desc: "Lanzas tres rayos de fuego, cada uno con su propia tirada de ataque; puedes repartirlos o concentrarlos en un solo blanco. Cada rayo hace 2d6.",
-    attack: true, damage: { dice: "2d6", type: "fuego" },
+    attack: true, damage: { dice: "2d6", type: "fuego" }, instancias: 3,
   },
   "invisibilidad": {
     id: "invisibilidad", name: "Invisibilidad", level: 2, school: "Ilusión",

@@ -71,5 +71,19 @@ check("clase desconocida: 1 ataque", ataquesPorAccion("no-existe", 20) === 1);
 check("nivel fuera de rango se acota por arriba", ataquesPorAccion("guerrero", 99) === 4);
 check("nivel fuera de rango se acota por abajo", ataquesPorAccion("guerrero", 0) === 1);
 
+// --- Armas ligeras (luchar con dos armas) ---------------------------------
+// Solo estas cuatro son ligeras en el catálogo.
+for (const n of ["Daga", "Espada corta", "Hacha de mano", "Cimitarra"]) {
+  check(`${n} es ligera`, ARMAS[n].ligera === true);
+}
+// TRAMPA CLÁSICA: la «Ballesta ligera» se llama así pero NO tiene la propiedad
+// ligera (sus propiedades son cargar, dos manos y munición).
+check("la Ballesta ligera NO es ligera", !ARMAS["Ballesta ligera"].ligera);
+for (const n of ["Espada larga", "Maza", "Bastón", "Lanza", "Martillo de guerra", "Arco corto", "Arco largo"]) {
+  check(`${n} no es ligera`, !ARMAS[n].ligera);
+}
+// Para luchar con dos armas hacen falta ligeras CUERPO A CUERPO.
+check("todas las ligeras del catálogo son cuerpo a cuerpo", Object.values(ARMAS).filter((a) => a.ligera).every((a) => a.alcance === "cuerpo"));
+
 if (failures) { console.log(`\n${failures} FALLos`); process.exit(1); }
 console.log("\nTodo en verde");

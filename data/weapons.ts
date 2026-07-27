@@ -9,14 +9,15 @@ export type Arma = {
   tipo: "cortante" | "perforante" | "contundente";
   alcance: "cuerpo" | "distancia";
   sutil?: boolean;         // finesse: elige la mejor de Fue/Des
+  ligera?: boolean;        // light: permite el ataque de acción adicional con dos armas
   versatil?: string;       // dado a dos manos (informativo en G2)
 };
 
 export const ARMAS: Record<string, Arma> = {
-  "Daga": { nombre: "Daga", categoria: "sencilla", dado: "1d4", tipo: "perforante", alcance: "cuerpo", sutil: true },
-  "Espada corta": { nombre: "Espada corta", categoria: "marcial", dado: "1d6", tipo: "perforante", alcance: "cuerpo", sutil: true },
+  "Daga": { nombre: "Daga", categoria: "sencilla", dado: "1d4", tipo: "perforante", alcance: "cuerpo", sutil: true, ligera: true },
+  "Espada corta": { nombre: "Espada corta", categoria: "marcial", dado: "1d6", tipo: "perforante", alcance: "cuerpo", sutil: true, ligera: true },
   "Espada larga": { nombre: "Espada larga", categoria: "marcial", dado: "1d8", tipo: "cortante", alcance: "cuerpo", versatil: "1d10" },
-  "Hacha de mano": { nombre: "Hacha de mano", categoria: "sencilla", dado: "1d6", tipo: "cortante", alcance: "cuerpo" },
+  "Hacha de mano": { nombre: "Hacha de mano", categoria: "sencilla", dado: "1d6", tipo: "cortante", alcance: "cuerpo", ligera: true },
   "Maza": { nombre: "Maza", categoria: "sencilla", dado: "1d6", tipo: "contundente", alcance: "cuerpo" },
   "Bastón": { nombre: "Bastón", categoria: "sencilla", dado: "1d6", tipo: "contundente", alcance: "cuerpo", versatil: "1d8" },
   "Arco corto": { nombre: "Arco corto", categoria: "sencilla", dado: "1d6", tipo: "perforante", alcance: "distancia" },
@@ -24,7 +25,7 @@ export const ARMAS: Record<string, Arma> = {
   "Ballesta ligera": { nombre: "Ballesta ligera", categoria: "sencilla", dado: "1d8", tipo: "perforante", alcance: "distancia" },
   "Lanza": { nombre: "Lanza", categoria: "sencilla", dado: "1d6", tipo: "perforante", alcance: "cuerpo", versatil: "1d8" },
   "Martillo de guerra": { nombre: "Martillo de guerra", categoria: "marcial", dado: "1d8", tipo: "contundente", alcance: "cuerpo", versatil: "1d10" },
-  "Cimitarra": { nombre: "Cimitarra", categoria: "marcial", dado: "1d6", tipo: "cortante", alcance: "cuerpo", sutil: true },
+  "Cimitarra": { nombre: "Cimitarra", categoria: "marcial", dado: "1d6", tipo: "cortante", alcance: "cuerpo", sutil: true, ligera: true },
 };
 
 /** El arma de ese nombre, o null si el objeto no es un arma del catálogo. */
