@@ -45,13 +45,40 @@ export function acotarHp(hp: number, hpMax: number): number | null {
 }
 
 /**
- * Nombres de una tanda de monstruos idénticos. Uno solo se queda con su
- * nombre a secas («Goblin»); varios se numeran («Goblin 1»… «Goblin 4») para
- * que el DM pueda decir a cuál le pegas.
+ * Nombres de una tanda de monstruos idénticos. Uno solo, y si no hay ninguno
+ * más en la mesa, se queda con su nombre a secas («Goblin»); en cuanto hay
+ * varios se numeran. `yaHay` es cuántos de ese mismo bicho hay ya en la
+ * iniciativa, porque los monstruos entran por tandas y la numeración de la
+ * segunda tanda tiene que seguir donde acabó la primera — si no, saldrían dos
+ * «Goblin 1» y el DM no podría decir a cuál le pegas.
  */
-export function nombresNumerados(nombre: string, n: number): string[] {
+export function nombresNumerados(nombre: string, n: number, yaHay = 0): string[] {
   const base = nombre.trim();
   if (n <= 0) return [];
-  if (n === 1) return [base];
-  return Array.from({ length: n }, (_, i) => `${base} ${i + 1}`);
+  if (yaHay <= 0 && n === 1) return [base];
+  const desde = Math.max(0, Math.round(yaHay));
+  return Array.from({ length: n }, (_, i) => `${base} ${desde + i + 1}`);
+}
+
+/**
+ * Cuántos de ese monstruo hay ya en la mesa, contando tanto el nombre a secas
+ * («Goblin») como los numerados («Goblin 1»). Se compara sin distinguir
+ * mayúsculas para que un personalizado escrito distinto no descuadre la cuenta.
+ */
+export function cuentaEnMesa(nombres: string[], nombre: string): number {
+  const base = nombre.trim().toLowerCase();
+  if (base.length === 0) return 0;
+  return nombres.filter((n) => {
+    const limpio = n.trim().toLowerCase();
+    return limpio === base || new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\d+$`).test(limpio);
+  }).length;
+}
+
+/** Cuántos bichos añade una tanda: al menos 1, como mucho 20, siempre entero. */
+export const TANDA_MAX = 20;
+
+export function cantidadValida(texto: string): number {
+  const n = Math.round(Number(texto));
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(1, Math.min(TANDA_MAX, n));
 }

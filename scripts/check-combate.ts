@@ -1,5 +1,5 @@
 // Comprobación manual del combate contra monstruos. Uso: npx tsx scripts/check-combate.ts
-import { saludDe, nombresNumerados, acotarHp } from "../lib/combate";
+import { saludDe, nombresNumerados, acotarHp, cantidadValida, cuentaEnMesa } from "../lib/combate";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -45,6 +45,30 @@ check("n negativo no crea filas", nombresNumerados("Goblin", -3).length === 0);
 check("recorta espacios del nombre", JSON.stringify(nombresNumerados("  Ogro  ", 1)) === JSON.stringify(["Ogro"]));
 check("nombres únicos dentro de la tanda", new Set(nombresNumerados("Lobo", 6)).size === 6);
 check("respeta nombres con espacios", nombresNumerados("Lobo huargo", 2)[1] === "Lobo huargo 2");
+
+// --- numeración entre tandas ---
+check("segunda tanda sigue la numeración", JSON.stringify(nombresNumerados("Goblin", 2, 3)) === JSON.stringify(["Goblin 4", "Goblin 5"]));
+check("uno solo con la mesa vacía va sin número", JSON.stringify(nombresNumerados("Goblin", 1, 0)) === JSON.stringify(["Goblin"]));
+check("uno solo con la mesa poblada sí lleva número", JSON.stringify(nombresNumerados("Goblin", 1, 1)) === JSON.stringify(["Goblin 2"]));
+check("dos tandas seguidas no repiten nombre", new Set([...nombresNumerados("Goblin", 3, 0), ...nombresNumerados("Goblin", 2, 3)]).size === 5);
+
+// --- cuentaEnMesa ---
+check("cuentaEnMesa cuenta el nombre a secas", cuentaEnMesa(["Goblin"], "Goblin") === 1);
+check("cuentaEnMesa cuenta los numerados", cuentaEnMesa(["Goblin 1", "Goblin 2"], "Goblin") === 2);
+check("cuentaEnMesa mezcla ambos", cuentaEnMesa(["Goblin", "Goblin 2", "Ogro"], "Goblin") === 2);
+check("cuentaEnMesa no cuenta otro bicho", cuentaEnMesa(["Ogro 1", "Lobo"], "Goblin") === 0);
+check("cuentaEnMesa no confunde un prefijo", cuentaEnMesa(["Goblin jefe"], "Goblin") === 0);
+check("cuentaEnMesa ignora mayúsculas", cuentaEnMesa(["goblin 1"], "Goblin") === 1);
+check("cuentaEnMesa con la mesa vacía da 0", cuentaEnMesa([], "Goblin") === 0);
+
+// --- cantidadValida ---
+check("cantidadValida deja pasar un valor normal", cantidadValida("4") === 4);
+check("cantidadValida corta por arriba en 20", cantidadValida("50") === 20);
+check("cantidadValida sube el 0 a 1", cantidadValida("0") === 1);
+check("cantidadValida sube un negativo a 1", cantidadValida("-5") === 1);
+check("cantidadValida con texto vacío da 1", cantidadValida("") === 1);
+check("cantidadValida con basura da 1", cantidadValida("goblin") === 1);
+check("cantidadValida redondea decimales", cantidadValida("3.7") === 4);
 
 // --- acotarHp ---
 check("acotarHp respeta un valor normal", acotarHp(7, 13) === 7);

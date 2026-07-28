@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useSession } from "@/components/SessionProvider";
 import { useParty } from "@/lib/character";
 import {
   useInitiative,
   setMyInitiative,
   addNpcInitiative,
-  addMonstersInitiative,
   setActiveInitiative,
   clearInitiative,
   removeInitiativeRow,
@@ -15,13 +15,17 @@ import {
   setNpcConds,
   type InitiativeRow,
 } from "@/lib/useInitiative";
-import { useBestiary, setDiscovered } from "@/lib/useBestiary";
 import { publishRoll } from "@/lib/useDiceFeed";
 import { derive } from "@/lib/derive";
 import { pgActuales, CONDICIONES } from "@/lib/estado";
-import { saludDe, nombresNumerados } from "@/lib/combate";
-import { d20Check } from "@/lib/dice";
+import { saludDe } from "@/lib/combate";
 import type { PlayState } from "@/lib/recursos";
+
+// Solo lo ve el DM, así que tampoco se descarga para los jugadores: el
+// bestiario son ~25 KB comprimidos de estadísticas que un jugador jamás
+// abre desde aquí, y /combate es justo la pantalla donde peor sienta la
+// espera al empezar el combate.
+const SelectorMonstruos = dynamic(() => import("@/components/combate/SelectorMonstruos"), { ssr: false });
 
 type Props = {
   mod?: number;      // modificador de Destreza para "Tirar iniciativa" (derive().abilities.des.mod)
@@ -63,26 +67,6 @@ export default function InitiativeTracker({ mod = 0, hideEmpty = false, onSelect
   const [npcName, setNpcName] = useState("");
   const [npcValue, setNpcValue] = useState("");
 
-  // Selector de monstruos del bestiario (solo DM). `monsters` ya incluye los
-  // personalizados del DM, así que el buscador los encuentra igual.
-  const { monsters } = useBestiary();
-  const [busqueda, setBusqueda] = useState("");
-  const [slugSel, setSlugSel] = useState("");
-  const [cantidad, setCantidad] = useState("1");
-  const [individual, setIndividual] = useState(false);
-  const [anadiendo, setAnadiendo] = useState(false);
-
-  // Diez coincidencias como mucho: es un desplegable, no el bestiario entero.
-  const sugerencias = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    if (q.length === 0) return monsters.slice(0, 10);
-    return monsters
-      .filter((m) => m.name.toLowerCase().includes(q) || m.nameEn.toLowerCase().includes(q))
-      .slice(0, 10);
-  }, [monsters, busqueda]);
-
-  const monstruoSel = monsters.find((m) => m.slug === slugSel) ?? null;
-
   if (hideEmpty && rows.length === 0) return null;
 
   const nameFor = (r: InitiativeRow) => {
@@ -119,44 +103,6 @@ export default function InitiativeTracker({ mod = 0, hideEmpty = false, onSelect
     await addNpcInitiative(name, value);
     setNpcName("");
     setNpcValue("");
-  }
-
-  // Añade una TANDA: un monstruo y una cantidad. Cada tanda tira su propia
-  // iniciativa con el modificador de ESE monstruo, así que un jefe añadido
-  // aparte nunca comparte turno con sus esbirros — sale gratis, sin ninguna
-  // opción que marcar.
-  async function addMonsters() {
-    if (!monstruoSel || anadiendo) return;
-    const n = Math.max(1, Math.min(20, Math.round(Number(cantidad) || 1)));
-    setAnadiendo(true);
-    setErr(null);
-
-    const nombres = nombresNumerados(monstruoSel.name, n);
-    // Sin "iniciativa individual", una sola tirada para toda la tanda: los
-    // bichos idénticos van juntos y la lista se queda corta, que es como se
-    // juega en la mesa.
-    const comun = d20Check(monstruoSel.initiative).total;
-    const filas = nombres.map((nombre) => ({
-      nombre,
-      slug: monstruoSel.slug,
-      hp: monstruoSel.hp,
-      valor: individual ? d20Check(monstruoSel.initiative).total : comun,
-    }));
-
-    const { error } = await addMonstersInitiative(filas);
-    if (error) {
-      setErr(error);
-    } else {
-      // Si os lo habéis peleado, lo habéis visto: queda descubierto en
-      // /bestiario para los jugadores. Un fallo aquí no debe deshacer las
-      // filas ya creadas, así que solo se avisa.
-      const { error: descError } = await setDiscovered(monstruoSel.slug, true);
-      if (descError) setErr(`Añadido, pero no se pudo marcar como descubierto: ${descError}`);
-      setBusqueda("");
-      setSlugSel("");
-      setCantidad("1");
-    }
-    setAnadiendo(false);
   }
 
   return (
@@ -225,55 +171,10 @@ export default function InitiativeTracker({ mod = 0, hideEmpty = false, onSelect
               Falta ejecutar <code>schema_v23</code>: los monstruos no guardarán PG ni condiciones todavía.
             </p>
           )}
-          <div className="space-y-2 pb-2 mb-1 border-b border-[var(--color-line)]">
-            <p className="font-ui text-[11px] uppercase tracking-wider" style={{ color: "var(--color-dim)" }}>
-              <i className="fas fa-dragon mr-1.5" />Del bestiario
-            </p>
-            <input
-              value={busqueda}
-              onChange={(e) => { setBusqueda(e.target.value); setSlugSel(""); }}
-              placeholder="Buscar monstruo…"
-              className="w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-ui text-[12px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
-              style={{ color: "var(--color-warm)" }}
-            />
-            {!monstruoSel && sugerencias.length > 0 && (
-              <div className="max-h-40 overflow-y-auto space-y-1">
-                {sugerencias.map((m) => (
-                  <button
-                    key={m.slug}
-                    onClick={() => { setSlugSel(m.slug); setBusqueda(m.name); }}
-                    className="w-full text-left panel-raised px-2.5 py-1.5 font-ui text-[12px] hover:border-[var(--color-bronze)] transition-colors"
-                    style={{ color: "var(--color-warm)" }}
-                  >
-                    {m.name}
-                    <span className="ml-2 text-[10px]" style={{ color: "var(--color-dim)" }}>
-                      CR {m.cr} · {m.hp} PG · ini {m.initiative >= 0 ? `+${m.initiative}` : m.initiative}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {monstruoSel && (
-              <div className="flex gap-2 items-center flex-wrap">
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={cantidad}
-                  onChange={(e) => setCantidad(e.target.value)}
-                  className="w-16 bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-ui text-[12px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
-                  style={{ color: "var(--color-warm)" }}
-                />
-                <label className="font-ui text-[11px] flex items-center gap-1.5 cursor-pointer" style={{ color: "var(--color-dim)" }}>
-                  <input type="checkbox" checked={individual} onChange={(e) => setIndividual(e.target.checked)} />
-                  Iniciativa individual
-                </label>
-                <button className="btn-gold !py-1.5 !px-3 text-[12px] ml-auto" onClick={addMonsters} disabled={anadiendo || faltaMigracion}>
-                  <i className="fas fa-plus mr-1.5" />{anadiendo ? "Añadiendo…" : "Añadir"}
-                </button>
-              </div>
-            )}
-          </div>
+          <SelectorMonstruos
+            faltaMigracion={faltaMigracion}
+            nombresExistentes={rows.filter((r) => r.is_npc).map((r) => r.npc_name ?? "")}
+          />
           <div className="flex gap-2">
             <input
               value={npcName}
