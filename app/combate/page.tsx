@@ -29,12 +29,15 @@ export default function CombatePage() {
     if (r.is_npc) return r.npc_name ?? "PNJ";
     return party.find((p) => p.user_id === r.user_id)?.username ?? "jugador";
   };
-  // Condiciones del objetivo: solo si es un jugador legible. Los PNJ no tienen
-  // ficha (sus PG y condiciones llegan en la losa siguiente).
-  const condsDe = (r: InitiativeRow): string[] =>
-    r.is_npc || !r.user_id
-      ? []
-      : ((party.find((p) => p.user_id === r.user_id)?.play_state as PlayState | undefined)?.conds ?? []);
+  // Condiciones del objetivo, de donde toque: un PNJ las lleva en su propia
+  // fila de iniciativa (schema_v23) y un jugador en su play_state. Con esto,
+  // las reglas de G4 muerden también contra monstruos — un goblin derribado da
+  // ventaja a quien le pega de cerca y desventaja a quien le dispara.
+  const condsDe = (r: InitiativeRow): string[] => {
+    if (r.is_npc) return r.conds;
+    if (!r.user_id) return [];
+    return (party.find((p) => p.user_id === r.user_id)?.play_state as PlayState | undefined)?.conds ?? [];
+  };
 
   const comoObjetivo = (r: InitiativeRow): Objetivo => ({ id: r.id, label: nombreDe(r), conds: condsDe(r) });
   // Todos menos tú: el objetivo es para atacar; curarse se hace desde Estado.
