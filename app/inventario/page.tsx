@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
 import { useInventarioVivo } from "@/lib/useInventarioVivo";
-import { devolver, quitarUno } from "@/lib/inventario";
+import { devolver, huecosDe, quitarUno } from "@/lib/inventario";
+import { CATALOG, type ItemCat } from "@/data/equipment";
 import Paperdoll from "@/components/Paperdoll";
 import BolsaAgrupada from "@/components/inventario/BolsaAgrupada";
 import DetalleObjeto from "@/components/inventario/DetalleObjeto";
@@ -57,6 +58,12 @@ function InventarioInner() {
   const seleccionado = inv.items.find((i) => i.id === seleccionadoId) ?? null;
 
   const usados = useMemo(() => inv.items.reduce((s, i) => s + i.qty, 0), [inv.items]);
+  const capacidad = huecosDe(inv.mods.fue);
+  const lleno = usados >= capacidad;
+
+  // Lo que el DM está escribiendo para dar a mano, y la pestaña del catálogo.
+  const [nuevo, setNuevo] = useState("");
+  const [cat, setCat] = useState<ItemCat>("Aventura");
 
   /* --- equipar / retirar / soltar / anotar ------------------------------- */
 
@@ -100,6 +107,27 @@ function InventarioInner() {
   const onNotas = (item: Item, notas: string) => {
     if (!puedeEquipar) return;
     inv.setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, notes: notas } : i)));
+  };
+
+  // DAR UN OBJETO. Venía de la hoja (`addItem` en CharacterSheet), con sus dos
+  // reglas intactas: se fusiona por NOMBRE EXACTO subiendo `qty` —lo mismo que
+  // hace `devolver`, y de ahí que dos dagas sean una entrada `×2`— y no se
+  // añade nada con la bolsa llena. Aquí solo lo ve el DM: en la hoja este
+  // formulario salía con `!readOnly`, que también incluía al DM mirando su
+  // propia hoja, pero el reparto de botín es suyo en las dos pantallas.
+  const onAñadir = (nombre: string) => {
+    if (!puedeEditarContenido) return;
+    const n = nombre.trim();
+    if (!n || lleno) return;
+    inv.setItems((prev) => {
+      const idx = prev.findIndex((i) => i.name === n);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
+        return next;
+      }
+      return [...prev, { id: crypto.randomUUID(), name: n, qty: 1 }];
+    });
   };
 
   /* --- vitales ----------------------------------------------------------- */
@@ -231,6 +259,66 @@ function InventarioInner() {
               onNotas={onNotas}
               onCerrar={() => setSeleccionadoId(null)}
             />
+          )}
+
+          {/* DAR UN OBJETO (solo el DM). Va al final del panel de la bolsa, no
+              arriba: lo que se consulta cien veces por sesión es lo que hay
+              dentro; repartir botín pasa una vez cada tanto. */}
+          {puedeEditarContenido && (
+            <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--color-line)" }}>
+              <p className="eyebrow mb-3">
+                <i className="fas fa-hand-holding-heart mr-1.5" style={{ color: "var(--color-bronze)" }} />
+                Dar un objeto
+              </p>
+
+              {/* El motivo de que no se pueda, dicho: sin esto los chips se
+                  quedan grises y no hay forma de saber por qué. */}
+              {lleno && (
+                <p className="font-ui text-[12px] italic mb-3" style={{ color: "var(--color-ember)" }}>
+                  <i className="fas fa-circle-exclamation mr-1.5" />
+                  La bolsa está llena ({usados} de {capacidad} huecos). Sube la Fuerza del personaje para ampliarla, o suelta algo primero.
+                </p>
+              )}
+
+              <div className="flex gap-2 mb-3">
+                <input
+                  value={nuevo}
+                  onChange={(e) => setNuevo(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { onAñadir(nuevo); setNuevo(""); } }}
+                  placeholder="Objeto personalizado…"
+                  className="flex-1 min-w-0 bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
+                  style={{ color: "var(--color-warm)" }}
+                />
+                <button
+                  type="button"
+                  className="stat-btn !w-9 !h-9 shrink-0"
+                  onClick={() => { onAñadir(nuevo); setNuevo(""); }}
+                  disabled={lleno || !nuevo.trim()}
+                >
+                  +
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {(Object.keys(CATALOG) as ItemCat[]).map((c) => (
+                  <button key={c} type="button" className="chip" data-on={cat === c} onClick={() => setCat(c)}>{c}</button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {CATALOG[cat].map((it) => (
+                  <button
+                    key={it}
+                    type="button"
+                    onClick={() => onAñadir(it)}
+                    disabled={lleno}
+                    className="chip disabled:opacity-40"
+                    title={lleno ? "La bolsa está llena" : "Añadir a la bolsa"}
+                  >
+                    {it} <i className="fas fa-plus text-[9px] ml-0.5" style={{ color: "var(--color-bronze)" }} />
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
