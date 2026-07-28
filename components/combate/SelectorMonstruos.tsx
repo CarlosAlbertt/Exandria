@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useBestiary, setDiscovered } from "@/lib/useBestiary";
+import { searchMonsters } from "@/data/bestiary";
 import { nombresNumerados, cuentaEnMesa, cantidadValida } from "@/lib/combate";
 import { d20Check } from "@/lib/dice";
 import { addMonstersInitiative } from "@/lib/useInitiative";
@@ -27,14 +28,10 @@ export default function SelectorMonstruos({ faltaMigracion, nombresExistentes }:
   const [anadiendo, setAnadiendo] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Diez coincidencias como mucho: es un desplegable, no el bestiario entero.
-  const sugerencias = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    if (q.length === 0) return monsters.slice(0, 10);
-    return monsters
-      .filter((m) => m.name.toLowerCase().includes(q) || m.nameEn.toLowerCase().includes(q))
-      .slice(0, 10);
-  }, [monsters, busqueda]);
+  // El bestiario ENTERO, sin recortar: la lista tiene su propio scroll, así que
+  // el tope solo servía para esconder monstruos. Con 124 y orden alfabético, un
+  // tope de 10 dejaba al DM viendo siempre los diez primeros y ninguno más.
+  const sugerencias = useMemo(() => searchMonsters(monsters, busqueda), [monsters, busqueda]);
 
   const monstruoSel = monsters.find((m) => m.slug === slugSel) ?? null;
 
@@ -82,8 +79,15 @@ export default function SelectorMonstruos({ faltaMigracion, nombresExistentes }:
 
   return (
     <div className="space-y-2 pb-2 mb-1 border-b border-[var(--color-line)]">
-      <p className="font-ui text-[11px] uppercase tracking-wider" style={{ color: "var(--color-dim)" }}>
-        <i className="fas fa-dragon mr-1.5" />Del bestiario
+      <p className="font-ui text-[11px] uppercase tracking-wider flex items-center gap-2" style={{ color: "var(--color-dim)" }}>
+        <span><i className="fas fa-dragon mr-1.5" />Del bestiario</span>
+        {/* El recuento a la vista: si algún día vuelve a faltar un monstruo, se
+            nota aquí antes que buscándolo a ciegas. */}
+        <span className="ml-auto normal-case tracking-normal">
+          {busqueda.trim().length > 0
+            ? `${sugerencias.length} de ${monsters.length}`
+            : `${monsters.length} monstruos`}
+        </span>
       </p>
       <input
         value={busqueda}
@@ -94,7 +98,7 @@ export default function SelectorMonstruos({ faltaMigracion, nombresExistentes }:
       />
       {err && <p className="text-[11px] italic" style={{ color: "var(--color-ember)" }}>{err}</p>}
       {!monstruoSel && sugerencias.length > 0 && (
-        <div className="max-h-40 overflow-y-auto space-y-1">
+        <div className="max-h-64 overflow-y-auto space-y-1">
           {sugerencias.map((m) => (
             <button
               key={m.slug}
