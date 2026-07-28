@@ -73,16 +73,12 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >     arma**. **Sin migración**; las tablas del tablero quedan **retiradas, no
 >     borradas**. Ver su RESUELTO.
 
-> [!todo] ⏳ `schema_v23` ESCRITA y PENDIENTE de ejecutar
-> La fase 1 de los monstruos ya está en el código. **`supabase/schema_v23.sql`
-> está escrita pero no ejecutada**: hay que correrla a mano en el SQL editor de
-> Supabase. Es idempotente y solo añade.
-> **Mientras no se ejecute, la app no se rompe**: `useInitiative` detecta el
-> 42703, lee sin esas columnas y la iniciativa se ve como siempre; el DM (solo
-> él) ve un aviso de que falta la migración y el botón de añadir monstruos queda
-> apagado. Pero los monstruos no guardan PG ni condiciones hasta que se ejecute.
-
-> [!tip] ✅ Todas las demás migraciones al día (v1–v22)
+> [!tip] ✅ Todas las migraciones al día (v1–v23)
+> **`schema_v23` ejecutada el 2026-07-28.** Con ella, los monstruos del bestiario
+> guardan PG y condiciones en su fila de `initiative`: el aviso de «falta la
+> migración» desaparece y el botón de añadir monstruos se enciende.
+> Si alguna vez reaparece ese aviso, la v23 es idempotente y se puede reejecutar
+> sin miedo.
 > **`schema_v22` está RETIRADA**: se ejecutó el 2026-07-25 para el tablero (G3),
 > y al quitar el tablero el 2026-07-26 sus tablas (`battle_tokens`,
 > `battle_board`) quedaron **vacías y sin uso**. **No se han borrado a
@@ -120,9 +116,10 @@ batalla) ya no existe**: se retiró el 2026-07-26 y el combate se juega en
 **`/combate`**, con la iniciativa como lista de combatientes. Su migración
 `schema_v22` se ejecutó y quedó **retirada** (ver el aviso de migraciones).
 
-**Siguiente paso**: **ejecutar `schema_v23`** y **jugar una sesión** con todo lo
-que hay, fase 1 de los monstruos incluida (ver el aviso 🎲 de arriba). La **fase
-2** (la «arena») no se empieza hasta entonces.
+**Siguiente paso**: **jugar una sesión** con todo lo que hay, fase 1 de los
+monstruos incluida (ver el aviso 🎲 de arriba). `schema_v23` ya está ejecutada,
+así que **no queda nada que preparar**. La **fase 2** (la «arena») no se empieza
+hasta entonces.
 
 **Lo siguiente ya está diseñado y decidido, en dos fases** (spec completo en
 `docs/superpowers/specs/2026-07-28-monstruos-al-combate-design.md`):
@@ -134,8 +131,9 @@ que hay, fase 1 de los monstruos incluida (ver el aviso 🎲 de arriba). La **fa
    jefe nunca comparte iniciativa con sus esbirros. El DM ve `11/13`; los
    jugadores ven «malherido». Deja de llevarse la vida en papel, y **arregla que
    las reglas de G4 no funcionaban contra monstruos** (sin `conds` en la fila, un
-   goblin derribado no daba ventaja a nadie). **HECHA el 2026-07-28** (spec, plan
-   y código; ver su sección RESUELTO). Falta **ejecutar `schema_v23`** y jugarla.
+   goblin derribado no daba ventaja a nadie). **HECHA el 2026-07-28** (spec, plan,
+   código y `schema_v23` ejecutada; ver su sección RESUELTO). **Solo falta
+   jugarla.**
 2. **FASE 2 — la «arena»** (el combate «más gráfico, tipo Pokémon» que pidió el
    usuario): dos bandos enfrentados con retratos y barras de vida, menú de
    acciones tipo consola y caja de texto narrando las tiradas. **Solo piel, cero
@@ -373,8 +371,14 @@ es una feature, es una red de seguridad**: declara de una vez las **25 columnas*
 que la app espera de `characters`, cada una con el tipo y el default de la
 migración que la introdujo. Idempotente y **solo añade** — ya ejecutada). El
 bucket de Storage `assets` (`storage-assets.sql`, Fase H) también ejecutado ·
-`schema_v22.sql` (**G3 tablero**: `battle_tokens` + `battle_board`). **v1–v22 al
-día; `schema_v22` ejecutada el 2026-07-25.** G4 (targeting) no llevó migración.
+`schema_v22.sql` (**G3 tablero**: `battle_tokens` + `battle_board`) ·
+**`schema_v23.sql`** (**FASE 1 monstruos al combate**: `initiative` gana
+`monster_slug`/`hp`/`hp_max`/`conds`, las cuatro opcionales y **solo para PNJ** —
+los jugadores siguen en `characters.play_state`. RLS y realtime de la v11 sin
+tocar. **Ejecutada el 2026-07-28**). **v1–v23 al día**; `schema_v22` ejecutada el
+2026-07-25 (y luego retirada con el tablero), `schema_v23` el 2026-07-28. G4
+(targeting), O2 (conjuros), la pantalla de combate y los objetivos múltiples no
+llevaron migración.
 
 > [!tip] Ante cualquier «column characters.X does not exist», **reejecutar la
 > v21**. Una migración que no llegó a correr entera **no deja rastro**: `add
@@ -438,8 +442,8 @@ Recuento del **2026-07-28, los 19 en verde**:
 > esta tabla.
 
 ## RESUELTO (2026-07-28): FASE 1 — los monstruos del bestiario al combate 🐉
-Rama `monstruos-al-combate`. **Migración `schema_v23` — escrita, PENDIENTE de
-ejecutar.** Spec y plan en
+Rama `monstruos-al-combate`. **Migración `schema_v23` — ejecutada el
+2026-07-28.** Spec y plan en
 `docs/superpowers/{specs,plans}/2026-07-28-monstruos-al-combate*`. Ejecutada con
 subagentes (implementador + revisión de spec + revisión de calidad por tarea).
 
@@ -510,9 +514,11 @@ subagentes (implementador + revisión de spec + revisión de calidad por tarea).
   con un arma de cuerpo ⇒ **ventaja**, y con un arco ⇒ **desventaja**; el goblin
   aparece **descubierto** en `/bestiario`; buscar algo que no esté (el bestiario
   solo llega a CR 1/2) ⇒ dice que no está y ofrece el PNJ a mano.
-- **Prueba extra, sin la migración**: con `schema_v23` **sin ejecutar**,
-  `/combate` sigue mostrando la iniciativa de siempre en vez de quedarse vacía,
-  el DM ve el aviso de que falta la migración y el botón de añadir está apagado.
+- **La degradación sin migración ya no se puede probar** (la v23 se ejecutó el
+  mismo día), pero queda escrita porque es la red de seguridad: sin las columnas,
+  `useInitiative` reconoce el 42703, lee sin ellas y `/combate` sigue mostrando la
+  iniciativa en vez de quedarse vacía; el DM ve el aviso y el botón de añadir se
+  apaga. Si algún día se restaura una base vieja, eso es lo que debe pasar.
 
 ## RESUELTO (2026-07-26): fuera el tablero, la iniciativa es el combate ⚔️
 Rama `quitar-tablero`. **Sin migración.** Spec y plan en
