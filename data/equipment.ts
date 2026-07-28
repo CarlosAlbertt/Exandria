@@ -8,7 +8,10 @@ export const CATALOG: Record<ItemCat, string[]> = {
     "Daga", "Espada corta", "Espada larga", "Hacha de mano", "Maza", "Bastón",
     "Arco corto", "Arco largo", "Ballesta ligera", "Lanza", "Martillo de guerra", "Cimitarra",
   ],
-  // Mantener estos nombres en sincronía con ARMOR_LOOKUP en lib/derive.ts (cálculo de CA).
+  // OJO: esta lista y ARMOR_LOOKUP (lib/derive.ts) son DOS listas a mano y hay
+  // que mantenerlas iguales. Una armadura que esté solo aquí aparece en el
+  // catálogo y se clasifica bien, pero no da CA ni tiene hueco de torso, porque
+  // eso se decide en ARMOR_LOOKUP. Lo vigila check-inventario.
   Armaduras: [
     "Armadura de cuero", "Cota de mallas", "Cota de escamas", "Coraza", "Escudo",
   ],

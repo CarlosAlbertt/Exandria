@@ -31,7 +31,7 @@ export type Derived = {
 };
 
 /** Tipo de armadura pesada/media/ligera → progresión de bono de Destreza. */
-type ArmorKind = "ligera" | "media" | "pesada";
+export type ArmorKind = "ligera" | "media" | "pesada";
 
 /**
  * Catálogo interno de CA por nombre de armadura. data/equipment.ts sólo
@@ -40,13 +40,13 @@ type ArmorKind = "ligera" | "media" | "pesada";
  * base de D&D 2024. "Escudo" se trata aparte (bono plano, no cuerpo).
  * Mantener en sincronía con CATALOG.Armaduras en data/equipment.ts.
  */
-const ARMOR_LOOKUP: Record<string, { base: number; kind: ArmorKind }> = {
+export const ARMOR_LOOKUP: Record<string, { base: number; kind: ArmorKind }> = {
   "Armadura de cuero": { base: 11, kind: "ligera" },
   "Cota de escamas": { base: 14, kind: "media" },
   "Coraza": { base: 14, kind: "media" },
   "Cota de mallas": { base: 16, kind: "pesada" },
 };
-const SHIELD_NAME = "Escudo";
+export const SHIELD_NAME = "Escudo";
 const SHIELD_BONUS = 2;
 
 /** Puntuación final de una aptitud: base + bono de trasfondo + suma de ASI repartida en todos los hitos. */
