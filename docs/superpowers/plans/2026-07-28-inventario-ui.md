@@ -484,6 +484,28 @@ EOF
 
 ---
 
+> ## ⚠️ CAMBIO DE ALCANCE (2026-07-28, tras la Task 2) — afecta a las Tasks 4, 6 y 7
+>
+> Al implementar el hook se descubrió que **en `app/personaje/page.tsx:19` la hoja
+> propia de un jugador es `readOnly`**, a propósito y comentado: hoy **un jugador no
+> puede tocar su propio inventario**. Este plan daba por hecho que sí.
+>
+> **Decisión del usuario**: el jugador **equipa y escribe notas**; añadir, soltar y
+> cambiar cantidades siguen siendo **solo del DM**. El DM controla qué posees, tú
+> decides qué llevas puesto.
+>
+> Por tanto hacen falta **dos permisos**, no uno:
+> - `puedeEquipar` — el dueño de la ficha o el DM.
+> - `puedeEditarContenido` — **solo el DM**.
+>
+> Y el **formulario de añadir** (input libre + chips de `CATALOG`), que hoy vive en la
+> hoja detrás de `!readOnly` y por eso solo ve el DM, **se muda a `/inventario`**: si no,
+> al vaciar la sección de la hoja (Task 7) el DM se queda sin forma de dar objetos.
+> El DM llega por **`/inventario?user=<id>`**, igual que ya hace con `/personaje?user=`.
+>
+> La base no lo impide: la policy `chars: actualizar lo propio` (schema_v14) ya deja a un
+> jugador escribir su fila. Era una decisión de producto, no de seguridad.
+
 ### Task 4: El detalle del objeto
 
 **Files:** Crear `components/inventario/DetalleObjeto.tsx`.

@@ -143,6 +143,38 @@ llenan a mano, para describir tu pinta) y ampliar el catálogo va al backlog.
 > está en la bolsa, así que no se puede soltar desde ella, y desequipar ya lo devuelve
 > bien. No hay bug que arreglar aquí.
 
+## Quién puede qué (decidido el 2026-07-28, tras leer el código)
+
+**Hallazgo que cambió el diseño**: en `app/personaje/page.tsx:19`, la hoja propia de
+un jugador es **`readOnly`**. Está comentado a propósito: *«Hoja propia: editable solo
+si eres DM; el jugador la ve en solo lectura.»* O sea que hoy **un jugador no puede
+tocar su propio inventario**, y el diseño original de este spec daba por hecho que sí.
+
+No es una limitación de la base: la policy `chars: actualizar lo propio` (schema_v14)
+deja a un jugador escribir su propia fila. Es una decisión de producto.
+
+**Decisión del usuario: el jugador equipa y escribe notas; nada más.**
+
+| Acción | Jugador (su ficha) | DM |
+|---|---|---|
+| Equipar / desequipar | ✅ | ✅ |
+| Escribir notas de un objeto | ✅ | ✅ |
+| Añadir un objeto | ❌ | ✅ |
+| Soltar un objeto / cambiar cantidad | ❌ | ✅ |
+
+El porqué: **el DM controla qué posees, y tú decides qué llevas puesto.** Es lo que pasa
+en una mesa real, y evita que un jugador se regale objetos.
+
+Dos consecuencias para la implementación:
+
+1. Hacen falta **dos permisos distintos**, no uno: `puedeEquipar` (dueño o DM) y
+   `puedeEditarContenido` (solo DM). No basta con `readOnly`.
+2. El formulario de **añadir** (input libre + chips de `CATALOG`) vive hoy en la hoja
+   detrás de `!readOnly`, así que **solo lo ve el DM**. Al sacar el inventario de la
+   hoja hay que llevárselo a `/inventario`, o el DM se queda sin forma de dar objetos.
+   El DM llega a la bolsa de un jugador por **`/inventario?user=<id>`**, igual que ya
+   hace con `/personaje?user=<id>`.
+
 ## La ficha y el panel del DM
 
 - **`/personaje`** conserva un **resumen**: chapas de lo equipado, **CA · Impacto ·
