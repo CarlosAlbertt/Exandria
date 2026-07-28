@@ -1,6 +1,6 @@
 // Script de comprobación manual para data/bestiary (bestiario D&D 2024).
 // Uso: npx tsx scripts/check-bestiary.ts
-import { ALL_MONSTERS } from "../data/bestiary";
+import { ALL_MONSTERS, searchMonsters, type Monster } from "../data/bestiary";
 import { CR_XP } from "../data/encounters";
 import { pbForCr, CR_OPTIONS } from "../lib/useBestiary";
 
@@ -86,6 +86,33 @@ for (const m of ALL_MONSTERS) {
 check(`pbForCr("1/4") === 2 (${pbForCr("1/4")})`, pbForCr("1/4") === 2);
 check(`pbForCr("13") === 5 (${pbForCr("13")})`, pbForCr("13") === 5);
 check(`CR_OPTIONS.length === CR_XP.length (${CR_OPTIONS.length} vs ${CR_XP.length})`, CR_OPTIONS.length === CR_XP.length);
+
+// --- searchMonsters ---
+// La comprobación que faltaba: el selector de combate recortaba a 10 y el DM
+// no veía el resto del bestiario. Buscar NO recorta; cuántos caben lo decide
+// quien pinta.
+check(
+  `búsqueda vacía devuelve el bestiario entero (${searchMonsters(ALL_MONSTERS, "").length} de ${ALL_MONSTERS.length})`,
+  searchMonsters(ALL_MONSTERS, "").length === ALL_MONSTERS.length
+);
+check(
+  "búsqueda vacía no recorta a 10",
+  searchMonsters(ALL_MONSTERS, "").length > 10
+);
+check("solo espacios cuenta como búsqueda vacía", searchMonsters(ALL_MONSTERS, "   ").length === ALL_MONSTERS.length);
+check("busca por nombre en español", searchMonsters(ALL_MONSTERS, ALL_MONSTERS[0].name).some((m) => m.slug === ALL_MONSTERS[0].slug));
+check("busca por nombre en inglés", searchMonsters(ALL_MONSTERS, ALL_MONSTERS[0].nameEn).some((m) => m.slug === ALL_MONSTERS[0].slug));
+check("no distingue mayúsculas", searchMonsters(ALL_MONSTERS, ALL_MONSTERS[0].name.toUpperCase()).length > 0);
+check("una búsqueda sin coincidencias devuelve vacío", searchMonsters(ALL_MONSTERS, "zzzzznoexiste").length === 0);
+check("filtra por CR", searchMonsters(ALL_MONSTERS, "", { cr: "0" }).every((m) => m.cr === "0"));
+check("filtra por tipo", searchMonsters(ALL_MONSTERS, "", { type: ALL_MONSTERS[0].type }).every((m) => m.type === ALL_MONSTERS[0].type));
+
+// Busca sobre la lista que se le pasa, no sobre ALL_MONSTERS: es lo que hace
+// que el DM encuentre sus monstruos personalizados.
+const inventado: Monster = { ...ALL_MONSTERS[0], slug: "bicho-inventado", name: "Bicho Inventado", nameEn: "Made Up Beast" };
+check("busca sobre la lista recibida, no sobre ALL_MONSTERS", searchMonsters([...ALL_MONSTERS, inventado], "Bicho Inventado").some((m) => m.slug === "bicho-inventado"));
+check("un personalizado no aparece si no está en la lista", searchMonsters(ALL_MONSTERS, "Bicho Inventado").length === 0);
+check("con lista vacía no devuelve nada", searchMonsters([], "").length === 0);
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
 process.exit(failures === 0 ? 0 : 1);

@@ -485,6 +485,19 @@ subagentes (implementador + revisión de spec + revisión de calidad por tarea).
 >    tandas, que es lo que evita que el jefe comparta iniciativa. La función
 >    estrella rompía a la otra. `nombresNumerados` gana `yaHay` y `cuentaEnMesa`
 >    lo cuenta.
+> 5. **El selector solo mostraba 10 de los 124** (cazada por el usuario **después
+>    del merge**, no por el gate). El desplegable recortaba con `.slice(0, 10)`,
+>    así que con orden alfabético el DM veía siempre los diez primeros y ninguno
+>    más — y encima el contenedor **ya tenía scroll**, o sea que el tope solo
+>    servía para esconder bichos. Se quita el recorte y la búsqueda pasa a
+>    `searchMonsters`, que ahora **recibe la lista** (para que encuentre también
+>    los personalizados del DM) y **no recorta**: cuántos caben lo decide quien
+>    pinta. Con su recuento a la vista («124 monstruos» / «7 de 124») para que
+>    volver a perder monstruos se note al abrirlo.
+>    > **Por qué el gate no lo vio**: el filtro vivía en el componente. Es la
+>    > misma lección por **cuarta** vez en esta misma losa. Ahora está en
+>    > `data/bestiary/index.ts` con 12 comprobaciones en `check-bestiary`
+>    > (1617 → **1629**), una de ellas justo «la búsqueda vacía no recorta a 10».
 
 - Verificado: `tsc --noEmit` + `next build` limpios · **los 20 check-scripts en
   verde** · ESLint sin avisos en los componentes tocados. **Nada probado en
