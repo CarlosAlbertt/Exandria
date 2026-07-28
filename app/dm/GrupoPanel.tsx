@@ -16,6 +16,7 @@ import EstadoVivo from "@/components/personaje/EstadoVivo";
 import EconomiaTurno from "@/components/personaje/EconomiaTurno";
 import Ataques from "@/components/personaje/Ataques";
 import Conjuros from "@/components/personaje/Conjuros";
+import BolsaAgrupada from "@/components/inventario/BolsaAgrupada";
 import { pgActuales } from "@/lib/estado";
 import { getMechanics } from "@/data/classdata";
 import type { PlayState } from "@/lib/recursos";
@@ -370,14 +371,10 @@ export default function GrupoPanel() {
                   {skills.length ? skills.map((s) => <span key={s} className="chip" data-on>{s}</span>) : <span className="text-sm" style={{ color: "var(--color-dim)" }}>—</span>}
                 </div>
 
-                {Array.isArray(c.inventory) && c.inventory.length > 0 && (
-                  <>
-                    <p className="eyebrow mb-2">Inventario</p>
-                    <div className="flex flex-wrap gap-2 mb-5">
-                      {c.inventory.map((it, i) => <span key={i} className="font-ui text-[12px] px-2.5 py-1 rounded-lg" style={{ color: "var(--color-warm)", border: "1px solid var(--color-line)" }}>{it}</span>)}
-                    </div>
-                  </>
-                )}
+                <p className="eyebrow mb-2">Inventario</p>
+                <div className="mb-5">
+                  <BolsaAgrupada items={c.items ?? []} />
+                </div>
 
                 <p className="eyebrow mb-2"><i className="fas fa-feather-pointed mr-1.5" style={{ color: "var(--color-bronze)" }} />Historia</p>
                 {c.lore?.trim() ? (

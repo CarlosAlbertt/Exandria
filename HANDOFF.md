@@ -418,15 +418,15 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 20**, y las secciones RESUELTO solo
+(no hay entrada en `package.json`). **Son 21**, y las secciones RESUELTO solo
 nombran los que tocó cada tanda — los demás siguen vivos aunque no se citen.
 Recuento del **2026-07-28, los 19 en verde**:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
-| `check-archive` | 13 | `check-dicebox` | 19 |
-| `check-ataque` | 64 | `check-estado` | 35 |
-| `check-atlas` | 118 | `check-ficha` | 11 |
+| `check-archive` | 13 | `check-estado` | 35 |
+| `check-ataque` | 64 | `check-ficha` | 11 |
+| `check-atlas` | 118 | `check-inventario` | 45 |
 | `check-bestiary` | 1617 | `check-lore` | 69 |
 | `check-clases` | 116 | `check-slots` | 15 |
 | `check-clima` | 32 | `check-spells` | 28 |
@@ -435,11 +435,79 @@ Recuento del **2026-07-28, los 19 en verde**:
 | `check-conjuros` | 49 | `check-turno` | 26 |
 | `check-derive` | 35 | | |
 | `check-dice` | 20 | | |
+| `check-dicebox` | 19 | | |
 
 > `check-tablero` se borró con el tablero el 2026-07-26. Las cuentas que citan
 > las secciones RESUELTO son las **del día que se escribieron** y algunas ya no
 > cuadran (p. ej. O2 dice «check-estado (36)» y «check-targeting (49)»); manda
 > esta tabla.
+
+## RESUELTO (2026-07-28): el inventario, rediseñado 🎒
+Rama `inventario-ui`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-28-inventario-ui*`.
+
+- **`/inventario` deja de redirigir a `/personaje`** y se convierte en la
+  pantalla: el muñeco con el retrato del personaje en el centro, las vitales
+  debajo, la bolsa agrupada al lado y el detalle del objeto abriéndose en el
+  mismo sitio, sin navegar a ningún otro lado. Dos columnas en portátil,
+  apiladas en móvil — **se estrecha, no se reordena**, porque el DM juega desde
+  un portátil y los jugadores desde el móvil.
+- **Lo que hace que se note que pasó algo**: `derive.ts` ya calculaba la CA a
+  partir de lo equipado y ya devolvía `acSource` (el motivo en español llano,
+  «Coraza + DES (máx 2)»), y nada de eso se mostraba en ningún sitio. El ataque
+  y el daño **no están en `derive`**: vienen de `ataqueDe` en `lib/ataque.ts`,
+  que ya existía y ya lo cubre `check-ataque`. **Cero reglas nuevas.**
+- **La categoría, el icono y el color de cada objeto se deducen del nombre por
+  coincidencia exacta, no por subcadena** — para que «Poción de curación mayor»
+  salga como «Otro» en vez de arriesgarse a pintar de verde una «Poción de
+  veneno».
+- **Permisos**, decididos por el usuario a media implementación: el jugador
+  **equipa, desequipa y escribe notas**; **añadir, soltar y las cantidades son
+  cosa del DM**, que llega a la bolsa de un jugador por `/inventario?user=<id>`.
+  Salió de descubrir que `app/personaje/page.tsx:19` pintaba la ficha de un
+  jugador **en modo solo lectura incluso para su propio dueño** — nunca podía
+  editar la suya.
+
+> **Cuatro trampas cazadas.**
+> 1. **El spec afirmaba un bug que no existía**: que soltar un objeto equipado
+>    dejaba un hueco obsoleto en el muñeco. Falso — equipar **saca** el objeto
+>    de la bolsa (`quitarUno`), así que no hay forma de soltarlo desde ahí para
+>    empezar. Venía de leer `changeQty` sin leer `equipInto`.
+> 2. **El plan sustituía un comentario verdadero por una tranquilidad falsa.**
+>    `data/equipment.ts` llevaba un comentario («mantener sincronizado con
+>    `ARMOR_LOOKUP`») que el plan quería borrar dando por hecho que ya no hacía
+>    falta. Las dos listas se siguen manteniendo a mano, y una armadura presente
+>    solo en una de las dos se ve bien pero no da CA. Ahora hay una comprobación
+>    en `check-inventario` que lo exige, en vez de un comentario pidiéndole a
+>    alguien que se acuerde.
+> 3. **`CATEGORIAS` era un array suelto**: olvidarse de una categoría habría
+>    sido silencioso, y `find(...)` habría devuelto `undefined` en tiempo de
+>    ejecución detrás de un `!`. Ahora es un `Record` indexado por el tipo del
+>    id: **olvidarse de una ya no compila**.
+> 4. **El botón «Leer» de los documentos en curso vivía dentro de las filas de
+>    objetos de la ficha.** Borrar esa sección entera, como decía el plan,
+>    habría dejado sin forma de abrirse a todos los documentos que el DM ya
+>    entregó — y leer un tomo es lo que desbloquea el saber. La sección
+>    Documentos se queda en la ficha.
+
+- **Fuera a propósito**: peso, rareza, sintonización, arte por objeto,
+  arrastrar y soltar, y ampliar `CATALOG` con cascos/guantes/botas (eso es
+  contenido, y en 2024 esas piezas no dan CA de todas formas — los cuatro
+  huecos huérfanos del muñeco son decorativos por diseño del propio juego).
+- Verificado: `tsc --noEmit` + `next build` limpios · **los 21 check-scripts en
+  verde** (`check-inventario`, 45) · ESLint sin avisos nuevos en los componentes
+  tocados. **Nada probado en vivo**: no hubo sesión disponible, así que la
+  pantalla solo se vio en sus estados sin sesión y sin personaje.
+- **Prueba del usuario**: equipar una coraza y ver subir la CA con la línea que
+  lo explica, y verla salir de la bolsa; desequiparla desde el muñeco y ver
+  bajar la CA y volver el objeto a la bolsa; llenar la bolsa y ver la barra
+  ponerse roja con el motivo del tope; buscar «pocion» sin tilde y encontrarla
+  igual; escribir un objeto a mano y verlo salir como «Otro»; abrir un objeto y
+  escribirle una nota; como jugador, confirmar que **no** hay forma de añadir
+  ni de soltar nada; como DM, entregarle un objeto a un jugador desde
+  `/inventario?user=<id>`; abrirlo en el móvil y comprobar que el muñeco se
+  estrecha sin que la página haga scroll lateral; y confirmar que un documento
+  se sigue pudiendo abrir con «Leer» desde la ficha.
 
 ## RESUELTO (2026-07-28): FASE 1 — los monstruos del bestiario al combate 🐉
 Rama `monstruos-al-combate`. **Migración `schema_v23` — ejecutada el
