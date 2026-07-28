@@ -1,5 +1,5 @@
 // Comprobación manual del inventario. Uso: npx tsx scripts/check-inventario.ts
-import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria, norm } from "../lib/inventario";
+import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria, norm, quitarUno, devolver } from "../lib/inventario";
 import { CATALOG } from "../data/equipment";
 import { ARMAS } from "../data/weapons";
 import { ARMOR_LOOKUP, SHIELD_NAME } from "../lib/derive";
@@ -111,6 +111,35 @@ check("respeta el orden de CATEGORIAS",
 check("agrupa las dos armas juntas",
   (grupos.find((g) => g.cat === "Armas")?.items.length ?? 0) === 2);
 check("una bolsa vacía no da grupos", agrupaPorCategoria([]).length === 0);
+
+// --- quitarUno / devolver ---
+// Los dos helpers que mueven unidades entre la bolsa y el muñeco. Vivían dentro
+// de CharacterSheet.tsx sin vigilancia; ahora son de la capa pura.
+const unaDaga = [item("Daga")];
+check("quitar el último borra la entrada", quitarUno(unaDaga, "Daga").length === 0);
+
+const tresPociones = [item("Poción de curación", 3)];
+const dosPociones = quitarUno(tresPociones, "Poción de curación");
+check("quitar uno de tres deja dos", dosPociones.length === 1 && dosPociones[0].qty === 2);
+
+const intacta = [item("Daga", 2), item("Coraza")];
+const trasFallo = quitarUno(intacta, "no-existe");
+check("quitar un id que no existe no cambia nada",
+  trasFallo.length === 2 && trasFallo[0].qty === 2 && trasFallo[1].name === "Coraza");
+
+// Coincide por NOMBRE, no por id: es lo que fusiona dos dagas en una entrada
+// con qty 2, y de eso depende puedeDosArmas (lib/ataque.ts).
+const conDaga = [{ id: "abc", name: "Daga", qty: 1 } as Item];
+const dosDagas = devolver(conDaga, { id: "otro-id-distinto", name: "Daga", qty: 1 });
+check("devolver algo cuyo nombre ya está sube la cantidad en vez de crear otra fila",
+  dosDagas.length === 1 && dosDagas[0].qty === 2);
+
+const conCoraza = devolver(conDaga, item("Coraza"));
+check("devolver algo nuevo añade una entrada con qty 1",
+  conCoraza.length === 2 && conCoraza[1].name === "Coraza" && conCoraza[1].qty === 1);
+
+const conNotas = devolver([], { id: "x", name: "Anillo", qty: 1, notes: "Regalo de Vex" });
+check("devolver conserva las notas del objeto", conNotas[0].notes === "Regalo de Vex");
 
 console.log(failures === 0 ? "\nTodo en verde" : `\n${failures} fallo(s)`);
 process.exit(failures === 0 ? 0 : 1);

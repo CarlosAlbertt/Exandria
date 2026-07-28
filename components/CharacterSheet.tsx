@@ -12,6 +12,9 @@ import { getBackground } from "@/data/backgrounds";
 import { ABILITIES, AbilityKey, fmtMod } from "@/data/rules";
 import { reachedAsiLevels } from "@/data/leveling";
 import { CATALOG, ItemCat } from "@/data/equipment";
+// Los helpers de la bolsa viven en la capa pura (lib/inventario.ts), donde el
+// gate los comprueba y donde /inventario los comparte: aquí solo se usan.
+import { quitarUno, devolver } from "@/lib/inventario";
 import LevelPanel from "@/components/LevelPanel";
 import Paperdoll from "@/components/Paperdoll";
 import PortraitFrame from "@/components/PortraitFrame";
@@ -44,26 +47,6 @@ const EMPTY_BUILD: Build = {
   name: "", species: null, lineage: null, cls: null, subclass: null, background: null,
   base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS },
 };
-
-/* --- helpers de inventario --- */
-function removeOne(items: Item[], id: string): Item[] {
-  const out: Item[] = [];
-  for (const it of items) {
-    if (it.id === id) {
-      if (it.qty > 1) out.push({ ...it, qty: it.qty - 1 });
-    } else out.push(it);
-  }
-  return out;
-}
-function addBack(items: Item[], item: Item): Item[] {
-  const idx = items.findIndex((i) => i.name === item.name);
-  if (idx >= 0) {
-    const next = [...items];
-    next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
-    return next;
-  }
-  return [...items, { id: crypto.randomUUID(), name: item.name, qty: 1, notes: item.notes }];
-}
 
 type CharacterSheetProps = {
   targetUserId: string | null; // whose sheet (null = no session → localStorage)
@@ -385,7 +368,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     const equipped = equipment[slotId];
     if (equipped) {
       // retirar → vuelve al inventario
-      setItems((prev) => addBack(prev, equipped));
+      setItems((prev) => devolver(prev, equipped));
       setEquipment((prev) => {
         const next = { ...prev };
         delete next[slotId];
@@ -400,8 +383,8 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const equipInto = (slotId: string, item: Item) => {
     const prevEquipped = equipment[slotId];
     setItems((prev) => {
-      let next = removeOne(prev, item.id);
-      if (prevEquipped) next = addBack(next, prevEquipped);
+      let next = quitarUno(prev, item.id);
+      if (prevEquipped) next = devolver(next, prevEquipped);
       return next;
     });
     setEquipment((prev) => ({ ...prev, [slotId]: { id: item.id, name: item.name, qty: 1, notes: item.notes } }));

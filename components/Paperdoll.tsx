@@ -12,6 +12,8 @@ type Props = {
   portrait?: string;
   portraitAlt: string;
   onSlotClick: (slotId: string) => void; // vacío = intentar equipar; lleno = retirar
+  /** Contenido bajo el muñeco (las vitales). Opcional: la hoja no lo pasa. */
+  pie?: React.ReactNode;
 };
 
 /** Genera los ids de hueco de accesorio según los modificadores actuales. */
@@ -39,7 +41,7 @@ function Slot({ label, icon, item, over, onClick }: { label: string; icon?: stri
   );
 }
 
-export default function Paperdoll({ equipment, mods, portrait, portraitAlt, onSlotClick }: Props) {
+export default function Paperdoll({ equipment, mods, portrait, portraitAlt, onSlotClick, pie }: Props) {
   const accIds = accessorySlotIds(mods);
   const validIds = new Set([
     ...ARMOR_SLOTS.map((s) => s.id), ...WEAPON_SLOTS.map((s) => s.id), ...accIds.map((a) => a.id),
@@ -78,6 +80,7 @@ export default function Paperdoll({ equipment, mods, portrait, portraitAlt, onSl
       {overflow.length > 0 && (
         <p className="text-[12px] mt-2 italic" style={{ color: "var(--color-ember)" }}>Hay accesorios equipados que ya no caben (bajó el modificador). Clic para retirarlos.</p>
       )}
+      {pie}
     </div>
   );
 }
