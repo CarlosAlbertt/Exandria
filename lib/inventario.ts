@@ -68,14 +68,14 @@ export function huecosDe(modFuerza: number): number {
  * D&D 2024 esas piezas NO dan CA, así que el catálogo no las trae.
  */
 export function huecoDestino(nombre: string, equipo: Record<string, Item>): string | null {
-  const n = norm(nombre);
-  if (n === norm(SHIELD_NAME)) return equipo.arma_secundaria ? null : "arma_secundaria";
-  if (Object.keys(ARMAS).some((a) => norm(a) === n)) {
+  if (norm(nombre) === norm(SHIELD_NAME)) return equipo.arma_secundaria ? null : "arma_secundaria";
+  const cat = categoriaDe(nombre);
+  if (cat === "Armas") {
     if (!equipo.arma_principal) return "arma_principal";
     if (!equipo.arma_secundaria) return "arma_secundaria";
     return null;
   }
-  if (Object.keys(ARMOR_LOOKUP).some((a) => norm(a) === n)) return equipo.torso ? null : "torso";
+  if (cat === "Armaduras") return equipo.torso ? null : "torso";
   return null;
 }
 

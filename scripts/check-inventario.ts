@@ -2,7 +2,7 @@
 import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria } from "../lib/inventario";
 import { CATALOG } from "../data/equipment";
 import { ARMAS } from "../data/weapons";
-import { ARMOR_LOOKUP } from "../lib/derive";
+import { ARMOR_LOOKUP, SHIELD_NAME } from "../lib/derive";
 import type { Item } from "../lib/character";
 
 let failures = 0;
@@ -60,6 +60,41 @@ check("con las dos ocupadas, no hay destino",
 check("el escudo va a la secundaria", huecoDestino("Escudo", {}) === "arma_secundaria");
 check("una armadura de cuerpo va al torso", huecoDestino("Coraza", {}) === "torso");
 check("un objeto desconocido no tiene destino", huecoDestino("Carta del gremio", {}) === null);
+
+// --- las dos listas de armadura no pueden separarse ---
+// CATALOG.Armaduras y ARMOR_LOOKUP se mantienen a mano por separado. Una
+// armadura que esté solo en el catálogo se clasifica bien pero no da CA: el
+// fallo es mudo, así que lo caza el gate en vez de un comentario.
+const armadurasConocidas = new Set([...Object.keys(ARMOR_LOOKUP), SHIELD_NAME].map((n) => n.toLowerCase()));
+const soloEnCatalogo = CATALOG.Armaduras.filter((n) => !armadurasConocidas.has(n.toLowerCase()));
+check(
+  `toda armadura del catálogo está en ARMOR_LOOKUP (sobran: ${soloEnCatalogo.join(", ") || "ninguna"})`,
+  soloEnCatalogo.length === 0
+);
+
+// --- ninguna fuente puede reclamar el mismo nombre para dos categorías ---
+// El índice se construye con Map.set desde seis listas: si dos reclaman el
+// mismo nombre, la última gana en silencio. Esto lo hace ruidoso.
+const reclamos = new Map<string, Set<string>>();
+const reclama = (nombres: string[], cat: string) => {
+  for (const n of nombres) {
+    const k = n.trim().toLowerCase();
+    if (!reclamos.has(k)) reclamos.set(k, new Set());
+    reclamos.get(k)!.add(cat);
+  }
+};
+reclama(Object.keys(ARMAS), "Armas");
+reclama([...Object.keys(ARMOR_LOOKUP), SHIELD_NAME], "Armaduras");
+reclama(CATALOG.Armas, "Armas");
+reclama(CATALOG.Armaduras, "Armaduras");
+reclama(CATALOG.Aventura, "Aventura");
+reclama(CATALOG.Consumibles, "Consumibles");
+reclama(CATALOG.Herramientas, "Herramientas");
+const enConflicto = [...reclamos.entries()].filter(([, cats]) => cats.size > 1).map(([n]) => n);
+check(
+  `ningún nombre se reclama para dos categorías (conflictos: ${enConflicto.join(", ") || "ninguno"})`,
+  enConflicto.length === 0
+);
 
 // --- agrupaPorCategoria ---
 const bolsa = [item("Espada larga"), item("Daga", 2), item("Poción de curación", 3), item("Carta del gremio")];
