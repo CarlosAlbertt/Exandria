@@ -5,9 +5,12 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-28)
 
 > [!warning] 🎲 **Lo siguiente NO es código: es jugar una sesión.**
-> Hay **seis features seguidas en producción y nunca vistas en una partida**
+> Hay **siete features seguidas en producción y nunca vistas en una partida**
 > (G4, O2, la mudanza a `/combate`, los objetivos múltiples, la retirada del
-> tablero y la documentación). Todas pasaron el gate; ninguna se ha jugado.
+> tablero, la documentación y **la fase 1 de los monstruos**). Todas pasaron el
+> gate; ninguna se ha jugado. La séptima se construyó **sabiendo** que la deuda
+> existía, así que la cuenta ya no es un descuido: es una decisión que hay que
+> pagar antes de la fase 2.
 > Esa deuda ya costó una: el **tablero de batalla** se construyó entero —rejilla,
 > fichas, medición, migración `schema_v22`— y se retiró **sin haberlo probado
 > nunca**, porque no encajaba con cómo se juega. Una sola partida lo habría
@@ -70,7 +73,16 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 >     arma**. **Sin migración**; las tablas del tablero quedan **retiradas, no
 >     borradas**. Ver su RESUELTO.
 
-> [!tip] ✅ Todas las migraciones al día (v1–v22)
+> [!todo] ⏳ `schema_v23` ESCRITA y PENDIENTE de ejecutar
+> La fase 1 de los monstruos ya está en el código. **`supabase/schema_v23.sql`
+> está escrita pero no ejecutada**: hay que correrla a mano en el SQL editor de
+> Supabase. Es idempotente y solo añade.
+> **Mientras no se ejecute, la app no se rompe**: `useInitiative` detecta el
+> 42703, lee sin esas columnas y la iniciativa se ve como siempre; el DM (solo
+> él) ve un aviso de que falta la migración y el botón de añadir monstruos queda
+> apagado. Pero los monstruos no guardan PG ni condiciones hasta que se ejecute.
+
+> [!tip] ✅ Todas las demás migraciones al día (v1–v22)
 > **`schema_v22` está RETIRADA**: se ejecutó el 2026-07-25 para el tablero (G3),
 > y al quitar el tablero el 2026-07-26 sus tablas (`battle_tokens`,
 > `battle_board`) quedaron **vacías y sin uso**. **No se han borrado a
@@ -108,8 +120,9 @@ batalla) ya no existe**: se retiró el 2026-07-26 y el combate se juega en
 **`/combate`**, con la iniciativa como lista de combatientes. Su migración
 `schema_v22` se ejecutó y quedó **retirada** (ver el aviso de migraciones).
 
-**Siguiente paso**: jugar una sesión con lo que ya hay (ver el aviso 🎲 de
-arriba). Solo después, la **fase 1** de los monstruos al combate.
+**Siguiente paso**: **ejecutar `schema_v23`** y **jugar una sesión** con todo lo
+que hay, fase 1 de los monstruos incluida (ver el aviso 🎲 de arriba). La **fase
+2** (la «arena») no se empieza hasta entonces.
 
 **Lo siguiente ya está diseñado y decidido, en dos fases** (spec completo en
 `docs/superpowers/specs/2026-07-28-monstruos-al-combate-design.md`):
@@ -121,7 +134,8 @@ arriba). Solo después, la **fase 1** de los monstruos al combate.
    jefe nunca comparte iniciativa con sus esbirros. El DM ve `11/13`; los
    jugadores ven «malherido». Deja de llevarse la vida en papel, y **arregla que
    las reglas de G4 no funcionaban contra monstruos** (sin `conds` en la fila, un
-   goblin derribado no daba ventaja a nadie). **Spec escrito; sin plan todavía.**
+   goblin derribado no daba ventaja a nadie). **HECHA el 2026-07-28** (spec, plan
+   y código; ver su sección RESUELTO). Falta **ejecutar `schema_v23`** y jugarla.
 2. **FASE 2 — la «arena»** (el combate «más gráfico, tipo Pokémon» que pidió el
    usuario): dos bandos enfrentados con retratos y barras de vida, menú de
    acciones tipo consola y caja de texto narrando las tiradas. **Solo piel, cero
@@ -400,7 +414,7 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 19**, y las secciones RESUELTO solo
+(no hay entrada en `package.json`). **Son 20**, y las secciones RESUELTO solo
 nombran los que tocó cada tanda — los demás siguen vivos aunque no se citen.
 Recuento del **2026-07-28, los 19 en verde**:
 
@@ -413,14 +427,79 @@ Recuento del **2026-07-28, los 19 en verde**:
 | `check-clases` | 116 | `check-slots` | 15 |
 | `check-clima` | 32 | `check-spells` | 28 |
 | `check-clock` | 20 | `check-statrolls` | 15 |
-| `check-conjuros` | 49 | `check-targeting` | 51 |
-| `check-derive` | 35 | `check-turno` | 26 |
+| `check-combate` | 49 | `check-targeting` | 51 |
+| `check-conjuros` | 49 | `check-turno` | 26 |
+| `check-derive` | 35 | | |
 | `check-dice` | 20 | | |
 
 > `check-tablero` se borró con el tablero el 2026-07-26. Las cuentas que citan
 > las secciones RESUELTO son las **del día que se escribieron** y algunas ya no
 > cuadran (p. ej. O2 dice «check-estado (36)» y «check-targeting (49)»); manda
 > esta tabla.
+
+## RESUELTO (2026-07-28): FASE 1 — los monstruos del bestiario al combate 🐉
+Rama `monstruos-al-combate`. **Migración `schema_v23` — escrita, PENDIENTE de
+ejecutar.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-28-monstruos-al-combate*`. Ejecutada con
+subagentes (implementador + revisión de spec + revisión de calidad por tarea).
+
+- **`schema_v23.sql`**: `initiative` gana `monster_slug`, `hp`, `hp_max` y
+  `conds`, las cuatro opcionales. **Solo para PNJ**: los jugadores siguen con sus
+  PG y condiciones en `characters.play_state`. **Una sola fuente de verdad por
+  combatiente, nunca dos.** Las políticas RLS de la v11 ya servían y no cambian.
+- **`lib/combate.ts`** (puro): `saludDe` (PG → palabra), `nombresNumerados`,
+  `acotarHp`, `cantidadValida`/`TANDA_MAX` y `cuentaEnMesa`. Verificado por
+  **`check-combate` (49)**. El gate pasa de 19 scripts a **20**.
+- **El DM añade monstruos del bestiario** desde `InitiativeTracker`, **por
+  tandas**: cada tanda tira su propia iniciativa con el modificador de ESE
+  monstruo, así que un jefe añadido aparte nunca comparte turno con sus esbirros
+  —sale gratis, sin marcar nada— y dentro de una tanda van juntos salvo que se
+  pida «iniciativa individual». Añadir marca el monstruo como **descubierto** en
+  `/bestiario`.
+- **El DM ve `11/13`; los jugadores ven «malherido».** La palabra no lleva
+  dígitos a propósito: nadie calcula «le quedan 3». Las **condiciones sí las ve
+  todo el mundo**, porque son lo que explica de dónde sale la ventaja.
+- **Arregla que G4 no funcionaba contra monstruos**: `condsDe` devolvía `[]` para
+  todo PNJ, así que un goblin derribado no daba ventaja a nadie. La regla llevaba
+  escrita desde G4 sin aplicarse nunca. **Cero reglas nuevas**: solo deja de
+  faltarle el dato.
+
+> **Cuatro trampas cazadas, y tres son la misma lección repitiéndose.**
+> 1. **El error tragado, otra vez.** `useInitiative` hacía `const { data } = await
+>    …`. Con las columnas nuevas en el `select` y la v23 sin ejecutar, un 42703
+>    tumba la consulta entera y `/combate` habría dicho **«Sin ronda de iniciativa
+>    en curso»**: el combate desaparecido y la culpa al dato. Se arregló **en la
+>    misma tarea** que metía las columnas.
+> 2. **Dos reglas fuera de la capa pura.** El clamp de PG vivía en el hook y el
+>    tope de cantidad en el componente — y **ningún script cubre ninguno de los
+>    dos sitios**. Subieron a `lib/combate.ts` como `acotarHp` y `cantidadValida`.
+>    Es la lección de las «dos armas» por tercera vez.
+> 3. **El bestiario viajaba al bundle del jugador.** `useBestiary` importado
+>    estáticamente metía `data/bestiary` en el grafo de `/combate`: **24,7 KB
+>    gzip** de estadísticas que un jugador descarga para un selector que solo ve
+>    el DM. Sacar el selector a `components/combate/SelectorMonstruos.tsx` con
+>    `next/dynamic` lo saca del bundle — hacerlo *dentro* del mismo archivo no
+>    habría servido, porque el import estático se queda.
+> 4. **La numeración se repetía entre tandas.** Añadir 3 goblins y luego 2 más
+>    daba dos «Goblin 1» y dos «Goblin 2» — y el diseño **empuja** a añadir por
+>    tandas, que es lo que evita que el jefe comparta iniciativa. La función
+>    estrella rompía a la otra. `nombresNumerados` gana `yaHay` y `cuentaEnMesa`
+>    lo cuenta.
+
+- Verificado: `tsc --noEmit` + `next build` limpios · **los 20 check-scripts en
+  verde** · ESLint sin avisos en los componentes tocados. **Nada probado en
+  vivo.**
+- **Prueba del usuario** (tras ejecutar `schema_v23`): añadir 4 goblins ⇒ salen
+  «Goblin 1..4» compartiendo iniciativa; añadir un ogro aparte ⇒ tiene la suya;
+  con «iniciativa individual», los 4 goblins salen desperdigados; **añadir 3 y
+  luego 2 más ⇒ la numeración sigue, sin repetidos**; el DM baja PG a un goblin y
+  **el jugador ve «malherido»**, no el número; marcarle **derribado** y atacarle
+  con un arma de cuerpo ⇒ **ventaja**, y con un arco ⇒ **desventaja**; el goblin
+  aparece **descubierto** en `/bestiario`; buscar algo que no esté (el bestiario
+  solo llega a CR 1/2) ⇒ dice que no está y ofrece el PNJ a mano.
+- **Prueba extra, sin la migración**: con `schema_v23` **sin ejecutar**,
+  `/combate` sigue mostrando la iniciativa de siempre en vez de quedarse vacía,
+  el DM ve el aviso de que falta la migración y el botón de añadir está apagado.
 
 ## RESUELTO (2026-07-26): fuera el tablero, la iniciativa es el combate ⚔️
 Rama `quitar-tablero`. **Sin migración.** Spec y plan en
