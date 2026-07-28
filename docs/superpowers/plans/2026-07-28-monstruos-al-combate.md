@@ -244,7 +244,7 @@ export function nombresNumerados(nombre: string, n: number): string[] {
 npx tsx scripts/check-combate.ts
 ```
 
-Esperado: 21 líneas `OK` y `Todo en verde`, con código de salida 0.
+Esperado: 22 líneas `OK` y `Todo en verde`, con código de salida 0.
 
 - [ ] **Step 5: Gate completo**
 
@@ -269,7 +269,7 @@ nombresNumerados nombra una tanda de bichos identicos: uno se queda
 "Goblin", varios pasan a "Goblin 1".."Goblin 4".
 
 Capa pura y su script primero, la UI despues: una regla que vive en un
-componente escapa al gate. 21 comprobaciones, incluidos los bordes
+componente escapa al gate. 22 comprobaciones, incluidos los bordes
 exactos de cada tramo y un hpMax de 0 o negativo.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
@@ -996,7 +996,7 @@ Añade además una prueba que el spec no trae y que este plan sí necesita:
 
 En la sección `## Migraciones Supabase`, añade `schema_v23.sql` al final de la lista con su descripción, y **actualiza el aviso de la cabecera**: deja de ser «v1–v22 al día» y pasa a decir si la v23 está ejecutada o pendiente (**pregúntaselo al usuario, no lo supongas**).
 
-En la sección `## Scripts de comprobación`, añade `check-combate` a la tabla con su recuento (21) y cambia «Son 19» por «Son 20».
+En la sección `## Scripts de comprobación`, añade `check-combate` a la tabla con su recuento (22) y cambia «Son 19» por «Son 20».
 
 - [ ] **Step 3: Vault**
 
