@@ -11,7 +11,9 @@ type Props = {
   mods: Record<AbilityKey, number>;
   portrait?: string;
   portraitAlt: string;
-  onSlotClick: (slotId: string) => void; // vacío = intentar equipar; lleno = retirar
+  // Lleno = retirar al inventario. Vacío ya no hace nada: equipar se hace desde
+  // el detalle del objeto, que sabe a qué hueco va (lib/inventario, huecoDestino).
+  onSlotClick: (slotId: string) => void;
   /** Contenido bajo el muñeco (las vitales). Opcional: la hoja no lo pasa. */
   pie?: React.ReactNode;
 };
