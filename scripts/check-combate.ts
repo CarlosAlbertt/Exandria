@@ -1,5 +1,5 @@
 // Comprobación manual del combate contra monstruos. Uso: npx tsx scripts/check-combate.ts
-import { saludDe, nombresNumerados } from "../lib/combate";
+import { saludDe, nombresNumerados, acotarHp } from "../lib/combate";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -45,6 +45,17 @@ check("n negativo no crea filas", nombresNumerados("Goblin", -3).length === 0);
 check("recorta espacios del nombre", JSON.stringify(nombresNumerados("  Ogro  ", 1)) === JSON.stringify(["Ogro"]));
 check("nombres únicos dentro de la tanda", new Set(nombresNumerados("Lobo", 6)).size === 6);
 check("respeta nombres con espacios", nombresNumerados("Lobo huargo", 2)[1] === "Lobo huargo 2");
+
+// --- acotarHp ---
+check("acotarHp respeta un valor normal", acotarHp(7, 13) === 7);
+check("acotarHp no baja de 0", acotarHp(-4, 13) === 0);
+check("acotarHp no pasa del máximo", acotarHp(99, 13) === 13);
+check("acotarHp redondea a entero", acotarHp(7.6, 13) === 8);
+check("acotarHp con hpMax 0 da 0", acotarHp(5, 0) === 0);
+check("acotarHp con hpMax negativo da 0", acotarHp(5, -3) === 0);
+check("acotarHp rechaza NaN", acotarHp(NaN, 13) === null);
+check("acotarHp rechaza Infinity", acotarHp(Infinity, 13) === null);
+check("acotarHp rechaza un hpMax no finito", acotarHp(5, NaN) === null);
 
 console.log(failures === 0 ? "\nTodo en verde" : `\n${failures} fallo(s)`);
 process.exit(failures === 0 ? 0 : 1);

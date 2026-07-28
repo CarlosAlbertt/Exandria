@@ -32,6 +32,19 @@ export function saludDe(hp: number, hpMax: number): Salud {
 }
 
 /**
+ * PG de un monstruo acotados a su fila: nunca por debajo de 0 ni por encima
+ * de su máximo, y siempre enteros (la columna es `int`). Devuelve `null` si
+ * le llega algo que no es un número finito — quien llama debe cortar en vez
+ * de escribir un `NaN`, que en JSON viaja como `null` y borraría los PG en
+ * silencio.
+ */
+export function acotarHp(hp: number, hpMax: number): number | null {
+  if (!Number.isFinite(hp) || !Number.isFinite(hpMax)) return null;
+  const tope = Math.max(0, Math.round(hpMax));
+  return Math.max(0, Math.min(Math.round(hp), tope));
+}
+
+/**
  * Nombres de una tanda de monstruos idénticos. Uno solo se queda con su
  * nombre a secas («Goblin»); varios se numeran («Goblin 1»… «Goblin 4») para
  * que el DM pueda decir a cuál le pegas.

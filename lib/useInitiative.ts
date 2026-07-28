@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
+import { acotarHp } from "@/lib/combate";
 
 export type InitiativeRow = {
   id: number;
@@ -19,9 +20,9 @@ export type InitiativeRow = {
   conds: string[];
 };
 
-const INI_FIELDS = "id, user_id, is_npc, npc_name, value, active, monster_slug, hp, hp_max, conds";
 // Las seis columnas de la schema_v11, que existen desde siempre.
 const INI_FIELDS_BASE = "id, user_id, is_npc, npc_name, value, active";
+const INI_FIELDS = `${INI_FIELDS_BASE}, monster_slug, hp, hp_max, conds`;
 
 // Una fila leída sin las columnas de la v23 tiene que seguir siendo una
 // InitiativeRow válida: se rellenan los huecos con los mismos valores que
@@ -76,7 +77,10 @@ export function useInitiative() {
         data = base.data;
         error = base.error;
         if (mounted) setFaltaMigracion(true);
-      } else if (mounted) {
+      } else if (mounted && !error) {
+        // Solo una lectura que ha ido bien prueba que las columnas están. Un
+        // error que no es 42703 (red, RLS) no prueba ni que estén ni que
+        // falten, así que se conserva lo último que se supo en vez de tirarlo.
         setFaltaMigracion(false);
       }
 
@@ -181,11 +185,15 @@ export async function addMonstersInitiative(filas: NuevoMonstruo[]): Promise<{ e
   return { error: error?.message ?? null };
 }
 
-// PG de un PNJ. Se acota entre 0 y hp_max aquí mismo para que ninguna vía
-// (botón, teclado) pueda dejar la fila con PG negativos o por encima del tope.
+// PG de un PNJ. El acotado entre 0 y hp_max lo hace acotarHp (capa pura, con
+// comprobaciones en scripts/check-combate.ts) y pasa por aquí sí o sí, para
+// que ninguna vía (botón, teclado) deje la fila con PG negativos o por encima
+// del tope.
 export async function setNpcHp(id: number, hp: number, hpMax: number): Promise<{ error: string | null }> {
   if (!supabaseConfigured) return { error: "Supabase no configurado" };
-  const acotado = Math.max(0, Math.min(Math.round(hp), hpMax));
+  const acotado = acotarHp(hp, hpMax);
+  // Un NaN aquí viajaría como null y borraría los PG de la fila sin avisar.
+  if (acotado === null) return { error: "PG inválidos" };
   const { error } = await createClient()
     .from("initiative")
     .update({ hp: acotado, updated_at: new Date().toISOString() })
