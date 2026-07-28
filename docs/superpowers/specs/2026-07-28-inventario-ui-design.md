@@ -58,8 +58,10 @@ mismo componente en ambos casos: **se estrecha, no se reordena**.
    de `acSource` explicando la CA. Y la **barra de huecos**, que sustituye al número
    suelto: ámbar al 80 %, roja al llegar al tope, y el texto dice `20 + 2 × mod. Fuerza`.
 3. **La bolsa** — lista **agrupada por categoría** con su recuento (`Armas · 2`), icono
-   y color por categoría, chapa **EQUIPADA**, y buscador arriba. Los nombres largos en
-   español caben enteros, que es justo lo que una rejilla de casillas no permite.
+   y color por categoría, y buscador arriba. Los nombres largos en español caben
+   enteros, que es justo lo que una rejilla de casillas no permite. **No lleva chapa de
+   «equipada»**: lo que llevas puesto no está en la bolsa (ver abajo), y ponerla sería
+   describir un estado que no existe.
 
 **El detalle del objeto no es un modal**: se abre en el sitio y empuja la lista. En
 móvil aparece bajo las vitales; en portátil, al pie de la columna derecha. Un modal
@@ -121,12 +123,25 @@ catálogo no tiene ni un yelmo, ni guantes, ni botas.** En D&D 2024 esas piezas 
 CA**, así que los cuatro huecos son decorativos por diseño del juego. Se quedan (se
 llenan a mano, para describir tu pinta) y ampliar el catálogo va al backlog.
 
-**Bug a corregir en esta misma tanda**: soltar un objeto lo borra de `items` pero **el
-hueco de equipo se queda con una copia**. Sueltas la coraza y sigues con 18 de CA,
-porque `derive` lee los huecos. Soltar un objeto equipado debe desequiparlo.
+**Cómo funciona hoy de verdad, y no se cambia**: equipar **saca el objeto de la bolsa**
+(`removeOne`, `CharacterSheet.tsx:49`) y lo mete en el hueco; desequipar lo devuelve
+(`addBack`, `:58`). O sea:
 
-**Los objetos equipados siguen ocupando hueco** — los llevas encima —, y por eso llevan
-la chapa EQUIPADA en la lista.
+- **El muñeco y la bolsa son conjuntos disjuntos**: lo puesto no está guardado. Eso
+  simplifica la pantalla — no hay que marcar nada como «equipado» dentro de la lista,
+  porque no aparece ahí.
+- **Lo equipado no cuenta para los huecos** (`used` solo suma `items`,
+  `CharacterSheet.tsx:305`). Ponerte la coraza te libera un hueco. Es raro visto de
+  cerca, pero **es la regla actual y cambiarla sería tocar mecánica**, no interfaz.
+  Se documenta aquí para que nadie lo «arregle» de paso.
+- **Desequipar se hace desde el muñeco**, tocando el hueco ocupado. Ese gesto ya existe
+  y se conserva tal cual.
+
+> **Corrección sobre una versión anterior de este spec**: decía que soltar un objeto
+> equipado dejaba el hueco con una copia obsoleta (y que por eso la CA no bajaba).
+> **Es falso.** Salió de leer `changeQty` sin leer `equipInto`. Un objeto equipado no
+> está en la bolsa, así que no se puede soltar desde ella, y desequipar ya lo devuelve
+> bien. No hay bug que arreglar aquí.
 
 ## La ficha y el panel del DM
 
@@ -185,8 +200,9 @@ pasar en verde, porque los scripts solo cubren funciones puras.
 - **Grep de referencias al quitar la sección de la hoja**: `tsc` no ve un enlace muerto,
   y ya pasó al borrar `/tablero` (quedó un botón «Ir al tablero» que no llevaba a
   ningún sitio).
-- **Prueba del usuario**: equipar una coraza y ver la CA subir y el texto explicarlo;
-  soltarla y ver la CA bajar (hoy no baja); llenar la bolsa y ver la barra en rojo con
+- **Prueba del usuario**: equipar una coraza y ver la CA subir y el texto explicarlo, y
+  que **desaparece de la bolsa**; desequiparla desde el muñeco y ver la CA bajar y el
+  objeto volver a la bolsa; llenar la bolsa y ver la barra en rojo con
   el porqué del tope; buscar «poción» y encontrarla; escribir un objeto a mano y verlo
   como «Otro»; abrir un objeto y escribir una nota; entrar desde el móvil y comprobar
   que el muñeco se estrecha en vez de romperse; y que el DM ve la lista con iconos y
