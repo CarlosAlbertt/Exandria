@@ -420,14 +420,14 @@ No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
 (no hay entrada en `package.json`). **Son 21**, y las secciones RESUELTO solo
 nombran los que tocó cada tanda — los demás siguen vivos aunque no se citen.
-Recuento del **2026-07-28, los 19 en verde**:
+Recuento del **2026-07-28, los 21 en verde**:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
 | `check-archive` | 13 | `check-estado` | 35 |
 | `check-ataque` | 64 | `check-ficha` | 11 |
 | `check-atlas` | 118 | `check-inventario` | 45 |
-| `check-bestiary` | 1617 | `check-lore` | 69 |
+| `check-bestiary` | 1629 | `check-lore` | 69 |
 | `check-clases` | 116 | `check-slots` | 15 |
 | `check-clima` | 32 | `check-spells` | 28 |
 | `check-clock` | 20 | `check-statrolls` | 15 |
