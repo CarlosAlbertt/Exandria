@@ -24,8 +24,15 @@ export const CATEGORIAS: Categoria[] = [
   { id: "Otro",         icon: "fa-cube",          color: "var(--color-dim)" },
 ];
 
-// Normaliza para comparar: sin mayúsculas, sin tildes, sin espacios de sobra.
-function norm(s: string): string {
+/**
+ * Normaliza para comparar: sin mayúsculas, sin tildes, sin espacios de sobra.
+ *
+ * Se exporta **para que las comprobaciones normalicen igual que el índice**. Un
+ * check que compara los nombres de otra forma tiene un punto ciego justo donde
+ * el índice es más permisivo (las tildes), y entonces no vigila lo que dice
+ * vigilar.
+ */
+export function norm(s: string): string {
   return s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 

@@ -1,5 +1,5 @@
 // Comprobación manual del inventario. Uso: npx tsx scripts/check-inventario.ts
-import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria } from "../lib/inventario";
+import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria, norm } from "../lib/inventario";
 import { CATALOG } from "../data/equipment";
 import { ARMAS } from "../data/weapons";
 import { ARMOR_LOOKUP, SHIELD_NAME } from "../lib/derive";
@@ -65,8 +65,8 @@ check("un objeto desconocido no tiene destino", huecoDestino("Carta del gremio",
 // CATALOG.Armaduras y ARMOR_LOOKUP se mantienen a mano por separado. Una
 // armadura que esté solo en el catálogo se clasifica bien pero no da CA: el
 // fallo es mudo, así que lo caza el gate en vez de un comentario.
-const armadurasConocidas = new Set([...Object.keys(ARMOR_LOOKUP), SHIELD_NAME].map((n) => n.toLowerCase()));
-const soloEnCatalogo = CATALOG.Armaduras.filter((n) => !armadurasConocidas.has(n.toLowerCase()));
+const armadurasConocidas = new Set([...Object.keys(ARMOR_LOOKUP), SHIELD_NAME].map(norm));
+const soloEnCatalogo = CATALOG.Armaduras.filter((n) => !armadurasConocidas.has(norm(n)));
 check(
   `toda armadura del catálogo está en ARMOR_LOOKUP (sobran: ${soloEnCatalogo.join(", ") || "ninguna"})`,
   soloEnCatalogo.length === 0
@@ -78,7 +78,7 @@ check(
 const reclamos = new Map<string, Set<string>>();
 const reclama = (nombres: string[], cat: string) => {
   for (const n of nombres) {
-    const k = n.trim().toLowerCase();
+    const k = norm(n);
     if (!reclamos.has(k)) reclamos.set(k, new Set());
     reclamos.get(k)!.add(cat);
   }
