@@ -13,8 +13,8 @@ type Props = {
 };
 
 // La bolsa: lo que llevas GUARDADO. Lo que llevas puesto está en el muñeco y
-// no aparece aquí — equipar saca el objeto de la bolsa (CharacterSheet.tsx,
-// removeOne), así que no hace falta ninguna chapa de "equipada".
+// no aparece aquí — equipar saca el objeto de la bolsa (`quitarUno`, en
+// lib/inventario), así que no hace falta ninguna chapa de "equipada".
 export default function BolsaAgrupada({ items, seleccionado = null, onSelect }: Props) {
   const [q, setQ] = useState("");
 

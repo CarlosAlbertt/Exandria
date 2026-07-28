@@ -11,9 +11,12 @@ import { getClass } from "@/data/classes";
 import { getBackground } from "@/data/backgrounds";
 import { ABILITIES, AbilityKey, fmtMod } from "@/data/rules";
 import { reachedAsiLevels } from "@/data/leveling";
-import { CATALOG, ItemCat } from "@/data/equipment";
+// Los helpers de la bolsa viven en la capa pura (lib/inventario.ts), donde el
+// gate los comprueba y donde /inventario los comparte: aquí solo se usan.
+import { devolver } from "@/lib/inventario";
 import LevelPanel from "@/components/LevelPanel";
 import Paperdoll from "@/components/Paperdoll";
+import ResumenEquipo from "@/components/inventario/ResumenEquipo";
 import PortraitFrame from "@/components/PortraitFrame";
 import { derive } from "@/lib/derive";
 import { getMechanics, type ClassFeature } from "@/data/classdata";
@@ -45,26 +48,6 @@ const EMPTY_BUILD: Build = {
   base: { ...EMPTY_SCORES }, bonus: { ...NO_BONUS },
 };
 
-/* --- helpers de inventario --- */
-function removeOne(items: Item[], id: string): Item[] {
-  const out: Item[] = [];
-  for (const it of items) {
-    if (it.id === id) {
-      if (it.qty > 1) out.push({ ...it, qty: it.qty - 1 });
-    } else out.push(it);
-  }
-  return out;
-}
-function addBack(items: Item[], item: Item): Item[] {
-  const idx = items.findIndex((i) => i.name === item.name);
-  if (idx >= 0) {
-    const next = [...items];
-    next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
-    return next;
-  }
-  return [...items, { id: crypto.randomUUID(), name: item.name, qty: 1, notes: item.notes }];
-}
-
 type CharacterSheetProps = {
   targetUserId: string | null; // whose sheet (null = no session → localStorage)
   readOnly: boolean;
@@ -92,7 +75,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const lastWrittenPlay = useRef<string | null>(null);
   const [skills, setSkills] = useState<string[]>([]); // pericias elegidas en /crear (solo lectura aquí)
   const [ac, setAc] = useState<number | null>(null); // CA: sesión-only (no se persiste)
-  const [pickingSlot, setPickingSlot] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(true);
   // id de la ficha activa (saveCharacter va por id). Retirar/listar es la Tarea 5.
@@ -101,7 +83,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   const [slots, setSlots] = useState<Awaited<ReturnType<typeof listCharacters>>>([]);
   const [archiveError, setArchiveError] = useState<string | null>(null);
 
-  const [cat, setCat] = useState<ItemCat>("Aventura");
   const [openDoc, setOpenDoc] = useState<Item | null>(null); // documento in-game abierto (Fase M)
   const [loreUnlocked, setLoreUnlocked] = useState<string[]>([]); // saber aprendido por este PJ
   const [loreMsg, setLoreMsg] = useState<string | null>(null);
@@ -120,7 +101,6 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     void saveCharacter(characterId, { lore_unlocked: next });
     setLoreMsg(`Has aprendido ${nuevos.length} cosa${nuevos.length === 1 ? "" : "s"} nueva${nuevos.length === 1 ? "" : "s"}. Míralo en El Mundo de Exandria.`);
   }
-  const [custom, setCustom] = useState("");
   const [rollErr, setRollErr] = useState<string | null>(null); // error de publishRoll (salvación/pericia)
   const [saveAuto, setSaveAuto] = useState<string | null>(null); // aviso de salvación auto-fallada (no se tira)
 
@@ -301,10 +281,15 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     return d.spellSlots.map((n, i) => ({ lvl: i + 1, n })).filter((s) => s.n > 0);
   }, [d.spellSlots]);
 
-  const cap = Math.max(10, 20 + 2 * mods.fue);
+  // Huecos ocupados de la bolsa. La capacidad ya no se calcula aquí: la pinta
+  // VitalesEquipo (dentro de ResumenEquipo) a partir de huecosDe(mod. Fuerza),
+  // que es la misma fórmula comprobada por scripts/check-inventario.ts.
   const used = useMemo(() => items.reduce((s, i) => s + i.qty, 0), [items]);
-  const full = used >= cap;
   const acValue = ac ?? d.ac;
+  // Documentos in-game que llevas encima (cartas, contratos, tomos). Se quedan
+  // en la hoja aunque la bolsa se haya ido a /inventario: leerlos no es
+  // gestionar el inventario, es enterarse de la trama — y además ENSEÑA saber.
+  const documentos = useMemo(() => items.filter((i) => i.doc), [items]);
 
   /* --- handlers de nivel / asi --- */
   const onLevel = (n: number) => {
@@ -354,62 +339,22 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
   /* --- oro --- */
   const setGoldClamped = (n: number) => setGold(Math.max(0, Math.floor(n) || 0));
 
-  /* --- inventario --- */
-  const addItem = (name: string) => {
-    const n = name.trim();
-    if (!n || full) return;
-    setItems((prev) => {
-      const idx = prev.findIndex((i) => i.name === n);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
-        return next;
-      }
-      return [...prev, { id: crypto.randomUUID(), name: n, qty: 1 }];
-    });
-  };
-  const changeQty = (id: string, delta: number) => {
-    if (delta > 0 && full) return;
-    setItems((prev) => prev.flatMap((i) => {
-      if (i.id !== id) return [i];
-      const q = i.qty + delta;
-      return q <= 0 ? [] : [{ ...i, qty: q }];
-    }));
-  };
-  const setNotes = (id: string, notes: string) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, notes } : i)));
-
-  /* --- equipar / retirar --- */
+  /* --- retirar del muñeco ---
+     Solo RETIRAR. Equipar se hace en /inventario, desde el detalle del objeto,
+     que ya sabe a qué hueco va cada cosa: el viejo modo de dos pasos («pulsa un
+     hueco y luego el objeto») obligaba a recordar qué habías pulsado y no cabía
+     en una hoja sin lista de objetos. Un hueco vacío aquí no hace nada, igual
+     que en la pantalla de inventario. */
   const onSlotClick = (slotId: string) => {
     if (readOnly) return;
     const equipped = equipment[slotId];
-    if (equipped) {
-      // retirar → vuelve al inventario
-      setItems((prev) => addBack(prev, equipped));
-      setEquipment((prev) => {
-        const next = { ...prev };
-        delete next[slotId];
-        return next;
-      });
-      if (pickingSlot === slotId) setPickingSlot(null);
-    } else {
-      setPickingSlot((p) => (p === slotId ? null : slotId));
-    }
-  };
-
-  const equipInto = (slotId: string, item: Item) => {
-    const prevEquipped = equipment[slotId];
-    setItems((prev) => {
-      let next = removeOne(prev, item.id);
-      if (prevEquipped) next = addBack(next, prevEquipped);
+    if (!equipped) return;
+    setItems((prev) => devolver(prev, equipped));
+    setEquipment((prev) => {
+      const next = { ...prev };
+      delete next[slotId];
       return next;
     });
-    setEquipment((prev) => ({ ...prev, [slotId]: { id: item.id, name: item.name, qty: 1, notes: item.notes } }));
-    setPickingSlot(null);
-  };
-
-  const onItemClick = (item: Item) => {
-    if (pickingSlot) equipInto(pickingSlot, item);
   };
 
   /* --- RETIRAR PERSONAJE / LISTA DE RETIRADOS ---
@@ -736,111 +681,49 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             </div>
           </section>
 
-          {/* INVENTARIO */}
-          <section className="panel p-5">
-            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-              <p className="eyebrow">Inventario</p>
-              <p className="font-ui text-[13px] font-semibold">
-                <span style={{ color: full ? "var(--color-ember)" : "var(--color-arcane-bright)" }}>{used}</span>
-                <span style={{ color: "var(--color-dim)" }}>/{cap} huecos</span>
+          {/* EQUIPO Y BOLSA, resumidos. La bolsa entera vive en /inventario:
+              lo que se mira en mitad de un turno es qué llevas puesto y tu CA,
+              no la lista de sogas y antorchas. El DM que esté viendo la hoja de
+              otro (?user=) se lleva ese ?user= al inventario, para no acabar en
+              su propia bolsa. */}
+          <ResumenEquipo
+            equipment={equipment}
+            ac={acValue}
+            acSource={d.acSource}
+            modFuerza={mods.fue}
+            usados={used}
+            href={saveMode === "dm" && targetUserId ? `/inventario?user=${targetUserId}` : "/inventario"}
+          />
+
+          {/* DOCUMENTOS. Se quedan en la hoja: el botón «Leer» era lo único de
+              las filas de objetos que no iba de gestionar la bolsa, y además
+              abrir un tomo ENSEÑA saber (openDocument). /inventario no tiene por
+              dónde leerlos, así que borrar esto sin más dejaría cartas y
+              contratos del DM sin forma de abrirse. */}
+          {documentos.length > 0 && (
+            <section className="panel p-5">
+              <p className="eyebrow mb-3">
+                <i className="fas fa-scroll mr-1.5" style={{ color: "var(--color-arcane)" }} />
+                Documentos
               </p>
-            </div>
-
-            {pickingSlot && (
-              <div className="panel-raised p-3 mb-4 flex items-center justify-between gap-3" style={{ borderColor: "var(--color-bronze)" }}>
-                <span className="font-ui text-[13px] font-semibold" style={{ color: "var(--color-bronze-bright)" }}>
-                  <i className="fas fa-hand-pointer mr-2" />Elige un objeto para equipar en: <strong>{pickingSlot}</strong>
-                </span>
-                <button className="btn-ghost !py-1.5 !px-3 text-[12px]" onClick={() => setPickingSlot(null)}>Cancelar</button>
-              </div>
-            )}
-
-            {/* añadir */}
-            {!readOnly && (
-              <>
-                <div className="flex gap-2 mb-3">
-                  <input value={custom} onChange={(e) => setCustom(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { addItem(custom); setCustom(""); } }}
-                    placeholder="Objeto personalizado…"
-                    className="flex-1 bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
-                    style={{ color: "var(--color-warm)" }} />
-                  <button className="stat-btn !w-9 !h-9" onClick={() => { addItem(custom); setCustom(""); }} disabled={full || !custom.trim()}>+</button>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {(Object.keys(CATALOG) as ItemCat[]).map((c) => (
-                    <button key={c} className="chip" data-on={cat === c} onClick={() => setCat(c)}>{c}</button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-1.5 mb-5">
-                  {CATALOG[cat].map((it) => (
-                    <button key={it} onClick={() => addItem(it)} disabled={full}
-                      className="chip disabled:opacity-40" title="Añadir">
-                      {it} <i className="fas fa-plus text-[9px] ml-0.5" style={{ color: "var(--color-bronze)" }} />
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {full && <p className="text-[12px] mb-3 text-center italic" style={{ color: "var(--color-ember)" }}>Inventario lleno. Aumenta tu Fuerza para más huecos.</p>}
-            {!pickingSlot && items.length > 0 && (
-              <p className="text-[11px] mb-3 italic" style={{ color: "var(--color-dim)" }}>
-                <i className="fas fa-circle-info mr-1" />Para equipar, pulsa un hueco del equipo (derecha) y luego el objeto.
-              </p>
-            )}
-
-            {/* filas de objetos */}
-            {items.length === 0 ? (
-              <p className="font-ui text-[13px] text-center py-4" style={{ color: "var(--color-dim)" }}>Sin objetos todavía.</p>
-            ) : (
               <div className="space-y-2">
-                {items.map((it) => (
-                  <div key={it.id}
-                    className="panel-raised p-3"
-                    data-pick={!!pickingSlot}
-                    style={pickingSlot ? { borderColor: "var(--color-bronze)", cursor: "pointer" } : undefined}
-                    onClick={pickingSlot ? () => onItemClick(it) : undefined}>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-ui text-[14px] font-semibold flex-1 min-w-0" style={{ color: "var(--color-warm)" }}>
-                        {it.doc && <i className="fas fa-scroll mr-1.5" style={{ color: "var(--color-arcane)" }} />}{it.name}
-                      </span>
-                      {it.doc && (
-                        <button className="btn-ghost !py-1 !px-2.5 text-[12px]" style={{ color: "var(--color-arcane-bright)" }}
-                          onClick={(e) => { e.stopPropagation(); openDocument(it); }}><i className="fas fa-book-open mr-1" />Leer</button>
-                      )}
-                      {!readOnly && (
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <button className="stat-btn !w-7 !h-7" onClick={() => changeQty(it.id, -1)}>−</button>
-                          <span className="font-ui font-bold w-6 text-center" style={{ color: "var(--color-parch)" }}>{it.qty}</span>
-                          <button className="stat-btn !w-7 !h-7" onClick={() => changeQty(it.id, +1)} disabled={full}>+</button>
-                        </div>
-                      )}
-                      {readOnly && (
-                        <span className="font-ui font-bold w-6 text-center" style={{ color: "var(--color-parch)" }}>×{it.qty}</span>
-                      )}
-                      {pickingSlot && (
-                        <span className="font-ui text-[12px] font-bold" style={{ color: "var(--color-bronze-bright)" }}>
-                          <i className="fas fa-hand-pointer mr-1" />Equipar aquí
-                        </span>
-                      )}
-                    </div>
-                    {readOnly ? (
-                      it.notes ? <p className="w-full mt-2 font-ui text-[12px]" style={{ color: "var(--color-muted)" }}>{it.notes}</p> : null
-                    ) : (
-                      <input
-                        value={it.notes ?? ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => setNotes(it.id, e.target.value)}
-                        placeholder="Notas…"
-                        className="w-full mt-2 bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-ui text-[12px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors"
-                        style={{ color: "var(--color-muted)" }} />
-                    )}
+                {documentos.map((it) => (
+                  <div key={it.id} className="panel-raised p-3 flex items-center gap-3 flex-wrap">
+                    <span className="font-ui text-[14px] font-semibold flex-1 min-w-0" style={{ color: "var(--color-warm)" }}>
+                      {it.name}
+                    </span>
+                    <button
+                      className="btn-ghost !py-1 !px-2.5 text-[12px]"
+                      style={{ color: "var(--color-arcane-bright)" }}
+                      onClick={() => openDocument(it)}
+                    >
+                      <i className="fas fa-book-open mr-1" />Leer
+                    </button>
                   </div>
                 ))}
               </div>
-            )}
-          </section>
+            </section>
+          )}
         </div>
 
         {/* PAPERDOLL */}

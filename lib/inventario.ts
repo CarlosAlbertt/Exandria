@@ -101,6 +101,47 @@ export function huecoDestino(nombre: string, equipo: Record<string, Item>): stri
   return null;
 }
 
+/**
+ * Quita UNA unidad del objeto con ese `id`. Si era la última, la entrada
+ * desaparece de la bolsa; si no, baja `qty` en uno.
+ *
+ * Un `id` que no está en la bolsa devuelve la lista tal cual (sin lanzar): es
+ * lo que pasa cuando dos pestañas sueltan el mismo objeto a la vez.
+ */
+export function quitarUno(items: Item[], id: string): Item[] {
+  const out: Item[] = [];
+  for (const it of items) {
+    if (it.id === id) {
+      if (it.qty > 1) out.push({ ...it, qty: it.qty - 1 });
+    } else out.push(it);
+  }
+  return out;
+}
+
+/**
+ * Devuelve UNA unidad a la bolsa: al retirar algo del muñeco, o al desplazar a
+ * quien ocupaba el hueco donde acabas de equipar.
+ *
+ * Busca por **NOMBRE, no por id**, y eso es a propósito y carga con peso: es
+ * justo lo que hace que dos dagas sean una sola entrada `{ name: "Daga", qty: 2 }`
+ * en vez de dos filas. Media app cuenta con ello — `puedeDosArmas`
+ * (lib/ataque.ts) suma cantidades precisamente porque la bolsa fusiona por
+ * nombre. Si esto pasara a comparar por id, cada unidad equipada y retirada
+ * volvería como fila suelta y esa regla dejaría de dispararse.
+ *
+ * La entrada nueva estrena `id`: el del objeto que vuelve puede seguir vivo en
+ * otro hueco del equipo.
+ */
+export function devolver(items: Item[], item: Item): Item[] {
+  const idx = items.findIndex((i) => i.name === item.name);
+  if (idx >= 0) {
+    const next = [...items];
+    next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
+    return next;
+  }
+  return [...items, { id: crypto.randomUUID(), name: item.name, qty: 1, notes: item.notes }];
+}
+
 export type Grupo = { cat: CategoriaId; items: Item[] };
 
 /** Agrupa la bolsa por categoría, en el orden de CATEGORIAS y sin grupos vacíos. */
