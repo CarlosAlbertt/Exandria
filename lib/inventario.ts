@@ -14,15 +14,30 @@ export type Categoria = {
   color: string;  // var() del tema: si no está definida en globals.css NO se ve, y sin error
 };
 
-// El orden manda: es el de los grupos en la bolsa. "Otro" siempre al final.
-export const CATEGORIAS: Categoria[] = [
-  { id: "Armas",        icon: "fa-khanda",        color: "var(--color-ember)" },
-  { id: "Armaduras",    icon: "fa-shield-halved", color: "var(--color-arcane)" },
-  { id: "Aventura",     icon: "fa-hiking",        color: "var(--color-bronze)" },
-  { id: "Consumibles",  icon: "fa-flask",         color: "var(--color-verdant)" },
-  { id: "Herramientas", icon: "fa-screwdriver-wrench", color: "var(--color-violet)" },
-  { id: "Otro",         icon: "fa-cube",          color: "var(--color-dim)" },
-];
+/**
+ * Icono y color de cada categoría. Es un `Record` sobre `CategoriaId` **a
+ * propósito**: así, si algún día se añade una categoría al tipo y se olvida
+ * aquí, **no compila**. Con un array suelto el olvido habría sido mudo, y
+ * `CATEGORIAS.find(...)` habría devuelto `undefined` en tiempo de ejecución.
+ */
+const META: Record<CategoriaId, Omit<Categoria, "id">> = {
+  Armas:        { icon: "fa-khanda",              color: "var(--color-ember)" },
+  Armaduras:    { icon: "fa-shield-halved",       color: "var(--color-arcane)" },
+  Aventura:     { icon: "fa-hiking",              color: "var(--color-bronze)" },
+  Consumibles:  { icon: "fa-flask",               color: "var(--color-verdant)" },
+  Herramientas: { icon: "fa-screwdriver-wrench",  color: "var(--color-violet)" },
+  Otro:         { icon: "fa-cube",                color: "var(--color-dim)" },
+};
+
+/** El orden manda: es el de los grupos en la bolsa. «Otro» siempre al final. */
+const ORDEN: CategoriaId[] = ["Armas", "Armaduras", "Aventura", "Consumibles", "Herramientas", "Otro"];
+
+export const CATEGORIAS: Categoria[] = ORDEN.map((id) => ({ id, ...META[id] }));
+
+/** Icono y color de una categoría. Nunca es `undefined`: el `Record` lo garantiza. */
+export function metaDe(cat: CategoriaId): Categoria {
+  return { id: cat, ...META[cat] };
+}
 
 /**
  * Normaliza para comparar: sin mayúsculas, sin tildes, sin espacios de sobra.

@@ -39,6 +39,11 @@ check("ningún objeto del CATALOG cae en Otro",
 
 // --- CATEGORIAS (icono y color de cada una) ---
 check("hay 6 categorías", CATEGORIAS.length === 6);
+// ORDEN es un array a mano: el Record META garantiza que ninguna categoria se
+// quede sin icono, pero no que ORDEN las liste todas. Esto ultimo si.
+check("ORDEN no se deja ninguna categoria fuera",
+  new Set(CATEGORIAS.map((c) => c.id)).size === CATEGORIAS.length);
+check("«Otro» va la ultima", CATEGORIAS[CATEGORIAS.length - 1].id === "Otro");
 check("toda categoría tiene icono y color", CATEGORIAS.every((c) => c.icon.length > 0 && c.color.length > 0));
 check("los colores son variables del tema", CATEGORIAS.every((c) => c.color.startsWith("var(--color-")));
 check("categoriaDe siempre devuelve una categoría conocida",

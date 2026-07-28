@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { agrupaPorCategoria, CATEGORIAS, categoriaDe, norm, type CategoriaId } from "@/lib/inventario";
+import { agrupaPorCategoria, categoriaDe, metaDe, norm } from "@/lib/inventario";
 import type { Item } from "@/lib/character";
 
 type Props = {
@@ -11,8 +11,6 @@ type Props = {
   /** Si falta, la lista es de solo lectura (panel del DM). */
   onSelect?: (item: Item) => void;
 };
-
-const meta = (cat: CategoriaId) => CATEGORIAS.find((c) => c.id === cat)!;
 
 // La bolsa: lo que llevas GUARDADO. Lo que llevas puesto está en el muñeco y
 // no aparece aquí — equipar saca el objeto de la bolsa (CharacterSheet.tsx,
@@ -52,7 +50,7 @@ export default function BolsaAgrupada({ items, seleccionado = null, onSelect }: 
         </p>
       ) : (
         grupos.map((g) => {
-          const m = meta(g.cat);
+          const m = metaDe(g.cat);
           return (
             <div key={g.cat}>
               <p className="font-ui text-[10px] uppercase tracking-[.16em] mt-4 mb-2 flex items-center gap-2" style={{ color: "var(--color-dim)" }}>
@@ -69,8 +67,8 @@ export default function BolsaAgrupada({ items, seleccionado = null, onSelect }: 
                     style={seleccionado === it.id ? { borderColor: "var(--color-bronze)", boxShadow: "0 0 0 1px var(--color-bronze)" } : undefined}
                   >
                     <span className="w-7 h-7 rounded-lg grid place-items-center shrink-0" style={{ background: "var(--color-night)" }}>
-                      <i className={`fas ${it.doc ? "fa-scroll" : meta(categoriaDe(it.name)).icon} text-[13px]`}
-                         style={{ color: it.doc ? "var(--color-arcane)" : meta(categoriaDe(it.name)).color }} />
+                      <i className={`fas ${it.doc ? "fa-scroll" : metaDe(categoriaDe(it.name)).icon} text-[13px]`}
+                         style={{ color: it.doc ? "var(--color-arcane)" : metaDe(categoriaDe(it.name)).color }} />
                     </span>
                     <span className="font-ui text-[13px] font-semibold flex-1 min-w-0" style={{ color: "var(--color-warm)" }}>
                       {it.name}
