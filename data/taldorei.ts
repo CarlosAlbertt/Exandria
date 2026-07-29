@@ -54,7 +54,7 @@ export const MAPS = {
 export const REGION_RATIO: Record<string, string> = {
   "costa-lucidiana": "2550 / 3300",
   "sierras-alabastro": "3300 / 2550",
-  "llanuras-divisorias": "3300 / 2500",
+  "llanuras-divisorias": "3300 / 2550",
   "montanas-torrerrisco": "5100 / 3300",
   "montanas-crestormentas": "3300 / 2550",
   "peninsula-pleabruma": "5100 / 3300",

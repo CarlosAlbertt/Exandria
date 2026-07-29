@@ -2,7 +2,7 @@
 // Uso: npx tsx scripts/check-taldorei.ts
 import fs from "node:fs";
 import path from "node:path";
-import { REGIONS } from "../data/taldorei";
+import { REGIONS, REGION_RATIO } from "../data/taldorei";
 import { POIS } from "../data/pois";
 import { TOWN_MAPS } from "../data/townMaps";
 
@@ -10,6 +10,21 @@ let failures = 0;
 function check(label: string, cond: boolean) {
   if (cond) console.log(`OK   ${label}`);
   else { console.log(`FAIL ${label}`); failures++; }
+}
+
+// Ancho y alto de un JPEG leídos de su cabecera (marcadores SOF), sin
+// dependencias. Se usa para verificar REGION_RATIO contra el archivo real.
+function tamañoJpeg(ruta: string): { w: number; h: number } | null {
+  const buf = fs.readFileSync(ruta);
+  let i = 2;
+  while (i < buf.length - 9) {
+    if (buf[i] !== 0xff) { i++; continue; }
+    const marca = buf[i + 1];
+    const esSOF = marca >= 0xc0 && marca <= 0xcf && marca !== 0xc4 && marca !== 0xc8 && marca !== 0xcc;
+    if (esSOF) return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) };
+    i += 2 + buf.readUInt16BE(i + 2);
+  }
+  return null;
 }
 
 // --- Cada región tiene POIs, imagen y el archivo existe ---
@@ -24,6 +39,27 @@ for (const r of REGIONS) {
       fs.existsSync(path.join(process.cwd(), "public", r.image))
     );
   }
+}
+
+// --- REGION_RATIO coincide con el aspecto REAL del JPG ---
+// Los pines se posicionan en % del contenedor, y el contenedor toma su forma de
+// REGION_RATIO; la imagen va con `object-contain`. Si la proporción declarada no
+// es la del archivo, la imagen queda con franjas dentro del contenedor y TODOS
+// los pines de esa región se desplazan respecto al dibujo. Pasó con Llanuras
+// Divisorias: la tabla decía 3300/2500 y el JPG es 2000x1545.
+for (const r of REGIONS) {
+  const declarado = REGION_RATIO[r.slug];
+  check(`${r.name}: tiene entrada en REGION_RATIO`, !!declarado);
+  if (!declarado || !r.image) continue;
+  const tam = tamañoJpeg(path.join(process.cwd(), "public", r.image));
+  check(`${r.name}: el submapa se puede leer`, !!tam);
+  if (!tam) continue;
+  const [a, b] = declarado.split("/").map((n) => Number(n.trim()));
+  const desvio = Math.abs(a / b - tam.w / tam.h) / (tam.w / tam.h);
+  check(
+    `${r.name}: REGION_RATIO (${declarado}) cuadra con el JPG (${tam.w}x${tam.h}), desvío ${(desvio * 100).toFixed(1)}%`,
+    desvio < 0.005
+  );
 }
 
 // --- No hay regiones en POIS que no estén en REGIONS ---
