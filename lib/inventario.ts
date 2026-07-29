@@ -155,20 +155,29 @@ export type TipoHueco = "arma" | "armadura" | "accesorio";
  *   ahí cabe cualquier cosa, la app acaba enseñando una tirada de ataque para un
  *   anillo — afirmando algo falso, que es peor que quedarse corta. Así que solo
  *   admiten armas del catálogo (`ARMAS`), que es una lista cerrada y comprobable.
- * - Los huecos de **armadura** se autofiltran: la CA sale de `ARMOR_LOOKUP`, así
- *   que algo desconocido en el torso no cambia ningún número, solo describe.
- * - Los **accesorios** no alimentan ninguna regla, así que admiten cualquier cosa.
- *   Es donde va un anillo, un colgante o el trofeo raro que te dio el DM.
+ * - Los huecos de **armadura** solo admiten armaduras del catálogo, que es la
+ *   lista que `ARMOR_LOOKUP` sabe convertir en CA.
+ * - Los **accesorios** no alimentan ninguna regla, así que son el destino de
+ *   todo lo que la app no reconoce: un anillo, un colgante, el trofeo raro que
+ *   te dio el DM.
  *
- * Consecuencia asumida: una «Espada de Kael» inventada **no** entra en el hueco
- * de arma. Es correcto — la app tampoco sabría calcular su ataque. Para que un
- * arma funcione, tiene que llamarse como una del catálogo.
+ * Cada objeto va a **un solo tipo de hueco**. Nada de ofrecer todos los sitios
+ * «por si acaso»: un anillo en la cabeza no es una opción que nadie quiera.
+ *
+ * Dos consecuencias asumidas, dichas aquí para que no sorprendan:
+ * 1. Una «Espada de Kael» inventada **no** entra en el hueco de arma. Correcto:
+ *    la app tampoco sabría calcular su ataque. Para que un arma funcione, tiene
+ *    que llamarse como una del catálogo.
+ * 2. Un «Yelmo» escrito a mano va a un accesorio, no a la cabeza. Los huecos de
+ *    cabeza, antebrazos, manos y pies **no tienen nada en el catálogo** que los
+ *    llene, porque en D&D 2024 esas piezas no dan CA. Si algún día se quieren
+ *    usar de verdad, lo que hace falta es ampliar el catálogo, no relajar esto.
  */
 export function tiposDeHuecoPara(nombre: string): TipoHueco[] {
   const cat = categoriaDe(nombre);
   if (cat === "Armas") return ["arma"];
   if (cat === "Armaduras") return norm(nombre) === norm(SHIELD_NAME) ? ["arma"] : ["armadura"];
-  return ["accesorio", "armadura"];
+  return ["accesorio"];
 }
 
 export type Grupo = { cat: CategoriaId; items: Item[] };
