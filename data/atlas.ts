@@ -153,6 +153,39 @@ export function seedAtlas(taldoreiOverride?: { regions: Region[]; pois: Record<s
   return atlas;
 }
 
+// Correcciones puntuales sobre POIs de Tal'Dorei que ya viajaron a un
+// `atlas_defs` sembrado. `mergeAtlas` solo SUMA POIs nuevos: sin esto, mover
+// Emon de región o renombrar el Lago Mooren no llegaría nunca a la mesa.
+// Cada corrección se aplica SOLO si el POI sigue exactamente como estaba
+// (mismo nombre, misma región, mismas x/y de plantilla). Si el DM ya lo movió
+// o lo renombró, se salta y su edición manda. Idempotente: aplicada una vez,
+// la segunda no encuentra nada que casar.
+export type TaldoreiFix = {
+  nombre: string;        // nombre tal y como está guardado
+  deRegion: string;      // slug de región donde estaba
+  desdeX: number;        // x de plantilla que tenía
+  desdeY: number;        // y de plantilla que tenía
+  aRegion?: string;      // slug de región nueva (si cambia)
+  nombreNuevo?: string;  // nombre nuevo (si cambia)
+  tipoNuevo?: PoiType;   // tipo nuevo (si cambia)
+  x?: number;            // posición nueva
+  y?: number;
+};
+
+export const TALDOREI_FIXES: TaldoreiFix[] = [
+  { nombre: "Emon", deRegion: "costa-lucidiana", desdeX: 40, desdeY: 40, aRegion: "litoral-filofulgor", x: 50, y: 39 },
+  { nombre: "Zephrah", deRegion: "montanas-crestormentas", desdeX: 45, desdeY: 22, aRegion: "costa-lucidiana", x: 21, y: 55 },
+  { nombre: "Lyrengorn", deRegion: "montanas-crestormentas", desdeX: 50, desdeY: 30, aRegion: "montanas-torrerrisco", x: 63, y: 12 },
+  { nombre: "Abismo de Cerrofauces", deRegion: "peninsula-pleabruma", desdeX: 50, desdeY: 78, aRegion: "montanas-crestormentas", nombreNuevo: "Garganta Cenicienta", x: 55, y: 47 },
+  { nombre: "Lago Anclado", deRegion: "costa-lucidiana", desdeX: 48, desdeY: 74, nombreNuevo: "Lago Mooren", x: 60, y: 26 },
+  { nombre: "Rivera del río Anclado", deRegion: "sierras-alabastro", desdeX: 40, desdeY: 74, nombreNuevo: "Vega del Mooren", x: 53, y: 90 },
+  { nombre: "Fort Daxio", deRegion: "montanas-torrerrisco", desdeX: 30, desdeY: 30, nombreNuevo: "Fuerte Daxio", x: 25, y: 65 },
+  { nombre: "Bahía de las Dagas", deRegion: "litoral-filofulgor", desdeX: 45, desdeY: 40, tipoNuevo: "natural", x: 46, y: 63 },
+  { nombre: "Montañas Puntormenta", deRegion: "peninsula-pleabruma", desdeX: 62, desdeY: 30, tipoNuevo: "natural", x: 61, y: 8 },
+  { nombre: "Caverna del Axioma", deRegion: "montanas-crestormentas", desdeX: 70, desdeY: 40, tipoNuevo: "cueva", x: 34, y: 38 },
+  { nombre: "Cavernas Cienocristal", deRegion: "litoral-filofulgor", desdeX: 30, desdeY: 55, tipoNuevo: "cueva", x: 32, y: 27 },
+];
+
 // --- FUSIÓN CON LO YA GUARDADO ---------------------------------------------
 // `seedAtlas` solo corre la PRIMERA vez (ver lib/useAtlas.ts): en cuanto existe
 // `atlas_defs` en app_config, ampliar data/world.ts no llegaba nunca a la mesa.
@@ -201,6 +234,34 @@ export function mergeAtlas(stored: AtlasDefs): { atlas: AtlasDefs; changed: bool
         }
         const slug = cont.regions.find((x) => x.name === r.name)?.slug ?? r.slug;
         addPois(cont, slug, POIS[r.slug] ?? []);
+      }
+
+      for (const fix of TALDOREI_FIXES) {
+        const origen = cont.pois[fix.deRegion];
+        if (!origen) continue;
+        const idx = origen.findIndex(
+          (p) => p.name === fix.nombre && p.x === fix.desdeX && p.y === fix.desdeY
+        );
+        if (idx === -1) continue; // el DM lo tocó, o ya se corrigió: no se pisa
+
+        // `origen` viene de un `{...prev.pois}`: el objeto está copiado, los
+        // arrays NO. Copiar antes de tocar, o se muta el `stored` del llamante.
+        const origenCopia = [...origen];
+        const [poi] = origenCopia.splice(idx, 1);
+        const corregido: Poi = {
+          ...poi,
+          name: fix.nombreNuevo ?? poi.name,
+          type: fix.tipoNuevo ?? poi.type,
+          x: fix.x ?? poi.x,
+          y: fix.y ?? poi.y,
+        };
+        const destino = fix.aRegion ?? fix.deRegion;
+        cont.pois = {
+          ...cont.pois,
+          [fix.deRegion]: origenCopia,
+          [destino]: [...(cont.pois[destino] ?? []).filter((p) => p.name !== corregido.name), corregido],
+        };
+        changed = true;
       }
       continue;
     }

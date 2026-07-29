@@ -2,7 +2,7 @@
 // Uso: npx tsx scripts/check-atlas.ts
 import fs from "node:fs";
 import path from "node:path";
-import { seedAtlas } from "../data/atlas";
+import { seedAtlas, mergeAtlas } from "../data/atlas";
 import { REGIONS } from "../data/taldorei";
 import { WORLD_POIS } from "../data/world";
 
@@ -97,6 +97,16 @@ check("Wildemount: al menos una región tiene imagen mapeada", wildemountWithIma
 const dientesRegion = atlas["Dientes Rotos"].regions.find((r) => r.name === "Dientes Rotos");
 check("Dientes Rotos: región presente", !!dientesRegion);
 check("Dientes Rotos: blurb no vacío (normalización de artículo)", !!dientesRegion && dientesRegion.blurb.length > 0);
+
+// --- TALDOREI_FIXES es idempotente: aplicar mergeAtlas dos veces no cambia
+// nada la segunda vez ---
+const primera = mergeAtlas(seedAtlas());
+const segunda = mergeAtlas(primera.atlas);
+check("mergeAtlas es idempotente sobre una semilla nueva", segunda.changed === false);
+check(
+  "tras mergeAtlas, Emon está en Litoral de Filofulgor",
+  (primera.atlas["Tal'Dorei"].pois["litoral-filofulgor"] ?? []).some((p) => p.name === "Emon")
+);
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
 process.exit(failures === 0 ? 0 : 1);
