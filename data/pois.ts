@@ -56,6 +56,12 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Peñascos Salados", type: "natural", blurb: "Acantilados salinos batidos por el viento.", x: 44, y: 12 },
     { name: "Canal Roto", type: "peligro", blurb: "Paso quebrado, ruta peligrosa entre riscos.", x: 88, y: 43 },
     { name: "Vega del Mooren", type: "natural", blurb: "Vega fértil a lo largo del río Mooren, donde las cosechas son buenas pero las lindes entre granjas llevan generaciones en disputa.", x: 53, y: 90 },
+    { name: "Bahía de Alabastro", type: "natural", blurb: "La bahía que se abre bajo los muros de Piedrablanca; sus aguas claras reflejan la ciudad-estado y disimulan mal el tráfico constante de mercancías.", x: 60, y: 33 },
+    { name: "Bahía Dawnmist", type: "natural", blurb: "Bahía del oeste casi siempre velada por una bruma baja que no se levanta hasta media mañana; los navegantes novatos la confunden con la orilla.", x: 25, y: 46 },
+    { name: "Pinar Dawnmist", type: "natural", blurb: "Pinar denso al suroeste de la sierra, hermano en nombre de la bahía brumosa; entre sus troncos se cazan ciervos y, según cuentan, algo más grande.", x: 16, y: 87 },
+    { name: "Bosque del Cerco Este", type: "natural", blurb: "Mancha de bosque en el filo occidental de la sierra, frontera natural que ha marcado más de un límite de propiedad entre las granjas de la vega.", x: 9, y: 47 },
+    { name: "Bahía de Sotosecos", type: "natural", blurb: "Bahía resguardada junto al Bosque de Sotosecos, donde los cazadores bajan a vender la pieza del día antes de que se ponga el sol.", x: 75, y: 55 },
+    { name: "Profundidades Gélidas", type: "peligro", blurb: "El tramo de mar helado que cierra la sierra por el norte; los barcos que se aventuran demasiado cerca no siempre vuelven a contarlo.", x: 72, y: 6 },
   ],
   "llanuras-divisorias": [
     { name: "Kymal", type: "ciudad", blurb: "La ciudad del vicio: casinos, apuestas y contrabando.", x: 30, y: 65 },
