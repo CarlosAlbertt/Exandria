@@ -149,14 +149,18 @@ export function seedAtlas(taldoreiOverride?: { regions: Region[]; pois: Record<s
   return atlas;
 }
 
-// Correcciones puntuales sobre POIs de Tal'Dorei que ya viajaron a un
-// `atlas_defs` sembrado. `mergeAtlas` solo SUMA POIs nuevos: sin esto, mover
-// Emon de región o renombrar el Lago Mooren no llegaría nunca a la mesa.
-// Cada corrección se aplica SOLO si el POI sigue exactamente como estaba
-// (mismo nombre, misma región, mismas x/y de plantilla). Si el DM ya lo movió
-// o lo renombró, se salta y su edición manda. Idempotente: aplicada una vez,
-// la segunda no encuentra nada que casar.
-export type TaldoreiFix = {
+// Correcciones puntuales sobre POIs que ya viajaron a un `atlas_defs`
+// sembrado. `mergeAtlas` solo SUMA POIs nuevos: sin esto, mover Emon de
+// región, renombrar el Lago Mooren o recolocar los POIs heredados de
+// Wildemount no llegaría nunca a la mesa. Cada corrección se aplica SOLO si
+// el POI sigue exactamente como estaba (mismo nombre, misma región, mismas
+// x/y de plantilla). Si el DM ya lo movió o lo renombró, se salta y su
+// edición manda. Idempotente: aplicada una vez, la segunda no encuentra nada
+// que casar. `continente` filtra qué CONTINENTES_PROPIOS la aplica; `borrar`
+// quita el POI sin reinsertarlo (el Valle del Tuétano deja de ser POI de
+// Wildemount y pasa a ser región).
+export type AtlasFix = {
+  continente: string;    // nombre del continente (clave de CONTINENTES_PROPIOS)
   nombre: string;        // nombre tal y como está guardado
   deRegion: string;      // slug de región donde estaba
   desdeX: number;        // x de plantilla que tenía
@@ -166,20 +170,55 @@ export type TaldoreiFix = {
   tipoNuevo?: PoiType;   // tipo nuevo (si cambia)
   x?: number;            // posición nueva
   y?: number;
+  borrar?: boolean;      // el POI desaparece (sin reinsertar en ningún lado)
 };
 
-export const TALDOREI_FIXES: TaldoreiFix[] = [
-  { nombre: "Emon", deRegion: "costa-lucidiana", desdeX: 40, desdeY: 40, aRegion: "litoral-filofulgor", x: 50, y: 39 },
-  { nombre: "Zephrah", deRegion: "montanas-crestormentas", desdeX: 45, desdeY: 22, aRegion: "costa-lucidiana", x: 21, y: 55 },
-  { nombre: "Lyrengorn", deRegion: "montanas-crestormentas", desdeX: 50, desdeY: 30, aRegion: "montanas-torrerrisco", x: 63, y: 12 },
-  { nombre: "Abismo de Cerrofauces", deRegion: "peninsula-pleabruma", desdeX: 50, desdeY: 78, aRegion: "montanas-crestormentas", nombreNuevo: "Garganta Cenicienta", x: 55, y: 47 },
-  { nombre: "Lago Anclado", deRegion: "costa-lucidiana", desdeX: 48, desdeY: 74, nombreNuevo: "Lago Mooren", x: 60, y: 26 },
-  { nombre: "Rivera del río Anclado", deRegion: "sierras-alabastro", desdeX: 40, desdeY: 74, nombreNuevo: "Vega del Mooren", x: 53, y: 90 },
-  { nombre: "Fort Daxio", deRegion: "montanas-torrerrisco", desdeX: 30, desdeY: 30, nombreNuevo: "Fuerte Daxio", x: 25, y: 65 },
-  { nombre: "Bahía de las Dagas", deRegion: "litoral-filofulgor", desdeX: 45, desdeY: 40, tipoNuevo: "natural", x: 46, y: 63 },
-  { nombre: "Montañas Puntormenta", deRegion: "peninsula-pleabruma", desdeX: 62, desdeY: 30, tipoNuevo: "natural", x: 61, y: 8 },
-  { nombre: "Caverna del Axioma", deRegion: "montanas-crestormentas", desdeX: 70, desdeY: 40, tipoNuevo: "cueva", x: 34, y: 38 },
-  { nombre: "Cavernas Cienocristal", deRegion: "litoral-filofulgor", desdeX: 30, desdeY: 55, tipoNuevo: "cueva", x: 32, y: 27 },
+export const ATLAS_FIXES: AtlasFix[] = [
+  // --- Tal'Dorei ---
+  { continente: "Tal'Dorei", nombre: "Emon", deRegion: "costa-lucidiana", desdeX: 40, desdeY: 40, aRegion: "litoral-filofulgor", x: 50, y: 39 },
+  { continente: "Tal'Dorei", nombre: "Zephrah", deRegion: "montanas-crestormentas", desdeX: 45, desdeY: 22, aRegion: "costa-lucidiana", x: 21, y: 55 },
+  { continente: "Tal'Dorei", nombre: "Lyrengorn", deRegion: "montanas-crestormentas", desdeX: 50, desdeY: 30, aRegion: "montanas-torrerrisco", x: 63, y: 12 },
+  { continente: "Tal'Dorei", nombre: "Abismo de Cerrofauces", deRegion: "peninsula-pleabruma", desdeX: 50, desdeY: 78, aRegion: "montanas-crestormentas", nombreNuevo: "Garganta Cenicienta", x: 55, y: 47 },
+  { continente: "Tal'Dorei", nombre: "Lago Anclado", deRegion: "costa-lucidiana", desdeX: 48, desdeY: 74, nombreNuevo: "Lago Mooren", x: 60, y: 26 },
+  { continente: "Tal'Dorei", nombre: "Rivera del río Anclado", deRegion: "sierras-alabastro", desdeX: 40, desdeY: 74, nombreNuevo: "Vega del Mooren", x: 53, y: 90 },
+  { continente: "Tal'Dorei", nombre: "Fort Daxio", deRegion: "montanas-torrerrisco", desdeX: 30, desdeY: 30, nombreNuevo: "Fuerte Daxio", x: 25, y: 65 },
+  { continente: "Tal'Dorei", nombre: "Bahía de las Dagas", deRegion: "litoral-filofulgor", desdeX: 45, desdeY: 40, tipoNuevo: "natural", x: 46, y: 63 },
+  { continente: "Tal'Dorei", nombre: "Montañas Puntormenta", deRegion: "peninsula-pleabruma", desdeX: 62, desdeY: 30, tipoNuevo: "natural", x: 61, y: 8 },
+  { continente: "Tal'Dorei", nombre: "Caverna del Axioma", deRegion: "montanas-crestormentas", desdeX: 70, desdeY: 40, tipoNuevo: "cueva", x: 34, y: 38 },
+  { continente: "Tal'Dorei", nombre: "Cavernas Cienocristal", deRegion: "litoral-filofulgor", desdeX: 30, desdeY: 55, tipoNuevo: "cueva", x: 32, y: 27 },
+
+  // --- Wildemount ---
+  // Los 25 POIs que la Task A3 recolocó en data/wildemount.ts ya habían
+  // viajado al atlas guardado con las coordenadas del mapa del MUNDO (las de
+  // WORLD_POIS, sacadas de `git show master:data/world.ts`) porque
+  // `seedContinent` los repartía desde ahí antes de que Wildemount tuviera
+  // datos propios. `desdeX`/`desdeY` son esas coordenadas de mundo; `x`/`y`
+  // son las de región que dejó data/wildemount.ts.
+  { continente: "Wildemount", nombre: "Montañas Cyrios", deRegion: "imperio-dwendaliano", desdeX: 75, desdeY: 33, x: 8, y: 85 },
+  { continente: "Wildemount", nombre: "Rexxentrum", deRegion: "imperio-dwendaliano", desdeX: 80, desdeY: 20, x: 80, y: 61 },
+  { continente: "Wildemount", nombre: "Zadash", deRegion: "imperio-dwendaliano", desdeX: 79, desdeY: 25, aRegion: "valle-del-tuetano", x: 42, y: 48 },
+  { continente: "Wildemount", nombre: "Trostenwald", deRegion: "imperio-dwendaliano", desdeX: 76, desdeY: 30, aRegion: "valle-del-tuetano", x: 45, y: 89 },
+  { continente: "Wildemount", nombre: "Bladegarden", deRegion: "imperio-dwendaliano", desdeX: 82, desdeY: 30, aRegion: "valle-del-tuetano", x: 75, y: 23 },
+  { continente: "Wildemount", nombre: "Hupperdook", deRegion: "imperio-dwendaliano", desdeX: 78, desdeY: 27, aRegion: "valle-del-tuetano", x: 57, y: 10 },
+  { continente: "Wildemount", nombre: "Talonstadt", deRegion: "imperio-dwendaliano", desdeX: 84, desdeY: 31, aRegion: "valle-del-tuetano", x: 73, y: 47 },
+  { continente: "Wildemount", nombre: "Valle del Tuétano", deRegion: "imperio-dwendaliano", desdeX: 81, desdeY: 29, borrar: true },
+  { continente: "Wildemount", nombre: "Uthodurn", deRegion: "yermos-grisaceos", desdeX: 83, desdeY: 11, x: 60, y: 46 },
+  { continente: "Wildemount", nombre: "Shadycreek Run", deRegion: "yermos-grisaceos", desdeX: 80, desdeY: 12, x: 34, y: 96 },
+  { continente: "Wildemount", nombre: "Aldea Palebank", deRegion: "yermos-grisaceos", desdeX: 88, desdeY: 9, aRegion: "eiselcross", x: 97, y: 82 },
+  { continente: "Wildemount", nombre: "Rosohna", deRegion: "xhorhas", desdeX: 90, desdeY: 20, x: 81, y: 41 },
+  { continente: "Wildemount", nombre: "Bazzoxan", deRegion: "xhorhas", desdeX: 91, desdeY: 13, x: 75, y: 28 },
+  { continente: "Wildemount", nombre: "Asarius", deRegion: "xhorhas", desdeX: 86, desdeY: 17, x: 36, y: 37 },
+  { continente: "Wildemount", nombre: "Cordillera Penumbra", deRegion: "xhorhas", desdeX: 90, desdeY: 13, x: 91, y: 48 },
+  { continente: "Wildemount", nombre: "Urzin", deRegion: "xhorhas", desdeX: 93, desdeY: 24, x: 34, y: 12 },
+  { continente: "Wildemount", nombre: "Jigow", deRegion: "xhorhas", desdeX: 95, desdeY: 28, x: 58, y: 13 },
+  { continente: "Wildemount", nombre: "Puerto Damali", deRegion: "costa-del-serrallo", desdeX: 76, desdeY: 45, x: 35, y: 6 },
+  { continente: "Wildemount", nombre: "Nicodranas", deRegion: "costa-del-serrallo", desdeX: 72, desdeY: 42, x: 80, y: 48 },
+  { continente: "Wildemount", nombre: "Gwardan", deRegion: "costa-del-serrallo", desdeX: 70, desdeY: 37, aRegion: "costa-del-serrallo-norte", x: 55, y: 62 },
+  { continente: "Wildemount", nombre: "Feolinn", deRegion: "costa-del-serrallo", desdeX: 78, desdeY: 48, x: 59, y: 23 },
+  { continente: "Wildemount", nombre: "Othe", deRegion: "costa-del-serrallo", desdeX: 74, desdeY: 47, aRegion: "costa-del-serrallo-norte", x: 97, y: 94 },
+  { continente: "Wildemount", nombre: "Puerto Zoon", deRegion: "costa-del-serrallo", desdeX: 77, desdeY: 47, x: 63, y: 41 },
+  { continente: "Wildemount", nombre: "Tussoa", deRegion: "costa-del-serrallo", desdeX: 71, desdeY: 49, aRegion: "costa-del-serrallo-norte", x: 71, y: 89 },
+  { continente: "Wildemount", nombre: "Vesrah", deRegion: "costa-del-serrallo", desdeX: 69, desdeY: 46, x: 92, y: 70 },
 ];
 
 // --- FUSIÓN CON LO YA GUARDADO ---------------------------------------------
@@ -236,43 +275,49 @@ export function mergeAtlas(stored: AtlasDefs): { atlas: AtlasDefs; changed: bool
         addPois(cont, slug, defPois[r.slug] ?? []);
       }
 
-      // TALDOREI_FIXES solo mira Tal'Dorei todavía (Task A4 lo generaliza a
-      // ATLAS_FIXES por continente). Wildemount no tiene correcciones propias
-      // aún: sus POIs sembrados por primera vez ya nacen en su posición final.
-      if (contName === "Tal'Dorei") {
-        for (const fix of TALDOREI_FIXES) {
-          const origen = cont.pois[fix.deRegion];
-          if (!origen) continue;
-          const idx = origen.findIndex(
-            (p) => p.name === fix.nombre && p.x === fix.desdeX && p.y === fix.desdeY
-          );
-          if (idx === -1) continue; // el DM lo tocó, o ya se corrigió: no se pisa
+      // ATLAS_FIXES filtra por continente: cada CONTINENTES_PROPIOS aplica
+      // solo las suyas. Un continente sin correcciones (ninguna entrada con
+      // su `continente`) simplemente no entra nunca al `if (idx === -1)`.
+      for (const fix of ATLAS_FIXES) {
+        if (fix.continente !== contName) continue;
+        const origen = cont.pois[fix.deRegion];
+        if (!origen) continue;
+        const idx = origen.findIndex(
+          (p) => p.name === fix.nombre && p.x === fix.desdeX && p.y === fix.desdeY
+        );
+        if (idx === -1) continue; // el DM lo tocó, o ya se corrigió: no se pisa
 
-          // `origen` viene de un `{...prev.pois}`: el objeto está copiado, los
-          // arrays NO. Copiar antes de tocar, o se muta el `stored` del llamante.
-          const origenCopia = [...origen];
-          const [poi] = origenCopia.splice(idx, 1);
-          const corregido: Poi = {
-            ...poi,
-            name: fix.nombreNuevo ?? poi.name,
-            type: fix.tipoNuevo ?? poi.type,
-            x: fix.x ?? poi.x,
-            y: fix.y ?? poi.y,
-          };
-          const destino = fix.aRegion ?? fix.deRegion;
-          // Si la corrección NO cambia de región, la lista de destino tiene que
-          // partir de `origenCopia` (ya sin el POI viejo). Partir de
-          // `cont.pois[destino]` dejaría el original dentro: en un renombre, el
-          // filtro por nombre no lo alcanza —el nombre ya es otro— y el DM
-          // acabaría con dos pines, uno con el nombre retirado.
-          const base = destino === fix.deRegion ? origenCopia : (cont.pois[destino] ?? []);
-          cont.pois = {
-            ...cont.pois,
-            [fix.deRegion]: origenCopia,
-            [destino]: [...base.filter((p) => p.name !== corregido.name), corregido],
-          };
+        // `origen` viene de un `{...prev.pois}`: el objeto está copiado, los
+        // arrays NO. Copiar antes de tocar, o se muta el `stored` del llamante.
+        const origenCopia = [...origen];
+        const [poi] = origenCopia.splice(idx, 1);
+
+        if (fix.borrar) {
+          cont.pois = { ...cont.pois, [fix.deRegion]: origenCopia };
           changed = true;
+          continue;
         }
+
+        const corregido: Poi = {
+          ...poi,
+          name: fix.nombreNuevo ?? poi.name,
+          type: fix.tipoNuevo ?? poi.type,
+          x: fix.x ?? poi.x,
+          y: fix.y ?? poi.y,
+        };
+        const destino = fix.aRegion ?? fix.deRegion;
+        // Si la corrección NO cambia de región, la lista de destino tiene que
+        // partir de `origenCopia` (ya sin el POI viejo). Partir de
+        // `cont.pois[destino]` dejaría el original dentro: en un renombre, el
+        // filtro por nombre no lo alcanza —el nombre ya es otro— y el DM
+        // acabaría con dos pines, uno con el nombre retirado.
+        const base = destino === fix.deRegion ? origenCopia : (cont.pois[destino] ?? []);
+        cont.pois = {
+          ...cont.pois,
+          [fix.deRegion]: origenCopia,
+          [destino]: [...base.filter((p) => p.name !== corregido.name), corregido],
+        };
+        changed = true;
       }
       continue;
     }
