@@ -44,6 +44,11 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Pantano de K'Tawl", type: "peligro", blurb: "Ciénaga traicionera de brumas y criaturas ocultas.", x: 37, y: 63 },
     { name: "Lago Mooren", type: "natural", blurb: "Gran lago que nutre la costa y sus asentamientos.", x: 60, y: 26 },
     { name: "Zephrah", type: "ciudad", blurb: "Hogar de los Ashari del Aire, en un altiplano de las cumbres; custodian un desgarrón al Plano del Aire.", x: 21, y: 55 },
+    { name: "Marisma de Rootgarden", type: "natural", blurb: "Marisma arbolada al norte del Lago Mooren, con árboles medio hundidos en el agua; las barcas planas son el único modo de cruzarla sin mojarse.", x: 70, y: 13 },
+    { name: "Cumbres Cimeras", type: "natural", blurb: "La sierra que sostiene Zephrah en sus alturas; el camino de subida serpentea entre repechos donde el viento no calla nunca del todo.", x: 26, y: 45 },
+    { name: "Dunghill", type: "ciudad", blurb: "Aldea humilde al borde del Pantano de K'Tawl que nunca cambió su nombre pese a las burlas; sus curtidores dicen que el olor es cuestión de acostumbrarse.", x: 38, y: 70 },
+    { name: "Bahía de K'Tawl", type: "natural", blurb: "La bahía donde el Pantano de K'Tawl vierte sus aguas turbias al mar; los pescadores locales leen corrientes que otros confunden con resaca.", x: 47, y: 71 },
+    { name: "Bahía Owlset", type: "natural", blurb: "Ensenada tranquila en el extremo suroeste de la costa, resguardada de las tormentas que azotan el resto del litoral; ideal para fondear sin ser visto.", x: 14, y: 92 },
   ],
   "sierras-alabastro": [
     { name: "Piedrablanca", type: "ciudad", blurb: "Ciudad-estado de los De Rolo, marcada por la sombra de los Briarwood.", x: 44, y: 34 },
