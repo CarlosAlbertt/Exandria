@@ -99,6 +99,19 @@ for (const r of REGIONS) {
   }
 }
 
+// --- Ningún blurb menciona un nombre que ya se corrigió ---
+// Renombrar un POI no toca los blurbs que lo citaban: "Vega del Mooren" se
+// quedó describiendo "el río Anclado", la mistraducción que acababa de irse
+// del nombre. Un texto que se queda mintiendo se arregla, no se deja ahí.
+const NOMBRES_RETIRADOS = ["Anclado", "Cerrofauces", "Fort Daxio"];
+for (const r of REGIONS) {
+  for (const p of POIS[r.slug] ?? []) {
+    for (const viejo of NOMBRES_RETIRADOS) {
+      check(`${p.name}: su blurb no cita "${viejo}"`, !p.blurb.includes(viejo));
+    }
+  }
+}
+
 // --- TOWN_MAPS apunta a POIs vivos y a archivos que existen ---
 const todosLosNombres = new Set(vistos.keys());
 for (const [nombre, ruta] of Object.entries(TOWN_MAPS)) {

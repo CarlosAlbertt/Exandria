@@ -50,7 +50,7 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Bosque de Sotosecos", type: "natural", blurb: "Espesura seca de caza y senderos ocultos.", x: 47, y: 76 },
     { name: "Peñascos Salados", type: "natural", blurb: "Acantilados salinos batidos por el viento.", x: 44, y: 12 },
     { name: "Canal Roto", type: "peligro", blurb: "Paso quebrado, ruta peligrosa entre riscos.", x: 88, y: 43 },
-    { name: "Vega del Mooren", type: "natural", blurb: "Vega fértil a lo largo del río Anclado, donde las cosechas son buenas pero las lindes entre granjas llevan generaciones en disputa.", x: 53, y: 90 },
+    { name: "Vega del Mooren", type: "natural", blurb: "Vega fértil a lo largo del río Mooren, donde las cosechas son buenas pero las lindes entre granjas llevan generaciones en disputa.", x: 53, y: 90 },
   ],
   "llanuras-divisorias": [
     { name: "Kymal", type: "ciudad", blurb: "La ciudad del vicio: casinos, apuestas y contrabando.", x: 30, y: 65 },
