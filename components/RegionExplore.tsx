@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { REGION_RATIO } from "@/data/taldorei";
+import { REGION_RATIO } from "@/data/regionRatio";
 import { POI_ICON, POI_COLOR, type Poi } from "@/data/pois";
 import { useTownMaps } from "@/lib/useTownMaps";
 import { usePois } from "@/lib/usePois";

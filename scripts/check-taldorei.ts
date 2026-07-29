@@ -2,7 +2,8 @@
 // Uso: npx tsx scripts/check-taldorei.ts
 import fs from "node:fs";
 import path from "node:path";
-import { REGIONS, REGION_RATIO } from "../data/taldorei";
+import { REGIONS } from "../data/taldorei";
+import { REGION_RATIO } from "../data/regionRatio";
 import { POIS } from "../data/pois";
 import { TOWN_MAPS } from "../data/townMaps";
 

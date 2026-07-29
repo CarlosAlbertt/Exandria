@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MAPS, REGION_RATIO, type Region } from "@/data/taldorei";
+import { MAPS, type Region } from "@/data/taldorei";
+import { REGION_RATIO } from "@/data/regionRatio";
 import { POI_ICON, POI_COLOR, type Poi, type PoiType } from "@/data/pois";
 import { CONTINENTS, CONTINENT_VIEW } from "@/data/world";
 import { useAtlas, regionsOf, poisOf } from "@/lib/useAtlas";
