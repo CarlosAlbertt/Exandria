@@ -142,6 +142,11 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Cavernas Cienocristal", type: "cueva", blurb: "Grutas de cristal fangoso y ecos antiguos.", x: 32, y: 27 },
     { name: "Cicatriz del Rey Cinéreo", type: "peligro", blurb: "Tierra quemada por un poder de la Calamidad.", x: 64, y: 52 },
     { name: "Ruinas de O'Noa", type: "ruina", blurb: "Los restos de la vieja O'Noa, hoy reasentada.", x: 56, y: 64 },
+    { name: "Montañas Seashale", type: "natural", blurb: "La sierra que abriga Emon por el norte y le corta el peor de los vientos de tormenta; sus canteras han levantado media capital.", x: 37, y: 33 },
+    { name: "Arboleda Flamereach", type: "natural", blurb: "Bosquete justo al este de Emon, tan cerca de las murallas que sirve de coto de caza a quien no tiene tiempo de alejarse más.", x: 59, y: 43 },
+    { name: "Bahía de Filofulgor", type: "natural", blurb: "La bahía que da nombre a todo el litoral; sus aguas relucen al atardecer de un modo que los marineros juran que no es solo el reflejo del sol.", x: 40, y: 49 },
+    { name: "Senda Esmeralda", type: "natural", blurb: "Ruta principal que baja de Emon hacia el sur, la más transitada del litoral; caravanas, mensajeros y patrullas la recorren a todas horas del día.", x: 52, y: 48 },
+    { name: "Río Esmeralda", type: "natural", blurb: "El río que da nombre a la senda que sigue su curso; cruza el litoral hacia el este y desemboca cerca de las Ruinas de O'Noa.", x: 57, y: 62 },
   ],
 };
 
