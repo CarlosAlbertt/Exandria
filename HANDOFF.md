@@ -2,7 +2,15 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-28)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-29)
+
+> **Lo último (2026-07-29): el atlas de Tal'Dorei.** El continente donde se
+> juega estaba mal —tres capitales de región inexistentes, Emon en la región
+> equivocada, las coordenadas sin colocar y **cero comprobaciones del gate**— y
+> ahora tiene **94 POIs** (eran 45) sacados de los ocho submapas rotulados, más
+> su propio script `check-taldorei` (22 en el gate). Ver su sección RESUELTO.
+> **Los otros cuatro continentes siguen pendientes** y necesitan fuentes que el
+> usuario tiene que pasar: no tienen submapa propio.
 
 > [!warning] 🎲 **Lo siguiente NO es código: es jugar una sesión.**
 > Hay **siete features seguidas en producción y nunca vistas en una partida**
@@ -418,22 +426,22 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 21**, y las secciones RESUELTO solo
+(no hay entrada en `package.json`). **Son 22**, y las secciones RESUELTO solo
 nombran los que tocó cada tanda — los demás siguen vivos aunque no se citen.
-Recuento del **2026-07-28, los 21 en verde**:
+Recuento del **2026-07-29, los 22 en verde**:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
 | `check-archive` | 13 | `check-estado` | 35 |
 | `check-ataque` | 64 | `check-ficha` | 11 |
-| `check-atlas` | 118 | `check-inventario` | 45 |
+| `check-atlas` | 206 | `check-inventario` | 73 |
 | `check-bestiary` | 1629 | `check-lore` | 69 |
 | `check-clases` | 116 | `check-slots` | 15 |
 | `check-clima` | 32 | `check-spells` | 28 |
 | `check-clock` | 20 | `check-statrolls` | 15 |
-| `check-combate` | 49 | `check-targeting` | 51 |
-| `check-conjuros` | 49 | `check-turno` | 26 |
-| `check-derive` | 35 | | |
+| `check-combate` | 49 | **`check-taldorei`** | **913** |
+| `check-conjuros` | 49 | `check-targeting` | 51 |
+| `check-derive` | 35 | `check-turno` | 26 |
 | `check-dice` | 20 | | |
 | `check-dicebox` | 19 | | |
 
@@ -441,6 +449,112 @@ Recuento del **2026-07-28, los 21 en verde**:
 > las secciones RESUELTO son las **del día que se escribieron** y algunas ya no
 > cuadran (p. ej. O2 dice «check-estado (36)» y «check-targeting (49)»); manda
 > esta tabla.
+
+## RESUELTO (2026-07-29): el atlas de Tal'Dorei, arreglado y poblado 🗺️
+Rama `atlas-taldorei`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-29-atlas-taldorei*`. Ejecutada con
+subagentes (uno por tarea, revisión del coordinador entre tareas).
+
+**La sesión iba de poblar los otros cuatro continentes. Al comprobarlo, el que
+estaba mal era Tal'Dorei** — el continente donde se juega la campaña. Cuatro
+fallos, todos verificados antes de tocar nada:
+
+1. **Tres de las ocho regiones tenían una `capital` que no existe.** Sierras de
+   Alabastro apuntaba a «Westruun», que es un POI de **otra región** y encima
+   sin traducir (es Oestruun); Pleabruma a «Puerto Sombrío» y Filofulgor a
+   «Bys», que **no existen como POI en ningún sitio**. `RegionCard` llevaba
+   meses enseñando al jugador una capital a la que no podía ir.
+2. **Las coordenadas eran plantilla, no posiciones**: siete pares x/y idénticos
+   repetidos entre regiones distintas y todas las capitales en la misma casilla.
+   Nadie las colocó nunca sobre el submapa.
+3. **Ningún script del gate miraba los 45 POIs de Tal'Dorei.** `check-atlas`
+   (118) solo validaba el reparto de `WORLD_POIS` y la unicidad de slugs.
+4. **Tal'Dorei no tenía ni un pin en `WORLD_POIS`**: en el mapa del mundo,
+   Marquet enseñaba 36 pines y el continente de la campaña, ninguno.
+
+**El hallazgo que lo hizo barato**: los ocho JPG de `public/maps/regions/` son
+mapas **rotulados**, y sus hojas se llaman exactamente como las ocho regiones.
+Son la fuente de verdad de Tal'Dorei — **no hizo falta ningún libro ni ninguna
+wiki**. Al abrirlos salieron fallos que solo se ven mirando el mapa:
+
+- **Cuatro POIs estaban en la región equivocada**: **Emon** (¡la capital!) en la
+  Costa Lucidiana cuando su rótulo está en la hoja del Litoral de Filofulgor —
+  Emon mira al Mar de Ozmit por el **oeste**, y la Costa Lucidiana es el litoral
+  **este**—; **Zephrah** en Crestormentas cuando está en los Summit Peaks de la
+  Lucidiana; **Lyrengorn** en Crestormentas cuando está en Torrerrisco; y el
+  **Abismo de Cerrofauces** en Pleabruma cuando es el **Ashen Gorge** de
+  Crestormentas (renombrado a **Garganta Cenicienta**).
+- **Dos nombres propios mal traducidos**: «Lago Anclado» y «Rivera del río
+  Anclado» son **Mooren Lake** y **Mooren River Run**. Alguien tradujo *moor*
+  como *anclar*; Mooren es un nombre propio.
+- **«Bahía de las Dagas» estaba tipada `ciudad`** con blurb de puerto pirata. En
+  el mapa, Daggerbay es **una bahía**. No hay ningún puerto ahí.
+
+**Lo que hay ahora**: **94 POIs** (45 arreglados + **49 nuevos** leídos de los
+rótulos de las ocho hojas), todos colocados sobre su submapa. La Península de
+Pleabruma pasa de 4 a 11: su hoja rotulaba **cinco asentamientos**
+(Ezordam-Haar, Hdar-Tye, Ortem-Vellak, Rybad-Kol, T'Zarrm) y el dato conocía
+uno. `PoiType` gana **`cueva`** y **`campamento`** (7 tipos). Y las 29 ciudades
+y fortalezas del continente ya tienen su pin en el mapa del mundo — los ~60
+accidentes naturales **no van**, que ese mapa sirve para navegar entre
+continentes, no para el detalle.
+
+> **Cuatro trampas cazadas, y tres las cazó la revisión, no el gate.**
+> 1. **Un `Record<PoiType>` escondido en un componente.** Ampliar `PoiType`
+>    reventó `TITULO` en `components/reino/ContinenteGeografia.tsx`, que ni el
+>    spec ni el plan tenían localizado. Lo cazó `tsc` al instante — que es
+>    exactamente para lo que están los `Record` cerrados en vez de arrays
+>    sueltos. **Sexta vez** que una regla vive en un componente; primera vez que
+>    el diseño la obliga a salir sola.
+> 2. **`TALDOREI_FIXES` dejaba un fantasma.** El código del plan construía la
+>    lista de destino desde el array **sin el splice** cuando la corrección no
+>    cambiaba de región: en un renombre, el filtro por nombre no alcanza al
+>    original —el nombre ya es otro— así que el POI viejo sobrevivía. El DM
+>    habría acabado con **dos pines**, uno con el nombre retirado. Afectaba a
+>    Lago Mooren, Vega del Mooren y Fuerte Daxio.
+> 3. **Y el gate no lo veía**, porque sus comprobaciones partían de
+>    `seedAtlas()`, que ya trae los nombres nuevos: **ninguna corrección llegaba
+>    a casar, así que no probaban nada**. Ahora `check-atlas` reconstruye el
+>    estado ANTERIOR deshaciendo cada fix y comprueba lo que importa: el nombre
+>    viejo desaparece del continente y el nuevo aparece **una sola vez**.
+>    Verificado reintroduciendo el bug a propósito: caza los tres.
+> 4. **Un blurb que se quedó mintiendo.** Al renombrar el Lago Mooren, el blurb
+>    de la Vega siguió diciendo «el río **Anclado**» — la mistraducción que
+>    acababa de salir del nombre. Renombrar un POI no toca los textos que lo
+>    citaban. `check-taldorei` gana la comprobación.
+> 5. **`seedAtlas()` entrega `data/pois.ts` POR REFERENCIA** (`pois: POIS`, sin
+>    copiar). Las simulaciones de `check-atlas` escribían encima y dejaban el
+>    módulo tocado en memoria: «Fuerte Daxio» volvía a llamarse «Fort Daxio»
+>    para toda comprobación posterior, según el **orden** del archivo. Ahora
+>    copian antes de tocar y una comprobación final verifica que el módulo sigue
+>    intacto. **Ojo con esto si alguien más consume `seedAtlas()` y muta.**
+
+**Por qué `TALDOREI_FIXES` existe**: `atlas_defs` ya está sembrado en
+`app_config`, y `mergeAtlas` **solo suma POIs nuevos por nombre** — no
+reposiciona, no renombra y no mueve de región. Sin esa tabla, todo lo de arriba
+se habría quedado en el repo y la partida habría seguido con los pines viejos.
+Cada corrección **solo se aplica si el POI sigue exactamente como estaba**
+(nombre, región y x/y de plantilla); si el DM ya lo movió, **su edición manda**.
+Es idempotente.
+
+- **Nuevo script**: `scripts/check-taldorei.ts` (**913** comprobaciones). El
+  gate pasa de 21 a **22**. Comprueba: la capital de cada región existe como POI
+  **de esa región**, ningún x/y repetido en todo el continente, rango [2,98],
+  nombres en español (lista negra de sustantivos comunes ingleses), blurbs de
+  40 caracteres mínimo, ningún blurb citando un nombre retirado, `TOWN_MAPS`
+  apuntando a POIs vivos, y unicidad de nombre (`poi_state` indexa por nombre).
+  `check-atlas` sube de 118 a **206**.
+- Verificado: `tsc --noEmit` + `next build` limpios · **los 22 check-scripts en
+  verde el 2026-07-29**. **NO probado en la app en vivo**: `/mapa` exige sesión.
+  La colocación se verificó pintando los 94 pines sobre sus ocho submapas
+  (SVG generados y entregados al usuario), no dentro de la aplicación.
+- **Prueba del usuario**: abrir `/mapa`, entrar en las ocho regiones de
+  Tal'Dorei y comprobar que cada pin cae sobre su rótulo; que **Emon sale en el
+  Litoral de Filofulgor** y ya no en la Costa Lucidiana; que Pleabruma enseña
+  sus cinco asentamientos; que las ciudades salen en el mapa del mundo; y —lo
+  más importante— que **su `atlas_defs` ya sembrado recibe las correcciones**:
+  que no aparezca ningún «Lago Anclado» ni «Fort Daxio» duplicado. Si el DM
+  había movido algún pin a mano, ese se queda donde lo dejó.
 
 ## RESUELTO (2026-07-28): el inventario, rediseñado 🎒
 Rama `inventario-ui`. **Sin migración.** Spec y plan en
