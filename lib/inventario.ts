@@ -142,6 +142,35 @@ export function devolver(items: Item[], item: Item): Item[] {
   return [...items, { id: crypto.randomUUID(), name: item.name, qty: 1, notes: item.notes }];
 }
 
+export type TipoHueco = "arma" | "armadura" | "accesorio";
+
+/**
+ * Qué CLASES de hueco admite un objeto al equiparlo a mano. La enumeración de
+ * huecos concretos la hace quien pinta; la regla vive aquí, donde el gate la ve.
+ *
+ * La línea que se traza: **un hueco que alimenta una regla solo acepta lo que la
+ * app puede verificar.**
+ *
+ * - Los huecos de **arma** alimentan `ataqueDe`, que produce impacto y daño. Si
+ *   ahí cabe cualquier cosa, la app acaba enseñando una tirada de ataque para un
+ *   anillo — afirmando algo falso, que es peor que quedarse corta. Así que solo
+ *   admiten armas del catálogo (`ARMAS`), que es una lista cerrada y comprobable.
+ * - Los huecos de **armadura** se autofiltran: la CA sale de `ARMOR_LOOKUP`, así
+ *   que algo desconocido en el torso no cambia ningún número, solo describe.
+ * - Los **accesorios** no alimentan ninguna regla, así que admiten cualquier cosa.
+ *   Es donde va un anillo, un colgante o el trofeo raro que te dio el DM.
+ *
+ * Consecuencia asumida: una «Espada de Kael» inventada **no** entra en el hueco
+ * de arma. Es correcto — la app tampoco sabría calcular su ataque. Para que un
+ * arma funcione, tiene que llamarse como una del catálogo.
+ */
+export function tiposDeHuecoPara(nombre: string): TipoHueco[] {
+  const cat = categoriaDe(nombre);
+  if (cat === "Armas") return ["arma"];
+  if (cat === "Armaduras") return norm(nombre) === norm(SHIELD_NAME) ? ["arma"] : ["armadura"];
+  return ["accesorio", "armadura"];
+}
+
 export type Grupo = { cat: CategoriaId; items: Item[] };
 
 /** Agrupa la bolsa por categoría, en el orden de CATEGORIAS y sin grupos vacíos. */

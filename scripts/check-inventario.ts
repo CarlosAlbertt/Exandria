@@ -1,5 +1,5 @@
 // Comprobación manual del inventario. Uso: npx tsx scripts/check-inventario.ts
-import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria, norm, quitarUno, devolver } from "../lib/inventario";
+import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria, norm, quitarUno, devolver, tiposDeHuecoPara } from "../lib/inventario";
 import { CATALOG } from "../data/equipment";
 import { ARMAS } from "../data/weapons";
 import { ARMOR_LOOKUP, SHIELD_NAME } from "../lib/derive";
@@ -100,6 +100,18 @@ check(
   `ningún nombre se reclama para dos categorías (conflictos: ${enConflicto.join(", ") || "ninguno"})`,
   enConflicto.length === 0
 );
+
+// --- tiposDeHuecoPara: el bug del anillo en el hueco de arma ---
+// Un hueco que alimenta una regla solo acepta lo que la app puede verificar.
+check("un arma del catalogo solo va a huecos de arma", JSON.stringify(tiposDeHuecoPara("Espada larga")) === JSON.stringify(["arma"]));
+check("el escudo va al hueco de arma (mano secundaria)", JSON.stringify(tiposDeHuecoPara("Escudo")) === JSON.stringify(["arma"]));
+check("una armadura de cuerpo solo va a huecos de armadura", JSON.stringify(tiposDeHuecoPara("Coraza")) === JSON.stringify(["armadura"]));
+check("un anillo NO puede ir a un hueco de arma", !tiposDeHuecoPara("Anillo de proteccion").includes("arma"));
+check("un anillo puede ir a un accesorio", tiposDeHuecoPara("Anillo de proteccion").includes("accesorio"));
+check("un objeto raro no puede ir a un hueco de arma", !tiposDeHuecoPara("Carta del gremio").includes("arma"));
+check("una espada inventada tampoco entra en el hueco de arma", !tiposDeHuecoPara("Espada de Kael").includes("arma"));
+check("ningun objeto se queda sin ningun hueco posible",
+  ["Espada larga", "Coraza", "Escudo", "Anillo", "Carta del gremio", ""].every((n) => tiposDeHuecoPara(n).length > 0));
 
 // --- agrupaPorCategoria ---
 const bolsa = [item("Espada larga"), item("Daga", 2), item("Poción de curación", 3), item("Carta del gremio")];
