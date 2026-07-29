@@ -450,6 +450,50 @@ Recuento del **2026-07-29, los 22 en verde**:
 > cuadran (p. ej. O2 dice «check-estado (36)» y «check-targeting (49)»); manda
 > esta tabla.
 
+## RESUELTO (2026-07-29): el visor de región descolocaba los pines 📍
+Rama `fix-visor-region`. **Sin migración.** Salió al probar el atlas nuevo en la
+app: **«al pulsar un POI se descoloca el mapa y el POI»**. Eran dos fallos, los
+dos preexistentes y los dos amplificados por el contenido nuevo.
+
+1. **Los pines se posicionaban sobre el hueco, no sobre el mapa.** El contenedor
+   de `RegionExplore` llevaba `aspectRatio` + `maxHeight: 100%` + un `width`
+   explícito. En cuanto el alto disponible no daba para ese aspecto, el alto se
+   recortaba y **el ancho no se recalculaba**: el contenedor quedaba deformado
+   (medido: **668×230** para una imagen de aspecto 1.294). La imagen se encogía
+   y se centraba dentro con `object-contain`, pero los pines seguían en % del
+   contenedor **entero** — hasta un **12% del ancho** de separación en un
+   portátil a pantalla completa. Ahora la imagen se dimensiona sola
+   (`max-w`/`max-h`, alto y ancho automáticos) de modo que **su caja es el
+   dibujo**, y los pines viven en una capa medida sobre esa caja con un
+   `ResizeObserver`.
+2. **El pie tenía dos alturas** —el aviso «Pulsa un punto» y la ficha del POI— y
+   el mapa ocupa el hueco que sobra, así que seleccionar recolocaba el mapa y el
+   pin se movía **bajo el dedo que acababa de pulsarlo** (medido: 27 px). Los
+   blurbs nuevos, de dos y tres líneas, convirtieron un salto imperceptible en
+   uno molesto. Ahora el pie tiene **altura fija** y el texto largo hace scroll
+   dentro.
+
+**Y un tercero que destapó**: `REGION_RATIO` de Llanuras Divisorias decía
+`3300 / 2500` y el JPG es 2000×1545 (**1.294, no 1.320**). Eso deformaba también
+la **superficie de arrastre del editor del DM** (`PinDragMap` va con
+`background-size: cover`, que solo es exacto si la proporción declarada cuadra
+con el archivo): los pines que se arrastraran ahí se guardaban con ~2% de error.
+`check-taldorei` ahora **lee la cabecera del JPG** y compara la proporción real
+con la declarada. Es la única comprobación que podía cazarlo.
+
+> **La lección de esta tanda, y no es la de siempre**: las cinco anteriores
+> fueron «una regla dentro de un componente escapa al gate». Esta es distinta —
+> **una regla dentro del CSS no la ve ningún script**. Lo único que se pudo
+> automatizar fue la proporción declarada contra el archivo; que los pines caigan
+> sobre el dibujo se verificó **midiendo el rectángulo de la imagen y el de la
+> capa de pines** en cuatro formas de pantalla (1200×800, 1200×420, 700×900,
+> 380×700): coinciden exactamente, la imagen conserva su proporción y abrir la
+> ficha no mueve nada. Esa medición no vive en el repo.
+
+- Verificado: `tsc --noEmit` + `next build` limpios · `check-taldorei` y
+  `check-atlas` en verde. **La app en vivo la probó el usuario** — así salió el
+  fallo.
+
 ## RESUELTO (2026-07-29): el atlas de Tal'Dorei, arreglado y poblado 🗺️
 Rama `atlas-taldorei`. **Sin migración.** Spec y plan en
 `docs/superpowers/{specs,plans}/2026-07-29-atlas-taldorei*`. Ejecutada con
