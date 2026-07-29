@@ -50,7 +50,7 @@ export const CONTINENTS = ["Tal'Dorei", "Issylra", "Wildemount", "Marquet", "Die
 export const REGIONS_BY_CONTINENT: Record<string, string[]> = {
   "Tal'Dorei": ["Costa Lucidiana", "Sierras de Alabastro", "Llanuras Divisorias", "Montañas Torrerrisco", "Montañas Crestormentas", "Península de Pleabruma", "Expansión Verdante", "Litoral de Filofulgor"],
   "Issylra": ["Othanzia", "Valle Demithore", "Montañas Utesspire", "Alcance Caramarin"],
-  "Wildemount": ["Imperio Dwendaliano", "Xhorhas", "Costa del Serrallo", "Yermos Grisáceos"],
+  "Wildemount": ["Imperio Dwendaliano", "Valle del Tuétano", "Xhorhas", "Yermos Grisáceos", "Costa del Serrallo", "Costa del Serrallo Norte", "Eiselcross", "Costa de la Plaga"],
   "Marquet": ["Desierto Rumedam", "Valle Hellcatch", "Tierras Salvajes de Oderan", "Aeshanadoor", "Tierras Altas Taladas", "Montañas Aggrad", "Arenas Panagrip"],
   "Dientes Rotos": ["Dientes Rotos"],
   "Mares": ["Mares"],
@@ -118,7 +118,7 @@ export const WORLD_POIS: WorldPoi[] = [
   { name: "Talonstadt", type: "pueblo", continent: "Wildemount", region: "Imperio Dwendaliano", x: 84, y: 31, blurb: "Ciudad-campamento de refugiados en el borde oriental del Valle del Tuétano." },
   { name: "Uthodurn", type: "ciudad", continent: "Wildemount", region: "Yermos Grisáceos", x: 83, y: 11, blurb: "Ciudad subterránea de enanos y elfos de la plata, en los Yermos Grisáceos." },
   { name: "Shadycreek Run", type: "pueblo", continent: "Wildemount", region: "Yermos Grisáceos", x: 80, y: 12, blurb: "Refugio sin ley de las tribus de los Yermos Grisáceos; crimen, contrabando y familias rivales." },
-  { name: "Aldea Palebank", type: "pueblo", continent: "Wildemount", region: "Yermos Grisáceos", x: 88, y: 9, blurb: "Aldea pesquera helada junto al Lago Estrellafría." },
+  { name: "Aldea Palebank", type: "pueblo", continent: "Wildemount", region: "Eiselcross", x: 88, y: 9, blurb: "Aldea pesquera helada junto al Lago Estrellafría." },
   { name: "Rosohna", type: "capital", continent: "Wildemount", region: "Xhorhas", x: 90, y: 20, blurb: "Capital de la Dinastía Kryn sobre las ruinas de Ghor Dranas, en los Campos Espinados. \"Renacer\" en drow: metrópoli en noche perpetua, devota del Luxon." },
   { name: "Bazzoxan", type: "fortaleza", continent: "Wildemount", region: "Xhorhas", x: 91, y: 13, blurb: "Puesto militar y antiguo templo oscuro en el norte de la Penumbra; contiene los horrores de la Calamidad." },
   { name: "Asarius", type: "ciudad", continent: "Wildemount", region: "Xhorhas", x: 86, y: 17, blurb: "La Ciudad de los Reyes: nexo militar y cultural del noroeste de Xhorhas." },

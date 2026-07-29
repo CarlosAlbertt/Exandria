@@ -6,15 +6,23 @@
 
 import { REGIONS, type Region } from "@/data/taldorei";
 import { POIS, type Poi, type PoiType } from "@/data/pois";
+import { WILDEMOUNT_REGIONS, WILDEMOUNT_POIS } from "@/data/wildemount";
 import { REGIONS_BY_CONTINENT, CONTINENT_VIEW, WORLD_POIS, type WorldType } from "@/data/world";
 import { slugify } from "@/lib/slug";
 
 export type ContinentAtlas = { regions: Region[]; pois: Record<string, Poi[]> }; // pois keyed por region.slug
 export type AtlasDefs = Record<string, ContinentAtlas>; // key = nombre de continente
 
-// Continentes generados a partir de REGIONS_BY_CONTINENT (Tal'Dorei se siembra
-// aparte, con sus datos propios). "Mares" queda fuera del atlas.
-const GENERATED_CONTINENTS = ["Issylra", "Wildemount", "Marquet", "Dientes Rotos"] as const;
+// Continentes con datos propios (regiones y POIs escritos a mano, no
+// derivados de WORLD_POIS). Los demás siguen saliendo de REGIONS_BY_CONTINENT.
+const CONTINENTES_PROPIOS: Record<string, () => ContinentAtlas> = {
+  "Tal'Dorei": () => ({ regions: REGIONS, pois: POIS }),
+  "Wildemount": () => ({ regions: WILDEMOUNT_REGIONS, pois: WILDEMOUNT_POIS }),
+};
+
+// Continentes generados a partir de REGIONS_BY_CONTINENT (los CONTINENTES_PROPIOS
+// se siembran aparte, con sus datos propios). "Mares" queda fuera del atlas.
+const GENERATED_CONTINENTS = ["Issylra", "Marquet", "Dientes Rotos"] as const;
 
 // Paleta de acentos para las regiones nuevas (misma lista que ACCENTS en
 // app/dm/MapaPanel.tsx), rotada por índice dentro de cada continente.
@@ -43,18 +51,6 @@ const WORLDTYPE_TO_POITYPE: Partial<Record<WorldType, PoiType>> = {
 function toPoiType(t: WorldType): PoiType {
   return WORLDTYPE_TO_POITYPE[t] ?? "ciudad";
 }
-
-// Mapa explícito nombre de región → archivo real en public/maps/wildemount/
-// (los nombres de archivo están en inglés; hay 8 archivos pero solo 4
-// regiones de Wildemount en REGIONS_BY_CONTINENT, así que la mitad de los
-// archivos quedan sin usar de momento — eiselcross, blightshore,
-// menagerie_coast_north y marrow_valley o zemni_fields, el que no se elija).
-const WILDEMOUNT_IMAGES: Record<string, string> = {
-  "Imperio Dwendaliano": "/maps/wildemount/zemni_fields.jpg", // Rexxentrum está en los Zemni Fields
-  "Xhorhas": "/maps/wildemount/xhorhas.jpg", // coincidencia directa de nombre
-  "Costa del Serrallo": "/maps/wildemount/menagerie_coast_south.jpg", // litoral sur de la Costa del Serrallo
-  "Yermos Grisáceos": "/maps/wildemount/greying_wildlands.jpg", // traducción directa
-};
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));
@@ -118,11 +114,9 @@ function seedContinent(cont: string, usedSlugs: Set<string>): ContinentAtlas {
       WORLD_POIS.find((p) => isRegionEntry(p) && stripArticle(p.name) === stripArticle(name));
     const blurb = worldMatch?.blurb ?? "";
 
-    const image = cont === "Wildemount" ? (WILDEMOUNT_IMAGES[name] ?? "") : "";
-
     const map = worldMatch ? { x: worldMatch.x, y: worldMatch.y } : fallbackMapPos(cont, idx, names.length);
 
-    regions.push({ slug: finalSlug, name, capital: "—", accent, feature: "", blurb, image, map });
+    regions.push({ slug: finalSlug, name, capital: "—", accent, feature: "", blurb, image: "", map });
 
     pois[finalSlug] = WORLD_POIS.filter(
       (p) => p.continent === cont && p.region === name && p.type !== "continente" && p.type !== "region"
@@ -135,16 +129,18 @@ function seedContinent(cont: string, usedSlugs: Set<string>): ContinentAtlas {
 // Construye el atlas completo (5 continentes, sin "Mares"). Si se pasa
 // `taldoreiOverride` (los taldorei_defs guardados por el usuario) se usa tal
 // cual para no perder ediciones ya hechas; si no, los defaults de
-// data/taldorei.ts / data/pois.ts.
+// data/taldorei.ts / data/pois.ts. Los demás CONTINENTES_PROPIOS (Wildemount)
+// siempre parten de sus propios datos por defecto: solo Tal'Dorei tiene hoy
+// un mecanismo de override desde el DM.
 export function seedAtlas(taldoreiOverride?: { regions: Region[]; pois: Record<string, Poi[]> }): AtlasDefs {
-  const taldoreiRegions = taldoreiOverride?.regions ?? REGIONS;
-  const taldoreiPois = taldoreiOverride?.pois ?? POIS;
+  const atlas: AtlasDefs = {};
+  for (const [nombre, build] of Object.entries(CONTINENTES_PROPIOS)) {
+    atlas[nombre] = nombre === "Tal'Dorei" && taldoreiOverride ? taldoreiOverride : build();
+  }
 
-  const usedSlugs = new Set<string>(taldoreiRegions.map((r) => r.slug));
-
-  const atlas: AtlasDefs = {
-    "Tal'Dorei": { regions: taldoreiRegions, pois: taldoreiPois },
-  };
+  const usedSlugs = new Set<string>(
+    Object.values(atlas).flatMap((c) => c.regions.map((r) => r.slug))
+  );
 
   for (const cont of GENERATED_CONTINENTS) {
     atlas[cont] = seedContinent(cont, usedSlugs);
@@ -211,12 +207,15 @@ export function mergeAtlas(stored: AtlasDefs): { atlas: AtlasDefs; changed: bool
     changed = true;
   };
 
-  for (const contName of [...GENERATED_CONTINENTS, "Tal'Dorei"]) {
+  const propiosNames = Object.keys(CONTINENTES_PROPIOS);
+
+  for (const contName of [...GENERATED_CONTINENTS, ...propiosNames]) {
     const prev = stored[contName];
+    const esPropio = propiosNames.includes(contName);
     // Continente que no estaba guardado (p. ej. atlas viejo): se siembra entero.
     if (!prev) {
-      atlas[contName] = contName === "Tal'Dorei"
-        ? { regions: REGIONS, pois: POIS }
+      atlas[contName] = esPropio
+        ? CONTINENTES_PROPIOS[contName]()
         : seedContinent(contName, usedSlugs);
       changed = true;
       continue;
@@ -225,49 +224,55 @@ export function mergeAtlas(stored: AtlasDefs): { atlas: AtlasDefs; changed: bool
     const cont: ContinentAtlas = { regions: [...prev.regions], pois: { ...prev.pois } };
     atlas[contName] = cont;
 
-    if (contName === "Tal'Dorei") {
-      for (const r of REGIONS) {
+    if (esPropio) {
+      const { regions: defRegions, pois: defPois } = CONTINENTES_PROPIOS[contName]();
+      for (const r of defRegions) {
         if (!cont.regions.some((x) => x.slug === r.slug || x.name === r.name)) {
           cont.regions.push(r);
           usedSlugs.add(r.slug);
           changed = true;
         }
         const slug = cont.regions.find((x) => x.name === r.name)?.slug ?? r.slug;
-        addPois(cont, slug, POIS[r.slug] ?? []);
+        addPois(cont, slug, defPois[r.slug] ?? []);
       }
 
-      for (const fix of TALDOREI_FIXES) {
-        const origen = cont.pois[fix.deRegion];
-        if (!origen) continue;
-        const idx = origen.findIndex(
-          (p) => p.name === fix.nombre && p.x === fix.desdeX && p.y === fix.desdeY
-        );
-        if (idx === -1) continue; // el DM lo tocó, o ya se corrigió: no se pisa
+      // TALDOREI_FIXES solo mira Tal'Dorei todavía (Task A4 lo generaliza a
+      // ATLAS_FIXES por continente). Wildemount no tiene correcciones propias
+      // aún: sus POIs sembrados por primera vez ya nacen en su posición final.
+      if (contName === "Tal'Dorei") {
+        for (const fix of TALDOREI_FIXES) {
+          const origen = cont.pois[fix.deRegion];
+          if (!origen) continue;
+          const idx = origen.findIndex(
+            (p) => p.name === fix.nombre && p.x === fix.desdeX && p.y === fix.desdeY
+          );
+          if (idx === -1) continue; // el DM lo tocó, o ya se corrigió: no se pisa
 
-        // `origen` viene de un `{...prev.pois}`: el objeto está copiado, los
-        // arrays NO. Copiar antes de tocar, o se muta el `stored` del llamante.
-        const origenCopia = [...origen];
-        const [poi] = origenCopia.splice(idx, 1);
-        const corregido: Poi = {
-          ...poi,
-          name: fix.nombreNuevo ?? poi.name,
-          type: fix.tipoNuevo ?? poi.type,
-          x: fix.x ?? poi.x,
-          y: fix.y ?? poi.y,
-        };
-        const destino = fix.aRegion ?? fix.deRegion;
-        // Si la corrección NO cambia de región, la lista de destino tiene que
-        // partir de `origenCopia` (ya sin el POI viejo). Partir de
-        // `cont.pois[destino]` dejaría el original dentro: en un renombre, el
-        // filtro por nombre no lo alcanza —el nombre ya es otro— y el DM
-        // acabaría con dos pines, uno con el nombre retirado.
-        const base = destino === fix.deRegion ? origenCopia : (cont.pois[destino] ?? []);
-        cont.pois = {
-          ...cont.pois,
-          [fix.deRegion]: origenCopia,
-          [destino]: [...base.filter((p) => p.name !== corregido.name), corregido],
-        };
-        changed = true;
+          // `origen` viene de un `{...prev.pois}`: el objeto está copiado, los
+          // arrays NO. Copiar antes de tocar, o se muta el `stored` del llamante.
+          const origenCopia = [...origen];
+          const [poi] = origenCopia.splice(idx, 1);
+          const corregido: Poi = {
+            ...poi,
+            name: fix.nombreNuevo ?? poi.name,
+            type: fix.tipoNuevo ?? poi.type,
+            x: fix.x ?? poi.x,
+            y: fix.y ?? poi.y,
+          };
+          const destino = fix.aRegion ?? fix.deRegion;
+          // Si la corrección NO cambia de región, la lista de destino tiene que
+          // partir de `origenCopia` (ya sin el POI viejo). Partir de
+          // `cont.pois[destino]` dejaría el original dentro: en un renombre, el
+          // filtro por nombre no lo alcanza —el nombre ya es otro— y el DM
+          // acabaría con dos pines, uno con el nombre retirado.
+          const base = destino === fix.deRegion ? origenCopia : (cont.pois[destino] ?? []);
+          cont.pois = {
+            ...cont.pois,
+            [fix.deRegion]: origenCopia,
+            [destino]: [...base.filter((p) => p.name !== corregido.name), corregido],
+          };
+          changed = true;
+        }
       }
       continue;
     }

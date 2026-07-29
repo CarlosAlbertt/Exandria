@@ -13,7 +13,7 @@ import { REGIONS, FACTIONS, HISTORY } from "@/data/taldorei";
 import { HISTORY_TIMELINE } from "@/data/history";
 import { WORLD_POIS } from "@/data/world";
 import { PLANES, MOONS } from "@/data/cosmology";
-import { WILDEMOUNT_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "@/data/wildemount";
+import { WILDEMOUNT_LORE_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } from "@/data/wildemount";
 import { LORE_TIERS, type LoreSkill } from "@/data/loreTiers";
 import { CONTINENT_LORE, type ContinentLoreEntry } from "@/data/continentes";
 import { CALAMIDAD_LORE } from "@/data/calamidad";
@@ -172,7 +172,7 @@ function factionEntries(): Omit<SaberEntry, "place" | "category">[] {
 // --- WILDEMOUNT: sus regiones las conoce quien es de allí; el resto, no -----
 function wildemountEntries(): Omit<SaberEntry, "place" | "category">[] {
   const out: Omit<SaberEntry, "place" | "category">[] = [];
-  for (const r of WILDEMOUNT_REGIONS) {
+  for (const r of WILDEMOUNT_LORE_REGIONS) {
     out.push({
       id: `wmreg:${r.slug}`,
       scope: { kind: "continente", continent: "Wildemount" },

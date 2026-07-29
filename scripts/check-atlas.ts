@@ -49,23 +49,27 @@ check(
 
 // --- Cada POI de WORLD_POIS no-continente/región (fuera de Mares) cae en
 // exactamente una región ---
-// Tal'Dorei se excluye igual que "Mares": sus pines de mundo NO se reparten por
-// región desde WORLD_POIS (el continente sale de data/taldorei.ts + data/pois.ts),
-// así que contarlos aquí compara dos cosas distintas. El filtro llevaba
-// excluyéndolo de facto solo porque Tal'Dorei no tenía ni un pin propio.
+// Tal'Dorei y Wildemount se excluyen igual que "Mares": sus pines de mundo NO
+// se reparten por región desde WORLD_POIS (los dos tienen datos propios en
+// data/taldorei.ts + data/pois.ts y data/wildemount.ts respectivamente), así
+// que contarlos aquí compara dos cosas distintas. El filtro llevaba
+// excluyendo a Tal'Dorei de facto solo porque no tenía ni un pin propio;
+// Wildemount se suma explícitamente desde que dejó de derivar sus POIs de
+// WORLD_POIS (ver data/wildemount.ts).
 const relevantWorldPois = WORLD_POIS.filter(
   (p) =>
     p.type !== "continente" &&
     p.type !== "region" &&
     p.continent !== "Mares" &&
-    p.continent !== "Tal'Dorei"
+    p.continent !== "Tal'Dorei" &&
+    p.continent !== "Wildemount"
 );
-// Tal'Dorei no viene de WORLD_POIS (usa data/taldorei.ts / data/pois.ts), así
-// que se excluye de este recuento: solo los continentes generados desde
-// REGIONS_BY_CONTINENT reparten WORLD_POIS.
+// Tal'Dorei y Wildemount no vienen de WORLD_POIS (usan sus propios archivos de
+// datos), así que se excluyen de este recuento: solo los continentes
+// generados desde REGIONS_BY_CONTINENT reparten WORLD_POIS.
 let totalAtlasPois = 0;
 for (const cont of continents) {
-  if (cont === "Tal'Dorei") continue;
+  if (cont === "Tal'Dorei" || cont === "Wildemount") continue;
   for (const slug of Object.keys(atlas[cont].pois)) totalAtlasPois += atlas[cont].pois[slug].length;
 }
 check(
