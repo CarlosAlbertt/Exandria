@@ -49,8 +49,16 @@ check(
 
 // --- Cada POI de WORLD_POIS no-continente/región (fuera de Mares) cae en
 // exactamente una región ---
+// Tal'Dorei se excluye igual que "Mares": sus pines de mundo NO se reparten por
+// región desde WORLD_POIS (el continente sale de data/taldorei.ts + data/pois.ts),
+// así que contarlos aquí compara dos cosas distintas. El filtro llevaba
+// excluyéndolo de facto solo porque Tal'Dorei no tenía ni un pin propio.
 const relevantWorldPois = WORLD_POIS.filter(
-  (p) => p.type !== "continente" && p.type !== "region" && p.continent !== "Mares"
+  (p) =>
+    p.type !== "continente" &&
+    p.type !== "region" &&
+    p.continent !== "Mares" &&
+    p.continent !== "Tal'Dorei"
 );
 // Tal'Dorei no viene de WORLD_POIS (usa data/taldorei.ts / data/pois.ts), así
 // que se excluye de este recuento: solo los continentes generados desde
@@ -81,16 +89,18 @@ for (const p of relevantWorldPois) {
 }
 
 // --- Cada ciudad/fortaleza de Tal'Dorei tiene su pin en el mapa mundial ---
-// (va aquí, ANTES de la sección "TALDOREI_FIXES sobre un atlas VIEJO de
-// verdad" de más abajo: esa sección muta `POIS` por referencia -- seedAtlas()
-// asigna `pois: POIS` tal cual, sin copiar -- así que leer POIS después de
-// ella vería nombres deshechos, p. ej. "Fuerte Daxio" vuelto "Fort Daxio".)
-const nombresMundo = new Set(WORLD_POIS.filter((p) => p.continent === "Tal'Dorei").map((p) => p.name));
+const pinesTaldorei = WORLD_POIS.filter((p) => p.continent === "Tal'Dorei" && p.type !== "continente");
+const nombresMundo = new Set(pinesTaldorei.map((p) => p.name));
 for (const lista of Object.values(POIS)) {
   for (const p of lista) {
     if (p.type !== "ciudad" && p.type !== "fortaleza") continue;
     check(`${p.name}: tiene pin en el mapa mundial`, nombresMundo.has(p.name));
   }
+}
+// …y al revés: ningún pin de mundo apunta a una región que no existe.
+const nombresDeRegion = new Set(REGIONS.map((r) => r.name));
+for (const p of pinesTaldorei) {
+  check(`pin de mundo "${p.name}": su región "${p.region}" existe`, nombresDeRegion.has(p.region));
 }
 
 // --- Wildemount: las regiones mapeadas a archivo tienen image no vacía y el
@@ -129,8 +139,15 @@ check(
 // (deshaciendo cada fix sobre la semilla) y se comprueba el resultado real:
 // el nombre viejo desaparece del continente entero y el nuevo aparece UNA vez.
 // Esto es lo que caza el fantasma de un renombre dentro de la misma región.
+// OJO: `seedAtlas()` devuelve el Tal'Dorei con `pois: POIS` **por referencia**,
+// sin copiar. Escribir en `contViejo.pois` mutaría el módulo `data/pois.ts` en
+// memoria y envenenaría cualquier comprobación posterior (se vio: "Fuerte
+// Daxio" volviendo a llamarse "Fort Daxio"). Se copia antes de tocar nada.
 const viejo = seedAtlas();
 const contViejo = viejo["Tal'Dorei"];
+contViejo.pois = Object.fromEntries(
+  Object.entries(contViejo.pois).map(([slug, lista]) => [slug, [...lista]])
+);
 for (const fix of TALDOREI_FIXES) {
   const destino = fix.aRegion ?? fix.deRegion;
   const nombreNuevo = fix.nombreNuevo ?? fix.nombre;
@@ -165,9 +182,12 @@ for (const fix of TALDOREI_FIXES) {
 
 // Una edición del DM manda sobre la corrección: si movió el pin, no se pisa.
 const conEdicion = seedAtlas();
-const lucidiana = conEdicion["Tal'Dorei"].pois["costa-lucidiana"] ?? [];
-conEdicion["Tal'Dorei"].pois["costa-lucidiana"] = [
-  ...lucidiana,
+const contEdicion = conEdicion["Tal'Dorei"];
+contEdicion.pois = Object.fromEntries(
+  Object.entries(contEdicion.pois).map(([slug, lista]) => [slug, [...lista]])
+);
+contEdicion.pois["costa-lucidiana"] = [
+  ...(contEdicion.pois["costa-lucidiana"] ?? []),
   { name: "Emon", type: "ciudad", blurb: "movido por el DM", x: 99, y: 99 },
 ];
 const trasEdicion = mergeAtlas(conEdicion).atlas["Tal'Dorei"];
@@ -175,6 +195,15 @@ check(
   "TALDOREI_FIXES: un POI que el DM movió no se corrige ni se duplica",
   (trasEdicion.pois["costa-lucidiana"] ?? []).some((p) => p.name === "Emon" && p.x === 99) &&
     Object.values(trasEdicion.pois).flat().filter((p) => p.name === "Emon").length === 2
+);
+
+// Cierre: este script simula atlas viejos y ediciones del DM, y `seedAtlas()`
+// entrega `data/pois.ts` por referencia. Si alguna simulación se olvida de
+// copiar, deja el módulo tocado en memoria y las comprobaciones de después
+// mienten. Esto lo detecta.
+check(
+  "el script no ha mutado data/pois.ts (Fuerte Daxio sigue en Torrerrisco)",
+  (POIS["montanas-torrerrisco"] ?? []).some((p) => p.name === "Fuerte Daxio")
 );
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
