@@ -71,6 +71,12 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Tumulosombrío", type: "peligro", blurb: "Túmulos malditos donde los muertos no descansan.", x: 75, y: 43 },
     { name: "Bosque de las Zarzas", type: "natural", blurb: "Espesura de zarzas casi impenetrable; quien conoce el sendero correcto la cruza en una hora, y quien no, tarda mucho más en salir.", x: 56, y: 26 },
     { name: "Deastok", type: "ciudad", blurb: "Ciudad comercial de las Llanuras, nudo de caravanas y almacenes entre Emon y el interior.", x: 68, y: 58 },
+    { name: "Gatshadow", type: "natural", blurb: "Monte solitario que se alza sobre el Bosque de las Zarzas; desde su cima se ve toda la llanura, por eso los vigías lo prefieren a cualquier torre.", x: 52, y: 18 },
+    { name: "Cruce de Silvercut", type: "ciudad", blurb: "Cruce de caminos con posta y establos donde confluyen las rutas de las Llanuras Divisorias; nadie se queda más de una noche, pero todos pasan por aquí.", x: 33, y: 48 },
+    { name: "Cuenca de Foramere", type: "natural", blurb: "El gran lago del sur de la llanura, alimentado por arroyos que bajan de la Cresta de Ironseat; sus orillas son pasto habitual de rebaños trashumantes.", x: 56, y: 84 },
+    { name: "Cresta de Ironseat", type: "natural", blurb: "Sierra corta al oeste de Kymal, poco más que un espinazo de roca, pero suficiente para que las caravanas prefieran rodearla antes que cruzarla.", x: 23, y: 52 },
+    { name: "Trono del Corazón Arcano", type: "ruina", blurb: "Pico solitario en el extremo occidental de la llanura, señalado en todos los mapas viejos; los estudiosos discuten qué reino se sentó alguna vez en su cima.", x: 9, y: 51 },
+    { name: "Espesura de Ivyheart", type: "natural", blurb: "Bosque cerrado y espeso en el rincón suroeste de la llanura, tan enmarañado de hiedra que ni los leñadores locales se internan sin un hacha de sobra.", x: 8, y: 68 },
   ],
   "montanas-torrerrisco": [
     { name: "Riscomartillo", type: "ciudad", blurb: "Gran ciudad enana bajo la montaña; forjas y política de clanes.", x: 46, y: 74 },
