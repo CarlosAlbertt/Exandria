@@ -102,6 +102,11 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Marismas de Filtrasueño", type: "peligro", blurb: "Pantano brumoso donde el sueño y la vigilia se confunden.", x: 48, y: 73 },
     { name: "Caverna del Axioma", type: "cueva", blurb: "Gruta de secretos arcanos: sus paredes están cubiertas de runas que ningún erudito ha logrado leer entero, y los que lo intentan salen distintos.", x: 34, y: 38 },
     { name: "Garganta Cenicienta", type: "peligro", blurb: "Grieta ligada al advenimiento del Rey Cinéreo.", x: 55, y: 47 },
+    { name: "Tumba de Udah", type: "ruina", blurb: "Sepulcro tallado en la roca a media sierra, de un nombre que ya nadie recuerda de quién fue; los cazatesoros que lo abrieron no hallaron más que polvo.", x: 42, y: 52 },
+    { name: "Bronbog", type: "ciudad", blurb: "Asentamiento sobre pilotes en el borde de las Marismas de Filtrasueño; sus habitantes duermen con las ventanas cerradas por más que haga calor.", x: 44, y: 60 },
+    { name: "Wrettis", type: "ciudad", blurb: "Aldea al oeste de las marismas que vive de la turba y de vender antorchas a quien se atreve a cruzarlas de noche.", x: 37, y: 68 },
+    { name: "Aguas de Vues'dal", type: "natural", blurb: "Lámina de agua tranquila en el suroeste de la sierra, tan quieta que de lejos se confunde con un espejo tendido entre las rocas.", x: 12, y: 71 },
+    { name: "Bahía Kirmont", type: "natural", blurb: "Bahía donde desaguan las Marismas de Filtrasueño; el agua llega turbia y con un olor que ningún pescador de la zona se ha acostumbrado a ignorar del todo.", x: 61, y: 82 },
   ],
   "peninsula-pleabruma": [
     { name: "Byroden", type: "ciudad", blurb: "Pueblo humilde, cuna de héroes legendarios.", x: 25, y: 18 },
