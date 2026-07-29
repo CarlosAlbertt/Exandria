@@ -509,6 +509,49 @@ Rama `inventario-ui`. **Sin migración.** Spec y plan en
   estrecha sin que la página haga scroll lateral; y confirmar que un documento
   se sigue pudiendo abrir con «Leer» desde la ficha.
 
+### Lo que salió al JUGARLO (2026-07-29) — tres arreglos seguidos 💍
+
+**La primera sesión de juego real desde hace ocho features**, y en minutos salieron
+tres fallos del mismo sitio: **el selector de huecos del detalle del objeto**. Los
+tres eran una lista de opciones viviendo en el componente, donde ningún script mira.
+
+1. **Un anillo se podía equipar como arma.** El selector ofrecía
+   `[...WEAPON_SLOTS, ...ARMOR_SLOTS]` a cualquier objeto desconocido, y **no
+   ofrecía los huecos de accesorio** — que ya existían (`ACCESSORY_SLOTS` en
+   `data/leveling.ts`: anillo, colgante, amuleto, collar) y que el muñeco ya
+   pintaba. El único sitio donde un anillo va de verdad era el único que faltaba.
+   ⇒ **`tiposDeHuecoPara`** en la capa pura. La línea que traza: *un hueco que
+   alimenta una regla solo acepta lo que la app puede verificar*. Los de arma
+   alimentan `ataqueDe`, así que solo admiten armas del catálogo — si no, la app
+   acabaría enseñando una tirada de ataque para un anillo.
+2. **Seguía entrando en la cabeza y el torso.** El primer arreglo dejó
+   `["accesorio", "armadura"]` para lo desconocido. ⇒ **un solo tipo de hueco por
+   objeto**, sin ofrecer sitios «por si acaso».
+3. **Dentro de los accesorios se ofrecían todos**: un anillo podía acabar en el
+   collar. ⇒ **`tipoAccesorioDe`**, que reconoce la clase por la **primera palabra
+   del nombre** («Anillo de protección» → anillo).
+   > **Por qué aquí sí se mira el nombre por partes**, si `categoriaDe` exige
+   > coincidencia exacta: cambia lo que se arriesga. Equivocar una categoría pinta
+   > de verde una «Poción de veneno» y **miente sobre lo que es**; equivocar esto
+   > solo ofrece el dedo en vez del cuello, y el jugador lo ve y elige otro. Y los
+   > huecos se llaman **igual** que los objetos, así que la primera palabra es una
+   > señal, no una corazonada. «Sortija» no se reconoce y se ofrecen todos.
+4. De paso, un caso que se veía roto: los huecos de accesorio **salen de los
+   modificadores**, así que con Inteligencia baja no hay ningún anillo donde
+   ponerlo. El botón abría una lista vacía; ahora lo dice.
+
+- `check-inventario` pasa de 45 a **73 comprobaciones**.
+- **Consecuencias asumidas, dichas para que no sorprendan**: una «Espada de Kael»
+  inventada **no** entra en el hueco de arma (la app tampoco sabría calcular su
+  ataque); y un «Yelmo» escrito a mano va a un accesorio, no a la cabeza — los
+  huecos de cabeza, antebrazos, manos y pies **no tienen nada en el catálogo** que
+  los llene, porque en 2024 esas piezas no dan CA. Si se quieren usar de verdad,
+  lo que hace falta es **ampliar el catálogo**, no relajar la regla.
+
+> **La lección, otra vez y van cinco**: una regla dentro de un componente escapa al
+> gate. `tsc`, `next build` y los 21 scripts estaban en verde con el anillo
+> entrando en la mano principal. Lo cazó una partida en cinco minutos.
+
 ## RESUELTO (2026-07-28): FASE 1 — los monstruos del bestiario al combate 🐉
 Rama `monstruos-al-combate`. **Migración `schema_v23` — ejecutada el
 2026-07-28.** Spec y plan en
