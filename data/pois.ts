@@ -2,7 +2,7 @@
 // descripciones son resúmenes propios). Posición x/y en % sobre el mapa de la
 // región — aproximada y ajustable (o colócalas con el modo DM de arrastre).
 
-export type PoiType = "ciudad" | "fortaleza" | "ruina" | "natural" | "peligro";
+export type PoiType = "ciudad" | "fortaleza" | "ruina" | "natural" | "peligro" | "cueva" | "campamento";
 
 export type Poi = {
   name: string;
@@ -24,6 +24,8 @@ export const POI_ICON: Record<PoiType, string> = {
   ruina: "fa-dungeon",
   natural: "fa-tree",
   peligro: "fa-skull",
+  cueva: "fa-mountain",
+  campamento: "fa-campground",
 };
 export const POI_COLOR: Record<PoiType, string> = {
   ciudad: "var(--color-bronze)",
@@ -31,6 +33,8 @@ export const POI_COLOR: Record<PoiType, string> = {
   ruina: "var(--color-violet)",
   natural: "var(--color-primitivo)",
   peligro: "var(--color-ember)",
+  cueva: "var(--color-arcane-deep)",
+  campamento: "var(--color-warm)",
 };
 
 export const POIS: Record<string, Poi[]> = {

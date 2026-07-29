@@ -6,11 +6,13 @@ import { POI_ICON, POI_COLOR, type PoiType } from "@/data/pois";
 // atlas (no de data/world.ts) para que refleje lo que el DM haya editado.
 // Los POIs van agrupados por tipo, que leído de corrido es más útil que una
 // lista suelta de treinta nombres.
-const ORDEN: PoiType[] = ["ciudad", "fortaleza", "ruina", "natural", "peligro"];
+const ORDEN: PoiType[] = ["ciudad", "campamento", "fortaleza", "ruina", "cueva", "natural", "peligro"];
 const TITULO: Record<PoiType, string> = {
   ciudad: "Ciudades y aldeas",
+  campamento: "Campamentos",
   fortaleza: "Fortalezas",
   ruina: "Ruinas",
+  cueva: "Cuevas y simas",
   natural: "Parajes",
   peligro: "Peligros",
 };
