@@ -113,6 +113,13 @@ export const POIS: Record<string, Poi[]> = {
     { name: "Niirdal-Poc", type: "ruina", blurb: "Reliquia de la Calamidad, sede de magia incognoscible.", x: 55, y: 50 },
     { name: "Selva de Pleabruma", type: "natural", blurb: "Jungla brumosa que devora los caminos; los guías locales cobran caro porque el sendero de ayer no es el de hoy.", x: 41, y: 43 },
     { name: "Montañas Puntormenta", type: "natural", blurb: "Cumbres tempestuosas donde habitan las tribus orroyen, que suben a leer el rayo y no reciben bien a quien las escala sin permiso.", x: 61, y: 8 },
+    { name: "Campiña de Mornset", type: "natural", blurb: "La única franja de tierra cultivable de toda la península, al norte, lejos del alcance de la selva; de aquí sale casi todo el grano que come Byroden.", x: 37, y: 25 },
+    { name: "Ezordam-Haar", type: "ciudad", blurb: "Asentamiento levantado sobre pilares en el corazón mismo de la Selva de Pleabruma; vive de recolectar resinas y venenos que solo crecen a la sombra más espesa, y nadie llega hasta aquí sin un guía que conozca el sendero de ese día.", x: 43, y: 66 },
+    { name: "Hdar-Tye", type: "ciudad", blurb: "Poblado costero del suroeste que vive de la pesca y de un pequeño astillero; sus barcas planas son las únicas capaces de remontar los canales que la selva cierra cada estación.", x: 31, y: 70 },
+    { name: "Ortem-Vellak", type: "ciudad", blurb: "Asentamiento del este asomado al mar Lucidiano, punto de embarque para quien quiere salir de la península sin cruzar la selva; su muelle es el único de la zona que aguanta un barco de verdad.", x: 78, y: 64 },
+    { name: "Rybad-Kol", type: "ciudad", blurb: "Poblado del sureste que comercia con las tribus orroyen de las Montañas Puntormenta más que con nadie de la propia península; el trueque manda sobre la moneda.", x: 67, y: 84 },
+    { name: "T'Zarrm", type: "ciudad", blurb: "El asentamiento habitado más meridional de todo Tal'Dorei, tan al sur que algunos mapas lo dan por leyenda; quien llega hasta aquí ya no tiene a dónde seguir bajando.", x: 48, y: 96 },
+    { name: "Río Orroyen", type: "natural", blurb: "Río que baja de la selva hacia el noreste, llamado así por las tribus que viven en su curso alto; su cauce cambia tanto que ningún mapa lo fía dos años seguidos.", x: 88, y: 23 },
   ],
   "expansion-verdante": [
     { name: "Syngorn", type: "ciudad", blurb: "La ciudad élfica que se desliza entre planos para protegerse.", x: 73, y: 31 },
