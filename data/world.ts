@@ -203,6 +203,40 @@ export const WORLD_POIS: WorldPoi[] = [
   { name: "Las Profundidades Gélidas", type: "natural", continent: "Mares", region: "Mares", x: 61, y: 7, blurb: "Mares helados del extremo norte del mundo." },
   { name: "Archipiélago Hespet", type: "natural", continent: "Mares", region: "Mares", x: 30, y: 53, blurb: "Cadena de islas dispersas en el Mar de Ozmit, entre Marquet y Tal'Dorei." },
   { name: "Mar Berilo", type: "natural", continent: "Mares", region: "Mares", x: 22, y: 93, blurb: "Mar que baña el sur de Marquet; a él desemboca el Canal Lapis desde el Lago Koron." },
+
+  // ---------------- TAL'DOREI: CIUDADES Y FORTALEZAS ----------------
+  // (el resto de POIs de Tal'Dorei —accidentes naturales, ruinas, etc.— vive
+  // solo en data/pois.ts / data/taldorei.ts; aquí únicamente ciudades y
+  // fortalezas, para no saturar el mapa mundial.)
+  { name: "Stilben", type: "ciudad", continent: "Tal'Dorei", region: "Costa Lucidiana", x: 51.4, y: 39.36, blurb: "Puerto portuario de mala fama, nido de contrabando y timos." },
+  { name: "Drynna", type: "ciudad", continent: "Tal'Dorei", region: "Costa Lucidiana", x: 52.12, y: 36.8, blurb: "La Ciudad Estrella, enclave próspero de la costa." },
+  { name: "Zephrah", type: "ciudad", continent: "Tal'Dorei", region: "Costa Lucidiana", x: 50.84, y: 38.2, blurb: "Hogar de los Ashari del Aire, en un altiplano de las cumbres; custodian un desgarrón al Plano del Aire." },
+  { name: "Dunghill", type: "ciudad", continent: "Tal'Dorei", region: "Costa Lucidiana", x: 51.52, y: 38.8, blurb: "Aldea humilde al borde del Pantano de K'Tawl que nunca cambió su nombre pese a las burlas; sus curtidores dicen que el olor es cuestión de acostumbrarse." },
+  { name: "Piedrablanca", type: "ciudad", continent: "Tal'Dorei", region: "Sierras de Alabastro", x: 49.76, y: 35.36, blurb: "Ciudad-estado de los De Rolo, marcada por la sombra de los Briarwood." },
+  { name: "Kymal", type: "ciudad", continent: "Tal'Dorei", region: "Llanuras Divisorias", x: 49.2, y: 43.6, blurb: "La ciudad del vicio: casinos, apuestas y contrabando." },
+  { name: "Oestruun", type: "ciudad", continent: "Tal'Dorei", region: "Llanuras Divisorias", x: 50.36, y: 42.64, blurb: "Gran urbe comercial, cicatrizada por un ataque gnoll." },
+  { name: "Deastok", type: "ciudad", continent: "Tal'Dorei", region: "Llanuras Divisorias", x: 50.72, y: 43.32, blurb: "Ciudad comercial de las Llanuras, nudo de caravanas y almacenes entre Emon y el interior." },
+  { name: "Cruce de Silvercut", type: "ciudad", continent: "Tal'Dorei", region: "Llanuras Divisorias", x: 49.32, y: 42.92, blurb: "Cruce de caminos con posta y establos donde confluyen las rutas de las Llanuras Divisorias; nadie se queda más de una noche, pero todos pasan por aquí." },
+  { name: "Riscomartillo", type: "ciudad", continent: "Tal'Dorei", region: "Montañas Torrerrisco", x: 48.84, y: 28.96, blurb: "Gran ciudad enana bajo la montaña; forjas y política de clanes." },
+  { name: "Fuerte Daxio", type: "fortaleza", continent: "Tal'Dorei", region: "Montañas Torrerrisco", x: 48.0, y: 28.6, blurb: "Fortaleza militar clave de Tal'Dorei: guarnición permanente que vigila los pasos hacia Riscomartillo y registra toda caravana antes de dejarla pasar." },
+  { name: "Brasalcázar", type: "fortaleza", continent: "Tal'Dorei", region: "Montañas Torrerrisco", x: 49.28, y: 27.56, blurb: "Bastión ígneo entre los picos, construido sobre una grieta de calor volcánico que mantiene sus forjas encendidas todo el año." },
+  { name: "Aldea de Jorenn", type: "ciudad", continent: "Tal'Dorei", region: "Montañas Torrerrisco", x: 50.0, y: 29.0, blurb: "Aldea minera acosada por males subterráneos." },
+  { name: "Terrah", type: "ciudad", continent: "Tal'Dorei", region: "Montañas Torrerrisco", x: 48.64, y: 27.68, blurb: "Hogar de los Ashari de la Tierra, en un valle en cuenco al norte de Riscomartillo; custodian un desgarrón al Plano de la Tierra." },
+  { name: "Lyrengorn", type: "ciudad", continent: "Tal'Dorei", region: "Montañas Torrerrisco", x: 49.52, y: 26.48, blurb: "Los Picos Élficos; guardianes de auroras y dracoformes." },
+  { name: "Wittebak", type: "ciudad", continent: "Tal'Dorei", region: "Montañas Torrerrisco", x: 49.04, y: 28.28, blurb: "Asentamiento aferrado a una repisa en pleno macizo de Torrerrisco; vive del paso de mineros y viajeros que necesitan techo antes de seguir subiendo." },
+  { name: "Bronbog", type: "ciudad", continent: "Tal'Dorei", region: "Montañas Crestormentas", x: 53.76, y: 30.4, blurb: "Asentamiento sobre pilotes en el borde de las Marismas de Filtrasueño; sus habitantes duermen con las ventanas cerradas por más que haga calor." },
+  { name: "Wrettis", type: "ciudad", continent: "Tal'Dorei", region: "Montañas Crestormentas", x: 53.48, y: 30.72, blurb: "Aldea al oeste de las marismas que vive de la turba y de vender antorchas a quien se atreve a cruzarlas de noche." },
+  { name: "Byroden", type: "ciudad", continent: "Tal'Dorei", region: "Península de Pleabruma", x: 47.0, y: 53.72, blurb: "Pueblo humilde, cuna de héroes legendarios." },
+  { name: "Ezordam-Haar", type: "ciudad", continent: "Tal'Dorei", region: "Península de Pleabruma", x: 47.72, y: 55.64, blurb: "Asentamiento levantado sobre pilares en el corazón mismo de la Selva de Pleabruma; vive de recolectar resinas y venenos que solo crecen a la sombra más espesa, y nadie llega hasta aquí sin un guía que conozca el sendero de ese día." },
+  { name: "Hdar-Tye", type: "ciudad", continent: "Tal'Dorei", region: "Península de Pleabruma", x: 47.24, y: 55.8, blurb: "Poblado costero del suroeste que vive de la pesca y de un pequeño astillero; sus barcas planas son las únicas capaces de remontar los canales que la selva cierra cada estación." },
+  { name: "Ortem-Vellak", type: "ciudad", continent: "Tal'Dorei", region: "Península de Pleabruma", x: 49.12, y: 55.56, blurb: "Asentamiento del este asomado al mar Lucidiano, punto de embarque para quien quiere salir de la península sin cruzar la selva; su muelle es el único de la zona que aguanta un barco de verdad." },
+  { name: "Rybad-Kol", type: "ciudad", continent: "Tal'Dorei", region: "Península de Pleabruma", x: 48.68, y: 56.36, blurb: "Poblado del sureste que comercia con las tribus orroyen de las Montañas Puntormenta más que con nadie de la propia península; el trueque manda sobre la moneda." },
+  { name: "T'Zarrm", type: "ciudad", continent: "Tal'Dorei", region: "Península de Pleabruma", x: 47.92, y: 56.84, blurb: "El asentamiento habitado más meridional de todo Tal'Dorei, tan al sur que algunos mapas lo dan por leyenda; quien llega hasta aquí ya no tiene a dónde seguir bajando." },
+  { name: "Syngorn", type: "ciudad", continent: "Tal'Dorei", region: "Expansión Verdante", x: 46.92, y: 44.24, blurb: "La ciudad élfica que se desliza entre planos para protegerse." },
+  { name: "La Fortaleza Cambiante", type: "fortaleza", continent: "Tal'Dorei", region: "Expansión Verdante", x: 46.24, y: 44.68, blurb: "Bastión que muda de forma y lugar por arte élfico; nadie ha trazado un mapa que siga siendo cierto dos visitas seguidas." },
+  { name: "Puerto U'Daa", type: "ciudad", continent: "Tal'Dorei", region: "Expansión Verdante", x: 44.52, y: 46.12, blurb: "Puerto pequeño en el borde occidental del bosque, salida discreta al mar para quien prefiere no pasar por Syngorn ni dar explicaciones a nadie." },
+  { name: "Emon", type: "capital", continent: "Tal'Dorei", region: "Litoral de Filofulgor", x: 44.0, y: 49.56, blurb: "Capital de Tal'Dorei y sede del Consejo. Puertos, aerobarcos y política." },
+  { name: "Puesto Esmeralda", type: "fortaleza", continent: "Tal'Dorei", region: "Litoral de Filofulgor", x: 44.96, y: 50.36, blurb: "Enclave fronterizo en la costa agreste, última guarnición antes de tierra de nadie; vigilan el mar tanto como el interior." },
 ];
 
 export function worldByContinent(): { continent: string; items: WorldPoi[] }[] {

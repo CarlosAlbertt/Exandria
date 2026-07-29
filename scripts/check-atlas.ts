@@ -5,6 +5,7 @@ import path from "node:path";
 import { seedAtlas, mergeAtlas, TALDOREI_FIXES } from "../data/atlas";
 import { REGIONS } from "../data/taldorei";
 import { WORLD_POIS } from "../data/world";
+import { POIS } from "../data/pois";
 
 let failures = 0;
 
@@ -77,6 +78,19 @@ for (const p of relevantWorldPois) {
   }
   const found = (cont.pois[region.slug] ?? []).some((poi) => poi.name === p.name);
   check(`${p.name} aparece en ${p.continent} / ${p.region}`, found);
+}
+
+// --- Cada ciudad/fortaleza de Tal'Dorei tiene su pin en el mapa mundial ---
+// (va aquí, ANTES de la sección "TALDOREI_FIXES sobre un atlas VIEJO de
+// verdad" de más abajo: esa sección muta `POIS` por referencia -- seedAtlas()
+// asigna `pois: POIS` tal cual, sin copiar -- así que leer POIS después de
+// ella vería nombres deshechos, p. ej. "Fuerte Daxio" vuelto "Fort Daxio".)
+const nombresMundo = new Set(WORLD_POIS.filter((p) => p.continent === "Tal'Dorei").map((p) => p.name));
+for (const lista of Object.values(POIS)) {
+  for (const p of lista) {
+    if (p.type !== "ciudad" && p.type !== "fortaleza") continue;
+    check(`${p.name}: tiene pin en el mapa mundial`, nombresMundo.has(p.name));
+  }
 }
 
 // --- Wildemount: las regiones mapeadas a archivo tienen image no vacía y el
