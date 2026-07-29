@@ -127,6 +127,13 @@ export const POIS: Record<string, Poi[]> = {
     { name: "El Mirescar", type: "peligro", blurb: "Ciénaga oscura en lo más profundo de la espesura; el agua no refleja el cielo y algo se mueve bajo el lodo que nunca sale del todo.", x: 55, y: 61 },
     { name: "La Fortaleza Cambiante", type: "fortaleza", blurb: "Bastión que muda de forma y lugar por arte élfico; nadie ha trazado un mapa que siga siendo cierto dos visitas seguidas.", x: 56, y: 42 },
     { name: "Cataratas de Tormor", type: "natural", blurb: "Grandes cascadas de aguas rugientes; caen tan fuerte que ahogan cualquier conversación, y detrás de la cortina de agua se dice que hay una cueva seca.", x: 75, y: 40 },
+    { name: "Orencleft", type: "ruina", blurb: "Tajo profundo en la roca junto a Syngorn, tan antiguo que los elfos lo dan por anterior a la propia ciudad; algo se excavó aquí una vez, y no se sabe bien qué.", x: 71, y: 35 },
+    { name: "Puerto U'Daa", type: "ciudad", blurb: "Puerto pequeño en el borde occidental del bosque, salida discreta al mar para quien prefiere no pasar por Syngorn ni dar explicaciones a nadie.", x: 13, y: 78 },
+    { name: "Montañas Daggerbay", type: "natural", blurb: "Cordillera que cierra el bosque por el norte y separa la Expansión Verdante del resto del continente; sus picos rara vez se ven despejados del todo.", x: 28, y: 12 },
+    { name: "Arrecife del Letargo", type: "peligro", blurb: "Arrecife del noroeste que ha hundido más barcos de los que cualquier carta de navegación se atreve a admitir; el nombre lo pusieron los que sobrevivieron.", x: 8, y: 16 },
+    { name: "Isla Visa", type: "natural", blurb: "Pequeña isla frente a la costa oeste del bosque, deshabitada salvo por las aves y por quien busca no ser encontrado durante un tiempo.", x: 3, y: 52 },
+    { name: "Vos'Sykriss", type: "ruina", blurb: "Enclave en ruinas al sur de la Isla Visa, con un nombre que no es élfico ni de ningún pueblo conocido de la zona; nadie ha vuelto con una explicación mejor.", x: 5, y: 61 },
+    { name: "Angosturas del Feshun", type: "natural", blurb: "Tramo donde el río Feshun se estrecha entre paredes de roca; las barcas que lo bajan cargadas tienen que aligerar antes o encallan sin remedio.", x: 28, y: 63 },
   ],
   "litoral-filofulgor": [
     { name: "Emon", type: "ciudad", blurb: "Capital de Tal'Dorei y sede del Consejo. Puertos, aerobarcos y política.", x: 50, y: 39 },
