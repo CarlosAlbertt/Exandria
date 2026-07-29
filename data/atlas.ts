@@ -256,10 +256,16 @@ export function mergeAtlas(stored: AtlasDefs): { atlas: AtlasDefs; changed: bool
           y: fix.y ?? poi.y,
         };
         const destino = fix.aRegion ?? fix.deRegion;
+        // Si la corrección NO cambia de región, la lista de destino tiene que
+        // partir de `origenCopia` (ya sin el POI viejo). Partir de
+        // `cont.pois[destino]` dejaría el original dentro: en un renombre, el
+        // filtro por nombre no lo alcanza —el nombre ya es otro— y el DM
+        // acabaría con dos pines, uno con el nombre retirado.
+        const base = destino === fix.deRegion ? origenCopia : (cont.pois[destino] ?? []);
         cont.pois = {
           ...cont.pois,
           [fix.deRegion]: origenCopia,
-          [destino]: [...(cont.pois[destino] ?? []).filter((p) => p.name !== corregido.name), corregido],
+          [destino]: [...base.filter((p) => p.name !== corregido.name), corregido],
         };
         changed = true;
       }

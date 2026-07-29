@@ -2,7 +2,7 @@
 // Uso: npx tsx scripts/check-atlas.ts
 import fs from "node:fs";
 import path from "node:path";
-import { seedAtlas, mergeAtlas } from "../data/atlas";
+import { seedAtlas, mergeAtlas, TALDOREI_FIXES } from "../data/atlas";
 import { REGIONS } from "../data/taldorei";
 import { WORLD_POIS } from "../data/world";
 
@@ -106,6 +106,61 @@ check("mergeAtlas es idempotente sobre una semilla nueva", segunda.changed === f
 check(
   "tras mergeAtlas, Emon está en Litoral de Filofulgor",
   (primera.atlas["Tal'Dorei"].pois["litoral-filofulgor"] ?? []).some((p) => p.name === "Emon")
+);
+
+// --- TALDOREI_FIXES sobre un atlas VIEJO de verdad ---
+// Las dos comprobaciones de arriba parten de `seedAtlas()`, que ya trae los
+// nombres nuevos: ninguna corrección llega a casar, así que no prueban nada de
+// lo que las correcciones hacen. Aquí se reconstruye el estado ANTERIOR
+// (deshaciendo cada fix sobre la semilla) y se comprueba el resultado real:
+// el nombre viejo desaparece del continente entero y el nuevo aparece UNA vez.
+// Esto es lo que caza el fantasma de un renombre dentro de la misma región.
+const viejo = seedAtlas();
+const contViejo = viejo["Tal'Dorei"];
+for (const fix of TALDOREI_FIXES) {
+  const destino = fix.aRegion ?? fix.deRegion;
+  const nombreNuevo = fix.nombreNuevo ?? fix.nombre;
+  const actual = (contViejo.pois[destino] ?? []).find((p) => p.name === nombreNuevo);
+  if (!actual) continue;
+  contViejo.pois[destino] = (contViejo.pois[destino] ?? []).filter((p) => p.name !== nombreNuevo);
+  contViejo.pois[fix.deRegion] = [
+    ...(contViejo.pois[fix.deRegion] ?? []),
+    { ...actual, name: fix.nombre, x: fix.desdeX, y: fix.desdeY },
+  ];
+}
+const corregido = mergeAtlas(viejo).atlas["Tal'Dorei"];
+const todosLosPois = Object.values(corregido.pois).flat();
+for (const fix of TALDOREI_FIXES) {
+  const nombreNuevo = fix.nombreNuevo ?? fix.nombre;
+  const destino = fix.aRegion ?? fix.deRegion;
+  if (fix.nombreNuevo) {
+    check(
+      `TALDOREI_FIXES: "${fix.nombre}" ya no existe tras corregirlo`,
+      !todosLosPois.some((p) => p.name === fix.nombre)
+    );
+  }
+  check(
+    `TALDOREI_FIXES: "${nombreNuevo}" aparece una sola vez`,
+    todosLosPois.filter((p) => p.name === nombreNuevo).length === 1
+  );
+  check(
+    `TALDOREI_FIXES: "${nombreNuevo}" acaba en ${destino}`,
+    (corregido.pois[destino] ?? []).some((p) => p.name === nombreNuevo)
+  );
+}
+
+// Una edición del DM manda sobre la corrección: si movió el pin, no se pisa.
+const conEdicion = seedAtlas();
+const lucidiana = conEdicion["Tal'Dorei"].pois["costa-lucidiana"] ?? [];
+conEdicion["Tal'Dorei"].pois["costa-lucidiana"] = [
+  ...lucidiana,
+  { name: "Emon", type: "ciudad", blurb: "movido por el DM", x: 99, y: 99 },
+];
+const trasEdicion = mergeAtlas(conEdicion).atlas["Tal'Dorei"];
+check(
+  "TALDOREI_FIXES: un POI que el DM movió no se corrige ni se duplica",
+  (trasEdicion.pois["costa-lucidiana"] ?? []).some((p) => p.name === "Emon" && p.x === 99) &&
+    Object.values(trasEdicion.pois).flat().filter((p) => p.name === "Emon").length === 2
 );
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
