@@ -107,7 +107,11 @@ check("un arma del catalogo solo va a huecos de arma", JSON.stringify(tiposDeHue
 check("el escudo va al hueco de arma (mano secundaria)", JSON.stringify(tiposDeHuecoPara("Escudo")) === JSON.stringify(["arma"]));
 check("una armadura de cuerpo solo va a huecos de armadura", JSON.stringify(tiposDeHuecoPara("Coraza")) === JSON.stringify(["armadura"]));
 check("un anillo NO puede ir a un hueco de arma", !tiposDeHuecoPara("Anillo de proteccion").includes("arma"));
-check("un anillo puede ir a un accesorio", tiposDeHuecoPara("Anillo de proteccion").includes("accesorio"));
+check("un anillo solo va a accesorios", JSON.stringify(tiposDeHuecoPara("Anillo de proteccion")) === JSON.stringify(["accesorio"]));
+check("un anillo NO puede ir a la cabeza ni al torso", !tiposDeHuecoPara("Anillo de proteccion").includes("armadura"));
+check("un objeto raro tampoco va a huecos de armadura", !tiposDeHuecoPara("Carta del gremio").includes("armadura"));
+check("cada objeto va a un solo tipo de hueco",
+  ["Espada larga", "Coraza", "Escudo", "Anillo", "Carta del gremio", ""].every((n) => tiposDeHuecoPara(n).length === 1));
 check("un objeto raro no puede ir a un hueco de arma", !tiposDeHuecoPara("Carta del gremio").includes("arma"));
 check("una espada inventada tampoco entra en el hueco de arma", !tiposDeHuecoPara("Espada de Kael").includes("arma"));
 check("ningun objeto se queda sin ningun hueco posible",
