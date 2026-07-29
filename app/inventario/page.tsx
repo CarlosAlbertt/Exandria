@@ -252,6 +252,7 @@ function InventarioInner() {
             <DetalleObjeto
               item={seleccionado}
               equipment={inv.equipment}
+              mods={inv.mods}
               puedeEquipar={puedeEquipar}
               puedeEditarContenido={puedeEditarContenido}
               onEquipar={onEquipar}

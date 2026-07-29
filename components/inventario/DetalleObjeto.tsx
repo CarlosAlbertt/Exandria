@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { categoriaDe, huecoDestino, metaDe } from "@/lib/inventario";
+import { categoriaDe, huecoDestino, metaDe, tiposDeHuecoPara } from "@/lib/inventario";
 import { ARMOR_SLOTS, WEAPON_SLOTS } from "@/data/equipmentSlots";
+import { accessorySlotIds } from "@/components/Paperdoll";
+import type { AbilityKey } from "@/data/rules";
 import type { Item } from "@/lib/character";
 
 type Props = {
   item: Item;
   equipment: Record<string, Item>;
+  /** Modificadores: de ellos salen los huecos de accesorio, que son variables. */
+  mods: Record<AbilityKey, number>;
   /** Dueño de la ficha, o el DM: puede equipar/desequipar y anotar. */
   puedeEquipar: boolean;
   /** Solo el DM: puede soltar el objeto (añadir y cambiar cantidad quedan
@@ -20,7 +24,23 @@ type Props = {
   onCerrar: () => void;
 };
 
-const SLOTS = [...WEAPON_SLOTS, ...ARMOR_SLOTS];
+/**
+ * Los huecos que se le ofrecen a un objeto, según lo que la app puede verificar
+ * de él (`tiposDeHuecoPara`, en la capa pura). Los de accesorio son variables:
+ * salen de los modificadores, igual que en el muñeco.
+ *
+ * Antes se ofrecían las armas y las armaduras a todo, y faltaban los accesorios,
+ * así que un anillo se podía equipar como arma principal y no se podía poner en
+ * un dedo. Lo cazó el usuario jugando.
+ */
+function huecosOfrecidos(nombre: string, mods: Record<AbilityKey, number>) {
+  const tipos = tiposDeHuecoPara(nombre);
+  const out: { id: string; label: string; icon?: string }[] = [];
+  if (tipos.includes("arma")) out.push(...WEAPON_SLOTS);
+  if (tipos.includes("armadura")) out.push(...ARMOR_SLOTS);
+  if (tipos.includes("accesorio")) out.push(...accessorySlotIds(mods).map((a) => ({ ...a, icon: "fa-gem" })));
+  return out;
+}
 
 // El detalle de un objeto de la bolsa. Vive EN LA PÁGINA, bajo la lista de
 // BolsaAgrupada, empujando el resto hacia abajo — NO es un modal, y no es un
@@ -30,6 +50,7 @@ const SLOTS = [...WEAPON_SLOTS, ...ARMOR_SLOTS];
 export default function DetalleObjeto({
   item,
   equipment,
+  mods,
   puedeEquipar,
   puedeEditarContenido,
   onEquipar,
@@ -38,6 +59,7 @@ export default function DetalleObjeto({
   onCerrar,
 }: Props) {
   const [eligiendoHueco, setEligiendoHueco] = useState(false);
+  const huecos = huecosOfrecidos(item.name, mods);
 
   const cat = categoriaDe(item.name);
   const meta = metaDe(cat);
@@ -135,7 +157,7 @@ export default function DetalleObjeto({
 
       {puedeEquipar && eligiendoHueco && (
         <div className="flex flex-wrap gap-1.5 mt-2">
-          {SLOTS.map((s) => (
+          {huecos.map((s) => (
             <button key={s.id} type="button" className="chip" onClick={() => equiparEn(s.id)}>
               <i className={`fas ${s.icon} mr-1`} />
               {s.label}
