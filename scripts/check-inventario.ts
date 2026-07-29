@@ -1,5 +1,5 @@
 // Comprobación manual del inventario. Uso: npx tsx scripts/check-inventario.ts
-import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria, norm, quitarUno, devolver, tiposDeHuecoPara } from "../lib/inventario";
+import { categoriaDe, CATEGORIAS, huecosDe, huecoDestino, agrupaPorCategoria, norm, quitarUno, devolver, tiposDeHuecoPara, tipoAccesorioDe, accesorioAdmite } from "../lib/inventario";
 import { CATALOG } from "../data/equipment";
 import { ARMAS } from "../data/weapons";
 import { ARMOR_LOOKUP, SHIELD_NAME } from "../lib/derive";
@@ -116,6 +116,28 @@ check("un objeto raro no puede ir a un hueco de arma", !tiposDeHuecoPara("Carta 
 check("una espada inventada tampoco entra en el hueco de arma", !tiposDeHuecoPara("Espada de Kael").includes("arma"));
 check("ningun objeto se queda sin ningun hueco posible",
   ["Espada larga", "Coraza", "Escudo", "Anillo", "Carta del gremio", ""].every((n) => tiposDeHuecoPara(n).length > 0));
+
+// --- tipoAccesorioDe: un anillo va a un dedo, no al cuello ---
+check("reconoce un anillo", tipoAccesorioDe("Anillo de proteccion") === "anillo");
+check("reconoce el nombre a secas", tipoAccesorioDe("Anillo") === "anillo");
+check("reconoce un amuleto", tipoAccesorioDe("Amuleto del sol") === "amuleto");
+check("reconoce un colgante", tipoAccesorioDe("Colgante runico") === "colgante");
+check("reconoce un collar", tipoAccesorioDe("Collar de perlas") === "collar");
+check("ignora mayusculas y tildes", tipoAccesorioDe("ANILLO DE PROTECCION") === "anillo");
+check("un nombre que no lo dice devuelve null", tipoAccesorioDe("Sortija elfica") === null);
+check("un objeto cualquiera devuelve null", tipoAccesorioDe("Carta del gremio") === null);
+check("cadena vacia devuelve null", tipoAccesorioDe("") === null);
+check("solo la primera palabra cuenta", tipoAccesorioDe("Caja con un anillo dentro") === null);
+
+// --- accesorioAdmite ---
+check("un anillo entra en anillo_1", accesorioAdmite("anillo_1", "Anillo de proteccion"));
+check("un anillo entra en anillo_2", accesorioAdmite("anillo_2", "Anillo de proteccion"));
+check("un anillo NO entra en un collar", !accesorioAdmite("collar", "Anillo de proteccion"));
+check("un anillo NO entra en un colgante", !accesorioAdmite("colgante_1", "Anillo de proteccion"));
+check("un collar entra en collar", accesorioAdmite("collar", "Collar de perlas"));
+check("un collar NO entra en un anillo", !accesorioAdmite("anillo_1", "Collar de perlas"));
+check("lo no reconocido entra en cualquier accesorio",
+  ["collar", "anillo_1", "colgante_1", "amuleto_1"].every((id) => accesorioAdmite(id, "Sortija elfica")));
 
 // --- agrupaPorCategoria ---
 const bolsa = [item("Espada larga"), item("Daga", 2), item("Poción de curación", 3), item("Carta del gremio")];

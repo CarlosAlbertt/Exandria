@@ -4,6 +4,7 @@
 import { CATALOG } from "@/data/equipment";
 import { ARMAS } from "@/data/weapons";
 import { ARMOR_LOOKUP, SHIELD_NAME } from "@/lib/derive";
+import { ACCESSORY_SLOTS, FIXED_ACCESSORY } from "@/data/leveling";
 import type { Item } from "@/lib/character";
 
 export type CategoriaId = "Armas" | "Armaduras" | "Aventura" | "Consumibles" | "Herramientas" | "Otro";
@@ -178,6 +179,41 @@ export function tiposDeHuecoPara(nombre: string): TipoHueco[] {
   if (cat === "Armas") return ["arma"];
   if (cat === "Armaduras") return norm(nombre) === norm(SHIELD_NAME) ? ["arma"] : ["armadura"];
   return ["accesorio"];
+}
+
+/** Los tipos de accesorio que existen, sacados de donde ya viven. */
+const TIPOS_ACCESORIO: string[] = [FIXED_ACCESSORY.type, ...ACCESSORY_SLOTS.map((a) => a.type)];
+
+/**
+ * Qué clase de accesorio es un objeto, por la **primera palabra de su nombre**:
+ * «Anillo de protección» → `anillo`. `null` si no se reconoce.
+ *
+ * Aquí sí se mira el nombre por partes, y no contradice la regla de
+ * `categoriaDe` (que exige coincidencia exacta). La diferencia está en lo que se
+ * arriesga: equivocar una categoría pinta de verde una «Poción de veneno» y
+ * miente sobre lo que es; equivocar esto solo ofrece el dedo en vez del cuello,
+ * y el jugador lo ve y elige otro. Además los huecos se llaman **igual** que los
+ * objetos —anillo, colgante, amuleto, collar—, así que la primera palabra es la
+ * señal, no una corazonada.
+ *
+ * Solo la primera palabra y solo en singular, a propósito: «Anillos» o «Sortija»
+ * devuelven `null` y se ofrecen todos los accesorios. Quedarse corto y preguntar
+ * es preferible a colar un objeto en el hueco equivocado.
+ */
+export function tipoAccesorioDe(nombre: string): string | null {
+  const primera = norm(nombre).split(/\s+/)[0] ?? "";
+  return TIPOS_ACCESORIO.find((t) => norm(t) === primera) ?? null;
+}
+
+/**
+ * ¿Este hueco de accesorio le vale a este objeto? Los ids que genera el muñeco
+ * son `collar`, `anillo_1`, `anillo_2`, `colgante_1`… así que el tipo es el id
+ * entero o lo que va antes del `_`.
+ */
+export function accesorioAdmite(slotId: string, nombre: string): boolean {
+  const tipo = tipoAccesorioDe(nombre);
+  if (!tipo) return true; // no se reconoce: que elija el jugador entre todos
+  return slotId === tipo || slotId.startsWith(`${tipo}_`);
 }
 
 export type Grupo = { cat: CategoriaId; items: Item[] };

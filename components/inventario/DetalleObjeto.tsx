@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { categoriaDe, huecoDestino, metaDe, tiposDeHuecoPara } from "@/lib/inventario";
+import { accesorioAdmite, categoriaDe, huecoDestino, metaDe, tiposDeHuecoPara } from "@/lib/inventario";
 import { ARMOR_SLOTS, WEAPON_SLOTS } from "@/data/equipmentSlots";
 import { accessorySlotIds } from "@/components/Paperdoll";
 import type { AbilityKey } from "@/data/rules";
@@ -38,7 +38,15 @@ function huecosOfrecidos(nombre: string, mods: Record<AbilityKey, number>) {
   const out: { id: string; label: string; icon?: string }[] = [];
   if (tipos.includes("arma")) out.push(...WEAPON_SLOTS);
   if (tipos.includes("armadura")) out.push(...ARMOR_SLOTS);
-  if (tipos.includes("accesorio")) out.push(...accessorySlotIds(mods).map((a) => ({ ...a, icon: "fa-gem" })));
+  if (tipos.includes("accesorio")) {
+    // Y dentro de los accesorios, el que le toca: un «Anillo de protección» va a
+    // un anillo, no a un collar. Si el nombre no dice qué es, se ofrecen todos.
+    out.push(
+      ...accessorySlotIds(mods)
+        .filter((a) => accesorioAdmite(a.id, nombre))
+        .map((a) => ({ ...a, icon: "fa-gem" })),
+    );
+  }
   return out;
 }
 
@@ -133,7 +141,7 @@ export default function DetalleObjeto({
               >
                 Equipar
               </button>
-            ) : (
+            ) : huecos.length > 0 ? (
               <button
                 type="button"
                 className="btn-ghost !py-1.5 !px-3 text-[12px]"
@@ -141,6 +149,14 @@ export default function DetalleObjeto({
               >
                 Equipar en…
               </button>
+            ) : (
+              // Sin ningún hueco válido: pasa de verdad, porque los de accesorio
+              // salen de los modificadores (un anillo necesita mod. Inteligencia
+              // positivo). Un botón que abre una lista vacía parece roto; una
+              // línea que lo explica, no.
+              <span className="font-ui text-[11px] italic" style={{ color: "var(--color-dim)" }}>
+                No tienes ningún hueco donde llevar esto.
+              </span>
             ))}
           {puedeEditarContenido && (
             <button
