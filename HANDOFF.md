@@ -4,6 +4,50 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-30)
 
+> **Lo último (2026-07-30, noche): el alcance del jugador para el arranque.**
+> El jugador solo ve **`/`, `/crear`, `/personaje`, `/inventario`, `/reino` y
+> `/lugar`**. `/panteon`, `/cronica`, `/bestiario`, `/mapa`, `/combate`,
+> `/taberna`, `/narrador` y `/dm` quedan **cerradas de verdad** y pintan
+> **`/cerrado`** («esto se abrirá más adelante»), con la URL escrita intacta
+> (`rewrite`, no redirect). **El DM lo sigue viendo todo.**
+> **La puerta está en `lib/supabase/proxy-session.ts`**, no en cada página, y
+> lee de **`lib/acceso.ts`** — la única fuente de verdad (`RUTAS_JUGADOR`,
+> `NAV_LINKS`, `puedeVer(role, path)`). **El nav filtra con la misma función**,
+> así que no puede divergir de la puerta: si una ruta se abre, su enlace
+> aparece solo; si se cierra, desaparece solo.
+> **Coste cero en el camino habitual**: las rutas del jugador pasan sin
+> consultar `profiles`; solo las cerradas consultan el rol.
+> **`/personaje` gana enlace propio en la barra** («Ficha»). La barra del
+> jugador queda: `Inicio · Ficha · Reino · Crear · Inventario`.
+> **`/` es ahora el panel del jugador** (cuatro puertas); el DM conserva la
+> portada de siempre, movida intacta a `components/home/PortadaDm.tsx`.
+> **Abrir una sección = añadir su ruta a `RUTAS_JUGADOR` y desplegar.** Se
+> descartó `app_config` **a propósito**: no está en la publicación realtime.
+> **`scripts/check-acceso.ts` es el gate 25** y exige que **toda** carpeta de
+> `app/` con página esté clasificada: una ruta nueva sin clasificar **falla**
+> (probado por mutación con `app/prueba/`).
+>
+> **Tres cosas que hay que saber, y ninguna es un descuido:**
+> 1. **Una URL inexistente (`/asdfasdf`) da «se abrirá más adelante», no 404.**
+>    Es deliberado: la alternativa —una lista explícita de rutas cerradas— haría
+>    que una ruta nueva sin clasificar quedara **abierta** al jugador. Fallar
+>    cerrado es la dirección correcta.
+> 2. **Si la consulta de rol falla, hasta un DM vería `/cerrado`.** También es la
+>    dirección correcta para una puerta. Si le pasa a alguien, el primer sitio
+>    donde mirar es que su fila en `profiles` tenga `role = 'dm'`.
+> 3. **`/api/*` sigue SIN control de rol.** `isPublic` los deja pasar. Un jugador
+>    con la consola abierta puede llamar `/api/ia` aunque `/taberna` esté
+>    cerrada. **Es otra tanda**, dicha a propósito, no un olvido.
+>
+> **El barrido de enlaces cazó uno que el plan no tenía**: `SiteFooter.tsx` se
+> renderiza vía `layout.tsx` en **todas** las páginas y enlazaba a `/mapa` y
+> `/narrador`. El grep del plan no lo veía porque sus hrefs viven en un array
+> (`{ href: "/mapa" }`), no como atributo. También cayó el fallback de continente
+> sin página propia de `ReinoRegions` y la sección «Ir al combate» de la ficha.
+> **Nada probado en la app en vivo** (todo tras el login): lo que tiene que
+> probar el usuario está al final de
+> `docs/superpowers/plans/2026-07-30-alcance-jugador-arranque.md`.
+
 > **Lo último (2026-07-30, tarde): el creador rehecho y el arte de las especies.**
 > **Escenas de Especie y Clase**: navegan igual (flechas a los lados, emblema
 > grande, tira de miniaturas abajo; recorrido por región/grupo). Se arregló que
@@ -480,9 +524,10 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 23**, y las secciones RESUELTO solo
-nombran los que tocó cada tanda — los demás siguen vivos aunque no se citen.
-Recuento del **2026-07-29, los 23 en verde**:
+(no hay entrada en `package.json`). **Son 25** (`check-especies` entró con las
+subclases y `check-acceso` con el alcance del jugador), y las secciones RESUELTO
+solo nombran los que tocó cada tanda — los demás siguen vivos aunque no se
+citen. Recuento del **2026-07-30, los 25 en verde**:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
@@ -497,7 +542,8 @@ Recuento del **2026-07-29, los 23 en verde**:
 | `check-conjuros` | 49 | `check-turno` | 26 |
 | `check-derive` | 35 | **`check-wildemount`** | **1026** |
 | `check-dice` | 20 | `check-estado` | 35 |
-| `check-dicebox` | 19 | | |
+| `check-dicebox` | 19 | `check-especies` | 272 |
+| **`check-acceso`** | **97** | | |
 
 > Las reglas de `check-taldorei` y `check-wildemount` viven en
 > `lib/continente.ts` (`comprobarContinente`): añadir un continente con submapas
