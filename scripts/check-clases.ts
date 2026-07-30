@@ -1,6 +1,7 @@
 // Comprobación manual de los pozos de clase. Uso: npx tsx scripts/check-clases.ts
 import { CLASS_MECHANICS } from "../data/classdata";
 import { CLASSES } from "../data/classes";
+import { SUBCLASS_FEATURES } from "../data/classdata/subclases";
 import { pozosDe, referenciasDe, gastar, devolver, recargar, type PlayState } from "../lib/recursos";
 
 let failures = 0;
@@ -94,6 +95,27 @@ const totalSubclases = CLASSES.reduce((n, c) => n + c.subclasses.length, 0);
 check("65 subclases en total", totalSubclases === 65);
 const nombresSub = CLASSES.flatMap((c) => c.subclasses.map((s) => s.name));
 check("nombres de subclase únicos globalmente", new Set(nombresSub).size === nombresSub.length);
+
+// --- Mecánica de subclase (data/classdata/subclases): calidad de lo presente ---
+for (const c of CLASSES) {
+  const reg = SUBCLASS_FEATURES[c.slug] ?? {};
+  for (const s of c.subclasses) {
+    const feats = reg[s.name];
+    if (!feats) continue; // la presencia (65/65) se exige en la tarea final
+    check(`${c.slug} · ${s.name}: ≥3 rasgos`, feats.length >= 3);
+    check(`${c.slug} · ${s.name}: ≥1 rasgo a nivel 3`, feats.some((f) => f.level === 3));
+    check(`${c.slug} · ${s.name}: niveles 1-20 no decrecientes`,
+      feats.every((f, i) => f.level >= 1 && f.level <= 20 && (i === 0 || f.level >= feats[i - 1].level)));
+    check(`${c.slug} · ${s.name}: name/text no vacíos`, feats.every((f) => f.name.trim().length > 0 && f.text.trim().length > 0));
+  }
+}
+// Sin huérfanos: toda clave del dato existe como subclase en classes.ts
+const nombresValidos = new Set(CLASSES.flatMap((c) => c.subclasses.map((s) => s.name)));
+for (const [slug, reg] of Object.entries(SUBCLASS_FEATURES)) {
+  for (const nombre of Object.keys(reg)) {
+    check(`${slug} · ${nombre}: no huérfano`, nombresValidos.has(nombre));
+  }
+}
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);

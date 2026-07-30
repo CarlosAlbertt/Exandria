@@ -12,6 +12,12 @@ export type ClassFeature = {
   subclass?: boolean;  // true si la otorga la subclase
 };
 
+export type SubclassFeature = {
+  level: number;   // nivel al que la subclase concede el rasgo (1-20)
+  name: string;    // nombre canónico ES del rasgo (p. ej. "Aura Glaciar")
+  text: string;    // regla completa; \n para saltos, "• " para viñetas
+};
+
 export type ClassResource = {
   name: string;
   values: (number | string)[];

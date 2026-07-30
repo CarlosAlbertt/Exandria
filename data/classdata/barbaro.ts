@@ -43,12 +43,6 @@ export const BARBARO: ClassMechanics = {
     },
     {
       level: 3,
-      name: "Subclase de Bárbaro",
-      blurb: "Elige una senda primigenia que define un estilo de furia propio y desbloquea rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
-      level: 3,
       name: "Conocimiento Primal",
       blurb: "El bárbaro gana competencia en una pericia adicional de la lista de su clase y, mientras está enfurecido, puede usar Fuerza en las pruebas de ciertas pericias.",
     },
@@ -66,12 +60,6 @@ export const BARBARO: ClassMechanics = {
       level: 5,
       name: "Movimiento Rápido",
       blurb: "La velocidad de desplazamiento del bárbaro aumenta mientras no lleve armadura pesada, facilitando perseguir o huir.",
-    },
-    {
-      level: 6,
-      name: "Rasgo de subclase",
-      blurb: "La senda primigenia elegida concede un nuevo poder que refuerza su identidad temática particular.",
-      subclass: true,
     },
     {
       level: 7,
@@ -94,12 +82,6 @@ export const BARBARO: ClassMechanics = {
       blurb: "Durante un Ataque Temerario, el bárbaro puede sacrificar parte de su ventaja para añadir un dado de daño extra al golpe.",
     },
     {
-      level: 10,
-      name: "Rasgo de subclase",
-      blurb: "Nuevo poder de la senda primigenia que amplía las opciones tácticas del bárbaro en combate.",
-      subclass: true,
-    },
-    {
       level: 11,
       name: "Furia Implacable",
       blurb: "Si un golpe dejaría al bárbaro enfurecido a 0 puntos de golpe, puede en su lugar quedarse con 1 punto de golpe, una vez por descanso largo.",
@@ -113,12 +95,6 @@ export const BARBARO: ClassMechanics = {
       level: 13,
       name: "Golpe Brutal Mejorado",
       blurb: "El Golpe Brutal gana una opción adicional, como derribar al objetivo o alejarlo de un tirón.",
-    },
-    {
-      level: 14,
-      name: "Rasgo de subclase",
-      blurb: "La senda primigenia otorga un rasgo culminante que suele definir el papel del bárbaro en niveles altos.",
-      subclass: true,
     },
     {
       level: 15,

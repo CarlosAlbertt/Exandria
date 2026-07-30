@@ -1,0 +1,36 @@
+import type { SubclassFeature } from "../types";
+
+// Rasgos de subclase del Bárbaro (niveles 3/6/10/14). Mecánica = hechos, del
+// material de subclases de Exandria 2024. Clave = nombre en data/classes.ts.
+export const BARBARO_SUBCLASSES: Record<string, SubclassFeature[]> = {
+  "Senda de la Furia Bermellón": [
+    { level: 3, name: "Rabia Insondable", text: "Tu furia no es física, es una presión mental aplastante. Cuando entras en Furia, tus ojos brillan con un rojo oscuro y emites una luz tenue a 10 pies (3 metros). Mientras estés en Furia, puedes elegir que tus ataques cuerpo a cuerpo inflijan daño Psíquico en lugar de su daño normal. Si lo haces, añades tu bonificador de Furia al daño como es habitual. Además, el primer enemigo que reciba daño Psíquico de tus ataques en cada uno de tus turnos pierde la capacidad de realizar Reacciones hasta el inicio de su próximo turno." },
+    { level: 6, name: "Mente Alienígena", text: "La luna roja protege tu consciencia. Obtienes Resistencia al daño Psíquico (incluso si no estás en Furia) y adquieres telepatía a 30 pies (9 metros). Además, si fallas una Tirada de Salvación de Inteligencia, Sabiduría o Carisma, puedes usar tu Reacción para gastar un uso de tu Furia y repetir la tirada. Debes usar el nuevo resultado." },
+    { level: 10, name: "Presagio de Predathos", text: "Al canalizar el hambre cósmica de Ruidus, puedes devorar la magia circundante. Como Acción Mágica, puedes gastar un uso de tu Furia para lanzar el hechizo Disipar Magia o Miedo. Usas Constitución como tu aptitud mágica para estos hechizos. Puedes lanzar estos hechizos incluso si estás actualmente en Furia, y hacerlo cuenta como si hubieras realizado un ataque para mantener tu Furia activa." },
+    { level: 14, name: "Ecos del Devorador", text: "El hambre de la luna roja se manifiesta físicamente cuando destrozas a tus enemigos. Mientras estás en Furia, si asestas un Golpe Crítico a una criatura o la reduces a 0 Puntos de Golpe, invocas un zarcillo carmesí psíquico. Tú recuperas Puntos de Golpe Temporales iguales a 1d12 + tu nivel de Bárbaro, y puedes obligar a una criatura que puedas ver a 30 pies a realizar una Tirada de Salvación de Sabiduría (CD 8 + Competencia + Constitución) o quedar Asustada de ti durante 1 minuto (puede repetir la tirada al final de cada uno de sus turnos)." },
+  ],
+  "Senda del Titán Caído": [
+    { level: 3, name: "Piel de Montaña", text: "Cuando entras en Furia, tu piel se vuelve grisácea y dura como el granito. Obtienes Puntos de Golpe Temporales iguales a 1d8 + tu nivel de Bárbaro. Además, mientras estás en Furia, ignoras el terreno difícil no mágico y, si te mueves a través del espacio de una criatura de tamaño Grande o menor, puedes obligarla a hacer una Tirada de Salvación de Fuerza (CD 8 + tu bonificador de Competencia + tu modificador de Fuerza) o ser empujada 5 pies a un lado." },
+    { level: 6, name: "Impacto Sísmico", text: "Puedes usar tu furia para castigar la tierra. Una vez por turno, cuando realizas la acción de Atacar, puedes sustituir uno de tus ataques por un pisotón o un golpe al suelo. Todas las criaturas en el suelo a 10 pies (3 metros) de ti deben superar una Tirada de Salvación de Destreza. Si fallan, reciben daño contundente igual a 1d6 + tu modificador de Fuerza y caen Derrumbadas (Prone)." },
+    { level: 10, name: "Raíces de Piedra", text: "Eres imposible de mover en contra de tu voluntad. Cuando un efecto o ataque fuera a empujarte o dejarte Derrumbado, puedes usar tu Reacción para anclarte al suelo. Ignoras el empuje y la caída, y el atacante (si está a 5 pies de ti) recibe daño contundente igual a tu nivel de Bárbaro debido a la onda de choque de tu resistencia." },
+    { level: 14, name: "Coloso Primordial", text: "Mientras estás en Furia, tu tamaño aumenta a Grande (junto con tu equipo), tu alcance (reach) aumenta en 5 pies, y tus ataques con armas cuerpo a cuerpo infligen un dado extra de daño del tipo del arma. Si no hay suficiente espacio para crecer, alcanzas el tamaño máximo posible." },
+  ],
+  "Senda de la Ceniza Helada": [
+    { level: 3, name: "Aura Glaciar", text: "Cuando entras en Furia, el aire a 10 pies de ti se congela. Los enemigos que comiencen su turno en el aura ven su velocidad reducida en 10 pies. Si golpeas a un enemigo dentro del aura con un ataque cuerpo a cuerpo, infliges 1d6 de daño por Frío adicional." },
+    { level: 6, name: "Sangre de Escarcha", text: "Obtienes Resistencia al daño por Frío. Además, puedes caminar sobre el agua congelándola a tu paso." },
+    { level: 10, name: "Represalia Invernal", text: "Cuando una criatura a 10 pies te impacta con un ataque, puedes usar tu Reacción para estallar en escarcha. El atacante recibe daño por Frío igual a tu nivel de Bárbaro y debe superar una Salvación de Constitución o perder su Reacción este turno." },
+    { level: 14, name: "Congelación Absoluta", text: "Mientras estás en Furia, si asestas un Golpe Crítico o reduces a un enemigo a 0 PG, el objetivo (o su cadáver) estalla en hielo. Los enemigos a 15 pies reciben 3d10 de daño por Frío y quedan Derrumbados (Prone)." },
+  ],
+  "Senda de la Mutación Salvaje": [
+    { level: 3, name: "Furia Mutante", text: "Al entrar en Furia, eliges una mutación (dura hasta que termine la furia):\n• Garras: Tus ataques desarmados infligen 1d8 de daño Cortante, y puedes hacer un ataque desarmado extra como Acción Adicional.\n• Glándula Corrosiva: Una vez por turno, puedes escupir ácido en un cono de 15 pies en lugar de un ataque (Salvación de Destreza, 2d6 daño de Ácido).\n• Piel Espinosa: Los atacantes cuerpo a cuerpo reciben daño Perforante igual a tu bonificador de Furia." },
+    { level: 6, name: "Evolución Constante", text: "Fuera de la Furia, obtienes pasivamente Visión en la Oscuridad a 60 pies y velocidad de escalada igual a tu velocidad." },
+    { level: 10, name: "Metabolismo de Xhorhas", text: "Si usas tu Nuevas Energías (Second Wind) mientras estás en Furia, recuperas el doble de Puntos de Golpe." },
+    { level: 14, name: "Quimera", text: "Cuando entras en Furia, ahora puedes elegir dos mutaciones simultáneas de tu rasgo de nivel 3." },
+  ],
+  "Senda del Rompe-Mares": [
+    { level: 3, name: "Depredador del Arrecife", text: "Tienes velocidad de nado igual a tu velocidad normal y respiras bajo el agua. Además, si impactas a una criatura con un arma cuerpo a cuerpo, puedes usar tu Acción Adicional para intentar Agarrarla (Grapple) automáticamente (tirada de Atletismo)." },
+    { level: 6, name: "Arrastre Inexorable", text: "Mientras tengas a una criatura Agarrada, moverte con ella no reduce tu velocidad a la mitad." },
+    { level: 10, name: "Ahogamiento", text: "Cuando tienes a un enemigo Agarrado, este comienza a ahogarse en magia elemental. Al inicio del turno del enemigo, recibe daño Contundente igual a tu modificador de Fuerza, y no puede proporcionar componentes verbales para hechizos." },
+    { level: 14, name: "Impacto del Leviatán", text: "Si te mueves al menos 15 pies y atacas, tu golpe genera una onda de choque oceánica. El objetivo y todos los enemigos a 10 pies detrás de él deben superar una Salvación de Fuerza o ser empujados 15 pies y quedar Derrumbados." },
+  ],
+};

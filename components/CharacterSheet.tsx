@@ -19,7 +19,8 @@ import Paperdoll from "@/components/Paperdoll";
 import ResumenEquipo from "@/components/inventario/ResumenEquipo";
 import PortraitFrame from "@/components/PortraitFrame";
 import { derive } from "@/lib/derive";
-import { getMechanics, type ClassFeature } from "@/data/classdata";
+import { getMechanics } from "@/data/classdata";
+import { subclassFeaturesFor } from "@/data/classdata/subclases";
 import { useSession } from "@/components/SessionProvider";
 import { publishRoll } from "@/lib/useDiceFeed";
 import { ventajaDe } from "@/lib/estado";
@@ -264,17 +265,26 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
 
   const mechanics = useMemo(() => getMechanics(build.cls), [build.cls]);
   const featuresByLevel = useMemo(() => {
-    if (!mechanics) return [] as { level: number; feats: ClassFeature[] }[];
-    const visible = mechanics.features.filter((f) => f.level <= level && (!f.subclass || !!build.subclass));
-    const map = new Map<number, ClassFeature[]>();
-    for (const f of visible) {
-      if (!map.has(f.level)) map.set(f.level, []);
-      map.get(f.level)!.push(f);
+    type SheetFeat = { name: string; body: string; sub?: string; preWrap?: boolean };
+    if (!mechanics) return [] as { level: number; feats: SheetFeat[] }[];
+    const items: { level: number; feat: SheetFeat }[] = [];
+    for (const f of mechanics.features) {
+      if (f.level > level || f.subclass) continue; // los placeholders de subclase ya no se pintan
+      items.push({ level: f.level, feat: { name: f.name, body: f.blurb } });
+    }
+    for (const sf of subclassFeaturesFor(build.cls ?? "", build.subclass)) {
+      if (sf.level > level) continue;
+      items.push({ level: sf.level, feat: { name: sf.name, body: sf.text, sub: build.subclass ?? undefined, preWrap: true } });
+    }
+    const map = new Map<number, SheetFeat[]>();
+    for (const it of items) {
+      if (!map.has(it.level)) map.set(it.level, []);
+      map.get(it.level)!.push(it.feat);
     }
     return Array.from(map.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([lvl, feats]) => ({ level: lvl, feats }));
-  }, [mechanics, level, build.subclass]);
+  }, [mechanics, level, build.subclass, build.cls]);
 
   const spellSlotChips = useMemo(() => {
     if (!d.spellSlots) return [] as { lvl: number; n: number }[];
@@ -641,9 +651,9 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
                       {feats.map((f) => (
                         <div key={f.name} className="panel-raised p-3">
                           <p className="font-ui text-[13px] font-bold" style={{ color: "var(--color-parch)" }}>
-                            {f.name}{f.subclass && build.subclass ? ` — ${build.subclass}` : ""}
+                            {f.name}{f.sub ? ` — ${f.sub}` : ""}
                           </p>
-                          <p className="font-ui text-[12px] mt-1" style={{ color: "var(--color-muted)" }}>{f.blurb}</p>
+                          <p className="font-ui text-[12px] mt-1" style={{ color: "var(--color-muted)", whiteSpace: f.preWrap ? "pre-wrap" : undefined }}>{f.body}</p>
                         </div>
                       ))}
                     </div>
