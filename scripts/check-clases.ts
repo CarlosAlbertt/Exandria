@@ -1,5 +1,6 @@
 // Comprobación manual de los pozos de clase. Uso: npx tsx scripts/check-clases.ts
 import { CLASS_MECHANICS } from "../data/classdata";
+import { CLASSES } from "../data/classes";
 import { pozosDe, referenciasDe, gastar, devolver, recargar, type PlayState } from "../lib/recursos";
 
 let failures = 0;
@@ -78,6 +79,21 @@ check("el descanso largo lo recarga todo", (gLargo.usos?.["segundo-aliento"] ?? 
 
 const conO2 = recargar({ usos: { furias: 1 }, huecos: { "1": 2 } } as PlayState, "barbaro", 5, "largo");
 check("recargar no toca las claves de otras fases", JSON.stringify((conO2 as Record<string, unknown>).huecos) === '{"1":2}');
+
+// --- Subclases (data/classes.ts) ---
+check("hay 13 clases en CLASSES", CLASSES.length === 13);
+for (const c of CLASSES) {
+  check(`${c.slug}: exactamente 5 subclases`, c.subclasses.length === 5);
+  check(`${c.slug}: subclassLabel no vacío`, c.subclassLabel.trim().length > 0);
+  for (const s of c.subclasses) {
+    check(`${c.slug} · ${s.name || "(sin nombre)"}: name no vacío`, s.name.trim().length > 0);
+    check(`${c.slug} · ${s.name}: blurb no vacío`, s.blurb.trim().length > 0);
+  }
+}
+const totalSubclases = CLASSES.reduce((n, c) => n + c.subclasses.length, 0);
+check("65 subclases en total", totalSubclases === 65);
+const nombresSub = CLASSES.flatMap((c) => c.subclasses.map((s) => s.name));
+check("nombres de subclase únicos globalmente", new Set(nombresSub).size === nombresSub.length);
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);
