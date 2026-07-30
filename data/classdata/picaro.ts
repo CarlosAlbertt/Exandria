@@ -43,12 +43,6 @@ export const PICARO: ClassMechanics = {
     },
     {
       level: 3,
-      name: "Subclase de Pícaro",
-      blurb: "Elige un arquetipo que define su especialidad delictiva o de infiltración y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
-      level: 3,
       name: "Puntería Firme",
       blurb: "Si el pícaro no se mueve en su turno, puede ganar ventaja en un ataque a distancia a cambio de exponer su posición.",
     },
@@ -88,12 +82,6 @@ export const PICARO: ClassMechanics = {
       blurb: "Nueva ronda de mejora de característica o talento.",
     },
     {
-      level: 9,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo del pícaro concede un nuevo poder que amplía su especialidad.",
-      subclass: true,
-    },
-    {
       level: 10,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -109,12 +97,6 @@ export const PICARO: ClassMechanics = {
       blurb: "Nueva ronda de mejora de característica o talento.",
     },
     {
-      level: 13,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo del pícaro otorga un nuevo poder que refuerza su especialidad.",
-      subclass: true,
-    },
-    {
       level: 14,
       name: "Golpes Insidiosos",
       blurb: "El pícaro puede gastar dados de Ataque Furtivo para imponer un efecto negativo adicional en el objetivo, además del daño.",
@@ -128,12 +110,6 @@ export const PICARO: ClassMechanics = {
       level: 16,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
-    },
-    {
-      level: 17,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo del pícaro concede un poder avanzado propio de pícaros consumados.",
-      subclass: true,
     },
     {
       level: 18,
