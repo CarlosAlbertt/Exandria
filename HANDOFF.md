@@ -2,7 +2,27 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-29)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-30)
+
+> **Lo último (2026-07-30): subclases rehechas (fase 1, foundation).** Se
+> borraron las **52 subclases** viejas (4/clase) y se pusieron **65 nuevas** (13
+> clases × 5), ambientación Exandria 2024, de momento **nombre + blurb** en
+> `data/classes.ts` (ningún consumidor tocado). **No se añade Artificiero.**
+> `subclassLabel` intacto. Nombres del Brujo en formato «Patrón del X». Antes
+> `check-clases.ts` no miraba subclases; ahora tiene **dientes** (13 clases, 5
+> c/u, 65 total, nombres únicos, name/blurb/label no vacíos). Gate: tsc + next
+> build + 23 checks en verde; prueba de mutación confirma que muerden. Spec/plan
+> en `docs/superpowers/{specs,plans}/2026-07-30-subclases-rehacer*`.
+> **Pendiente que solo hace el usuario**: correr `delete from public.characters;`
+> en el SQL Editor de Supabase — las fichas de prueba guardan la subclase por
+> nombre y quedaron con nombres inexistentes al renombrar.
+> **FASE 2 PENDIENTE (grande): mecánica por subclase.** El usuario pasó
+> `Downloads/subclases.md` (976 líneas) con **rasgos completos por nivel** de las
+> 65. Meterlos es escala bestiario: el modelo `ClassFeature` de
+> `data/classdata/types.ts` **no liga un rasgo a una subclase concreta** (hoy los
+> `subclass: true` son placeholders genéricos, iguales para las 5), así que hace
+> falta cambio de arquitectura + ~300 rasgos transcritos + UI en la ficha + gate.
+> Tiene su propio brainstorm → spec → plan (en marcha 2026-07-30).
 
 > **Lo último (2026-07-29): dos continentes de atlas.** **Tal'Dorei** pasó de 45
 > a **94 POIs** (tres capitales inexistentes, Emon en la región equivocada, las
