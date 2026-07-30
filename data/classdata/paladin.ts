@@ -48,12 +48,6 @@ export const PALADIN: ClassMechanics = {
       blurb: "El paladín invoca directamente el poder de su juramento para lograr un efecto sobrenatural determinado por su orden sagrada.",
     },
     {
-      level: 3,
-      name: "Subclase de Paladín",
-      blurb: "Elige un juramento sagrado que define su código de honor y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -72,12 +66,6 @@ export const PALADIN: ClassMechanics = {
       level: 6,
       name: "Aura de Protección",
       blurb: "El paladín y los aliados cercanos suman su bonificador de Carisma a las salvaciones que realicen.",
-    },
-    {
-      level: 7,
-      name: "Rasgo de subclase",
-      blurb: "El juramento sagrado concede un nuevo poder que refuerza su código de honor.",
-      subclass: true,
     },
     {
       level: 8,
@@ -110,12 +98,6 @@ export const PALADIN: ClassMechanics = {
       blurb: "Al usar Imposición de Manos, el paladín puede además eliminar una condición perjudicial que afecte al objetivo.",
     },
     {
-      level: 15,
-      name: "Rasgo de subclase",
-      blurb: "El juramento sagrado otorga un nuevo poder que amplía su devoción.",
-      subclass: true,
-    },
-    {
       level: 16,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -129,12 +111,6 @@ export const PALADIN: ClassMechanics = {
       level: 19,
       name: "Don Épico",
       blurb: "El paladín obtiene un don épico, una mejora extraordinaria reservada a personajes de nivel legendario.",
-    },
-    {
-      level: 20,
-      name: "Rasgo de subclase",
-      blurb: "El juramento sagrado concede un rasgo culminante propio de paladines legendarios.",
-      subclass: true,
     },
   ],
   resources: [
