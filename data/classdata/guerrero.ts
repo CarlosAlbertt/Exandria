@@ -42,12 +42,6 @@ export const GUERRERO: ClassMechanics = {
       blurb: "El guerrero puede usar su bono de competencia para mejorar una prueba de característica fallida, gastando un uso de Segundo Aliento.",
     },
     {
-      level: 3,
-      name: "Subclase de Guerrero",
-      blurb: "Elige un arquetipo marcial que define su estilo de combate y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -68,12 +62,6 @@ export const GUERRERO: ClassMechanics = {
       blurb: "Nueva ronda de mejora de característica o talento.",
     },
     {
-      level: 7,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo marcial concede un nuevo poder que amplía las opciones tácticas del guerrero.",
-      subclass: true,
-    },
-    {
       level: 8,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -87,12 +75,6 @@ export const GUERRERO: ClassMechanics = {
       level: 9,
       name: "Indomable",
       blurb: "El guerrero puede repetir una salvación fallida, un número limitado de veces por descanso largo.",
-    },
-    {
-      level: 10,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo marcial otorga un nuevo poder que refuerza su especialidad en combate.",
-      subclass: true,
     },
     {
       level: 11,
@@ -115,12 +97,6 @@ export const GUERRERO: ClassMechanics = {
       blurb: "Nueva ronda de mejora de característica o talento.",
     },
     {
-      level: 15,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo marcial concede un poder avanzado propio de guerreros veteranos.",
-      subclass: true,
-    },
-    {
       level: 16,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -129,12 +105,6 @@ export const GUERRERO: ClassMechanics = {
       level: 17,
       name: "Reservas de Combate Ampliadas",
       blurb: "El guerrero gana un uso adicional de Acción Sorpresiva y de Indomable, pudiendo recurrir a ellos con más frecuencia.",
-    },
-    {
-      level: 18,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo marcial otorga un rasgo culminante propio de guerreros legendarios.",
-      subclass: true,
     },
     {
       level: 19,
