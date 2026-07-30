@@ -47,12 +47,6 @@ export const MONJE: ClassMechanics = {
       blurb: "Con su reacción, el monje reduce el daño de un ataque cuerpo a cuerpo que le impacte, pudiendo anularlo por completo.",
     },
     {
-      level: 3,
-      name: "Subclase de Monje",
-      blurb: "Elige una tradición marcial que define su estilo de combate y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -76,12 +70,6 @@ export const MONJE: ClassMechanics = {
       level: 6,
       name: "Golpes Potenciados",
       blurb: "Los ataques desarmados del monje cuentan como mágicos para superar resistencias e inmunidades.",
-    },
-    {
-      level: 6,
-      name: "Rasgo de subclase",
-      blurb: "La tradición marcial concede un nuevo poder que amplía su estilo de combate.",
-      subclass: true,
     },
     {
       level: 7,
@@ -109,12 +97,6 @@ export const MONJE: ClassMechanics = {
       blurb: "Al terminar un descanso corto, el monje puede eliminar una condición perjudicial que lo afecte.",
     },
     {
-      level: 11,
-      name: "Rasgo de subclase",
-      blurb: "La tradición marcial otorga un nuevo poder que refuerza su especialidad temática.",
-      subclass: true,
-    },
-    {
       level: 12,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -138,12 +120,6 @@ export const MONJE: ClassMechanics = {
       level: 16,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
-    },
-    {
-      level: 17,
-      name: "Rasgo de subclase",
-      blurb: "La tradición marcial concede un poder avanzado propio de monjes de gran disciplina.",
-      subclass: true,
     },
     {
       level: 18,
