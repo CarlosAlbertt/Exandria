@@ -360,6 +360,16 @@ export const WILDEMOUNT_POIS: Record<string, Poi[]> = {
   ],
   "costa-de-la-plaga": [
     { name: "Nueva Haxon", type: "ciudad", blurb: "Asentamiento costero en Blightshore, al pie de la Cordillera Penumbra; el único apoyo señalado en ese tramo de litoral yermo.", x: 45, y: 81 },
+    { name: "Hharom Lejano", type: "natural", blurb: "Masa de tierra de tono verdoso en el extremo norte de la hoja, unida al resto de la costa por el Macizo Ebonglass.", x: 57, y: 18 },
+    { name: "Escollo de Ole", type: "natural", blurb: "Islote frente a la costa suroeste de Hharom Lejano, aislado en mar abierto.", x: 45, y: 22 },
+    { name: "Macizo Ebonglass", type: "natural", blurb: "Cordillera que une Hharom Lejano con el resto de la Costa de la Plaga, cerrando el paso hacia el norte.", x: 63, y: 31 },
+    { name: "Strathfell", type: "natural", blurb: "Mancha de bosque denso y oscuro en el extremo nororiental de la hoja, junto a la costa.", x: 80, y: 37 },
+    { name: "Ghor Veles", type: "ruina", blurb: "Ruina señalada tierra adentro, al norte del Mar del Caldero, entre las estribaciones orientales de la Cordillera Penumbra.", x: 51, y: 47 },
+    { name: "Mar del Caldero", type: "natural", blurb: "Cala interior en el centro de la Costa de la Plaga, rodeada de tierras yermas al norte del litoral homónimo.", x: 55, y: 54 },
+    { name: "Diente de Zebir", type: "natural", blurb: "Península curva que se adentra en el mar al este de la Costa de la Plaga, frente al Estrecho de Venum.", x: 81, y: 57 },
+    { name: "Estrecho de Venum", type: "natural", blurb: "Paso de mar entre el Diente de Zebir y las islas de Sariss y Mordant, al sureste de la hoja.", x: 76, y: 64 },
+    { name: "Sariss", type: "natural", blurb: "Isla pequeña en el Estrecho de Venum, junto a Isla Mordant.", x: 73, y: 66 },
+    { name: "Isla Mordant", type: "natural", blurb: "Isla al sur de Sariss, la más meridional del grupo que salpica el Estrecho de Venum.", x: 72, y: 69 },
   ],
 };
 
