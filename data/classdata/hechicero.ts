@@ -38,12 +38,6 @@ export const HECHICERO: ClassMechanics = {
       blurb: "El hechicero aprende opciones de Metamagia que le permiten alterar sus conjuros al lanzarlos, a cambio de puntos de hechicería.",
     },
     {
-      level: 3,
-      name: "Subclase de Hechicero",
-      blurb: "Elige un origen de hechicería que explica la fuente de su poder y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -52,12 +46,6 @@ export const HECHICERO: ClassMechanics = {
       level: 5,
       name: "Restauración de Hechicero",
       blurb: "Al terminar un descanso corto, el hechicero recupera algunos de sus puntos de hechicería gastados.",
-    },
-    {
-      level: 6,
-      name: "Rasgo de subclase",
-      blurb: "El origen de hechicería concede un nuevo poder que refuerza la naturaleza de su magia innata.",
-      subclass: true,
     },
     {
       level: 7,
@@ -80,12 +68,6 @@ export const HECHICERO: ClassMechanics = {
       blurb: "Nueva ronda de mejora de característica o talento.",
     },
     {
-      level: 14,
-      name: "Rasgo de subclase",
-      blurb: "El origen de hechicería otorga un nuevo poder que amplía las manifestaciones de su magia.",
-      subclass: true,
-    },
-    {
       level: 16,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -94,12 +76,6 @@ export const HECHICERO: ClassMechanics = {
       level: 17,
       name: "Metamagia",
       blurb: "El hechicero aprende otra opción de Metamagia, ampliando su repertorio de manipulación arcana.",
-    },
-    {
-      level: 18,
-      name: "Rasgo de subclase",
-      blurb: "El origen de hechicería concede un rasgo culminante propio de hechiceros de gran poder.",
-      subclass: true,
     },
     {
       level: 19,
