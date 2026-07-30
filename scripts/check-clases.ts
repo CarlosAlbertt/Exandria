@@ -117,5 +117,15 @@ for (const [slug, reg] of Object.entries(SUBCLASS_FEATURES)) {
   }
 }
 
+// --- Mecánica de subclase: completitud (las 65 tienen rasgos) ---
+for (const c of CLASSES) {
+  const reg = SUBCLASS_FEATURES[c.slug] ?? {};
+  for (const s of c.subclasses) {
+    check(`${c.slug} · ${s.name}: tiene mecánica`, Array.isArray(reg[s.name]));
+  }
+}
+check("ningún placeholder subclass:true sobrevive",
+  clases.every((c) => (c.features ?? []).every((f) => !f.subclass)));
+
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);
