@@ -1,12 +1,20 @@
-"use client";
-
 import Link from "next/link";
 import Emblem from "@/components/Emblem";
-import { useRole } from "@/components/SessionProvider";
+import { puedeVer } from "@/lib/acceso";
+import type { Role } from "@/lib/auth";
 
-export default function SiteFooter() {
-  const isDM = useRole() === "dm";
+const LINKS = [
+  { href: "/reino", label: "El Reino" },
+  { href: "/crear", label: "Crear Personaje" },
+  { href: "/inventario", label: "Inventario" },
+  { href: "/mapa", label: "Mapa" },
+  { href: "/narrador", label: "Narrador" },
+];
 
+// El pie se pinta en TODAS las páginas (`app/layout.tsx`), también en las que
+// ve el jugador: filtra con la misma función que la puerta del proxy, igual
+// que `SiteNav`. El rol llega por prop para que siga siendo de servidor.
+export default function SiteFooter({ role }: { role: Role }) {
   return (
     <footer className="mt-24 border-t border-[var(--color-line)]">
       <div className="max-w-6xl mx-auto px-6 py-12 text-center">
@@ -14,12 +22,7 @@ export default function SiteFooter() {
         <p className="font-display text-xl font-bold gold-text mb-1">Exandria</p>
         <p className="eyebrow mb-6">Compañero de Campaña · Exandria</p>
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-6">
-          {[
-            { href: "/reino", label: "El Reino" },
-            { href: "/crear", label: "Crear Personaje" },
-            { href: "/inventario", label: "Inventario" },
-            ...(isDM ? [{ href: "/mapa", label: "Mapa" }, { href: "/narrador", label: "Narrador" }] : []),
-          ].map((l) => (
+          {LINKS.filter((l) => puedeVer(role, l.href)).map((l) => (
             <Link key={l.href} href={l.href}
               className="font-ui text-[12px] font-semibold tracking-wide transition-colors"
               style={{ color: "var(--color-muted)" }}>

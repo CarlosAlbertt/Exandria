@@ -15,17 +15,24 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > `NAV_LINKS`, `puedeVer(role, path)`). **El nav filtra con la misma función**,
 > así que no puede divergir de la puerta: si una ruta se abre, su enlace
 > aparece solo; si se cierra, desaparece solo.
-> **Coste cero en el camino habitual**: las rutas del jugador pasan sin
-> consultar `profiles`; solo las cerradas consultan el rol.
+> **Coste cero en el camino habitual del jugador**: sus rutas pasan sin
+> consultar `profiles`; solo las cerradas consultan el rol. **Al DM sí le
+> cuesta**: navegar a cualquiera de las ocho cerradas —que es donde vive— hace
+> en el proxy la misma consulta que `getSessionProfile()` ya hace en el layout,
+> dos veces por request. Es asumible y no se ha optimizado.
 > **`/personaje` gana enlace propio en la barra** («Ficha»). La barra del
 > jugador queda: `Inicio · Ficha · Reino · Crear · Inventario`.
 > **`/` es ahora el panel del jugador** (cuatro puertas); el DM conserva la
 > portada de siempre, movida intacta a `components/home/PortadaDm.tsx`.
 > **Abrir una sección = añadir su ruta a `RUTAS_JUGADOR` y desplegar.** Se
 > descartó `app_config` **a propósito**: no está en la publicación realtime.
-> **`scripts/check-acceso.ts` es el gate 25** y exige que **toda** carpeta de
-> `app/` con página esté clasificada: una ruta nueva sin clasificar **falla**
-> (probado por mutación con `app/prueba/`).
+> **`scripts/check-acceso.ts` es el gate 25** y exige que **toda** ruta con
+> página de `app/` esté clasificada, **incluidas las anidadas**: tanto
+> `app/tesoreria/` como `app/reino/secreto/` hacen fallar el gate (probado por
+> mutación). Lo anidado importa porque heredaría el permiso de su padre por la
+> regla de prefijo y se colaría abierto. También comprueba que las **puertas**
+> del jugador (`PUERTAS_JUGADOR`, las que pintan la portada y `/cerrado`) sigan
+> abiertas.
 >
 > **Tres cosas que hay que saber, y ninguna es un descuido:**
 > 1. **Una URL inexistente (`/asdfasdf`) da «se abrirá más adelante», no 404.**

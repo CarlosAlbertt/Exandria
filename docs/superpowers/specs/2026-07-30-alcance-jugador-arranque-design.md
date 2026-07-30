@@ -128,8 +128,12 @@ fallo clásico de este tipo de cambio y el diseño lo hace imposible.
 
 Resultado:
 
-- **Jugador**: `Inicio · Ficha · Inventario · Reino · Crear`
+- **Jugador**: `Inicio · Ficha · Reino · Crear · Inventario`
 - **DM**: los nueve de hoy + `Ficha` + `Narrador` + `Panel DM`
+
+El orden es el histórico de `BASE_LINKS` con `Ficha` insertada en segunda
+posición. Se conserva a propósito: así el DM no nota que la barra ha cambiado
+de sitio nada.
 
 `PartyLocationWidget` (→ `/lugar`) sigue visible para ambos, porque `/lugar`
 queda abierta.

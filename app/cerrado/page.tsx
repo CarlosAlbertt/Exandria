@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Emblem from "@/components/Emblem";
+import { PUERTAS_JUGADOR } from "@/lib/acceso";
 
 export const metadata: Metadata = { title: "Aún no" };
-
-const PUERTAS = [
-  { href: "/personaje", icon: "fa-scroll", label: "Tu ficha" },
-  { href: "/inventario", icon: "fa-sack-xmark", label: "Tu inventario" },
-  { href: "/reino", icon: "fa-book-open", label: "El reino" },
-];
 
 export default function CerradoPage() {
   return (
@@ -23,7 +18,7 @@ export default function CerradoPage() {
         la campaña llegue a ella.
       </p>
       <div className="flex flex-wrap justify-center gap-3">
-        {PUERTAS.map((p) => (
+        {PUERTAS_JUGADOR.map((p) => (
           <Link key={p.href} href={p.href} className="btn-ghost">
             <i className={`fas ${p.icon} mr-2`} />{p.label}
           </Link>

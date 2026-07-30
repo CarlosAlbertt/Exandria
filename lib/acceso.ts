@@ -38,6 +38,26 @@ export const NAV_LINKS: { href: string; label: string }[] = [
 ];
 
 /**
+ * Las puertas del jugador: las secciones que puede tocar en el arranque.
+ * Las pintan la portada (`components/home/PanelJugador.tsx`) y la página
+ * `/cerrado`. Viven aquí y no en cada componente para que no puedan quedarse
+ * enlazando a una sección que se haya cerrado: el gate comprueba que todas
+ * pasan `puedeVer("player", …)`.
+ */
+export const PUERTAS_JUGADOR: {
+  href: string;
+  icon: string;
+  label: string;
+  text: string;
+  accent: string;
+}[] = [
+  { href: "/personaje", icon: "fa-scroll", label: "Tu ficha", text: "Aptitudes, salvaciones, pericias, equipo y nivel de tu héroe.", accent: "var(--color-arcane)" },
+  { href: "/inventario", icon: "fa-sack-xmark", label: "Tu inventario", text: "Lo que llevas encima, lo que pesa y lo que llevas puesto.", accent: "var(--color-bronze)" },
+  { href: "/reino", icon: "fa-book-open", label: "El reino", text: "La historia de Exandria y las tierras que vais conociendo.", accent: "var(--color-primitivo)" },
+  { href: "/crear", icon: "fa-hat-wizard", label: "Crear personaje", text: "Especie, clase, trasfondo y aptitudes del reglamento 2024.", accent: "var(--color-violet)" },
+];
+
+/**
  * ¿Puede este rol ver esta ruta? El DM lo ve todo.
  * La barra del `startsWith` es obligatoria: sin ella `/reino` dejaría entrar a
  * `/reinos`, y `/` dejaría entrar a todo.

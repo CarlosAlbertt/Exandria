@@ -1,6 +1,6 @@
 // Comprobación manual del alcance del jugador (lib/acceso.ts).
 // Uso: npx tsx scripts/check-acceso.ts
-import { puedeVer, RUTAS_JUGADOR, RUTA_CERRADA, NAV_LINKS } from "../lib/acceso";
+import { puedeVer, RUTAS_JUGADOR, RUTA_CERRADA, NAV_LINKS, PUERTAS_JUGADOR } from "../lib/acceso";
 import { readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -11,9 +11,12 @@ function check(label: string, condition: boolean) {
 }
 
 // --- El DM lo ve todo -------------------------------------------------------
-for (const p of ["/", "/mapa", "/bestiario", "/combate", "/dm", "/taberna", "/reino/wildemount"]) {
-  check(`dm ve ${p}`, puedeVer("dm", p) === true);
-}
+// `puedeVer` devuelve true para "dm" en su primera línea, así que un check por
+// ruta no comprobaría nada: basta anclar ese early-return una vez. Lo que sí
+// tiene contenido es comprobarlo contra las rutas REALES de app/, y eso se
+// hace más abajo, cuando ya se han descubierto.
+check("dm: el early-return abre cualquier ruta",
+  ["/", "/mapa", "/dm", "/reino/wildemount", "/lo-que-sea"].every((p) => puedeVer("dm", p)));
 
 // --- El jugador ve exactamente su lista ------------------------------------
 const ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/reino", "/lugar", "/cerrado", "/login"];
@@ -53,46 +56,56 @@ check("ninguna RUTAS_JUGADOR acaba en / salvo la raíz",
 // check-atlas, y los scripts se lanzan siempre desde la raíz del repo.
 const APP = join(process.cwd(), "app");
 
-// Rutas de primer nivel esperadas, clasificadas a mano.
-const ESPERADAS_ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/reino", "/lugar", "/cerrado", "/login"];
+// TODAS las rutas de páginas esperadas, no solo las de primer nivel: una ruta
+// anidada bajo una carpeta abierta (p. ej. app/reino/loquesea/) heredaría el
+// permiso de su padre por la regla de prefijo y se colaría sin decidirlo.
+const ESPERADAS_ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/reino", "/reino/[continente]", "/lugar", "/cerrado", "/login"];
 const ESPERADAS_CERRADAS = ["/panteon", "/cronica", "/bestiario", "/mapa", "/combate", "/taberna", "/narrador", "/dm"];
 
-// ¿Hay algún page.tsx en este árbol? (una ruta puede tener la página en un
-// subdirectorio dinámico, p. ej. app/reino/[continente]/page.tsx)
-function tienePagina(dir: string): boolean {
-  if (existsSync(join(dir, "page.tsx"))) return true;
-  return readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .some((e) => tienePagina(join(dir, e.name)));
+// Todas las rutas con página bajo este directorio, con su ruta completa (los
+// segmentos dinámicos se conservan tal cual: `/reino/[continente]`).
+function rutasCon(dir: string, prefijo: string): string[] {
+  const encontradas: string[] = [];
+  if (existsSync(join(dir, "page.tsx"))) encontradas.push(prefijo === "" ? "/" : prefijo);
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (!e.isDirectory()) continue;
+    encontradas.push(...rutasCon(join(dir, e.name), `${prefijo}/${e.name}`));
+  }
+  return encontradas;
 }
 
-const descubiertas: string[] = [];
-if (existsSync(join(APP, "page.tsx"))) descubiertas.push("/");
-for (const e of readdirSync(APP, { withFileTypes: true })) {
-  if (!e.isDirectory() || e.name === "api") continue;
-  if (tienePagina(join(APP, e.name))) descubiertas.push("/" + e.name);
-}
+const descubiertas = rutasCon(APP, "").filter((r) => r !== "/api" && !r.startsWith("/api/"));
 
 const clasificadas = new Set([...ESPERADAS_ABIERTAS, ...ESPERADAS_CERRADAS]);
 for (const r of descubiertas) {
   check(`ruta ${r} está clasificada en check-acceso`, clasificadas.has(r));
   check(`ruta ${r}: puedeVer coincide con su clasificación`,
     puedeVer("player", r) === ESPERADAS_ABIERTAS.includes(r));
+  check(`ruta ${r}: el DM la ve`, puedeVer("dm", r) === true);
 }
 for (const r of clasificadas) {
   check(`la ruta clasificada ${r} existe en app/`, descubiertas.includes(r));
 }
 
 // --- Los enlaces del nav no llevan a puerta cerrada ------------------------
-for (const l of NAV_LINKS) {
-  check(`nav: el DM puede ver ${l.href}`, puedeVer("dm", l.href) === true);
-}
 const navJugador = NAV_LINKS.filter((l) => puedeVer("player", l.href)).map((l) => l.href);
 check("nav del jugador = Inicio, Ficha, Reino, Crear, Inventario",
   JSON.stringify(navJugador) === JSON.stringify(["/", "/personaje", "/reino", "/crear", "/inventario"]));
 check("nav: sin hrefs duplicados",
   new Set(NAV_LINKS.map((l) => l.href)).size === NAV_LINKS.length);
 check("nav: ninguna etiqueta vacía", NAV_LINKS.every((l) => l.label.trim().length > 0));
+
+// --- Las puertas del jugador (portada y /cerrado) están abiertas -----------
+// Sin esto, cerrar una sección dejaría a la portada y a la página «aún no»
+// enlazando a una puerta que rebota al jugador contra /cerrado.
+for (const p of PUERTAS_JUGADOR) {
+  check(`puerta ${p.href}: el jugador la puede ver`, puedeVer("player", p.href) === true);
+  check(`puerta ${p.href}: está clasificada como abierta`, ESPERADAS_ABIERTAS.includes(p.href));
+}
+check("puertas: sin hrefs duplicados",
+  new Set(PUERTAS_JUGADOR.map((p) => p.href)).size === PUERTAS_JUGADOR.length);
+check("puertas: ninguna etiqueta, texto o icono vacío",
+  PUERTAS_JUGADOR.every((p) => p.label.trim() && p.text.trim() && p.icon.trim() && p.accent.trim()));
 
 console.log(failures === 0 ? `\nTodo OK` : `\n${failures} FALLOS`);
 process.exit(failures === 0 ? 0 : 1);

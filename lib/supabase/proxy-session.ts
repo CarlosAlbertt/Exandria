@@ -30,8 +30,18 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+  // `/api/` y `/_next/` con barra: sin ella, una página futura llamada
+  // `app/apiario/` se saltaría la puerta entera. La última alternativa deja
+  // pasar los ficheros de `public/` que el `matcher` de proxy.ts no excluye
+  // por extensión (un .woff2, un robots.txt): si no, al jugador se le serviría
+  // el HTML de /cerrado en vez del fichero.
   const isPublic =
-    path === "/login" || path.startsWith("/api") || path.startsWith("/_next") || path === "/favicon.ico";
+    path === "/login" ||
+    path === "/api" ||
+    path.startsWith("/api/") ||
+    path.startsWith("/_next/") ||
+    path === "/favicon.ico" ||
+    /\.[a-z0-9]+$/i.test(path);
 
   // No autenticado en ruta privada -> a /login
   if (!user && !isPublic) {

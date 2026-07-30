@@ -1,15 +1,10 @@
 import Link from "next/link";
 import Emblem from "@/components/Emblem";
 import { WORLD_INTRO } from "@/data/cosmology";
-
-// Las cuatro puertas del arranque de campaña. Son fijas: no se consulta si el
-// jugador ya tiene ficha para esconder «Crear personaje».
-const PUERTAS = [
-  { icon: "fa-scroll", href: "/personaje", title: "Tu ficha", text: "Aptitudes, salvaciones, pericias, equipo y nivel de tu héroe.", accent: "var(--color-arcane)" },
-  { icon: "fa-sack-xmark", href: "/inventario", title: "Tu inventario", text: "Lo que llevas encima, lo que pesa y lo que llevas puesto.", accent: "var(--color-bronze)" },
-  { icon: "fa-book-open", href: "/reino", title: "El reino", text: "La historia de Exandria y las tierras que vais conociendo.", accent: "var(--color-primitivo)" },
-  { icon: "fa-hat-wizard", href: "/crear", title: "Crear personaje", text: "Especie, clase, trasfondo y aptitudes del reglamento 2024.", accent: "var(--color-violet)" },
-];
+// Las puertas viven en lib/acceso.ts, junto a la lista de rutas permitidas:
+// son fijas (no se consulta si el jugador ya tiene ficha para esconder «Crear
+// personaje») y el gate comprueba que ninguna lleve a sección cerrada.
+import { PUERTAS_JUGADOR } from "@/lib/acceso";
 
 export default function PanelJugador() {
   return (
@@ -27,11 +22,11 @@ export default function PanelJugador() {
 
       <section className="max-w-5xl mx-auto px-6 pb-20">
         <div className="grid sm:grid-cols-2 gap-5">
-          {PUERTAS.map((c) => (
+          {PUERTAS_JUGADOR.map((c) => (
             <Link key={c.href} href={c.href} className="pick-card p-7 block"
               style={{ ["--accent" as string]: c.accent, ["--glow" as string]: "rgba(69,199,189,0.3)" }}>
               <i className={`fas ${c.icon} text-3xl mb-4`} style={{ color: c.accent }} />
-              <h3 className="font-display text-xl font-bold mb-2" style={{ color: "var(--color-parch)" }}>{c.title}</h3>
+              <h3 className="font-display text-xl font-bold mb-2" style={{ color: "var(--color-parch)" }}>{c.label}</h3>
               <p style={{ color: "var(--color-muted)", fontSize: "15px", lineHeight: 1.6 }}>{c.text}</p>
               <span className="mt-4 inline-flex items-center gap-2 font-ui text-[12px] font-bold tracking-wide" style={{ color: c.accent }}>
                 Entrar <i className="fas fa-arrow-right-long" />
