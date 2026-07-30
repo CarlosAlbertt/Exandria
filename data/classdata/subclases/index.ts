@@ -10,6 +10,7 @@ import { MAGO_SUBCLASSES } from "./mago";
 import { MONJE_SUBCLASSES } from "./monje";
 import { PALADIN_SUBCLASSES } from "./paladin";
 import { PICARO_SUBCLASSES } from "./picaro";
+import { BRUJO_SUBCLASSES } from "./brujo";
 
 // slug de clase → nombre de subclase → rasgos por nivel. Las clases 2-13 se
 // añaden aquí a medida que se transcriben.
@@ -25,6 +26,7 @@ export const SUBCLASS_FEATURES: Record<string, Record<string, SubclassFeature[]>
   monje: MONJE_SUBCLASSES,
   paladin: PALADIN_SUBCLASSES,
   picaro: PICARO_SUBCLASSES,
+  brujo: BRUJO_SUBCLASSES,
 };
 
 export function subclassFeaturesFor(slug: string, subclase: string | null): SubclassFeature[] {

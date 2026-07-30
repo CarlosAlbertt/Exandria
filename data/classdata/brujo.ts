@@ -33,21 +33,9 @@ export const BRUJO: ClassMechanics = {
       blurb: "Como acción adicional en un descanso corto, el brujo recupera parte de sus espacios de conjuro gastados.",
     },
     {
-      level: 3,
-      name: "Subclase de Brujo",
-      blurb: "Elige un patrón sobrenatural que define el origen de su pacto y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
-    },
-    {
-      level: 6,
-      name: "Rasgo de subclase",
-      blurb: "El patrón sobrenatural concede un nuevo poder que refuerza el vínculo del pacto.",
-      subclass: true,
     },
     {
       level: 8,
@@ -58,12 +46,6 @@ export const BRUJO: ClassMechanics = {
       level: 9,
       name: "Contactar con el Patrón",
       blurb: "El brujo puede establecer contacto directo con su patrón para obtener respuestas o guía.",
-    },
-    {
-      level: 10,
-      name: "Rasgo de subclase",
-      blurb: "El patrón sobrenatural otorga un nuevo poder que amplía las opciones del brujo.",
-      subclass: true,
     },
     {
       level: 11,
@@ -79,12 +61,6 @@ export const BRUJO: ClassMechanics = {
       level: 13,
       name: "Arcano Místico",
       blurb: "El brujo añade un conjuro de nivel 7 a su Arcano Místico, lanzable una vez por descanso largo.",
-    },
-    {
-      level: 14,
-      name: "Rasgo de subclase",
-      blurb: "El patrón sobrenatural concede un poder culminante propio de brujos experimentados.",
-      subclass: true,
     },
     {
       level: 15,
