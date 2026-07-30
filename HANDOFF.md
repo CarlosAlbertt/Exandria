@@ -4,6 +4,31 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-30)
 
+> **Lo último (2026-07-30, tarde): el creador rehecho y el arte de las especies.**
+> **Escenas de Especie y Clase**: navegan igual (flechas a los lados, emblema
+> grande, tira de miniaturas abajo; recorrido por región/grupo). Se arregló que
+> el detalle **no crecía** (`.scene-detail` sin `flex:1`) y todo quedaba
+> apelotonado a la izquierda, que las flechas eran **barras a toda altura**, y
+> que las miniaturas cuadradas **recortaban** el arte vertical. El marco de arte
+> gana `.art-bleed` (relleno desenfocado) para que un arte 1024×1024 se vea
+> entero en un marco 659×1025.
+> **Ventanas emergentes** (`components/crear/Modal.tsx`): en Clase, al elegir
+> subclase (descripción + rasgos por nivel + fe); en Especie, tres (elegir
+> linaje, describir especie, describir linaje).
+> **Fe predefinida**: `data/subclassDeity.ts` — 10 subclases rellenan la deidad.
+> **Región nueva «Planos y Paraje Feérico»** (Eladrin, Shadar-kai, Gith) y
+> **`scripts/check-especies.ts`, el gate 24**, que valida que la región de cada
+> especie exista y que el recorrido cubra las 36 una vez: sin eso una región mal
+> escrita **hace desaparecer especies sin ningún error**.
+> **Las 36 especies tienen emblema** en `public/species/<slug>.jpg` (JPEG
+> 1024×1024, 3,1 MB; llegaron como PNG de 151 MB y se reencodearon).
+> Gate: tsc + next build + **24 checks** en verde. UI verificada en navegador con
+> banco de pruebas estático; en la app viva la aprobó el usuario.
+> **Lo siguiente está escrito en `docs/PROMPT-SIGUIENTE-SESION.md`**: estrechar
+> la app para el arranque de campaña (el jugador solo `/crear` + `/personaje`,
+> `/inventario` y `/reino`). Ojo: `proxy.ts` **solo refresca sesión, no cierra
+> rutas por rol**, así que ocultar enlaces del nav no basta.
+
 > **Lo último (2026-07-30): subclases rehechas (fase 1, foundation).** Se
 > borraron las **52 subclases** viejas (4/clase) y se pusieron **65 nuevas** (13
 > clases × 5), ambientación Exandria 2024, de momento **nombre + blurb** en

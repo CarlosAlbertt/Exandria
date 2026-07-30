@@ -6,54 +6,80 @@ CarlosAlbertt/Exandria, desplegada en exandria.vercel.app).
 Obsidian (`C:\Users\carlo\Desktop\Exandria-Obsidian\Exandria`) está al día y
 explica el porqué de las decisiones.
 
-## La tarea de esta sesión: rehacer las subclases
+## La tarea de esta sesión: preparar el arranque de campaña
 
-Quiero **borrar todas las subclases actuales y sustituirlas por 70 nuevas que te
-voy a pasar yo**. No tires de las que hay ni de memoria: **espérate a que te dé
-la lista** y trabaja solo con lo que te pase. Pídemela al empezar.
+Vamos a **estrechar la app** para el inicio: de momento el jugador solo debe
+poder tocar **tres cosas**:
 
-**Antes de escribir nada, pregúntame lo que necesites saber sobre el formato de
-lo que te voy a dar** (¿solo nombres?, ¿nombre + descripción?, ¿agrupadas por
-clase?, ¿traen rasgos mecánicos por nivel o solo el blurb?). De eso depende
-media sesión, así que acláralo primero.
+1. **Crear personaje** (`/crear`) y su **ficha** (`/personaje`).
+2. **Inventario** (`/inventario`).
+3. **El reino** (`/reino` y `/reino/[continente]`).
 
-## Dónde viven las subclases hoy, para que no lo busques a ciegas
+Todo lo demás queda **fuera de su alcance** hasta que la campaña avance. El DM
+(rol `dm`) sigue viéndolo todo, sin cambios.
 
-- **`data/classes.ts`** — cada una de las 13 clases tiene `subclassLabel` (p. ej.
-  «Colegio bárdico», «Juramento sagrado») y `subclasses: { name, blurb }[]`. Ahí
-  están las **67 subclases actuales**, como nombre + blurb. Es la lista que se
-  enseña en el creador y en la ficha.
-- **`data/classdata/<clase>.ts`** — los **rasgos mecánicos por nivel** de cada
-  clase. Algunos rasgos llevan `subclass: true` (los otorga la subclase, no la
-  clase base). Si las 70 nuevas traen mecánica, aquí es donde aterriza, no en
-  `classes.ts`.
-- **`data/classdata/types.ts`** — el tipo de esos rasgos.
+**Antes de escribir nada, pregúntame lo que necesites.** Hay al menos cuatro
+decisiones que no puedo tomar yo solo y que están listadas más abajo.
 
-**Consumidores de subclases** (lo que se rompe si cambias la forma del dato):
-`components/crear/steps/ClassScene.tsx` (selector en el creador),
-`components/crear/steps/SummaryScene.tsx`, `app/crear/page.tsx`,
-`components/CharacterSheet.tsx` (la ficha), `app/dm/GrupoPanel.tsx` (panel DM) y
-`lib/character.ts`. **Ojo**: puede haber personajes ya creados en Supabase con
-una subclase guardada por nombre; si renombramos o quitamos subclases, decidir
-qué pasa con esas fichas (¿migración?, ¿se quedan con el nombre viejo?).
+## Cómo está hoy la navegación (para que no lo busques a ciegas)
+
+`components/SiteNav.tsx` tiene un `BASE_LINKS` con **9 enlaces que ve cualquier
+jugador**, y añade 2 más si el rol es `dm`:
+
+```
+BASE_LINKS: /  ·  /reino  ·  /panteon  ·  /cronica  ·  /bestiario
+            /crear  ·  /inventario  ·  /mapa  ·  /combate
+DM_LINKS  : /narrador  ·  /dm
+```
+
+Es decir: hay que **quitar del alcance del jugador** `/panteon`, `/cronica`,
+`/bestiario`, `/mapa` y `/combate`, y decidir qué pasa con `/` (Inicio).
+
+> [!danger] **Ocultar el enlace NO es cerrar la puerta**
+> `proxy.ts` (el antiguo middleware, Next 16) **solo refresca la sesión**
+> (`updateSession`): no mira roles ni rutas. Si solo quitamos enlaces del nav,
+> cualquiera que escriba `/bestiario` en la barra del navegador entra igual.
+> **La sesión tiene que cerrar de verdad las rutas, no solo esconderlas.**
+
+Otro cabo suelto que encontré: **`/personaje` no está en el nav**. Hoy solo se
+llega desde el botón «Ir a la ficha» del último paso del creador
+(`components/crear/steps/SummaryScene.tsx:82`). Si el jugador recarga o vuelve
+otro día, no tiene por dónde entrar a su propia ficha. Habrá que arreglarlo,
+porque justo la ficha es una de las tres cosas que sí debe poder tocar.
+
+## Lo que necesito que me preguntes antes de tocar código
+
+1. **¿Dónde se corta el acceso?** ¿En `proxy.ts` (una sola puerta, redirige a
+   `/` las rutas no permitidas según rol), en cada página, o las dos cosas?
+2. **¿Qué pasa con `/` (Inicio)?** Hoy lleva a los continentes de Exandria. ¿Se
+   queda como portada, se convierte en el panel del jugador (mi ficha, mi
+   inventario, el reino), o se retira también?
+3. **¿La lista permitida es fija o configurable?** Se podría dejar en
+   `app_config` para que puedas ir abriendo secciones desde el Panel DM según
+   avance la campaña, sin desplegar. Ojo: si vamos por ahí, **`app_config` NO
+   está en la publicación realtime** — hace falta update optimista (lección ya
+   pagada dos veces).
+4. **¿Qué ve el jugador si entra a una ruta cerrada?** ¿Redirección silenciosa a
+   `/`, o una página de «Esto se abrirá más adelante»?
 
 ## Cómo trabajamos (esto ya está rodado, respétalo)
 
 - **Antes de escribir nada**: brainstorming → spec → plan → ejecución con las
   skills de superpowers. Specs y planes en `docs/superpowers/{specs,plans}/`.
-- Rama feature por tarea → gate **`npx tsc --noEmit` + `npx next build` + los 23
+- Rama feature por tarea → gate **`npx tsc --noEmit` + `npx next build` + los 24
   `scripts/check-*.ts`** (no hay tests; ese es el gate real) → commit por tarea →
   actualizar `HANDOFF.md` y el vault → merge a `master` y push.
-- **La regla que va a mandar aquí**: si las subclases traen mecánica, **la capa
-  pura y su script primero, la UI después**. Y hay un `scripts/check-clases.ts`
-  (116 comprobaciones) que hoy **no valida los nombres de subclase**: si esta
-  tanda toca subclases en serio, ese script tiene que empezar a mirarlas, o el
-  gate no verá nada de lo que hagamos.
-- Ejecutar con subagentes (implementador + revisión por tarea) funciona muy bien
-  y en las últimas tandas cazó una decena de fallos reales que el gate no veía.
-  Pero **revisa lo que devuelven**: han llegado a afirmar verificaciones que no
-  habían hecho, y un par de veces el bug estaba en el propio código que yo puse
-  en el plan.
+- **Si esta tanda toca datos, el gate tiene que verlo.** Es la lección de las dos
+  últimas: `check-clases.ts` no miraba las subclases y `check-especies.ts` no
+  existía; una región mal escrita hacía **desaparecer especies sin dar ningún
+  error**. Si añades reglas nuevas, **pruébalas por mutación** (rómpelo a
+  propósito, comprueba que el gate falla, restaura).
+- **No uses `git checkout --` para restaurar tras una prueba de mutación** si
+  tienes cambios sin commitear en ese archivo: te los llevas por delante (me pasó
+  el 2026-07-30). Usa `git stash` o haz la mutación sobre una copia.
+- Ejecutar con subagentes funciona bien, pero **revisa lo que devuelven**: han
+  llegado a afirmar verificaciones que no habían hecho, y uno se quedó a medias
+  por límite de sesión dejando el archivo a mitad.
 - Commits acaban con `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
   Autor `CarlosAlbertt` (Vercel bloquea otros emails). Con backticks en el
   mensaje, usar `git commit -F -` con heredoc y el **bash tool** (el shell por
@@ -62,45 +88,44 @@ qué pasa con esas fichas (¿migración?, ¿se quedan con el nombre viejo?).
 - `AGENTS.md`: este Next.js 16 tiene cambios rompedores. Ante dudas de API, lee
   `node_modules/next/dist/docs/`, no tires de memoria.
 
-## Convención de contenido, que aquí también aplica
+> [!warning] **No puedes ver la app**
+> Todo está detrás del login y **no debes meter credenciales**. Para verificar UI
+> puedes montar un banco de pruebas estático con el CSS real y servirlo por
+> `/dice-box/` (esa ruta está excluida del proxy), pero **bórralo antes de
+> commitear**. La comprobación en la app viva la hago yo.
 
-Los **nombres y los datos mecánicos son hechos** de la ambientación 2024 y se
-usan tal cual. **Todos los blurbs y descripciones son redacción original en
-español**, nunca prosa de los libros ni traducida de cerca. Es una herramienta
-de fans no oficial.
+## Dónde lo dejamos (30 de julio de 2026)
 
-## Dónde lo dejamos (29 de julio de 2026)
-
-- **El atlas de dos continentes, hecho esta última tanda.**
-  - **Tal'Dorei**: estaba roto (tres capitales de región que no existían, Emon en
-    la región equivocada, coordenadas de plantilla, cero comprobaciones del gate)
-    y pasó de 45 a **94 POIs** leídos de sus ocho submapas rotulados.
-  - **Wildemount**: reestructurado de 4 regiones políticas a **8 regiones —una
-    por hoja de mapa—** y de 25 a **158 POIs**. Se añadieron Valle del Tuétano,
-    Costa del Serrallo Norte, Eiselcross y Costa de la Plaga.
-  - Se **generalizó la maquinaria** del atlas: `REGION_RATIO` → `data/regionRatio.ts`,
-    las reglas del gate → `lib/continente.ts` (`comprobarContinente`, un gate por
-    continente sin copiar código), y `TALDOREI_FIXES` → `ATLAS_FIXES` con campo
-    de continente. Añadir el siguiente continente es escribir su `data/<cont>.ts`
-    y un `check-<cont>.ts` de tres líneas.
-  - Se arregló que **el visor de región (`/mapa`) descolocaba los pines** al
-    pulsar un POI: los pines se posicionaban sobre el hueco y no sobre la imagen.
-  - `PoiType` ganó `cueva` y `campamento` (7 tipos).
-- **Gate: 23 `scripts/check-*.ts` en verde** el 2026-07-29, con `tsc` y
-  `next build` limpios. **Nada probado en la app en vivo** (sin sesión): la
-  colocación de los POIs se verificó pintando los pines sobre los submapas (SVG).
+- **Las 65 subclases, con mecánica.** 13 clases × 5 (sin Artificiero). Nombre y
+  blurb en `data/classes.ts`; los **rasgos por nivel** en
+  `data/classdata/subclases/<clase>.ts` (tipo `SubclassFeature {level,name,text}`,
+  registro en `subclases/index.ts` + helper `subclassFeaturesFor`). Se quitaron
+  los placeholders `subclass:true` de los 13 `classdata`. El gate exige 65/65.
+- **El creador, rehecho.** Especie y Clase navegan igual (flechas + tira de
+  miniaturas, recorrido por región/grupo), con **ventanas emergentes**: subclase
+  (descripción + rasgos por nivel + fe), y en Especie tres (elegir linaje,
+  describir especie, describir linaje). Carcasa en `components/crear/Modal.tsx`.
+- **Fe predefinida por subclase** (`data/subclassDeity.ts`): 10 subclases
+  rellenan la deidad del personaje al elegirlas.
+- **Región «Planos y Paraje Feérico»** para Eladrin, Shadar-kai y Gith, y
+  `scripts/check-especies.ts` (el gate 24).
+- **Las 36 especies tienen emblema** en `public/species/<slug>.jpg` (JPEG
+  1024×1024, 3,1 MB en total; llegaron como PNG de 151 MB y se reencodearon).
+- **Gate: 24 `scripts/check-*.ts` en verde**, con `tsc` y `next build` limpios.
+  **La UI del creador está verificada en navegador solo con banco de pruebas
+  estático** (rejilla, flechas, miniaturas, modales); en la app viva la vio el
+  usuario y dio el visto bueno.
 
 ## Lo que sigue pendiente y NO es esto
 
-No lo empieces sin decírmelo: **poblar Issylra, Marquet y los Dientes Rotos**
-(les faltan submapas rotulados propios, así que necesito pasarte fuentes antes),
-deshacer el aplastamiento `capital`/`pueblo`→`ciudad` en esos tres continentes
-generados, la **fase 2 del combate (la «arena»)** —diseñada, spec en
-`docs/superpowers/specs/2026-07-28-monstruos-al-combate-design.md`—, ampliar la
-biblioteca de conjuros, los pozos de las 5 clases que faltan, el bestiario a
-medias (124 monstruos, solo CR 0–1/2), Fase P (downtime), Fase Q (misiones IA),
-C2 (regateo), y los retratos de especie (`public/species/lineages/` vacío).
+No lo empieces sin decírmelo: **jugar una sesión de prueba** (hay siete features
+desplegadas y nunca vistas en partida; la fase 2 del combate está bloqueada a
+propósito hasta que eso pase), poblar Issylra, Marquet y los Dientes Rotos,
+deshacer el aplastamiento `capital`/`pueblo`→`ciudad` en esos tres continentes,
+ampliar la biblioteca de conjuros, los pozos de las 5 clases que faltan, el
+bestiario a medias (124 monstruos, solo CR 0–1/2), Fase P (downtime), Fase Q
+(misiones IA), C2 (regateo), y los **retratos de linaje**
+(`public/species/lineages/` sigue vacío).
 
-**Empieza pidiéndome la lista de las 70 subclases y preguntándome en qué formato
-te la doy. No escribas código hasta que la tengas.**
-</content>
+**Empieza leyendo `HANDOFF.md` y preguntándome las cuatro decisiones de arriba.
+No escribas código hasta que las tengas.**
