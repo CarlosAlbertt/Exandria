@@ -38,12 +38,6 @@ export const BARDO: ClassMechanics = {
       blurb: "El bardo suma la mitad de su bono de competencia a cualquier prueba de característica en la que no sea competente.",
     },
     {
-      level: 3,
-      name: "Subclase de Bardo",
-      blurb: "Elige un colegio bárdico que define su estilo artístico y desbloquea rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -52,12 +46,6 @@ export const BARDO: ClassMechanics = {
       level: 5,
       name: "Fuente de Inspiración",
       blurb: "Si se queda sin usos de Inspiración Bárdica, el bardo recupera uno automáticamente al tirar iniciativa.",
-    },
-    {
-      level: 6,
-      name: "Rasgo de subclase",
-      blurb: "El colegio bárdico concede un nuevo poder que amplía el repertorio artístico del bardo.",
-      subclass: true,
     },
     {
       level: 7,
@@ -83,12 +71,6 @@ export const BARDO: ClassMechanics = {
       level: 12,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
-    },
-    {
-      level: 14,
-      name: "Rasgo de subclase",
-      blurb: "El colegio bárdico otorga un nuevo poder que refuerza su especialidad temática.",
-      subclass: true,
     },
     {
       level: 16,
