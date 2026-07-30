@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Emblem from "@/components/Emblem";
+import { useRole } from "@/components/SessionProvider";
 
 export default function SiteFooter() {
+  const isDM = useRole() === "dm";
+
   return (
     <footer className="mt-24 border-t border-[var(--color-line)]">
       <div className="max-w-6xl mx-auto px-6 py-12 text-center">
@@ -13,8 +18,7 @@ export default function SiteFooter() {
             { href: "/reino", label: "El Reino" },
             { href: "/crear", label: "Crear Personaje" },
             { href: "/inventario", label: "Inventario" },
-            { href: "/mapa", label: "Mapa" },
-            { href: "/narrador", label: "Narrador" },
+            ...(isDM ? [{ href: "/mapa", label: "Mapa" }, { href: "/narrador", label: "Narrador" }] : []),
           ].map((l) => (
             <Link key={l.href} href={l.href}
               className="font-ui text-[12px] font-semibold tracking-wide transition-colors"

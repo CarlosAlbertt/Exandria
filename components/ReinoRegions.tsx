@@ -21,7 +21,7 @@ export default function ReinoRegions() {
         <h2 className="font-display text-2xl font-bold flex items-center gap-3" style={{ color: "var(--color-parch)" }}>
           <i className="fas fa-earth-americas text-[var(--color-bronze)]" /> {isDM ? "Las tierras de Exandria" : "Las tierras que conocéis"}
         </h2>
-        <Link href="/mapa" className="btn-ghost !py-2 !px-4 text-[12px]">Ver en el mapa →</Link>
+        {isDM && <Link href="/mapa" className="btn-ghost !py-2 !px-4 text-[12px]">Ver en el mapa →</Link>}
       </div>
       <p className="prose-lore !text-[15px] mb-8 max-w-2xl">
         Cada continente tiene su propia página: su geografía, sus regiones y ciudades, su gente y
@@ -46,7 +46,7 @@ export default function ReinoRegions() {
           {visible.map((c) => (
             <Link
               key={c.id}
-              href={continentBySlug(slugify(c.continent)) ? `/reino/${slugify(c.continent)}` : "/mapa"}
+              href={continentBySlug(slugify(c.continent)) ? `/reino/${slugify(c.continent)}` : (isDM ? "/mapa" : "/reino")}
               className="panel p-6 block transition-transform hover:-translate-y-0.5"
               style={{ borderColor: "var(--color-line)" }}
             >
