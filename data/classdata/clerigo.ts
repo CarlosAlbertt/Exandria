@@ -33,12 +33,6 @@ export const CLERIGO: ClassMechanics = {
       blurb: "El clérigo invoca directamente el poder de su deidad para lograr un efecto sobrenatural determinado por su orden o dominio.",
     },
     {
-      level: 3,
-      name: "Subclase de Clérigo",
-      blurb: "Elige un dominio divino que define el favor de su deidad y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -47,12 +41,6 @@ export const CLERIGO: ClassMechanics = {
       level: 5,
       name: "Marchitar Muertos",
       blurb: "Al usar Canalizar Divinidad para hacer huir a los no-muertos, el clérigo puede además infligirles daño radiante.",
-    },
-    {
-      level: 6,
-      name: "Rasgo de subclase",
-      blurb: "El dominio divino concede un nuevo poder que refuerza la conexión del clérigo con su deidad.",
-      subclass: true,
     },
     {
       level: 7,
@@ -83,12 +71,6 @@ export const CLERIGO: ClassMechanics = {
       level: 16,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
-    },
-    {
-      level: 17,
-      name: "Rasgo de subclase",
-      blurb: "El dominio divino otorga un rasgo culminante propio de clérigos de gran devoción.",
-      subclass: true,
     },
     {
       level: 19,
