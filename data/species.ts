@@ -3,7 +3,7 @@
 
 export type RegionKey =
   | "universal" | "taldorei" | "wildemount"
-  | "marquet" | "issylra" | "underdark" | "oceans";
+  | "marquet" | "issylra" | "underdark" | "planar" | "oceans";
 
 export type Lineage = { name: string; perk: string; image?: string; homebrew?: boolean };
 
@@ -434,7 +434,7 @@ export const SPECIES: Species[] = [
   {
     slug: "eladrin",
     name: "Eladrin",
-    region: "underdark",
+    region: "planar",
     origin: "Elfos puros del Paraje Feérico. Su apariencia y ánimo cambian con la estación que los domina, reflejo de sus emociones extremas.",
     size: "Mediano",
     speed: 9,
@@ -451,7 +451,7 @@ export const SPECIES: Species[] = [
   {
     slug: "shadar-kai",
     name: "Shadar-kai",
-    region: "underdark",
+    region: "planar",
     origin: "Elfos del Páramo Sombrío, siervos de la Reina Cuervo, la Diosa de la Muerte. Piel pálida, adornos de cuervos y cadenas, sin miedo a la mortalidad.",
     size: "Mediano",
     speed: 9,
@@ -462,7 +462,7 @@ export const SPECIES: Species[] = [
   {
     slug: "gith",
     name: "Gith",
-    region: "underdark",
+    region: "planar",
     origin: "Nativos del Plano Astral y el Limbo. Viajeros interdimensionales cuyas naves a veces se estrellan en los yermos de Exandria.",
     size: "Mediano",
     speed: 9,
@@ -517,7 +517,11 @@ export const REGIONS: { key: RegionKey; label: string; blurb: string }[] = [
   { key: "wildemount", label: "Wildemount", blurb: "El continente dividido entre el Imperio y la Dinastía Kryn." },
   { key: "marquet", label: "Marquet", blurb: "Contrastes y arena; ciudades verticales y oasis." },
   { key: "issylra", label: "Issylra y las Ashari", blurb: "El continente sagrado y las fronteras elementales." },
-  { key: "underdark", label: "Infraoscuridad y fronteras planares", blurb: "Culturas de las profundidades y de otros planos." },
+  { key: "underdark", label: "Infraoscuridad", blurb: "Culturas nacidas en las profundidades bajo Exandria." },
+  // Estas no son originarias de Exandria: vienen del Paraje Feérico, del Páramo
+  // Sombrío o de los planos exteriores. Antes iban con la Infraoscuridad, que
+  // las dejaba entre duergar y kobolds sin venir a cuento.
+  { key: "planar", label: "Planos y Paraje Feérico", blurb: "Linajes llegados de otros planos: el Feywild, el Shadowfell y el Astral." },
   { key: "oceans", label: "Los océanos", blurb: "Lucidian, Ozmit y Los Dientes Destrozados." },
 ];
 
