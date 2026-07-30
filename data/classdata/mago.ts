@@ -38,12 +38,6 @@ export const MAGO: ClassMechanics = {
       blurb: "El mago gana un beneficio adicional al usar una pericia concreta relacionada con su estudio arcano.",
     },
     {
-      level: 3,
-      name: "Subclase de Mago",
-      blurb: "Elige una tradición arcana que define su especialidad de estudio y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -54,32 +48,14 @@ export const MAGO: ClassMechanics = {
       blurb: "Tras un descanso corto, el mago puede cambiar un conjuro preparado por otro de su libro de conjuros.",
     },
     {
-      level: 6,
-      name: "Rasgo de subclase",
-      blurb: "La tradición arcana concede un nuevo poder que profundiza su especialidad de estudio.",
-      subclass: true,
-    },
-    {
       level: 8,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
     },
     {
-      level: 10,
-      name: "Rasgo de subclase",
-      blurb: "La tradición arcana otorga un nuevo poder que amplía las aplicaciones de su magia.",
-      subclass: true,
-    },
-    {
       level: 12,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
-    },
-    {
-      level: 14,
-      name: "Rasgo de subclase",
-      blurb: "La tradición arcana concede un poder avanzado propio de magos de gran erudición.",
-      subclass: true,
     },
     {
       level: 16,

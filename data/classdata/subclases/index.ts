@@ -6,6 +6,7 @@ import { DRUIDA_SUBCLASSES } from "./druida";
 import { EXPLORADOR_SUBCLASSES } from "./explorador";
 import { GUERRERO_SUBCLASSES } from "./guerrero";
 import { HECHICERO_SUBCLASSES } from "./hechicero";
+import { MAGO_SUBCLASSES } from "./mago";
 
 // slug de clase → nombre de subclase → rasgos por nivel. Las clases 2-13 se
 // añaden aquí a medida que se transcriben.
@@ -17,6 +18,7 @@ export const SUBCLASS_FEATURES: Record<string, Record<string, SubclassFeature[]>
   explorador: EXPLORADOR_SUBCLASSES,
   guerrero: GUERRERO_SUBCLASSES,
   hechicero: HECHICERO_SUBCLASSES,
+  mago: MAGO_SUBCLASSES,
 };
 
 export function subclassFeaturesFor(slug: string, subclase: string | null): SubclassFeature[] {
