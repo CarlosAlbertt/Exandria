@@ -702,6 +702,8 @@ canvas.dice-box-canvas {
 /* Las subclases en dos columnas cuando hay sitio: 5 filas largas cansaban. */
 .cls-subs { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 8px; }
 .cls-subs .pick-row { margin-bottom: 0; height: 100%; }
+/* Botonera del detalle (ver descripción / elegir linaje). */
+.cls-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .pick-row-tag {
   display: inline-block; margin-top: 5px;
   font-family: var(--font-ui); font-size: 10px; font-weight: 700;

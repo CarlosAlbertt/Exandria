@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
 import { loadActiveCharacter, saveCharacter, createCharacter, listCharacters, type Build } from "@/lib/character";
 import { canCreate, type CharSlot } from "@/lib/archive";
-import { getSpecies, REGIONS, regionSpecies } from "@/data/species";
+import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { BACKGROUNDS, getBackground } from "@/data/backgrounds";
 import { deityForSubclass } from "@/data/subclassDeity";
@@ -29,19 +29,9 @@ const NO_BONUS: Record<AbilityKey, number> = { fue: 0, des: 0, con: 0, int: 0, s
 const STEPS = ["Especie", "Clase", "Trasfondo", "Aptitudes", "Pericias", "Ficha"];
 const KEY = "taldorei.build.v1";
 
-// Opciones del carril: derivadas de los datos estáticos, no cambian en tiempo
-// de ejecución. `speciesOptions` recorre las regiones en orden para que las
-// especies de una misma región queden CONSECUTIVAS (OptionRail agrupa rachas
-// consecutivas de `group`).
-const speciesOptions: RailOption[] = REGIONS.flatMap((r) =>
-  regionSpecies(r.key).map((s) => ({
-    slug: s.slug,
-    name: s.name + (s.homebrew ? " · DM" : ""),
-    sub: s.tagline,
-    img: `/species/${s.slug}.jpg`,
-    group: r.label,
-  }))
-);
+// Opciones del carril de trasfondos: derivadas de los datos estáticos, no
+// cambian en tiempo de ejecución. Especies y clases ya no usan carril: navegan
+// con flechas + tira de miniaturas en su propia escena.
 const backgroundOptions: RailOption[] = BACKGROUNDS.map((g) => ({
   slug: g.slug, name: g.name, sub: g.feat,
 }));
@@ -393,7 +383,6 @@ export default function CrearPage() {
 
       {b.step === 0 && (
         <SpeciesScene
-          options={speciesOptions}
           species={species}
           selected={b.species}
           lineage={b.lineage}

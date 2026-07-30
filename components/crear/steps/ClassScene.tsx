@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CLASSES, GROUP_LABEL, type CharClass } from "@/data/classes";
 import { abbrOf } from "@/data/rules";
 import { subclassFeaturesFor } from "@/data/classdata/subclases";
 import { deityForSubclass, deityLabel } from "@/data/subclassDeity";
 import ArtPanel from "@/components/crear/ArtPanel";
+import Modal from "@/components/crear/Modal";
 import { useArt } from "@/lib/useArt";
 
 // Escena 1 — Clase. Navegación por FLECHAS (una clase cada vez, con su arte
@@ -37,66 +38,49 @@ function Thumb({ cls, on, onClick }: { cls: CharClass; on: boolean; onClick: () 
   );
 }
 
-// Ventana emergente con el detalle de lo recién elegido: qué es, qué te da por
-// nivel y qué fe arrastra. Se cierra con Esc, con el fondo o con el botón.
-function DetailModal({
-  title,
-  eyebrow,
+// Contenido de la ventana emergente de subclase: qué es, qué fe arrastra y qué
+// te da por nivel. La carcasa (fondo, Esc, aspa) la pone <Modal>.
+function SubclassDetail({
   blurb,
   features,
   deity,
   onClose,
 }: {
-  title: string;
-  eyebrow: string;
   blurb: string;
   features: { level: number; name: string; text: string }[];
   deity: string | null;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   return (
-    <div className="cls-modal-back" onClick={onClose} role="presentation">
-      <div className="cls-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={title}>
-        <button type="button" className="cls-modal-x" onClick={onClose} aria-label="Cerrar">
-          <i className="fas fa-xmark" />
-        </button>
-        <p className="eyebrow mb-1">{eyebrow}</p>
-        <h3 className="font-display text-2xl font-extrabold mb-2" style={{ color: "var(--color-bronze-bright)" }}>{title}</h3>
-        <p className="font-ui text-[13px] leading-relaxed mb-3" style={{ color: "var(--color-warm)" }}>{blurb}</p>
+    <>
+      <p className="font-ui text-[13px] leading-relaxed mb-3" style={{ color: "var(--color-warm)" }}>{blurb}</p>
 
-        {deity && (
-          <p className="cls-modal-deity">
-            <i className="fas fa-hands-praying mr-2" />
-            Fe predefinida: <strong>{deity}</strong>. Puedes cambiarla en el paso de Trasfondo.
-          </p>
-        )}
+      {deity && (
+        <p className="cls-modal-deity">
+          <i className="fas fa-hands-praying mr-2" />
+          Fe predefinida: <strong>{deity}</strong>. Puedes cambiarla en el paso de Trasfondo.
+        </p>
+      )}
 
-        {features.length > 0 && (
-          <>
-            <p className="eyebrow mt-4 mb-2">Rasgos por nivel</p>
-            <div className="cls-modal-feats">
-              {features.map((f) => (
-                <div key={`${f.level}-${f.name}`} className="cls-feat">
-                  <p className="cls-feat-h">
-                    <span className="cls-feat-lv">Nv {f.level}</span>
-                    {f.name}
-                  </p>
-                  <p className="cls-feat-t">{f.text}</p>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+      {features.length > 0 && (
+        <>
+          <p className="eyebrow mt-4 mb-2">Rasgos por nivel</p>
+          <div className="cls-modal-feats">
+            {features.map((f) => (
+              <div key={`${f.level}-${f.name}`} className="cls-feat">
+                <p className="cls-feat-h">
+                  <span className="cls-feat-lv">Nv {f.level}</span>
+                  {f.name}
+                </p>
+                <p className="cls-feat-t">{f.text}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
-        <button type="button" className="btn-gold mt-4 w-full" onClick={onClose}>Entendido</button>
-      </div>
-    </div>
+      <button type="button" className="btn-gold mt-4 w-full" onClick={onClose}>Entendido</button>
+    </>
   );
 }
 
@@ -211,14 +195,18 @@ export default function ClassScene({
       </div>
 
       {detailSub && (
-        <DetailModal
+        <Modal
           eyebrow={`${shown.name} · ${shown.subclassLabel}`}
           title={detailSub.name}
-          blurb={detailSub.blurb}
-          features={subclassFeaturesFor(shown.slug, detailSub.name)}
-          deity={deityLabel(deityForSubclass(detailSub.name))}
           onClose={() => setDetail(null)}
-        />
+        >
+          <SubclassDetail
+            blurb={detailSub.blurb}
+            features={subclassFeaturesFor(shown.slug, detailSub.name)}
+            deity={deityLabel(deityForSubclass(detailSub.name))}
+            onClose={() => setDetail(null)}
+          />
+        </Modal>
       )}
     </div>
   );
