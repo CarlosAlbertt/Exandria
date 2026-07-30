@@ -6,6 +6,7 @@ import OptionRail, { type RailOption } from "@/components/crear/OptionRail";
 import { CONTINENTS } from "@/data/world";
 import { REGIONS } from "@/data/taldorei";
 import { ALL_DEITIES } from "@/data/saber";
+import { deityForSubclass } from "@/data/subclassDeity";
 
 // Escena 2 — Trasfondo: lista | detalle. Sin panel de arte: backgrounds.ts no
 // tiene campo `image` ni está previsto. Los 16 van en lista plana (no tienen
@@ -21,6 +22,7 @@ export default function BackgroundScene({
   originContinent,
   originRegion,
   deity,
+  subclass,
   onOrigin,
 }: {
   options: RailOption[];
@@ -30,8 +32,13 @@ export default function BackgroundScene({
   originContinent: string | null;
   originRegion: string | null;
   deity: string | null;
+  subclass: string | null;
   onOrigin: (patch: { originContinent?: string | null; originRegion?: string | null; deity?: string | null }) => void;
 }) {
+  // Si la subclase impone una fe, se avisa: el selector sigue abierto (se puede
+  // cambiar), pero el jugador ve de dónde le vino la deidad ya rellenada.
+  const impuesta = deityForSubclass(subclass);
+  const feDeSubclase = !!impuesta && impuesta === deity;
   const selectCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
   return (
     <div className="scene-2col">
@@ -117,6 +124,12 @@ export default function BackgroundScene({
                 <option value="">— sin fe —</option>
                 {ALL_DEITIES.map((d) => <option key={d.slug} value={d.slug}>{d.name} · {d.epithet}</option>)}
               </select>
+              {feDeSubclase && (
+                <p className="font-ui text-[10.5px] mt-1.5" style={{ color: "var(--color-bronze-bright)" }}>
+                  <i className="fas fa-hands-praying mr-1.5" />
+                  La impone tu subclase ({subclass}). Puedes cambiarla si quieres.
+                </p>
+              )}
             </div>
           </div>
         </div>

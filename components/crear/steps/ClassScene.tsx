@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CLASSES, GROUP_LABEL, type CharClass } from "@/data/classes";
 import { abbrOf } from "@/data/rules";
+import { subclassFeaturesFor } from "@/data/classdata/subclases";
+import { deityForSubclass, deityLabel } from "@/data/subclassDeity";
 import ArtPanel from "@/components/crear/ArtPanel";
 import { useArt } from "@/lib/useArt";
 
@@ -18,7 +20,8 @@ const ORDERED: CharClass[] = [...CLASSES].sort(
   (a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group)
 );
 
-// Miniatura de la tira: cae al rombo si no hay .jpg (bardo y paladin hoy).
+// Miniatura de la tira: cae al rombo si no hay .png. Es VERTICAL porque el arte
+// de clase es 659×1025; con marco cuadrado se recortaba la cabeza y los pies.
 function Thumb({ cls, on, onClick }: { cls: CharClass; on: boolean; onClick: () => void }) {
   const [failed, setFailed] = useState(false);
   return (
@@ -31,6 +34,69 @@ function Thumb({ cls, on, onClick }: { cls: CharClass; on: boolean; onClick: () 
       )}
       <span className="cls-thumb-nm">{cls.name}</span>
     </button>
+  );
+}
+
+// Ventana emergente con el detalle de lo recién elegido: qué es, qué te da por
+// nivel y qué fe arrastra. Se cierra con Esc, con el fondo o con el botón.
+function DetailModal({
+  title,
+  eyebrow,
+  blurb,
+  features,
+  deity,
+  onClose,
+}: {
+  title: string;
+  eyebrow: string;
+  blurb: string;
+  features: { level: number; name: string; text: string }[];
+  deity: string | null;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="cls-modal-back" onClick={onClose} role="presentation">
+      <div className="cls-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={title}>
+        <button type="button" className="cls-modal-x" onClick={onClose} aria-label="Cerrar">
+          <i className="fas fa-xmark" />
+        </button>
+        <p className="eyebrow mb-1">{eyebrow}</p>
+        <h3 className="font-display text-2xl font-extrabold mb-2" style={{ color: "var(--color-bronze-bright)" }}>{title}</h3>
+        <p className="font-ui text-[13px] leading-relaxed mb-3" style={{ color: "var(--color-warm)" }}>{blurb}</p>
+
+        {deity && (
+          <p className="cls-modal-deity">
+            <i className="fas fa-hands-praying mr-2" />
+            Fe predefinida: <strong>{deity}</strong>. Puedes cambiarla en el paso de Trasfondo.
+          </p>
+        )}
+
+        {features.length > 0 && (
+          <>
+            <p className="eyebrow mt-4 mb-2">Rasgos por nivel</p>
+            <div className="cls-modal-feats">
+              {features.map((f) => (
+                <div key={`${f.level}-${f.name}`} className="cls-feat">
+                  <p className="cls-feat-h">
+                    <span className="cls-feat-lv">Nv {f.level}</span>
+                    {f.name}
+                  </p>
+                  <p className="cls-feat-t">{f.text}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <button type="button" className="btn-gold mt-4 w-full" onClick={onClose}>Entendido</button>
+      </div>
+    </div>
   );
 }
 
@@ -49,6 +115,8 @@ export default function ClassScene({
   // clase (es un pase de arte, no una lista vacía). No selecciona nada por su
   // cuenta — el gate sigue pidiendo que el jugador pulse.
   const { artSrc } = useArt();
+  // Qué enseña el modal: la subclase recién pulsada, o null si está cerrado.
+  const [detail, setDetail] = useState<string | null>(null);
   const idx = useMemo(() => {
     const i = ORDERED.findIndex((c) => c.slug === cls?.slug);
     return i === -1 ? 0 : i;
@@ -60,11 +128,20 @@ export default function ClassScene({
     onPick(ORDERED[next].slug);
   };
 
+  const pickSub = (name: string) => {
+    onSubclass(name);
+    setDetail(name);
+  };
+
+  const detailSub = detail ? shown.subclasses.find((s) => s.name === detail) : undefined;
+
   return (
     <div>
       <span aria-live="polite" className="sr-only">{shown.name}</span>
       <div className="cls-stage">
-        <button type="button" className="cls-arrow" onClick={() => go(-1)} aria-label="Clase anterior">◀</button>
+        <button type="button" className="cls-arrow" onClick={() => go(-1)} aria-label="Clase anterior">
+          <i className="fas fa-chevron-left" />
+        </button>
 
         <ArtPanel src={artSrc("class", shown.slug, `/classes/${shown.slug}.png`) ?? null} alt={shown.name} />
 
@@ -76,7 +153,7 @@ export default function ClassScene({
           <p className="font-ui text-[13px] italic mb-3" style={{ color: "var(--color-muted)" }}>{shown.tagline}</p>
           <p className="font-ui text-[14px] leading-relaxed mb-4" style={{ color: "var(--color-warm)" }}>{shown.blurb}</p>
 
-          <div className="flex gap-6 mb-4 flex-wrap">
+          <div className="cls-stats">
             <div><p className="eyebrow !text-[9px]">Dado de golpe</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>d{shown.hitDie}</p></div>
             <div><p className="eyebrow !text-[9px]">Aptitud principal</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{shown.primary.map(abbrOf).join(" / ")}</p></div>
             <div><p className="eyebrow !text-[9px]">Salvaciones</p><p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{shown.saves.map(abbrOf).join(" / ")}</p></div>
@@ -90,18 +167,30 @@ export default function ClassScene({
           {cls?.slug === shown.slug ? (
             <>
               <p className="eyebrow mb-1.5">{shown.subclassLabel} *</p>
-              {shown.subclasses.map((sc) => (
-                <button
-                  key={sc.name}
-                  type="button"
-                  className={`pick-row${subclass === sc.name ? " sel" : ""}`}
-                  onClick={() => onSubclass(sc.name)}
-                  aria-pressed={subclass === sc.name}
-                >
-                  <span className="pick-row-name">{sc.name}</span>
-                  <span className="pick-row-sub">{sc.blurb}</span>
-                </button>
-              ))}
+              <div className="cls-subs">
+                {shown.subclasses.map((sc) => {
+                  const sel = subclass === sc.name;
+                  const fe = deityLabel(deityForSubclass(sc.name));
+                  return (
+                    <button
+                      key={sc.name}
+                      type="button"
+                      className={`pick-row${sel ? " sel" : ""}`}
+                      onClick={() => pickSub(sc.name)}
+                      aria-pressed={sel}
+                    >
+                      <span className="pick-row-name">
+                        {sc.name}
+                        {sel && <i className="fas fa-circle-check ml-2" style={{ color: "var(--color-bronze-bright)" }} />}
+                      </span>
+                      <span className="pick-row-sub">{sc.blurb}</span>
+                      {fe && (
+                        <span className="pick-row-tag"><i className="fas fa-hands-praying mr-1" />{fe}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </>
           ) : (
             <button type="button" className="btn-gold" onClick={() => onPick(shown.slug)}>
@@ -110,7 +199,9 @@ export default function ClassScene({
           )}
         </div>
 
-        <button type="button" className="cls-arrow" onClick={() => go(1)} aria-label="Clase siguiente">▶</button>
+        <button type="button" className="cls-arrow" onClick={() => go(1)} aria-label="Clase siguiente">
+          <i className="fas fa-chevron-right" />
+        </button>
       </div>
 
       <div className="cls-strip">
@@ -118,6 +209,17 @@ export default function ClassScene({
           <Thumb key={c.slug} cls={c} on={c.slug === shown.slug} onClick={() => onPick(c.slug)} />
         ))}
       </div>
+
+      {detailSub && (
+        <DetailModal
+          eyebrow={`${shown.name} · ${shown.subclassLabel}`}
+          title={detailSub.name}
+          blurb={detailSub.blurb}
+          features={subclassFeaturesFor(shown.slug, detailSub.name)}
+          deity={deityLabel(deityForSubclass(detailSub.name))}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
   );
 }

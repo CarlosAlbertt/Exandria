@@ -33,8 +33,14 @@ export default function ArtPanel({
   return (
     <div className="art-panel">
       {showImg ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src as string} alt={alt ?? ""} onError={() => setFailed(true)} />
+        <>
+          {/* Relleno del marco: la misma imagen ampliada y desenfocada detrás.
+              Así un arte que no sea 659×1025 se ve ENTERO (contain) sin dejar
+              bandas negras a los lados ni aparentar estar recortado. */}
+          <div className="art-bleed" style={{ backgroundImage: `url(${src})` }} aria-hidden="true" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src as string} alt={alt ?? ""} onError={() => setFailed(true)} />
+        </>
       ) : (
         <div
           className="art-silo"
