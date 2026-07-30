@@ -43,12 +43,6 @@ export const DRUIDA: ClassMechanics = {
       blurb: "El druida puede lanzar Encontrar Familiar como ritual, invocando un espíritu con forma de bestia menor.",
     },
     {
-      level: 3,
-      name: "Subclase de Druida",
-      blurb: "Elige un círculo druídico que define su vínculo con la naturaleza y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -57,12 +51,6 @@ export const DRUIDA: ClassMechanics = {
       level: 5,
       name: "Resurgimiento Salvaje",
       blurb: "El druida puede gastar un uso de Forma Salvaje para recuperar puntos de golpe, incluso sin transformarse.",
-    },
-    {
-      level: 6,
-      name: "Rasgo de subclase",
-      blurb: "El círculo druídico concede un nuevo poder que amplía su vínculo con lo salvaje.",
-      subclass: true,
     },
     {
       level: 7,
@@ -75,21 +63,9 @@ export const DRUIDA: ClassMechanics = {
       blurb: "Nueva ronda de mejora de característica o talento.",
     },
     {
-      level: 10,
-      name: "Rasgo de subclase",
-      blurb: "El círculo druídico otorga un nuevo poder que refuerza su especialidad temática.",
-      subclass: true,
-    },
-    {
       level: 12,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
-    },
-    {
-      level: 14,
-      name: "Rasgo de subclase",
-      blurb: "El círculo druídico concede un poder avanzado propio de druidas de gran experiencia.",
-      subclass: true,
     },
     {
       level: 15,
