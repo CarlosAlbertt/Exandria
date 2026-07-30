@@ -4,13 +4,16 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-29)
 
-> **Lo último (2026-07-29): el atlas de Tal'Dorei.** El continente donde se
-> juega estaba mal —tres capitales de región inexistentes, Emon en la región
-> equivocada, las coordenadas sin colocar y **cero comprobaciones del gate**— y
-> ahora tiene **94 POIs** (eran 45) sacados de los ocho submapas rotulados, más
-> su propio script `check-taldorei` (22 en el gate). Ver su sección RESUELTO.
-> **Los otros cuatro continentes siguen pendientes** y necesitan fuentes que el
-> usuario tiene que pasar: no tienen submapa propio.
+> **Lo último (2026-07-29): dos continentes de atlas.** **Tal'Dorei** pasó de 45
+> a **94 POIs** (tres capitales inexistentes, Emon en la región equivocada, las
+> coordenadas sin colocar, cero comprobaciones del gate) y **Wildemount** de 25 a
+> **158**, reestructurado en **8 regiones —una por hoja de mapa—** en vez de 4.
+> De paso se generalizó la maquinaria (`data/regionRatio.ts`, `lib/continente.ts`
+> con el gate por continente, `ATLAS_FIXES`) y se arregló que el **visor de
+> región descolocaba los pines**. Gate: **23 scripts**. Ver las tres secciones
+> RESUELTO de abajo.
+> **Faltan Issylra, Marquet y los Dientes Rotos**: no tienen submapa rotulado
+> propio, así que necesitan fuentes (mapas o libros) que el usuario pase.
 
 > [!warning] 🎲 **Lo siguiente NO es código: es jugar una sesión.**
 > Hay **siete features seguidas en producción y nunca vistas en una partida**
@@ -426,29 +429,106 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 22**, y las secciones RESUELTO solo
+(no hay entrada en `package.json`). **Son 23**, y las secciones RESUELTO solo
 nombran los que tocó cada tanda — los demás siguen vivos aunque no se citen.
-Recuento del **2026-07-29, los 22 en verde**:
+Recuento del **2026-07-29, los 23 en verde**:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
-| `check-archive` | 13 | `check-estado` | 35 |
-| `check-ataque` | 64 | `check-ficha` | 11 |
-| `check-atlas` | 206 | `check-inventario` | 73 |
-| `check-bestiary` | 1629 | `check-lore` | 69 |
-| `check-clases` | 116 | `check-slots` | 15 |
-| `check-clima` | 32 | `check-spells` | 28 |
-| `check-clock` | 20 | `check-statrolls` | 15 |
-| `check-combate` | 49 | **`check-taldorei`** | **913** |
-| `check-conjuros` | 49 | `check-targeting` | 51 |
-| `check-derive` | 35 | `check-turno` | 26 |
-| `check-dice` | 20 | | |
+| `check-archive` | 13 | `check-ficha` | 11 |
+| `check-ataque` | 64 | `check-inventario` | 73 |
+| `check-atlas` | 349 | `check-lore` | 69 |
+| `check-bestiary` | 1629 | `check-slots` | 15 |
+| `check-clases` | 116 | `check-spells` | 28 |
+| `check-clima` | 32 | `check-statrolls` | 15 |
+| `check-clock` | 20 | **`check-taldorei`** | **937** |
+| `check-combate` | 49 | `check-targeting` | 51 |
+| `check-conjuros` | 49 | `check-turno` | 26 |
+| `check-derive` | 35 | **`check-wildemount`** | **1026** |
+| `check-dice` | 20 | `check-estado` | 35 |
 | `check-dicebox` | 19 | | |
+
+> Las reglas de `check-taldorei` y `check-wildemount` viven en
+> `lib/continente.ts` (`comprobarContinente`): añadir un continente con submapas
+> es escribir su `data/<cont>.ts` y un `scripts/check-<cont>.ts` de tres líneas,
+> no copiar el gate.
 
 > `check-tablero` se borró con el tablero el 2026-07-26. Las cuentas que citan
 > las secciones RESUELTO son las **del día que se escribieron** y algunas ya no
 > cuadran (p. ej. O2 dice «check-estado (36)» y «check-targeting (49)»); manda
 > esta tabla.
+
+## RESUELTO (2026-07-29): Wildemount, ocho regiones y 158 POIs 🗺️
+Rama `atlas-wildemount`. **Sin migración.** Spec y plan en
+`docs/superpowers/{specs,plans}/2026-07-29-atlas-wildemount*`. Ejecutada con
+subagentes (uno o dos por hoja, revisión del coordinador entre tandas).
+
+**El problema no era el vacío, era el desajuste.** Wildemount tenía 4 regiones
+**políticas** y 8 hojas de mapa **geográficas**: el Imperio Dwendaliano ocupaba
+dos hojas (Campos Zemni + Valle del Tuétano), la Costa del Serrallo otras dos, y
+Eiselcross y la Costa de la Plaga no existían como región. **La mitad del
+continente no tenía dónde caer**, y sus 25 POIs se derivaban de `WORLD_POIS`
+—los pines del mapa del mundo— con coordenadas que como coordenadas de región no
+significan nada.
+
+**Decidido con el usuario**: ocho regiones, una por hoja, **añadiendo** cuatro
+(Valle del Tuétano, Costa del Serrallo Norte, Eiselcross, Costa de la Plaga) sin
+renombrar las cuatro que había. Es aditivo, así que un `atlas_defs` ya sembrado
+recibe las nuevas sin riesgo de duplicar. Lo político (Imperio, Dinastía Kryn,
+Concordato Clovis) se cuenta en el blurb de cada región, no en su nombre.
+
+**Lo que hay ahora**: **158 POIs** (eran 25), leídos de los ocho hexmaps
+rotulados. Reparto: Imperio 23, Valle del Tuétano 25, Xhorhas 23, Costa del
+Serrallo 27, Serrallo Norte 16, Yermos Grisáceos 16, Eiselcross 17, Costa de la
+Plaga 11. Las 31 ciudades y fortalezas nuevas tienen pin en el mapa del mundo;
+los ~120 accidentes naturales no (mismo criterio que Tal'Dorei).
+
+**Lo que se generalizó, para que el siguiente continente no obligue a copiar:**
+- **`REGION_RATIO` → `data/regionRatio.ts`.** Vivía en `data/taldorei.ts`, que
+  con 16 regiones dejaba de tener sentido. Cada entrada se comprueba contra la
+  cabecera del JPG.
+- **Las reglas del gate → `lib/continente.ts`** (`comprobarContinente`).
+  `check-taldorei` y `check-wildemount` son ahora tres líneas cada uno. **Cero
+  reglas duplicadas.**
+- **`TALDOREI_FIXES` → `ATLAS_FIXES`**, con campo `continente` y `borrar?`.
+  Wildemount aporta 25 correcciones (los 25 POIs viejos cambiaban de posición
+  porque llevaban coordenadas del mundo; seis cambian de región; el «Valle del
+  Tuétano» dejó de ser POI y pasó a ser región).
+- **Wildemount deja de derivar de `WORLD_POIS`**: `seedAtlas`/`mergeAtlas` tienen
+  un mapa `CONTINENTES_PROPIOS` (Tal'Dorei + Wildemount) en vez de una rama
+  `if (contName === "Tal'Dorei")`.
+
+> **La regla de contenido de esta tanda**: de la mayoría de estos sitios solo se
+> sabe **lo que enseña el mapa**. El blurb describe el terreno, qué tiene al lado
+> y qué ruta pasa; **no inventa historia** (batallas, fundadores, maldiciones)
+> que no esté en ninguna fuente. Los nombres y datos son hechos; el texto es
+> redacción propia. La wiki de Critical Role se consultó por el **panel Browser**
+> (`WebFetch` da 402 y `defuddle` 403 contra Fandom).
+
+> **Tres trampas cazadas:**
+> 1. **`data/wildemount.ts` ya existía** con las regiones de lore del sistema de
+>    Saber. El subagente lo renombró a `WILDEMOUNT_LORE_REGIONS` en vez de
+>    pisarlo; `check-lore` confirma que Saber sigue intacto.
+> 2. **Choque de nombres entre continentes**, que es real porque `poi_state`
+>    indexa por nombre sin distinguir continente. «Frigid Depths» de los Campos
+>    Zemni chocaba con «Profundidades Gélidas» de Tal'Dorei → «Mar de las
+>    Profundidades Gélidas». `comprobarContinente` recibe los `nombresAjenos` de
+>    los otros continentes y lo caza.
+> 3. **Rótulos que sangran entre hojas vecinas.** Cada hoja rotula lugares de la
+>    de al lado en su borde (Molaesmyr sale en Zemni y en los Yermos; Rumblecusp
+>    en el Serrallo y es de los Dientes Rotos). Cada POI se pone **una sola vez**,
+>    en la hoja donde su rótulo es central. La unicidad global lo garantiza.
+
+- Verificado: `tsc --noEmit` + `next build` limpios · **los 23 check-scripts en
+  verde** (`check-wildemount` 1026, `check-atlas` 349). **NO probado en la app en
+  vivo**: `/mapa` exige sesión. La colocación se verificó pintando los 158 pines
+  sobre sus ocho hojas (SVG entregados al usuario).
+- **Prueba del usuario**: abrir `/mapa` → Wildemount, entrar en las ocho regiones
+  y ver que los pines caen sobre su rótulo; que **Eiselcross y la Costa de la
+  Plaga** son regiones nuevas navegables; que las ciudades salen en el mapa del
+  mundo; y que su `atlas_defs` ya sembrado recibe los cambios sin duplicar (no
+  debe aparecer «Valle del Tuétano» como POI ni «Aldea Palebank» en dos sitios).
+  Si movió algún pin a mano, se queda donde lo dejó.
 
 ## RESUELTO (2026-07-29): el visor de región descolocaba los pines 📍
 Rama `fix-visor-region`. **Sin migración.** Salió al probar el atlas nuevo en la
