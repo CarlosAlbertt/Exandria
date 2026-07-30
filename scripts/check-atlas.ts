@@ -6,7 +6,7 @@ import { seedAtlas, mergeAtlas, ATLAS_FIXES } from "../data/atlas";
 import { REGIONS } from "../data/taldorei";
 import { WORLD_POIS } from "../data/world";
 import { POIS } from "../data/pois";
-import { WILDEMOUNT_POIS } from "../data/wildemount";
+import { WILDEMOUNT_POIS, WILDEMOUNT_REGIONS } from "../data/wildemount";
 
 let failures = 0;
 
@@ -106,6 +106,21 @@ for (const lista of Object.values(POIS)) {
 const nombresDeRegion = new Set(REGIONS.map((r) => r.name));
 for (const p of pinesTaldorei) {
   check(`pin de mundo "${p.name}": su región "${p.region}" existe`, nombresDeRegion.has(p.region));
+}
+
+// --- Cada ciudad/fortaleza de Wildemount tiene su pin en el mapa mundial ---
+const pinesWildemount = WORLD_POIS.filter((p) => p.continent === "Wildemount" && p.type !== "continente");
+const nombresMundoWildemount = new Set(pinesWildemount.map((p) => p.name));
+for (const lista of Object.values(WILDEMOUNT_POIS)) {
+  for (const p of lista) {
+    if (p.type !== "ciudad" && p.type !== "fortaleza") continue;
+    check(`${p.name}: tiene pin en el mapa mundial`, nombresMundoWildemount.has(p.name));
+  }
+}
+// …y al revés: ningún pin de mundo de Wildemount apunta a una región que no existe.
+const nombresDeRegionWildemount = new Set(WILDEMOUNT_REGIONS.map((r) => r.name));
+for (const p of pinesWildemount) {
+  check(`pin de mundo "${p.name}": su región "${p.region}" existe`, nombresDeRegionWildemount.has(p.region));
 }
 
 // --- Wildemount: las regiones mapeadas a archivo tienen image no vacía y el
