@@ -43,12 +43,6 @@ export const EXPLORADOR: ClassMechanics = {
       blurb: "El explorador elige un estilo de combate que le otorga un beneficio pasivo permanente en batalla.",
     },
     {
-      level: 3,
-      name: "Subclase de Explorador",
-      blurb: "Elige un arquetipo del explorador que define su especialidad y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -62,12 +56,6 @@ export const EXPLORADOR: ClassMechanics = {
       level: 6,
       name: "Merodeo",
       blurb: "La velocidad de desplazamiento del explorador aumenta mientras no lleve armadura pesada.",
-    },
-    {
-      level: 7,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo del explorador concede un nuevo poder que amplía sus habilidades de caza.",
-      subclass: true,
     },
     {
       level: 8,
@@ -85,12 +73,6 @@ export const EXPLORADOR: ClassMechanics = {
       blurb: "Al final de un descanso corto, el explorador recupera puntos de golpe y puede eliminar un nivel de agotamiento.",
     },
     {
-      level: 11,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo del explorador otorga un nuevo poder que refuerza su papel en el grupo.",
-      subclass: true,
-    },
-    {
       level: 12,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -104,12 +86,6 @@ export const EXPLORADOR: ClassMechanics = {
       level: 14,
       name: "Velo de la Naturaleza",
       blurb: "El explorador puede volverse invisible durante un breve instante, fundiéndose con su entorno natural.",
-    },
-    {
-      level: 15,
-      name: "Rasgo de subclase",
-      blurb: "El arquetipo del explorador concede un poder avanzado propio de cazadores experimentados.",
-      subclass: true,
     },
     {
       level: 16,
