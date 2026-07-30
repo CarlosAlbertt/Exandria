@@ -27,7 +27,8 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > **Lo siguiente está escrito en `docs/PROMPT-SIGUIENTE-SESION.md`**: estrechar
 > la app para el arranque de campaña (el jugador solo `/crear` + `/personaje`,
 > `/inventario` y `/reino`). Ojo: `proxy.ts` **solo refresca sesión, no cierra
-> rutas por rol**, así que ocultar enlaces del nav no basta.
+> rutas por rol**, así que ocultar enlaces del nav no basta. `/personaje` no
+> tiene enlace en la barra, pero se llega desde `/inventario` («Ver la hoja»).
 
 > **Lo último (2026-07-30): subclases rehechas (fase 1, foundation).** Se
 > borraron las **52 subclases** viejas (4/clase) y se pusieron **65 nuevas** (13

@@ -41,11 +41,12 @@ Es decir: hay que **quitar del alcance del jugador** `/panteon`, `/cronica`,
 > cualquiera que escriba `/bestiario` en la barra del navegador entra igual.
 > **La sesión tiene que cerrar de verdad las rutas, no solo esconderlas.**
 
-Otro cabo suelto que encontré: **`/personaje` no está en el nav**. Hoy solo se
-llega desde el botón «Ir a la ficha» del último paso del creador
-(`components/crear/steps/SummaryScene.tsx:82`). Si el jugador recarga o vuelve
-otro día, no tiene por dónde entrar a su propia ficha. Habrá que arreglarlo,
-porque justo la ficha es una de las tres cosas que sí debe poder tocar.
+Detalle menor: **`/personaje` no tiene enlace propio en el nav**, pero **no está
+bloqueada** — se llega en un clic desde `/inventario` (botón «Ver la hoja»,
+`app/inventario/page.tsx:203`), y desde el creador (`router.push` al finalizar y
+el botón «Ir a la ficha» del resumen). Como la ficha es una de las tres cosas que
+el jugador sí debe tocar, conviene darle su enlace en la barra, pero es pulido,
+no un acceso roto.
 
 ## Lo que necesito que me preguntes antes de tocar código
 
