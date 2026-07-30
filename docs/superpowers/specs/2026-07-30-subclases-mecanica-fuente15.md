@@ -35,11 +35,30 @@ subclase según cada clase.
 ## Guerrero (niveles 3, 7, 10, 15, 18)
 
 ### Guerrero Elementalista
-- **Nv3 · Hoja Primigenia:** Aprendes dos Trucos (Cantrips) de la lista de Druida. Además, puedes imbuir tu arma: cambias todo tu daño al tipo Fuego, Frío o Relámpago (eliges al atacar). Cuando usas tu rasgo de Maestría de Armas, el objetivo recibe 1d4 extra de ese daño elemental.
-- **Nv7 · Escudo de Tormentas:** Cuando usas tu Nuevas Energías (Second Wind), obtienes Resistencia al Fuego, Frío y Relámpago durante 1 minuto.
-- **Nv10 · Detonación de Acción:** Cuando usas tu Acción Súbita (Action Surge), un estallido elemental brota de ti. Los enemigos a 10 pies reciben 2d8 de daño elemental y son empujados 10 pies.
-- **Nv15 · Acero Penetrante:** Tus ataques elementales ignoran las Resistencias al daño.
-- **Nv18 · Furia Bimental:** Cuando golpeas con un ataque, infliges 1d8 extra de dos elementos diferentes (ej: 1d8 Fuego y 1d8 Frío).
+
+> **Corregido el 2026-07-30 (tarde).** La primera versión de esta subclase era
+> una tanda de cinco rasgos sueltos (Hoja Primigenia, Escudo de Tormentas,
+> Detonación de Acción, Acero Penetrante, Furia Bimental) que el usuario
+> descartó: el texto de partida estaba escrito como **clase base de niveles 1-20**
+> y repetía cosas que el Guerrero ya trae (Ataque Extra, ASI). Esta es la versión
+> buena, condensada a los niveles de arquetipo marcial **3/3/7/10/15/18** y con
+> la reserva de Dados Elementales como motor.
+
+- **Nv3 · Sintonía Primordial:** La energía elemental fluye pasivamente a tu alrededor. Aprendes los trucos Controlar Llamas (Control Flames), Moldear la Tierra (Mold Earth), Dar Forma al Agua (Shape Water) y Ráfaga (Gust). La Constitución es tu característica para lanzarlos.
+- **Nv3 · Núcleo y Golpes Elementales:** Tu cuerpo alberga un pozo de energía. Obtienes una reserva de Dados Elementales (d6). Tienes una cantidad de dados igual al doble de tu Bonificador de Competencia.
+  • Recuperación: Recuperas todos tus dados gastados al finalizar un Descanso Corto o Largo. Además, cuando tiras Iniciativa y no te quedan dados, recuperas 1 dado.
+  • CD Elemental: Cuando un golpe tuyo requiera una tirada de salvación, la CD es 8 + tu bonificador de competencia + tu modificador de Constitución.
+  Una vez por turno, cuando impactas a una criatura con un ataque de arma cuerpo a cuerpo o a distancia, puedes gastar 1 Dado Elemental para imbuir el arma. Sumas la tirada del dado al daño y aplicas un efecto:
+  • Fuego: Daño de Fuego. Otra criatura a 5 pies del objetivo recibe daño de Fuego igual a tu modificador de Constitución.
+  • Agua: Daño de Frío. La velocidad del objetivo se reduce en 10 pies hasta el inicio de tu siguiente turno.
+  • Tierra: Daño Contundente. El objetivo debe superar una salvación de Fuerza o su velocidad se reduce a 0 hasta el inicio de tu siguiente turno.
+  • Aire: Daño de Relámpago. El objetivo no puede realizar Reacciones hasta el inicio de tu siguiente turno.
+- **Nv7 · Manto y Fusión (2 Elementos):** Tu control elemental se expande tanto en defensa como en ataque.
+  • Manto Elemental: Como Acción Adicional, gastas 1 Dado Elemental para rodearte de energía durante 1 minuto. Elige un elemento. Obtienes Resistencia a su tipo de daño (Fuego; Frío para agua; Relámpago para aire; Contundente para tierra). Mientras el manto esté activo, tu velocidad de movimiento aumenta en 10 pies, y cualquier enemigo que te impacte cuerpo a cuerpo recibe daño de ese tipo igual a tu modificador de Constitución.
+  • Fusión (2 Elementos): Cuando usas tu Golpe Elemental, puedes gastar 2 Dados Elementales para crear una fusión. Tiras ambos dados y sumas el resultado al daño: Magma (Fuego+Tierra, daño de Fuego, terreno difícil y Desventaja en su próxima salvación de Destreza) · Plasma (Fuego+Aire, daño de Relámpago, salvación de Constitución o Cegado) · Vapor (Fuego+Agua, daño de Fuego, Desventaja en su próxima tirada de ataque) · Tormenta de Arena (Tierra+Aire, daño Cortante, salvación de Destreza o Cegado) · Fango (Tierra+Agua, daño de Fuerza, salvación de Fuerza o velocidad 0) · Tormenta (Aire+Agua, daño de Frío, empuje de 10 pies y velocidad reducida en 10 pies).
+- **Nv10 · Maestría Primordial:** La energía destructiva se afina. Los ataques de arma en los que apliques cualquier tipo de Golpe o Fusión Elemental consiguen un Golpe Crítico con un resultado de 19 o 20 en el dado. Además, siempre que asestas un Golpe Crítico en combate, recuperas 1 Dado Elemental gastado.
+- **Nv15 · Fusión Avanzada (3 Elementos):** Puedes entrelazar tres planos a la vez. Al usar tu Golpe Elemental, puedes gastar 3 Dados Elementales para crear una fusión mayor (tiras los 3 dados para el daño adicional): Llamarada Solar (Fuego+Aire+Tierra, daño Radiante, Cegado si falla Constitución) · Tundra Eterna (Agua+Aire+Tierra, daño de Frío, Restringido si falla Constitución) · Ceniza Acidificada (Fuego+Agua+Aire, daño de Ácido, CA reducida en 2 hasta tu siguiente turno) · Gravedad Masiva (Fuego+Agua+Tierra, daño de Fuerza, Derrumbado automático, sin Carrera, y arrastre de 5 pies a las criaturas a 15 pies).
+- **Nv18 · Avatar del Caos Elemental:** Te conviertes en la tormenta perfecta. Puedes gastar 4 Dados Elementales para tu Golpe Elemental, desatando la Fusión Suprema (Vacío del Caos): añades los 4d6 como daño de Fuerza puro; el objetivo hace una salvación de Constitución y, si falla, es Desterrado a un plano elemental hasta el final de tu próximo turno; si el ataque lo reduce a 0 Puntos de Golpe, se desintegra. Además, una vez por Descanso Largo puedes transformarte en un Nexo Viviente como Acción Adicional durante 1 minuto: velocidad de Vuelo de 60 pies, Inmunidad al daño de Fuego, Frío y Relámpago, y una vez en cada uno de tus turnos puedes aplicar el efecto de un Golpe Elemental básico (1 solo dado) gratis, sin gastar Dados Elementales.
 
 ### Caballero de Grifos
 - **Nv3 · Salto del Cazador:** Tu distancia y altura de salto se triplican. Además, si saltas o caes al menos 10 pies antes de impactar un ataque cuerpo a cuerpo, infliges 1d8 de daño extra y puedes empujar al objetivo 10 pies.
