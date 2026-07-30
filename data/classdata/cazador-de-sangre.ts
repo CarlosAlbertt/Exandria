@@ -40,12 +40,6 @@ export const CAZADOR_DE_SANGRE: ClassMechanics = {
       blurb: "El cazador de sangre inflige daño a sí mismo para imbuir su arma con energía hemocrática, añadiendo daño necrótico a sus golpes durante un tiempo limitado.",
     },
     {
-      level: 3,
-      name: "Subclase de Cazador de Sangre",
-      blurb: "Elige una orden sanguínea que define su especialidad de caza y le otorga rasgos exclusivos en niveles posteriores.",
-      subclass: true,
-    },
-    {
       level: 4,
       name: "Mejora de Característica",
       blurb: "El personaje aumenta sus puntuaciones de característica o adquiere un talento.",
@@ -59,12 +53,6 @@ export const CAZADOR_DE_SANGRE: ClassMechanics = {
       level: 6,
       name: "Marca de Castigo",
       blurb: "El cazador de sangre puede marcar a un enemigo con un símbolo hemocrático que lo castiga si intenta atacarlo a él o a sus aliados.",
-    },
-    {
-      level: 7,
-      name: "Rasgo de subclase",
-      blurb: "La orden sanguínea concede un nuevo poder que amplía su especialidad de caza.",
-      subclass: true,
     },
     {
       level: 7,
@@ -87,12 +75,6 @@ export const CAZADOR_DE_SANGRE: ClassMechanics = {
       blurb: "El cazador de sangre puede gastar puntos de golpe adicionales al activar Rito Carmesí para obtener un beneficio sobrenatural extra y temporal.",
     },
     {
-      level: 11,
-      name: "Rasgo de subclase",
-      blurb: "La orden sanguínea otorga un nuevo poder que refuerza su papel de cazador de lo sobrenatural.",
-      subclass: true,
-    },
-    {
       level: 12,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -113,12 +95,6 @@ export const CAZADOR_DE_SANGRE: ClassMechanics = {
       blurb: "El Rito Carmesí del cazador de sangre puede imbuir un arma adicional al mismo tiempo.",
     },
     {
-      level: 15,
-      name: "Rasgo de subclase",
-      blurb: "La orden sanguínea concede un poder avanzado propio de cazadores de sangre experimentados.",
-      subclass: true,
-    },
-    {
       level: 16,
       name: "Mejora de Característica",
       blurb: "Nueva ronda de mejora de característica o talento.",
@@ -127,12 +103,6 @@ export const CAZADOR_DE_SANGRE: ClassMechanics = {
       level: 17,
       name: "Maldición de Sangre Mejorada",
       blurb: "Las maldiciones de sangre del cazador de sangre ganan efectos adicionales más poderosos al activarse.",
-    },
-    {
-      level: 18,
-      name: "Rasgo de subclase",
-      blurb: "La orden sanguínea otorga un rasgo culminante propio de cazadores de sangre legendarios.",
-      subclass: true,
     },
     {
       level: 19,
