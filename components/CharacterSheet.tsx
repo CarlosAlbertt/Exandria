@@ -525,16 +525,18 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
             <p className="text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>CA editable para reflejar bonificadores temporales (p. ej. conjuros); no se guarda entre sesiones. El cálculo base se indica bajo el número.</p>
           </section>
 
-          {/* El combate se juega en /combate */}
-          <section className="panel p-5 text-center">
-            <p className="eyebrow mb-2"><i className="fas fa-khanda mr-1.5" style={{ color: "var(--color-bronze)" }} />Combate</p>
-            <p className="font-ui text-[13px] mb-3" style={{ color: "var(--color-muted)" }}>
-              Los puntos de golpe, las condiciones, el turno, los ataques y los conjuros se llevan desde la pantalla de combate.
-            </p>
-            <Link href="/combate" className="btn-gold !py-1.5 !px-4 text-[13px]">
-              <i className="fas fa-khanda mr-1.5" />Ir al combate
-            </Link>
-          </section>
+          {/* El combate se juega en /combate (cerrado para el jugador en el arranque) */}
+          {session?.role === "dm" && (
+            <section className="panel p-5 text-center">
+              <p className="eyebrow mb-2"><i className="fas fa-khanda mr-1.5" style={{ color: "var(--color-bronze)" }} />Combate</p>
+              <p className="font-ui text-[13px] mb-3" style={{ color: "var(--color-muted)" }}>
+                Los puntos de golpe, las condiciones, el turno, los ataques y los conjuros se llevan desde la pantalla de combate.
+              </p>
+              <Link href="/combate" className="btn-gold !py-1.5 !px-4 text-[13px]">
+                <i className="fas fa-khanda mr-1.5" />Ir al combate
+              </Link>
+            </section>
+          )}
 
           {/* SALVACIONES */}
           <section className="panel p-5">

@@ -8,18 +8,7 @@ import ClockPopover from "@/components/ClockPopover";
 import PartyLocationWidget from "@/components/PartyLocationWidget";
 import { createClient } from "@/lib/supabase/client";
 import type { Role } from "@/lib/auth";
-
-const BASE_LINKS = [
-  { href: "/", label: "Inicio" },
-  { href: "/reino", label: "Reino" },
-  { href: "/panteon", label: "Panteón" },
-  { href: "/cronica", label: "Crónica" },
-  { href: "/bestiario", label: "Bestiario" },
-  { href: "/crear", label: "Crear" },
-  { href: "/inventario", label: "Inventario" },
-  { href: "/mapa", label: "Mapa" },
-  { href: "/combate", label: "Combate" },
-];
+import { NAV_LINKS, puedeVer } from "@/lib/acceso";
 
 export default function SiteNav({ role, username }: { role: Role; username: string }) {
   const pathname = usePathname();
@@ -27,11 +16,9 @@ export default function SiteNav({ role, username }: { role: Role; username: stri
   const [open, setOpen] = useState(false);
   const active = (h: string) => (h === "/" ? pathname === "/" : pathname.startsWith(h));
 
-  const DM_LINKS = [
-    { href: "/narrador", label: "Narrador" },
-    { href: "/dm", label: "Panel DM" },
-  ];
-  const links = role === "dm" ? [...BASE_LINKS, ...DM_LINKS] : BASE_LINKS;
+  // Una sola lista, filtrada por la misma función que usa la puerta del proxy:
+  // así el nav no puede enseñar un enlace que lleve a puerta cerrada.
+  const links = NAV_LINKS.filter((l) => puedeVer(role, l.href));
 
   async function logout() {
     await createClient().auth.signOut();
