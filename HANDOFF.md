@@ -16,13 +16,18 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > **Pendiente que solo hace el usuario**: correr `delete from public.characters;`
 > en el SQL Editor de Supabase — las fichas de prueba guardan la subclase por
 > nombre y quedaron con nombres inexistentes al renombrar.
-> **FASE 2 PENDIENTE (grande): mecánica por subclase.** El usuario pasó
-> `Downloads/subclases.md` (976 líneas) con **rasgos completos por nivel** de las
-> 65. Meterlos es escala bestiario: el modelo `ClassFeature` de
-> `data/classdata/types.ts` **no liga un rasgo a una subclase concreta** (hoy los
-> `subclass: true` son placeholders genéricos, iguales para las 5), así que hace
-> falta cambio de arquitectura + ~300 rasgos transcritos + UI en la ficha + gate.
-> Tiene su propio brainstorm → spec → plan (en marcha 2026-07-30).
+> **FASE 2 HECHA: mecánica por subclase (las 65).** Rasgos por nivel de las 65
+> subclases en `data/classdata/subclases/<clase>.ts` (13 archivos, tipo nuevo
+> `SubclassFeature {level,name,text}`, registro en `subclases/index.ts` +
+> `subclassFeaturesFor`). La ficha (`CharacterSheet.tsx`) pinta los rasgos reales
+> de la subclase elegida (texto completo, `white-space: pre-wrap`); se quitaron
+> los placeholders `subclass:true` de los 13 `classdata`. `check-clases.ts` valida
+> integridad referencial nombre↔nombre, ≥3 rasgos/≥1 a nv3, niveles ascendentes,
+> no vacíos, y **65/65** con mecánica sin placeholders supervivientes. Fuentes:
+> `Downloads/subclases.md` (50) + `docs/superpowers/specs/2026-07-30-subclases-mecanica-fuente15.md`
+> (15). Gate: tsc + next build + 23 checks en verde. **Nada probado en la app en
+> vivo** (sin sesión): verificar en `/crear` → elegir clase+subclase → ver rasgos
+> por nivel en la ficha.
 
 > **Lo último (2026-07-29): dos continentes de atlas.** **Tal'Dorei** pasó de 45
 > a **94 POIs** (tres capitales inexistentes, Emon en la región equivocada, las
