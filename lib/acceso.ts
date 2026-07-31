@@ -12,6 +12,10 @@ export const RUTAS_JUGADOR = [
   "/crear",
   "/personaje",
   "/inventario",
+  // El taller de oficios. Va una sola ruta con PESTAÑAS por oficio, y no una
+  // ruta por oficio, justo para no volver a tocar este archivo: abrir la forja
+  // o la destilación mañana no vuelve a pasar por aquí ni por el nav.
+  "/taller",
   "/reino",
   "/lugar",
   "/cerrado",
@@ -31,6 +35,7 @@ export const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/bestiario", label: "Bestiario" },
   { href: "/crear", label: "Crear" },
   { href: "/inventario", label: "Inventario" },
+  { href: "/taller", label: "Taller" },
   { href: "/mapa", label: "Mapa" },
   { href: "/combate", label: "Combate" },
   { href: "/narrador", label: "Narrador" },

@@ -19,7 +19,7 @@ check("dm: el early-return abre cualquier ruta",
   ["/", "/mapa", "/dm", "/reino/wildemount", "/lo-que-sea"].every((p) => puedeVer("dm", p)));
 
 // --- El jugador ve exactamente su lista ------------------------------------
-const ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/reino", "/lugar", "/cerrado", "/login"];
+const ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/taller", "/reino", "/lugar", "/cerrado", "/login"];
 for (const p of ABIERTAS) {
   check(`jugador ve ${p}`, puedeVer("player", p) === true);
 }
@@ -59,7 +59,7 @@ const APP = join(process.cwd(), "app");
 // TODAS las rutas de páginas esperadas, no solo las de primer nivel: una ruta
 // anidada bajo una carpeta abierta (p. ej. app/reino/loquesea/) heredaría el
 // permiso de su padre por la regla de prefijo y se colaría sin decidirlo.
-const ESPERADAS_ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/reino", "/reino/[continente]", "/lugar", "/cerrado", "/login"];
+const ESPERADAS_ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/taller", "/reino", "/reino/[continente]", "/lugar", "/cerrado", "/login"];
 const ESPERADAS_CERRADAS = ["/panteon", "/cronica", "/bestiario", "/mapa", "/combate", "/taberna", "/narrador", "/dm"];
 
 // Todas las rutas con página bajo este directorio, con su ruta completa (los
@@ -89,8 +89,8 @@ for (const r of clasificadas) {
 
 // --- Los enlaces del nav no llevan a puerta cerrada ------------------------
 const navJugador = NAV_LINKS.filter((l) => puedeVer("player", l.href)).map((l) => l.href);
-check("nav del jugador = Inicio, Ficha, Reino, Crear, Inventario",
-  JSON.stringify(navJugador) === JSON.stringify(["/", "/personaje", "/reino", "/crear", "/inventario"]));
+check("nav del jugador = Inicio, Ficha, Reino, Crear, Inventario, Taller",
+  JSON.stringify(navJugador) === JSON.stringify(["/", "/personaje", "/reino", "/crear", "/inventario", "/taller"]));
 check("nav: sin hrefs duplicados",
   new Set(NAV_LINKS.map((l) => l.href)).size === NAV_LINKS.length);
 check("nav: ninguna etiqueta vacía", NAV_LINKS.every((l) => l.label.trim().length > 0));
