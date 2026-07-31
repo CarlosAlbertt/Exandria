@@ -97,6 +97,37 @@ todo) y el **Cazador de Sangre** cuatro, por lo mismo.
 
 ---
 
+## 2.5 ESTADO: el andamio ya está construido (2026-07-31)
+
+Todo lo de §2 está **implementado y en el gate**. Lo único que falta es el
+contenido de §5: qué hace cada pericia.
+
+- `data/rules.ts` — el tipo `Skill` admite `ability2` y `oficio`; entran las 7;
+  helpers `OFICIOS`, `SKILLS_2024` y `esOficio(name)`.
+- `data/leveling.ts` — `OFICIO_LEVELS = [1, 7]` y `oficioPicks(level)`, con el
+  mismo patrón de hitos que `reachedAsiLevels`.
+- `data/classes.ts` — cada clase declara sus `oficios`.
+- `lib/derive.ts` — cada pericia trae `oficio`, y las dobles además `ability2` y
+  **`mod2` sin competencia**.
+- El creador (`SkillsScene`) tiene un tercer bloque con cupo propio; el cupo del
+  nivel 7 se elige en `LevelPanel`, junto a los hitos de ASI.
+- La ficha separa **Pericias** de **Oficios** y en las dobles pinta las dos
+  tiradas, con la aptitud en el nombre de la tirada publicada.
+- **`scripts/check-pericias.ts` es el gate 26**, con tres pruebas de mutación
+  pasadas: invertir el par de aptitudes de una doble, dejar una clase con un
+  solo oficio, y colar un oficio en un `skillList`.
+
+**Un cambio de comportamiento que conviene saber**: la ficha **ya guarda
+`skills`**. Hasta ahora las trataba como solo lectura porque solo se elegían en
+el creador; con la elección del nivel 7 eso deja de ser cierto.
+
+**Y una corrección al reparto de §2.3**: Clérigo, Guerrero y Paladín se quedaban
+con **un solo oficio**, así que a nivel 7 tendrían un cupo sin nada que elegir.
+Se les dio un segundo (Clérigo: Destilación Exandriana; Guerrero y Paladín:
+Cocina) y **el gate ahora exige mínimo dos por clase**.
+
+---
+
 ## 3. Lo que hay que tocar (y lo que no)
 
 - **`data/rules.ts`** — el tipo `Skill` pasa de `{ name, ability }` a admitir
@@ -128,15 +159,68 @@ oficio que no esté en las 7.
 
 ---
 
-## 4. Lo que falta por decidir
+## 4. Asunciones tomadas para poder avanzar
 
-1. **Qué hace cada una de las 25.** Es lo que el usuario va a dictar. Por cada
-   pericia hace falta saber: **contra qué se tira** (CD fija, CD del DM, o
-   tirada enfrentada), **qué pasa al fallar** (nada, algo malo, o un solo
-   intento) y **quién resuelve** (la app sola, como `SaberRoll`, o texto que
-   guía al DM en la mesa).
-2. **Visto bueno al reparto por clase** de §2.3.
-3. **En las dobles, ¿quién elige la aptitud?** ¿El jugador al tirar, o el DM
-   según la situación?
-4. **¿Las 7 nuevas entran en `SaberRoll`** («¿Qué sé de esto?» en `/lugar`), o
-   ese sitio se queda con Historia/Arcanos/Religión?
+El usuario pidió seguir sin preguntar más. Estas cuatro se dieron por buenas y
+**todas son reversibles**:
+
+1. **El reparto por clase de §2.3** (con la corrección de §2.5).
+2. **En las dobles elige el jugador** al tirar: la ficha ofrece las dos tiradas
+   y él pulsa la que toque. Si se prefiere que lo mande el DM, es cambiar quién
+   pulsa, no el dato.
+3. **`SaberRoll` no cambia**: «¿Qué sé de esto?» sigue con Historia, Arcanos y
+   Religión. Las 7 nuevas no entran ahí de momento.
+4. **No se inventó el texto de ninguna pericia.** El andamio está entero y el
+   hueco está en §5.
+
+---
+
+## 5. EL HUECO: qué hace cada pericia
+
+Esto es lo único que falta, y lo dicta el usuario. **No se rellena a ojo.**
+
+Por cada pericia hacen falta cuatro cosas:
+
+- **Cubre** — qué situaciones caen bajo ella.
+- **Contra qué** — CD fija (¿cuál?), CD que pone el DM, o tirada enfrentada
+  (¿contra qué pericia?).
+- **Al fallar** — no pasa nada, pasa algo concreto, o un solo intento.
+- **Quién resuelve** — la app sola (como `SaberRoll`, que tira, compara y
+  desbloquea) o texto que guía al DM en la mesa.
+
+Cuando llegue el contenido, la forma natural de guardarlo es un
+`data/pericias.ts` indexado por nombre de pericia, separado de `data/rules.ts`
+(que son hechos mecánicos del reglamento) igual que `data/classdata/` está
+separado de `data/classes.ts`. **Y tendrá que entrar en el gate**: una pericia
+sin entrada, o una entrada con un nombre que no existe en `SKILLS`, tiene que
+hacer fallar `check-pericias`.
+
+### Plantilla
+
+```
+1  Atletismo (FUE) —
+2  Acrobacias (DES) —
+3  Juego de Manos (DES) —
+4  Sigilo (DES) —
+5  Arcanos (INT) —
+6  Historia (INT) —
+7  Investigación (INT) —
+8  Naturaleza (INT) —
+9  Religión (INT) —
+10 Medicina (SAB) —
+11 Percepción (SAB) —
+12 Perspicacia (SAB) —
+13 Supervivencia (SAB) —
+14 Trato con Animales (SAB) —
+15 Engaño (CAR) —
+16 Interpretación (CAR) —
+17 Intimidación (CAR) —
+18 Persuasión (CAR) —
+19 Alquimia (INT) —
+20 Forja (SAB–FUE) —
+21 Cocina (SAB) —
+22 Cristalografía Arcana (INT) —
+23 Tatuaje Rúnico (DES–INT) —
+24 Extracción de Componentes (DES–INT) —
+25 Destilación Exandriana (SAB) —
+```

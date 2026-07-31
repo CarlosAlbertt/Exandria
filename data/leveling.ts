@@ -23,6 +23,20 @@ export function asiPoints(clsSlug: string | null | undefined, level: number): nu
   return reachedAsiLevels(clsSlug, level).length * 2;
 }
 
+/**
+ * Niveles a los que se gana una pericia de **oficio**. Mismo patrón que los
+ * ASI: hitos por nivel, y lo alcanzado se deriva del nivel actual.
+ * Es un cupo APARTE del `skillCount` de la clase — las de oficio no compiten
+ * con las 18 del reglamento.
+ */
+export const OFICIO_LEVELS = [1, 7];
+
+/** Pericias de oficio a las que se tiene derecho a un nivel dado. */
+export function oficioPicks(level: number): number {
+  const l = Math.max(1, Math.min(20, level));
+  return OFICIO_LEVELS.filter((n) => n <= l).length;
+}
+
 /** Competencia 2024: 2 + floor((nivel-1)/4). Nivel se acota a 1..20. */
 export function proficiencyBonus(level: number): number {
   const l = Math.max(1, Math.min(20, level));

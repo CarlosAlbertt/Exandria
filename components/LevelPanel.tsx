@@ -1,7 +1,7 @@
 "use client";
 
-import { ABILITIES, AbilityKey, abilityMod, fmtMod } from "@/data/rules";
-import { reachedAsiLevels, proficiencyBonus, rollHitDie, maxHpFromRolls, xpForNext } from "@/data/leveling";
+import { ABILITIES, AbilityKey, abilityMod, fmtMod, esOficio } from "@/data/rules";
+import { reachedAsiLevels, proficiencyBonus, rollHitDie, maxHpFromRolls, xpForNext, oficioPicks, OFICIO_LEVELS } from "@/data/leveling";
 import type { Asi } from "@/lib/character";
 
 type Props = {
@@ -18,6 +18,11 @@ type Props = {
   readOnly?: boolean;
   canRollHp?: boolean;
   xp?: number;
+  /** todas las pericias del personaje (las 2024 y las de oficio, en un array) */
+  skills?: string[];
+  onSkills?: (next: string[]) => void;
+  /** oficios que ofrece su clase (`CharClass.oficios`) */
+  oficios?: string[];
 };
 
 /** Suma del reparto ASI de un hito. */
@@ -35,12 +40,16 @@ export function asiTotals(asi: Asi): Record<AbilityKey, number> {
   return out;
 }
 
-export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, asi, onAsi, hpRolls, onRollHp, readOnly = false, canRollHp = false, xp = 0 }: Props) {
+export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, asi, onAsi, hpRolls, onRollHp, readOnly = false, canRollHp = false, xp = 0, skills = [], onSkills = () => {}, oficios = [] }: Props) {
   const hitos = reachedAsiLevels(clsSlug, level);
   const totals = asiTotals(asi);
   const conTotal = preAsi.con + totals.con;
   const hp = maxHpFromRolls(hitDie, level, abilityMod(conTotal), hpRolls);
   const prof = proficiencyBonus(level);
+  // El cupo de oficio es independiente del de clase: se cuenta solo lo que
+  // pertenece al conjunto de oficios.
+  const elegidos = skills.filter(esOficio);
+  const cupo = oficioPicks(level);
 
   return (
     <div className="panel p-5">
@@ -126,6 +135,40 @@ export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, as
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* OFICIOS — cupo aparte del de la clase. Uno a nivel 1 (se elige en el
+          creador) y otro a nivel 7, que se elige aquí. */}
+      {oficios.length > 0 && (
+        <div className="panel-raised p-3 mt-3">
+          <p className="eyebrow mb-2">
+            Oficios · <span style={{ color: elegidos.length === cupo ? "var(--color-primitivo)" : "var(--color-ember)" }}>{elegidos.length}/{cupo}</span>
+          </p>
+          {cupo > elegidos.length && (
+            <p className="font-ui text-[12px] mb-2" style={{ color: "var(--color-bronze-bright)" }}>
+              Tienes un oficio por aprender.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {oficios.map((n) => {
+              const on = skills.includes(n);
+              const lleno = !on && elegidos.length >= cupo;
+              return (
+                <button key={n} className="chip" data-on={on}
+                  disabled={readOnly || lleno}
+                  style={{ opacity: !readOnly && lleno ? 0.4 : 1 }}
+                  onClick={() => onSkills(on ? skills.filter((x) => x !== n) : [...skills, n])}>
+                  {n}
+                </button>
+              );
+            })}
+          </div>
+          {cupo < OFICIO_LEVELS.length && (
+            <p className="font-ui text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>
+              El siguiente llega al nivel {OFICIO_LEVELS.find((l) => l > level)}.
+            </p>
+          )}
         </div>
       )}
     </div>

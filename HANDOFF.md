@@ -2,7 +2,45 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-30)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-31)
+
+> **Lo último (2026-07-31): las pericias de oficio, el andamio entero.**
+> Siete pericias nuevas homebrew: **Alquimia** (INT), **Forja** (SAB–FUE),
+> **Cocina** (SAB), **Cristalografía Arcana** (INT), **Tatuaje Rúnico**
+> (DES–INT), **Extracción de Componentes** (DES–INT) y **Destilación
+> Exandriana** (SAB). Con ellas son **25**.
+> **Aptitud doble = dos tiradas.** La primera es la primaria y es la **única
+> que suma competencia**; con la secundaria se tira a aptitud pelada. `derive`
+> da dos números (`mod` y `mod2`) y la ficha pinta los dos.
+> **Cupo aparte**: `oficioPicks` da **una a nivel 1** (se elige en el creador,
+> tercer bloque con su propio contador) y **otra a nivel 7** (se elige en
+> `LevelPanel`, junto a los hitos de ASI). Elegir un oficio **no** consume una
+> pericia de clase.
+> **Sin migración**: `characters.skills` ya era `string[]`, así que los dos
+> cupos viven en el mismo array y se separan con `esOficio()`.
+> **Gate 26: `scripts/check-pericias.ts`**, con tres mutaciones pasadas
+> (invertir el par de aptitudes de una doble, dejar una clase con un solo
+> oficio, colar un oficio en un `skillList`).
+>
+> **Dos cosas que hay que saber:**
+> 1. **La ficha ahora GUARDA `skills`.** Hasta ahora las trataba como solo
+>    lectura porque solo se elegían en el creador; con la elección del nivel 7
+>    eso deja de ser cierto. El passthrough de `/api/dm/character` ya dejaba
+>    pasar la columna, así que el DM también puede corregirlo.
+> 2. **Clérigo, Guerrero y Paladín recibieron un segundo oficio** porque con el
+>    reparto inicial se quedaban en uno y el cupo del nivel 7 no habría tenido
+>    nada que elegir. El gate exige **mínimo dos por clase**.
+>
+> **LO QUE FALTA es el contenido: qué hace cada una de las 25.** Lo dicta el
+> usuario y **no se rellena a ojo**. La plantilla y las cuatro cosas que hacen
+> falta por pericia están en **`docs/pericias-borrador.md` §5**, junto a las
+> cuatro asunciones tomadas para poder avanzar (§4), todas reversibles.
+> De paso: **`skillChoices` en los 13 `data/classdata/*.ts` no lo lee nadie** —
+> es dato muerto duplicado de `skillList`/`skillCount` en `data/classes.ts`,
+> que es lo que el creador usa de verdad. No se tocó.
+> **Nada probado en la app en vivo.**
+
+## 🚦 Antes de eso (2026-07-30)
 
 > **Lo último (2026-07-30, noche): el alcance del jugador para el arranque.**
 > El jugador solo ve **`/`, `/crear`, `/personaje`, `/inventario`, `/reino` y
@@ -539,10 +577,11 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 25** (`check-especies` entró con las
-subclases y `check-acceso` con el alcance del jugador), y las secciones RESUELTO
-solo nombran los que tocó cada tanda — los demás siguen vivos aunque no se
-citen. Recuento del **2026-07-30, los 25 en verde**:
+(no hay entrada en `package.json`). **Son 26** (`check-especies` entró con las
+subclases, `check-acceso` con el alcance del jugador y `check-pericias` con los
+oficios), y las secciones RESUELTO solo nombran los que tocó cada tanda — los
+demás siguen vivos aunque no se citen. Recuento del **2026-07-31, los 26 en
+verde**:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
@@ -558,7 +597,7 @@ citen. Recuento del **2026-07-30, los 25 en verde**:
 | `check-derive` | 35 | **`check-wildemount`** | **1026** |
 | `check-dice` | 20 | `check-estado` | 35 |
 | `check-dicebox` | 19 | `check-especies` | 272 |
-| **`check-acceso`** | **97** | | |
+| **`check-acceso`** | **97** | **`check-pericias`** | **281** |
 
 > Las reglas de `check-taldorei` y `check-wildemount` viven en
 > `lib/continente.ts` (`comprobarContinente`): añadir un continente con submapas

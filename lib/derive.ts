@@ -23,7 +23,19 @@ export type Derived = {
   acSource: string;
   initiative: number;
   saves: Record<AbilityKey, { mod: number; proficient: boolean }>;
-  skills: { name: string; ability: AbilityKey; mod: number; proficient: boolean }[];
+  /**
+   * `mod2` solo existe en las pericias de oficio de aptitud doble, y va
+   * **sin competencia** a propósito: es la tirada con la aptitud secundaria.
+   */
+  skills: {
+    name: string;
+    ability: AbilityKey;
+    mod: number;
+    proficient: boolean;
+    oficio: boolean;
+    ability2?: AbilityKey;
+    mod2?: number;
+  }[];
   passivePerception: number;
   spellDc?: number;
   spellAttack?: number;
@@ -130,7 +142,17 @@ export function derive(c: Partial<CharacterData>): Derived {
   const known = new Set(c.skills ?? []);
   const skills = SKILLS.map((s) => {
     const proficient = known.has(s.name);
-    return { name: s.name, ability: s.ability, mod: abilities[s.ability].mod + (proficient ? prof : 0), proficient };
+    return {
+      name: s.name,
+      ability: s.ability,
+      mod: abilities[s.ability].mod + (proficient ? prof : 0),
+      proficient,
+      oficio: !!s.oficio,
+      // Aptitud doble: la secundaria se tira SIN competencia, siempre. Es toda
+      // la diferencia entre las dos tiradas de una pericia de oficio doble.
+      ability2: s.ability2,
+      mod2: s.ability2 ? abilities[s.ability2].mod : undefined,
+    };
   });
 
   const percepcion = skills.find((s) => s.name === "Percepción");
