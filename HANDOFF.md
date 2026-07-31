@@ -4,6 +4,39 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-31)
 
+> **Lo último (2026-07-31, noche): las despensas de Cocina y Forja.**
+> Rama `cocina-ingredientes`. **Sin migración.**
+> **`data/cocina.ts`: 100 ingredientes** en cinco categorías (carne 25, pescado
+> 20, vegetal 25, lácteo 15, despensa 15).
+> **`data/forja.ts`: 75 materiales** en cinco de quince (metal, cristal,
+> monstruo, madera, temple).
+> Con `data/alquimia.ts` (70) ya son **tres catálogos** con la misma forma
+> —número de catálogo, categoría, descripción— y **numeración propia cada uno**.
+> No se buscan entre sí.
+>
+> **Forja es distinto de los otros dos: trae REGLA, no solo sabor.** El mithril
+> anula el requisito de Fuerza de la armadura pesada, la adamantina anula los
+> críticos recibidos, el residuum vuelve mágica el arma, la azuremita le cambia
+> la aptitud, la madera de bruma da Sutil a un arma pesada… Eso vive en un campo
+> **`mecanica`** aparte del `blurb`, para no mezclar regla con descripción.
+> ⚠️ **Nada de eso está conectado.** Ni `data/equipment.ts` ni `lib/derive.ts`
+> saben que estos materiales existen: forjar un peto de mithril hoy no quita
+> ningún requisito. Es catálogo, no mecánica en juego.
+>
+> **Gates 28 (`check-cocina`) y 29 (`check-forja`)**, con las mismas reglas que
+> el de alquimia más una nueva: **la lista de solapes entre catálogos se declara
+> y hoy está vacía**. Un mismo material *puede* servir a dos oficios (el
+> residuum sirve para pociones y para armas), pero no puede colarse sin que
+> alguien lo decida. Probado por mutación: quitarle la mecánica al mithril, y
+> duplicar un nombre entre cocina y forja.
+>
+> **Lo que sigue sin existir son las recetas**: qué materiales hacen falta para
+> cada cosa, con qué CD y qué pasa al fallar. Los tres catálogos y las 25
+> pociones están sueltos hasta que llegue el contenido de
+> `docs/pericias-borrador.md` §5.
+
+## 🚦 Antes de eso (2026-07-31, tarde)
+
 > **Lo último (2026-07-31, tarde): la fe se descubre, y alquimia con pociones.**
 > **La fe deja de elegirse al crear el personaje.** Solo se empieza creyendo en
 > algo si **la subclase lo impone** (`deityForSubclass`, 10 subclases); el resto

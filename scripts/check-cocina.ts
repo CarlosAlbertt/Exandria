@@ -4,7 +4,6 @@ import {
   INGREDIENTES_COCINA, COCINA_CATEGORIA_LABEL, cocinaDe, cocinaPorN,
   type CocinaCategoria,
 } from "../data/cocina";
-import { INGREDIENTES } from "../data/alquimia";
 
 let failures = 0;
 function check(label: string, condition: boolean) {
@@ -54,16 +53,8 @@ for (const i of INGREDIENTES_COCINA) {
 }
 check("las categorías van en bloques seguidos (carne → pescado → vegetal → lácteo → despensa)", seguidas);
 
-// --- Las dos despensas no se pisan -----------------------------------------
-// Cocina y alquimia son catálogos APARTE y con numeraciones propias (1-100 y
-// 1-70). Si un mismo nombre apareciera en las dos, una receta futura no sabría
-// de cuál tirar. Están cerca a propósito —la Baya Buena sale en las dos— pero
-// con nombres distintos: «Zumo de Baya Buena» en alquimia y «Baya Buena
-// deshidratada» aquí.
-const nombresAlquimia = new Set(INGREDIENTES.map((i) => i.name));
-const solapes = INGREDIENTES_COCINA.filter((i) => nombresAlquimia.has(i.name)).map((i) => i.name);
-check(`ningún nombre está en las dos despensas${solapes.length ? ` (repetidos: ${solapes.join(", ")})` : ""}`,
-  solapes.length === 0);
+// El cruce entre catálogos vive en `scripts/check-materiales.ts`, que los
+// conoce los seis: tenerlo aquí también sería una segunda fuente de verdad.
 
 // --- Los helpers ------------------------------------------------------------
 check("cocinaPorN(1) es el Lomo de Oso Lechuza",

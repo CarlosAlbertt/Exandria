@@ -4,8 +4,6 @@ import {
   MATERIALES_FORJA, FORJA_CATEGORIA_LABEL, FORJA_CON_MECANICA, forjaDe, forjaPorN,
   type ForjaCategoria,
 } from "../data/forja";
-import { INGREDIENTES } from "../data/alquimia";
-import { INGREDIENTES_COCINA } from "../data/cocina";
 
 let failures = 0;
 function check(label: string, condition: boolean) {
@@ -72,19 +70,8 @@ for (const n of ["Mithril Estelar", "Adamantina de Kraghammer", "Residuum refina
   check(`«${n}» existe y trae mecánica`, !!m?.mecanica);
 }
 
-// --- Los tres catálogos no se pisan por accidente ---------------------------
-// Un mismo material PUEDE estar en dos oficios (el residuum sirve para pociones
-// y para armas). Lo que no puede es aparecer sin que nadie lo sepa: la lista de
-// solapes se declara aquí, así que uno nuevo hace fallar el gate y obliga a
-// decidir si es intencionado.
-const SOLAPES_ESPERADOS: string[] = [];
-const otros = new Set([
-  ...INGREDIENTES.map((i) => i.name),
-  ...INGREDIENTES_COCINA.map((i) => i.name),
-]);
-const solapes = MATERIALES_FORJA.filter((m) => otros.has(m.name)).map((m) => m.name).sort();
-check(`los solapes con alquimia y cocina son los declarados${solapes.length ? ` (hay: ${solapes.join(", ")})` : " (ninguno)"}`,
-  JSON.stringify(solapes) === JSON.stringify(SOLAPES_ESPERADOS.slice().sort()));
+// El cruce entre catálogos vive en `scripts/check-materiales.ts`, que los
+// conoce los seis: tenerlo aquí también sería una segunda fuente de verdad.
 
 // --- Los helpers ------------------------------------------------------------
 check("forjaPorN(3) es el Mithril Estelar", forjaPorN(3)?.name === "Mithril Estelar");
