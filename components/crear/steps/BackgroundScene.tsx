@@ -117,18 +117,34 @@ export default function BackgroundScene({
               </div>
             )}
 
+            {/* La fe NO se elige. O te la impone la clase, o la descubres
+                jugando: creer en algo es algo que le pasa al personaje en la
+                mesa, no una casilla que se marca antes de empezar. */}
             <div>
-              <label className="eyebrow !text-[9px] block mb-1">Deidad</label>
-              <select value={deity ?? ""} className={selectCls} style={{ color: "var(--color-warm)" }}
-                onChange={(e) => onOrigin({ deity: e.target.value || null })}>
-                <option value="">— sin fe —</option>
-                {ALL_DEITIES.map((d) => <option key={d.slug} value={d.slug}>{d.name} · {d.epithet}</option>)}
-              </select>
-              {feDeSubclase && (
-                <p className="font-ui text-[10.5px] mt-1.5" style={{ color: "var(--color-bronze-bright)" }}>
-                  <i className="fas fa-hands-praying mr-1.5" />
-                  La impone tu subclase ({subclass}). Puedes cambiarla si quieres.
-                </p>
+              <label className="eyebrow !text-[9px] block mb-1">Fe</label>
+              {feDeSubclase ? (
+                <>
+                  <p className="font-ui text-[13px] font-semibold" style={{ color: "var(--color-bronze-bright)" }}>
+                    <i className="fas fa-hands-praying mr-1.5" />
+                    {ALL_DEITIES.find((d) => d.slug === deity)?.name ?? deity}
+                    {(() => {
+                      const ep = ALL_DEITIES.find((d) => d.slug === deity)?.epithet;
+                      return ep ? <span style={{ color: "var(--color-muted)" }}> · {ep}</span> : null;
+                    })()}
+                  </p>
+                  <p className="font-ui text-[10.5px] mt-1.5" style={{ color: "var(--color-muted)" }}>
+                    Te la impone tu subclase ({subclass}). No se cambia.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-ui text-[13px]" style={{ color: "var(--color-dim)" }}>
+                    <i className="fas fa-circle-question mr-1.5" />Aún sin fe
+                  </p>
+                  <p className="font-ui text-[10.5px] mt-1.5" style={{ color: "var(--color-muted)" }}>
+                    No se elige al crear el personaje: la irás descubriendo por el camino.
+                  </p>
+                </>
               )}
             </div>
           </div>

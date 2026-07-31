@@ -337,19 +337,17 @@ export default function CrearPage() {
   // Al cambiar de clase se cae la subclase; si la fe venía IMPUESTA por esa
   // subclase (y no elegida a mano en Trasfondo), se cae con ella para no dejar
   // a un ex-Alma del Luxon venerando al Luxon sin motivo.
+  // La fe ya NO se elige en el creador: o la impone la subclase, o se descubre
+  // jugando. Por eso al cambiar de clase la fe SIEMPRE se cae — si venía de la
+  // subclase anterior ya no aplica, y si no venía de ahí es que la descubrió en
+  // partida, y eso no pasa mientras se está creando el personaje.
   const pickClass = (slug: string) =>
-    set({
-      cls: slug,
-      subclass: null,
-      skills: [],
-      deity: b.deity && b.deity === deityForSubclass(b.subclass) ? null : b.deity,
-    });
-  // Elegir subclase puede PREDEFINIR la deidad (Alma del Luxon → Luxon, etc.).
-  // Solo la impone si esa subclase tiene fe propia; si no, respeta la que hubiera.
-  const pickSubclass = (name: string) => {
-    const impuesta = deityForSubclass(name);
-    set({ subclass: name, ...(impuesta ? { deity: impuesta } : {}) });
-  };
+    set({ cls: slug, subclass: null, skills: [], deity: null });
+  // Elegir subclase puede IMPONER la deidad (Alma del Luxon → Luxon, etc.).
+  // Si la subclase nueva no tiene fe propia, el personaje se queda sin fe: la
+  // que hubiera venía de la subclase anterior.
+  const pickSubclass = (name: string) =>
+    set({ subclass: name, deity: deityForSubclass(name) ?? null });
   const pickBackground = (slug: string) => set({ background: slug, bonus: { ...NO_BONUS } });
 
   return (

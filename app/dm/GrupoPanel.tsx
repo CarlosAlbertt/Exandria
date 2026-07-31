@@ -11,6 +11,7 @@ import { xpForNext } from "@/data/leveling";
 import { derive } from "@/lib/derive";
 import { createClient } from "@/lib/supabase/client";
 import LorePicker from "@/components/LorePicker";
+import { ALL_DEITIES } from "@/data/saber";
 import PozosClase from "@/components/personaje/PozosClase";
 import EstadoVivo from "@/components/personaje/EstadoVivo";
 import EconomiaTurno from "@/components/personaje/EconomiaTurno";
@@ -212,6 +213,7 @@ export default function GrupoPanel() {
               </Link>
             </div>
 
+            <ConcederFe userId={c.user_id} nombre={c.username} actual={c.deity ?? null} />
             <EnsenarSaber userId={c.user_id} nombre={c.username} />
 
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -430,6 +432,41 @@ export default function GrupoPanel() {
 
 // Enseñar saber a mano: la vía de escape del DM para cualquier situación de
 // mesa ("eso tu personaje lo sabría"). Va por /api/dm/character (service_role).
+// La fe ya no se elige en el creador: se descubre jugando. Este es el sitio
+// donde eso se hace efectivo — el DM se la concede cuando el personaje llega a
+// creer en algo. Las que impone una subclase llegan solas desde `/crear`.
+function ConcederFe({ userId, nombre, actual }: { userId: string; nombre: string; actual: string | null }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function set(slug: string | null) {
+    if (busy) return;
+    setBusy(true); setMsg(null);
+    await dmPatch(userId, { deity: slug });
+    setMsg(slug
+      ? `${nombre} ahora venera a ${ALL_DEITIES.find((d) => d.slug === slug)?.name ?? slug}.`
+      : `${nombre} se queda sin fe.`);
+    setBusy(false);
+  }
+
+  return (
+    <div className="mt-4 pt-3 border-t border-[var(--color-line)] space-y-2">
+      <label className="eyebrow !text-[9px] block">Fe</label>
+      <select
+        value={actual ?? ""}
+        disabled={busy}
+        className="w-full bg-transparent border border-[var(--color-line)] rounded-lg px-3 py-2 font-ui text-[13px]"
+        style={{ color: "var(--color-warm)" }}
+        onChange={(e) => set(e.target.value || null)}
+      >
+        <option value="">— sin fe —</option>
+        {ALL_DEITIES.map((d) => <option key={d.slug} value={d.slug}>{d.name} · {d.epithet}</option>)}
+      </select>
+      {msg && <p className="font-ui text-[12px] italic" style={{ color: "var(--color-primitivo)" }}>{msg}</p>}
+    </div>
+  );
+}
+
 function EnsenarSaber({ userId, nombre }: { userId: string; nombre: string }) {
   const [ids, setIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);

@@ -58,7 +58,8 @@ function SubclassDetail({
       {deity && (
         <p className="cls-modal-deity">
           <i className="fas fa-hands-praying mr-2" />
-          Fe predefinida: <strong>{deity}</strong>. Puedes cambiarla en el paso de Trasfondo.
+          Fe impuesta: <strong>{deity}</strong>. Es la única forma de empezar creyendo en algo:
+          el resto de personajes descubre su fe jugando.
         </p>
       )}
 
