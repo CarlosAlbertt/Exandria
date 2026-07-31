@@ -15,7 +15,6 @@ import { SABER } from "../data/saber";
 import { regionesDeOrigen, todasLasRegionesDeOrigen } from "../data/atlas";
 import { CONTINENTS } from "../data/world";
 import { PLACES, HABITADOS } from "../data/saber";
-import { REGIONS } from "../data/taldorei";
 
 let failures = 0;
 
@@ -46,11 +45,32 @@ check(
 const slugs = regiones.map((r) => r.region.slug);
 check(`ningún slug de región repetido (${slugs.length} regiones)`, new Set(slugs).size === slugs.length);
 check("ningún slug vacío", slugs.every((s) => s.trim().length > 0));
-// Las fichas ya creadas guardan estos ocho. Si un refactor los cambia, esos
-// personajes pierden su tierra sin que nada lo diga: aquí se entera.
+// Las fichas ya creadas guardan estos ocho slugs. Si un refactor los cambia,
+// esos personajes pierden su tierra sin que nada lo diga.
+//
+// Van ESCRITOS A MANO a propósito. La primera versión de este check los
+// comparaba contra `REGIONS`, que es de donde el atlas los saca: los dos lados
+// se movían juntos y la comprobación era verde por construcción. La prueba de
+// mutación lo destapó — cambiar un slug en data/taldorei.ts no tumbaba nada.
+// Una regla que no puede fallar no vigila nada.
+const SLUGS_TALDOREI_CONGELADOS = [
+  "costa-lucidiana",
+  "sierras-alabastro",
+  "llanuras-divisorias",
+  "montanas-torrerrisco",
+  "montanas-crestormentas",
+  "peninsula-pleabruma",
+  "expansion-verdante",
+  "litoral-filofulgor",
+];
 check(
   "los slugs de Tal'Dorei no se mueven (fichas ya guardadas)",
-  REGIONS.every((r) => slugs.includes(r.slug))
+  SLUGS_TALDOREI_CONGELADOS.every((s) => slugs.includes(s))
+);
+// Y al revés: que Tal'Dorei no gane ni pierda regiones sin que nadie se entere.
+check(
+  "Tal'Dorei sigue teniendo exactamente esas ocho regiones",
+  regionesDeOrigen("Tal'Dorei").length === SLUGS_TALDOREI_CONGELADOS.length
 );
 
 // --- Cada región va archivada en SU continente ------------------------------
