@@ -13,7 +13,7 @@
 // el juego acepta y luego no usa es exactamente el fallo que no se ve.
 import { SABER } from "../data/saber";
 import { regionesDeOrigen, todasLasRegionesDeOrigen } from "../data/atlas";
-import { CONTINENTS } from "../data/world";
+import { CONTINENTS, REGIONS_BY_CONTINENT, DETALLE_REGION } from "../data/world";
 import { PLACES, HABITADOS } from "../data/saber";
 
 let failures = 0;
@@ -103,6 +103,27 @@ check(
   "toda entrada de región se entrega por ser de allí (ámbito región)",
   entradas.every((e) => e.scope.kind === "region")
 );
+
+// --- Ninguna tierra a medias -----------------------------------------------
+// "Tu tierra" se compone con blurb + capital + rasgo. Las regiones sembradas
+// salían con capital "—" y rasgo vacío, así que un personaje de Marquet leía
+// media entrada y uno de Tal'Dorei la entera, sin que nada lo dijera.
+check(
+  "toda región de origen declara su rasgo",
+  regiones.every(({ region }) => region.feature.trim().length > 0)
+);
+check(
+  "toda región de origen tiene blurb propio",
+  regiones.every(({ region }) => region.blurb.trim().length > 0)
+);
+// Las dos tablas se escriben a mano por separado: si se añade una región a
+// REGIONS_BY_CONTINENT y se olvida su detalle, aquí salta.
+for (const cont of ["Issylra", "Marquet", "Dientes Rotos"]) {
+  check(
+    `${cont}: cada región sembrada tiene capital y rasgo escritos`,
+    (REGIONS_BY_CONTINENT[cont] ?? []).every((n) => !!DETALLE_REGION[n])
+  );
+}
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);

@@ -7,7 +7,7 @@
 import { REGIONS, type Region } from "@/data/taldorei";
 import { POIS, type Poi, type PoiType } from "@/data/pois";
 import { WILDEMOUNT_REGIONS, WILDEMOUNT_POIS } from "@/data/wildemount";
-import { REGIONS_BY_CONTINENT, CONTINENT_VIEW, WORLD_POIS, type WorldType } from "@/data/world";
+import { REGIONS_BY_CONTINENT, CONTINENT_VIEW, DETALLE_REGION, WORLD_POIS, type WorldType } from "@/data/world";
 import { slugify } from "@/lib/slug";
 
 export type ContinentAtlas = { regions: Region[]; pois: Record<string, Poi[]> }; // pois keyed por region.slug
@@ -116,7 +116,17 @@ function seedContinent(cont: string, usedSlugs: Set<string>): ContinentAtlas {
 
     const map = worldMatch ? { x: worldMatch.x, y: worldMatch.y } : fallbackMapPos(cont, idx, names.length);
 
-    regions.push({ slug: finalSlug, name, capital: "—", accent, feature: "", blurb, image: "", map });
+    const detalle = DETALLE_REGION[name];
+    regions.push({
+      slug: finalSlug,
+      name,
+      capital: detalle?.capital ?? "—",
+      accent,
+      feature: detalle?.feature ?? "",
+      blurb,
+      image: "",
+      map,
+    });
 
     pois[finalSlug] = WORLD_POIS.filter(
       (p) => p.continent === cont && p.region === name && p.type !== "continente" && p.type !== "region"

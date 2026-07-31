@@ -56,6 +56,41 @@ export const REGIONS_BY_CONTINENT: Record<string, string[]> = {
   "Mares": ["Mares"],
 };
 
+// Plaza principal y rasgo de las regiones que el atlas SIEMBRA a partir de la
+// tabla de arriba (Issylra, Marquet y los Dientes Rotos). Tal'Dorei y
+// Wildemount no salen aquí: sus regiones están escritas a mano, con estos dos
+// campos ya puestos, en data/taldorei.ts y data/wildemount.ts.
+//
+// Se añade porque estas regiones se sembraban con `capital: "—"` y `feature: ""`
+// y ese hueco se ve donde importa: la entrada "Tu tierra" del saber inicial se
+// compone con los tres campos, así que un personaje de Marquet leía la mitad de
+// tierra que uno de Tal'Dorei. Resúmenes originales; no reproducen el texto de
+// ninguna ambientación publicada.
+//
+// La clave es el NOMBRE de la región, que es lo que `seedContinent` recorre.
+export const DETALLE_REGION: Record<string, { capital: string; feature: string }> = {
+  // --- Issylra ---
+  "Othanzia": { capital: "Vasselheim", feature: "Cuna de la civilización y sede de la teocracia" },
+  "Valle Demithore": { capital: "Hearthdell", feature: "Bosques y aldeas lejos del dominio de Othanzia" },
+  "Montañas Utesspire": { capital: "—", feature: "La cordillera que le pone freno a Othanzia" },
+  "Alcance Caramarin": { capital: "—", feature: "Nieve, pinares de altura y el Lago Umamu" },
+
+  // --- Marquet ---
+  "Desierto Rumedam": { capital: "Ank'Harel", feature: "Una metrópoli en mitad de la arena" },
+  "Valle Hellcatch": { capital: "Bassuras", feature: "Nexo de caminos sin ley" },
+  "Tierras Salvajes de Oderan": { capital: "Jrusar", feature: "Valle selvático cercado por los Picos Serpenteantes" },
+  "Aeshanadoor": { capital: "Yios", feature: "Junglas en sombra y saber órquico" },
+  "Tierras Altas Taladas": { capital: "Sruwargas", feature: "Mesetas de cultivo bajo el Trono Estratos" },
+  "Montañas Aggrad": { capital: "Shammel", feature: "El espinazo del norte, sobre la Bahía de los Dones" },
+  "Arenas Panagrip": { capital: "—", feature: "El desierto hermano del Rumedam, sin oasis que valga" },
+
+  // --- Dientes Rotos ---
+  // Sigue siendo UNA región que abarca el archipiélago entero. Subdividirlo en
+  // islas está pendiente de decisión (ver HANDOFF): son 43, y elegir cuáles son
+  // origen jugable es cosa del DM, no de una lista sacada a ojo.
+  "Dientes Rotos": { capital: "—", feature: "Cuarenta y tres islas tras la Cortina del Necio" },
+};
+
 export type ContinentView = { cx: number; cy: number; scale: number; box: { x: number; y: number; w: number; h: number } };
 export const CONTINENT_VIEW: Record<string, ContinentView> = {
   "Tal'Dorei": { cx: 49, cy: 38, scale: 2.0, box: { x: 37, y: 14, w: 24, h: 50 } },
