@@ -194,6 +194,21 @@ check("el nombre del producto es el de la variante en las familias",
 // regla no estaría vigilada por nada hasta que llegue cristalografía.
 const cincel = materialesDe("cristalografia").find((m) => m.herramienta)!;
 const piedra = materialesDe("cristalografia").find((m) => !m.herramienta)!;
+
+// La regla «ninguna receta gasta una herramienta» hoy se cumple **sin esfuerzo**:
+// solo cristalografía y tatuaje tienen herramientas, y ninguno de los dos tiene
+// recetas todavía. Una regla que no puede fallar no vigila nada, así que además
+// de afirmarla se comprueba que el detector SÍ dispara contra una receta que la
+// rompe a propósito. Sin esto, el día que alquimia gane una herramienta la
+// comprobación seguiría en verde por casualidad.
+const gastaHerramienta = (r: { oficio: Oficio; materiales: { n: number }[] }) =>
+  r.materiales.some((m) => materialPorN(r.oficio, m.n)?.herramienta === true);
+check("ninguna receta real gasta una herramienta",
+  RECETAS.every((r) => !gastaHerramienta(r)));
+check("el detector de herramientas gastadas SÍ dispara contra una receta que la rompe",
+  gastaHerramienta({ oficio: "cristalografia", materiales: [{ n: cincel.n }] }) === true);
+check("y NO dispara contra un material corriente",
+  gastaHerramienta({ oficio: "cristalografia", materiales: [{ n: piedra.n }] }) === false);
 const conHerramienta = {
   slug: "prueba", oficio: "cristalografia" as Oficio, produce: "x", cd: 10,
   materiales: [{ n: piedra.n, qty: 1 }], herramientas: [cincel.n],

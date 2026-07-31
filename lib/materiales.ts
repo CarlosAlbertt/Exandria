@@ -72,14 +72,23 @@ export type Material = {
   mecanica?: string;
 };
 
-/** Los 369, en el orden de `OFICIOS_ORDEN` y dentro de cada uno por catálogo. */
+/**
+ * Los 369, en el orden de `OFICIOS_ORDEN` y dentro de cada uno por catálogo.
+ *
+ * **Se esparce la entrada entera (`...i`) en vez de copiar campo a campo**, y no
+ * es un atajo: copiando campos, un dato nuevo en un catálogo se pierde aquí
+ * **en silencio**. Costó encontrarlo una prueba de mutación —marcar como
+ * herramienta un ingrediente de alquimia no hacía fallar nada, porque el índice
+ * descartaba el campo y la regla de «ninguna receta gasta una herramienta» se
+ * quedaba vacía—. Con el spread, lo que se añada a un catálogo llega solo.
+ */
 export const MATERIALES: Material[] = [
-  ...INGREDIENTES.map((i): Material => ({ oficio: "alquimia", n: i.n, name: i.name, blurb: i.blurb, category: i.category })),
-  ...INGREDIENTES_COCINA.map((i): Material => ({ oficio: "cocina", n: i.n, name: i.name, blurb: i.blurb, category: i.category })),
-  ...MATERIALES_FORJA.map((m): Material => ({ oficio: "forja", n: m.n, name: m.name, blurb: m.blurb, category: m.category, mecanica: m.mecanica })),
-  ...INGREDIENTES_DESTILACION.map((i): Material => ({ oficio: "destilacion", n: i.n, name: i.name, blurb: i.blurb, riesgo: i.riesgo })),
-  ...MATERIALES_CRISTAL.map((m): Material => ({ oficio: "cristalografia", n: m.n, name: m.name, blurb: m.blurb, herramienta: m.herramienta })),
-  ...MATERIALES_TATUAJE.map((m): Material => ({ oficio: "tatuaje", n: m.n, name: m.name, blurb: m.blurb, herramienta: m.herramienta })),
+  ...INGREDIENTES.map((i): Material => ({ ...i, oficio: "alquimia" })),
+  ...INGREDIENTES_COCINA.map((i): Material => ({ ...i, oficio: "cocina" })),
+  ...MATERIALES_FORJA.map((m): Material => ({ ...m, oficio: "forja" })),
+  ...INGREDIENTES_DESTILACION.map((i): Material => ({ ...i, oficio: "destilacion" })),
+  ...MATERIALES_CRISTAL.map((m): Material => ({ ...m, oficio: "cristalografia" })),
+  ...MATERIALES_TATUAJE.map((m): Material => ({ ...m, oficio: "tatuaje" })),
 ];
 
 // Índice por nombre normalizado. Usa el `norm` de `lib/inventario` a propósito
