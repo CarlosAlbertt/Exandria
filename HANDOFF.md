@@ -4,6 +4,39 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-31)
 
+> **Lo último (2026-07-31, tarde): la fe se descubre, y alquimia con pociones.**
+> **La fe deja de elegirse al crear el personaje.** Solo se empieza creyendo en
+> algo si **la subclase lo impone** (`deityForSubclass`, 10 subclases); el resto
+> sale «aún sin fe» y la descubre jugando. Al cambiar de clase la fe **siempre**
+> se cae: la que hubiera venía de la subclase anterior.
+> **El mecanismo de descubrimiento** es Panel DM › Grupo, junto a «Enseñar
+> saber»: un selector por jugador con el que el DM concede la fe cuando el
+> personaje llega a creer en algo. El passthrough de `/api/dm/character` ya
+> dejaba pasar la columna `deity`, así que no hizo falta tocar la API.
+>
+> **`data/alquimia.ts`: los 70 ingredientes** del DM, en cuatro categorías
+> (flora 20, fauna 25, mineral 15, esencia 10). Llevan **número de catálogo
+> estable** porque es como se referencian entre sesiones («el 46, el residuum»);
+> el gate exige que vayan de 1 a 70 sin huecos.
+> **`data/pociones.ts`: las 25 pociones** de los libros — **23 de la Guía del
+> Dungeon Master 2024 en español** (que el usuario subió a la carpeta de libros
+> a mitad de la tanda) y **2 de Wildemount**, las únicas de ese libro. Los otros
+> cuatro libros **no tienen ninguna**. Curación y Fuerza de Gigante van como
+> **familias con `variantes`** (4 potencias y 5 filas de gigante) en vez de
+> duplicadas, que es como las presenta el libro.
+> **`scripts/check-alquimia.ts` es el gate 27**, para las dos cosas. Probado por
+> mutación: borrar un ingrediente da 3 fallos; quitarle las variantes a Curación
+> dejándola en «rareza variable», otros 3.
+>
+> **Nada de esto tiene mecánica todavía**: no hay recetas, ni CD, ni qué
+> ingredientes hacen falta para cada poción. Eso es parte de la mecánica de
+> Alquimia, que sigue esperando el contenido de `docs/pericias-borrador.md` §5.
+> **Nada probado en la app en vivo.**
+> **Nota de proceso**: esta tanda fue a `master` directamente, sin rama feature.
+> Salta la convención de siempre; queda dicho, no escondido.
+
+## 🚦 Antes de eso (2026-07-31, mañana)
+
 > **Lo último (2026-07-31): las pericias de oficio, el andamio entero.**
 > Siete pericias nuevas homebrew: **Alquimia** (INT), **Forja** (SAB–FUE),
 > **Cocina** (SAB), **Cristalografía Arcana** (INT), **Tatuaje Rúnico**
@@ -577,11 +610,11 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 26** (`check-especies` entró con las
-subclases, `check-acceso` con el alcance del jugador y `check-pericias` con los
-oficios), y las secciones RESUELTO solo nombran los que tocó cada tanda — los
-demás siguen vivos aunque no se citen. Recuento del **2026-07-31, los 26 en
-verde**:
+(no hay entrada en `package.json`). **Son 27** (`check-especies` con las
+subclases, `check-acceso` con el alcance del jugador, `check-pericias` con los
+oficios y `check-alquimia` con los ingredientes y las pociones), y las secciones
+RESUELTO solo nombran los que tocó cada tanda — los demás siguen vivos aunque no
+se citen. Recuento del **2026-07-31, los 27 en verde**:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
@@ -598,6 +631,7 @@ verde**:
 | `check-dice` | 20 | `check-estado` | 35 |
 | `check-dicebox` | 19 | `check-especies` | 272 |
 | **`check-acceso`** | **97** | **`check-pericias`** | **281** |
+| **`check-alquimia`** | **82** | | |
 
 > Las reglas de `check-taldorei` y `check-wildemount` viven en
 > `lib/continente.ts` (`comprobarContinente`): añadir un continente con submapas
