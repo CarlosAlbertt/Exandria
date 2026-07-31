@@ -24,7 +24,7 @@ for (const p of ABIERTAS) {
   check(`jugador ve ${p}`, puedeVer("player", p) === true);
 }
 
-const CERRADAS = ["/panteon", "/cronica", "/bestiario", "/mapa", "/combate", "/taberna", "/narrador", "/dm"];
+const CERRADAS = ["/panteon", "/cronica", "/bestiario", "/oficios", "/mapa", "/combate", "/taberna", "/narrador", "/dm"];
 for (const p of CERRADAS) {
   check(`jugador NO ve ${p}`, puedeVer("player", p) === false);
 }
@@ -60,7 +60,7 @@ const APP = join(process.cwd(), "app");
 // anidada bajo una carpeta abierta (p. ej. app/reino/loquesea/) heredaría el
 // permiso de su padre por la regla de prefijo y se colaría sin decidirlo.
 const ESPERADAS_ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/taller", "/reino", "/reino/[continente]", "/lugar", "/cerrado", "/login"];
-const ESPERADAS_CERRADAS = ["/panteon", "/cronica", "/bestiario", "/mapa", "/combate", "/taberna", "/narrador", "/dm"];
+const ESPERADAS_CERRADAS = ["/panteon", "/cronica", "/bestiario", "/oficios", "/mapa", "/combate", "/taberna", "/narrador", "/dm"];
 
 // Todas las rutas con página bajo este directorio, con su ruta completa (los
 // segmentos dinámicos se conservan tal cual: `/reino/[continente]`).

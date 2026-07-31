@@ -33,6 +33,9 @@ export const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/panteon", label: "Panteón" },
   { href: "/cronica", label: "Crónica" },
   { href: "/bestiario", label: "Bestiario" },
+  // Los catálogos de oficio del máster. Cerrada al jugador: su libro de recetas
+  // está en el taller — la gracia del oficio es descubrirlo, no leer la lista.
+  { href: "/oficios", label: "Oficios" },
   { href: "/crear", label: "Crear" },
   { href: "/inventario", label: "Inventario" },
   { href: "/taller", label: "Taller" },
