@@ -4,7 +4,7 @@ import type { Background } from "@/data/backgrounds";
 import { ABILITIES } from "@/data/rules";
 import OptionRail, { type RailOption } from "@/components/crear/OptionRail";
 import { CONTINENTS } from "@/data/world";
-import { REGIONS } from "@/data/taldorei";
+import { regionesDeOrigen } from "@/data/atlas";
 import { ALL_DEITIES } from "@/data/saber";
 import { deityForSubclass } from "@/data/subclassDeity";
 
@@ -39,6 +39,7 @@ export default function BackgroundScene({
   // cambiar), pero el jugador ve de dónde le vino la deidad ya rellenada.
   const impuesta = deityForSubclass(subclass);
   const feDeSubclase = !!impuesta && impuesta === deity;
+  const regiones = originContinent ? regionesDeOrigen(originContinent) : [];
   const selectCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
   return (
     <div className="scene-2col">
@@ -98,21 +99,24 @@ export default function BackgroundScene({
               <select value={originContinent ?? ""} className={selectCls} style={{ color: "var(--color-warm)" }}
                 onChange={(e) => {
                   const v = e.target.value || null;
-                  // Cambiar de continente invalida la subregión (solo Tal'Dorei tiene).
-                  onOrigin({ originContinent: v, originRegion: v === "Tal'Dorei" ? originRegion : null });
+                  // Cambiar de continente invalida la subregión: el slug elegido
+                  // es de otro continente y no lo reconocería ningún saber.
+                  onOrigin({ originContinent: v, originRegion: null });
                 }}>
                 <option value="">— sin definir —</option>
                 {CONTINENTS.filter((c) => c !== "Mares").map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
-            {originContinent === "Tal'Dorei" && (
+            {/* Los cinco continentes tienen subregión, no solo Tal'Dorei: es lo
+                que decide tu entrada "Tu tierra" del saber inicial. */}
+            {regiones.length > 0 && (
               <div>
                 <label className="eyebrow !text-[9px] block mb-1">Tu región</label>
                 <select value={originRegion ?? ""} className={selectCls} style={{ color: "var(--color-warm)" }}
                   onChange={(e) => onOrigin({ originRegion: e.target.value || null })}>
                   <option value="">— sin definir —</option>
-                  {REGIONS.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                  {regiones.map((r) => <option key={r.slug} value={r.slug}>{r.name}</option>)}
                 </select>
               </div>
             )}

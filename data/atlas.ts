@@ -149,6 +149,33 @@ export function seedAtlas(taldoreiOverride?: { regions: Region[]; pois: Record<s
   return atlas;
 }
 
+// --- REGIONES DE ORIGEN -----------------------------------------------------
+// De dónde es tu personaje, para el selector de /crear y para el saber inicial
+// (data/saber.ts). Salen de la MISMA semilla que el atlas: no hay una segunda
+// lista escrita a mano que se pueda desincronizar de las regiones de verdad.
+//
+// A propósito lee la semilla ESTÁTICA y no el atlas que el DM tenga guardado
+// en `app_config`: el catálogo SABER se construye a nivel de módulo, así que
+// si el selector ofreciera una región que el DM ha añadido después, esa
+// elección no tendría ninguna entrada de saber detrás y el jugador se quedaría
+// sin su "Tu tierra" sin que nada avisara. Selector y saber miran lo mismo.
+let semillaCache: AtlasDefs | null = null;
+function semilla(): AtlasDefs {
+  return (semillaCache ??= seedAtlas());
+}
+
+/** Regiones elegibles como origen en un continente ("Mares" no tiene: []). */
+export function regionesDeOrigen(continente: string): Region[] {
+  return semilla()[continente]?.regions ?? [];
+}
+
+/** Todas las regiones de origen, con el continente al que pertenecen. */
+export function todasLasRegionesDeOrigen(): { continente: string; region: Region }[] {
+  return Object.entries(semilla()).flatMap(([continente, atlas]) =>
+    atlas.regions.map((region) => ({ continente, region }))
+  );
+}
+
 // Correcciones puntuales sobre POIs que ya viajaron a un `atlas_defs`
 // sembrado. `mergeAtlas` solo SUMA POIs nuevos: sin esto, mover Emon de
 // región, renombrar el Lago Mooren o recolocar los POIs heredados de
