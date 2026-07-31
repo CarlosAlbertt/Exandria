@@ -13,48 +13,72 @@ explica el porqué de las decisiones.
 En `app/personaje/page.tsx` hay una sección al final, titulada **«Dados del
 grupo»**, que monta `<DicePanel />`. **Ahí no tiene que salir nada.** Quítala.
 
-> [!warning] **No es solo un panel de dados: ahí viven las peticiones del DM**
-> `components/DicePanel.tsx` trae cuatro cosas en una: el **feed de tiradas
-> recientes** del grupo, un **dado rápido**, una **fórmula libre** y las
-> **peticiones de tirada del DM** (`useRollRequests`). Si la sección se va sin
-> más, **el jugador deja de ver y de poder responder las peticiones del DM** —
-> y no hay ningún otro sitio en la app donde las vea: el único otro consumidor
-> de `useRollRequests` es `app/dm/DadosPanel.tsx`, que es la pantalla del DM.
->
-> **Pregúntame qué quiero que pase con las peticiones** antes de borrar nada.
+**Decisión ya tomada: que el jugador pueda lanzar un dado del valor que le dé la
+gana se deja para más adelante.** No hay que buscarle otro sitio ni partir el
+panel: se quita de la ficha y ya está.
 
-`DicePanel` **se sigue usando** en el Panel DM (`app/dm/DadosPanel.tsx`): eso no
-se toca. Y los **dados 3D** (`DiceBoard` en `app/layout.tsx`) tampoco: son la
-animación de la tirada, no este panel.
+`components/DicePanel.tsx` trae cuatro cosas en una: el **feed de tiradas
+recientes** del grupo, un **dado rápido**, una **fórmula libre** y las
+**peticiones de tirada del DM** (`useRollRequests`). Las tres primeras son las
+que se aparcan.
 
-Decide conmigo también si `DicePanel` queda solo para el DM o si hay que
-partirlo.
+> [!warning] **Lo que sí hay que decidir: las peticiones de tirada del DM**
+> El único otro consumidor de `useRollRequests` es `app/dm/DadosPanel.tsx`, que
+> es la pantalla del DM. O sea que al quitar la sección **el jugador deja de ver
+> y de poder responder lo que el DM le pide**, y no queda ningún sitio donde
+> las vea. **Pregúntame qué hago con ellas** antes de borrar: se aparcan también,
+> o se sacan a su propio sitio.
+
+**Lo que NO se toca, comprobado:**
+- **La tirada de estadísticas** (Fase K, `stat_rolls`) vive en
+  `components/crear/steps/AbilitiesStep.tsx`, dentro de `/crear`, y **no usa
+  `DicePanel` para nada**. Quitar la sección de la ficha no la roza. Sigue
+  funcionando igual: tirada única e inmutable, y solo el DM la resetea desde
+  `app/dm/GrupoPanel.tsx`.
+- **`DicePanel` sigue montado en el Panel DM** (`app/dm/DadosPanel.tsx`).
+- **Los dados 3D** (`DiceBoard` en `app/layout.tsx`) siguen: son la animación de
+  la tirada, no este panel. Las tiradas que salen de la ficha (ataques,
+  salvaciones, pericias) **no dependen de `DicePanel`** — publican por
+  `publishRoll` de `lib/useDiceFeed.ts`.
 
 ### 2. Mecánicas jugables para las pericias
 
 Esto es lo gordo y va en dos fases:
 
-**Fase 1 — la lista entera.** Las **18 pericias** ya existen en `data/rules.ts`
-(`SKILLS`), pero **solo como nombre + aptitud**:
+> [!important] **Lee `docs/pericias-borrador.md` antes que nada de esto**
+> Es el documento vivo de la tanda. Ya recoge **las 25 pericias** (las 18 de
+> 2024 más **7 nuevas homebrew**), las reglas ya decididas con el usuario, el
+> reparto por clase propuesto, qué archivos hay que tocar y **qué falta por
+> decidir**. Aquí abajo va solo el resumen.
 
-```ts
-{ name: "Acrobacias", ability: "des" }
-```
+**Son 25, no 18.** Se añaden siete de oficio: **Alquimia** (INT), **Forja**
+(SAB–FUE), **Cocina** (SAB), **Cristalografía Arcana** (INT), **Tatuaje
+Rúnico** (DES–INT), **Extracción de Componentes** (DES–INT) y **Destilación
+Exandriana** (SAB).
 
-Nada más. No hay una sola línea que diga **para qué sirve** ninguna. Lo que
-quiero primero es esa lista completa: cada pericia con lo que cubre y cuándo se
-tira.
+**Dos reglas ya decididas:**
 
-**Fase 2 — la mecánica de cada una.** De la lista se pasa a la mecánica: qué se
-tira, contra qué CD, qué pasa con éxito y qué pasa con fallo, y qué cosas de la
-app se enganchan a eso.
+1. **Aptitud doble = dos tiradas posibles.** La primera es la primaria. Se puede
+   tirar con cualquiera de las dos según pida la situación, pero **la
+   competencia solo suma en la primaria**. La ficha enseña los dos números.
+2. **Cupo de oficio aparte.** Las 7 no compiten con las pericias normales: cada
+   clase mantiene su `pick` de siempre, y además elige **una de oficio a nivel
+   1** y **otra a nivel 7**, restringidas a las que su clase tenga en lista.
 
-**Pregúntame el alcance antes de escribir nada.** Hay decisiones que no puedo
-tomar yo: si la mecánica es **texto que guía al DM** o **algo que la app tira y
-resuelve sola**; si va en la ficha, en `/lugar`, o en las dos; qué relación
-tiene con lo que ya existe (`SaberRoll` en `components/lugar/SaberRoll.tsx` ya
-tira Historia/Arcanos/Religión contra una CD, y `lib/derive.ts` ya calcula el
-modificador de cada pericia); y si hace falta persistir algo.
+**Fase 1 — la lista entera con lo que hace cada una.** Las 18 de 2024 existen en
+`data/rules.ts` como `{ name: "Acrobacias", ability: "des" }` y **nada más**: ni
+una línea de para qué sirven. El usuario va a dictar, por cada una de las 25,
+**contra qué se tira** (CD fija, CD del DM, o tirada enfrentada), **qué pasa al
+fallar** (nada, algo malo, o un solo intento) y **quién resuelve** (la app sola,
+como `SaberRoll`, o texto que guía al DM en la mesa).
+
+**Fase 2 — engancharlo.** El tipo `Skill`, `lib/derive.ts:131` (que hoy da **un**
+número por pericia y tendrá que dar dos en las dobles), los 13 archivos de
+clase, el creador y el subir de nivel. **Sin migración**: `characters.skills` ya
+es `string[]` y el cupo se controla por pertenencia al conjunto de oficios.
+
+**El gate tendrá que verlo**: hoy ningún `check-*` valida `SKILLS`. Es el mismo
+patrón que ya salió caro con `check-clases` y `check-especies`.
 
 **Dónde está hoy lo de pericias**, para que no lo busques a ciegas:
 - `data/rules.ts` — `SKILLS`, las 18 (nombre + aptitud).
