@@ -4,6 +4,59 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-31)
 
+> **Lo último (2026-07-31, noche): los SEIS catálogos de oficio.**
+> Rama `cocina-ingredientes`. **Sin migración.** **369 entradas** en total, cada
+> catálogo con **numeración propia**; no se buscan entre sí.
+>
+> | Oficio | Archivo | Entradas |
+> |---|---|---|
+> | Alquimia | `data/alquimia.ts` | 70 |
+> | Cocina | `data/cocina.ts` | 100 |
+> | Forja | `data/forja.ts` | 75 |
+> | Destilación Exandriana | `data/destilacion.ts` | 49 |
+> | Cristalografía Arcana | `data/cristalografia.ts` | 50 |
+> | Tatuaje Rúnico | `data/tatuaje.ts` | 25 |
+>
+> **Tres campos que separan cosas distintas**: `mecanica` en forja (regla, no
+> sabor), `riesgo` en destilación (el catálogo peligroso: la mitad trae
+> contrapartida explícita) y `herramienta` en cristalografía y tatuaje —cinceles,
+> agujas, pinzas y paños **no se gastan**; una receta los exige disponibles pero
+> no los consume. Confundirlos gastaría el cincel en cada tirada.
+>
+> **Cuatro arreglos sobre las listas del DM**, dichos y no escondidos: la
+> numeración de destilación se cortaba en el 26; **«Extracto de Memoria» venía
+> dos veces** en destilación (fusionadas en una); cristalografía venía en dos
+> bloques y tatuaje numerado del 51 al 75. Los tres van renumerados desde 1.
+>
+> **Forja es distinto de los otros dos: trae REGLA, no solo sabor.** El mithril
+> anula el requisito de Fuerza de la armadura pesada, la adamantina anula los
+> críticos recibidos, el residuum vuelve mágica el arma, la azuremita le cambia
+> la aptitud, la madera de bruma da Sutil a un arma pesada… Eso vive en un campo
+> **`mecanica`** aparte del `blurb`, para no mezclar regla con descripción.
+> ⚠️ **Nada de eso está conectado.** Ni `data/equipment.ts` ni `lib/derive.ts`
+> saben que estos materiales existen: forjar un peto de mithril hoy no quita
+> ningún requisito. Es catálogo, no mecánica en juego.
+>
+> **Gates 28 (`check-cocina`), 29 (`check-forja`) y 30 (`check-materiales`)**,
+> con las mismas reglas que el de alquimia. El 30 cubre los tres últimos
+> catálogos **y centraliza el cruce entre los seis**: un nombre exacto repetido
+> entre dos oficios es ambiguo —una receta no sabría de cuál tirar—, así que
+> **la lista de solapes se declara y hoy está vacía**. Un mismo material *puede*
+> servir a dos oficios (el residuum vale para pociones, para armas y para
+> tallar), pero entonces lleva nombre propio en cada catálogo.
+> Ese cruce se **quitó** de `check-cocina` y `check-forja`, que lo tenían
+> parcial: eran dos fuentes de verdad para la misma regla.
+> Probado por mutación: quitarle la mecánica al mithril, duplicar un nombre
+> entre cocina y forja, y repetir «Mithril Estelar» en cristalografía (el gate
+> dice en qué dos catálogos está).
+>
+> **Lo que sigue sin existir son las recetas**: qué materiales hacen falta para
+> cada cosa, con qué CD y qué pasa al fallar. Los tres catálogos y las 25
+> pociones están sueltos hasta que llegue el contenido de
+> `docs/pericias-borrador.md` §5.
+
+## 🚦 Antes de eso (2026-07-31, tarde)
+
 > **Lo último (2026-07-31, tarde): la fe se descubre, y alquimia con pociones.**
 > **La fe deja de elegirse al crear el personaje.** Solo se empieza creyendo en
 > algo si **la subclase lo impone** (`deityForSubclass`, 10 subclases); el resto
@@ -610,11 +663,13 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 27** (`check-especies` con las
-subclases, `check-acceso` con el alcance del jugador, `check-pericias` con los
-oficios y `check-alquimia` con los ingredientes y las pociones), y las secciones
-RESUELTO solo nombran los que tocó cada tanda — los demás siguen vivos aunque no
-se citen. Recuento del **2026-07-31, los 27 en verde**:
+(no hay entrada en `package.json`). **Son 30**: a los de siempre se sumaron
+`check-especies` (subclases), `check-acceso` (alcance del jugador),
+`check-pericias` (oficios), `check-alquimia` (ingredientes y pociones),
+`check-cocina`, `check-forja` y `check-materiales` (los otros tres catálogos
+más el cruce entre los seis). Las secciones RESUELTO solo nombran los que tocó
+cada tanda — los demás siguen vivos aunque no se citen. Recuento del
+**2026-07-31, los 30 en verde**:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
@@ -631,7 +686,8 @@ se citen. Recuento del **2026-07-31, los 27 en verde**:
 | `check-dice` | 20 | `check-estado` | 35 |
 | `check-dicebox` | 19 | `check-especies` | 272 |
 | **`check-acceso`** | **97** | **`check-pericias`** | **281** |
-| **`check-alquimia`** | **82** | | |
+| **`check-alquimia`** | **82** | **`check-cocina`** | **26** |
+| **`check-forja`** | **33** | **`check-materiales`** | **40** |
 
 > Las reglas de `check-taldorei` y `check-wildemount` viven en
 > `lib/continente.ts` (`comprobarContinente`): añadir un continente con submapas
