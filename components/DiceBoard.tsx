@@ -19,6 +19,8 @@ export default function DiceBoard() {
   const [mod, setMod] = useState(0);
   const [total, setTotal] = useState<number | null>(null);
   const [crit, setCrit] = useState<"crit" | "fumble" | null>(null);
+  const [rolls, setRolls] = useState<number[] | null>(null);
+  const [dropped, setDropped] = useState<number[]>([]);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -31,6 +33,8 @@ export default function DiceBoard() {
       setMod(e.mod);
       setTotal(e.total);
       setCrit(e.crit);
+      setRolls(e.rolls);
+      setDropped(e.dropped);
       if (e.phase === "result") {
         hideTimer.current = setTimeout(() => setPhase("hidden"), 2000);
       }
@@ -81,6 +85,16 @@ export default function DiceBoard() {
           <div className={`dice-result${crit === "crit" ? " is-crit" : crit === "fumble" ? " is-fumble" : ""}`}>
             {label && <div className="dice-result-label">{label}</div>}
             <div className="dice-result-total">{total}</div>
+            {/* Desglose solo cuando hay dados que no cuentan (4d6 descartando
+                el menor): así se ve que el total no es la suma de lo que hay
+                en la mesa, y cuál se ha caído. */}
+            {dropped.length > 0 && rolls && (
+              <div className="dice-result-dice">
+                {rolls.map((v, i) => (
+                  <span key={i} className={dropped.includes(i) ? "is-dropped" : undefined}>{v}</span>
+                ))}
+              </div>
+            )}
             {crit === "crit" && <div className="dice-result-badge">¡CRÍTICO!</div>}
             {crit === "fumble" && <div className="dice-result-badge is-fumble">PIFIA</div>}
           </div>

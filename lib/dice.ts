@@ -92,6 +92,26 @@ export function rollFromDice(formula: string, dice: number[], mod: number): Roll
   return { formula: formula.trim(), rolls: dice, modifier: mod, total };
 }
 
+// Índices de `dice` que se descartan al quedarse con los `keep` más altos.
+// El empate se rompe por posición (orden estable), así que con [4,4,3,1] y
+// keep 3 se descarta el 1 — el índice 3 —, no uno de los cuatros.
+// Devuelve [] si no hay nada que descartar (keep >= dados).
+export function droppedIndexes(dice: number[], keep: number): number[] {
+  if (keep >= dice.length) return [];
+  const order = dice.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v || a.i - b.i);
+  return order.slice(keep).map((d) => d.i).sort((a, b) => a - b);
+}
+
+// Tirada de «quedarse con los N más altos» (4d6 descartando el menor). `rolls`
+// guarda LAS CUATRO caras que se vieron rodar —el dado descartado también salió
+// en la mesa—, pero `total` solo suma las conservadas. Ese total es el que vale:
+// quien lo pinte y quien lo guarde tienen que leer el mismo número.
+export function keepHighestFromDice(formula: string, dice: number[], keep: number, mod: number): RollResult {
+  const drop = new Set(droppedIndexes(dice, keep));
+  const total = dice.reduce((a, v, i) => (drop.has(i) ? a : a + v), 0) + mod;
+  return { formula: formula.trim(), rolls: dice, modifier: mod, total };
+}
+
 // Chequeo d20: dice = [a] normal, [a,b] con ventaja/desventaja. La fórmula
 // resultante coincide con la de d20Check (incluye " (ventaja)"/" (desventaja)").
 export function d20FromDice(dice: number[], mod: number, adv?: "adv" | "dis"): RollResult {

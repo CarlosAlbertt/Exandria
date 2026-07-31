@@ -489,6 +489,30 @@ canvas.dice-box-canvas {
 }
 .dice-result.is-crit .dice-result-total { color: #ffd76a; text-shadow: 0 0 24px rgba(255, 200, 90, 0.8); }
 .dice-result.is-fumble .dice-result-total { color: var(--color-ember); }
+/* Las caras que salieron. El dado descartado se queda tachado y apagado: se
+   vio rodar, pero no suma. */
+.dice-result-dice {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-warm);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+.dice-result-dice span {
+  min-width: 22px;
+  padding: 1px 4px;
+  border-radius: 5px;
+  background: rgba(13, 18, 26, 0.72);
+}
+.dice-result-dice .is-dropped {
+  color: var(--color-dim);
+  text-decoration: line-through;
+}
 .dice-result-badge {
   display: inline-block;
   margin-top: 6px;
