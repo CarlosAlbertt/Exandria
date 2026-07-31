@@ -6,113 +6,126 @@ CarlosAlbertt/Exandria, desplegada en exandria.vercel.app).
 Obsidian (`C:\Users\carlo\Desktop\Exandria-Obsidian\Exandria`) está al día y
 explica el porqué de las decisiones.
 
-## La tarea de esta sesión: dos cosas, en este orden
+## La tarea de esta sesión: darle cuerpo a los oficios
 
-### 1. Fuera el apartado «Dados del grupo» de la ficha
+Los siete oficios existen y tienen **369 materiales** repartidos en seis
+catálogos, pero **no se puede hacer nada con ellos**: son listas sueltas. Esta
+sesión va de convertirlos en algo que se juegue.
 
-En `app/personaje/page.tsx` hay una sección al final, titulada **«Dados del
-grupo»**, que monta `<DicePanel />`. **Ahí no tiene que salir nada.** Quítala.
+### 1. Una interfaz propia para cada oficio
 
-**Decisión ya tomada: que el jugador pueda lanzar un dado del valor que le dé la
-gana se deja para más adelante.** No hay que buscarle otro sitio ni partir el
-panel: se quita de la ficha y ya está.
+No una pantalla genérica de «fabricar». **Cada oficio con la suya**, que se
+parezca a lo que hace:
 
-`components/DicePanel.tsx` trae cuatro cosas en una: el **feed de tiradas
-recientes** del grupo, un **dado rápido**, una **fórmula libre** y las
-**peticiones de tirada del DM** (`useRollRequests`). Las tres primeras son las
-que se aparcan.
+> **Alquimia**: una especie de **caldero**. El jugador tiene un **libro** con X
+> recetas y conocimientos que **va descubriendo** poco a poco, y con lo que ha
+> aprendido puede preparar pociones.
 
-> [!warning] **Lo que sí hay que decidir: las peticiones de tirada del DM**
-> El único otro consumidor de `useRollRequests` es `app/dm/DadosPanel.tsx`, que
-> es la pantalla del DM. O sea que al quitar la sección **el jugador deja de ver
-> y de poder responder lo que el DM le pide**, y no queda ningún sitio donde
-> las vea. **Pregúntame qué hago con ellas** antes de borrar: se aparcan también,
-> o se sacan a su propio sitio.
+Y por el estilo el resto: la **forja** con su yunque y su temple, el **tatuaje**
+con su plantilla y sus agujas, la **cristalografía** con su tallado, la
+**cocina** con sus fuegos, la **destilación** con su alambique.
 
-**Lo que NO se toca, comprobado:**
-- **La tirada de estadísticas** (Fase K, `stat_rolls`) vive en
-  `components/crear/steps/AbilitiesStep.tsx`, dentro de `/crear`, y **no usa
-  `DicePanel` para nada**. Quitar la sección de la ficha no la roza. Sigue
-  funcionando igual: tirada única e inmutable, y solo el DM la resetea desde
-  `app/dm/GrupoPanel.tsx`.
-- **`DicePanel` sigue montado en el Panel DM** (`app/dm/DadosPanel.tsx`).
-- **Los dados 3D** (`DiceBoard` en `app/layout.tsx`) siguen: son la animación de
-  la tirada, no este panel. Las tiradas que salen de la ficha (ataques,
-  salvaciones, pericias) **no dependen de `DicePanel`** — publican por
-  `publishRoll` de `lib/useDiceFeed.ts`.
+### 2. Recetas y mezclas
 
-### 2. Mecánicas jugables para las pericias
+Lo que une los catálogos con lo que sale de ellos: **qué materiales lleva cada
+cosa**, contra qué se tira y qué pasa al fallar. Hoy no existe ni una.
 
-Esto es lo gordo y va en dos fases:
+## Lo que quiero que me preguntes antes de escribir código
 
-> [!important] **Lee `docs/pericias-borrador.md` antes que nada de esto**
-> Es el documento vivo de la tanda. Ya recoge **las 25 pericias** (las 18 de
-> 2024 más **7 nuevas homebrew**), las reglas ya decididas con el usuario, el
-> reparto por clase propuesto, qué archivos hay que tocar y **qué falta por
-> decidir**. Aquí abajo va solo el resumen.
+Hay al menos cinco decisiones que no puedes tomar tú:
 
-**Son 25, no 18.** Se añaden siete de oficio: **Alquimia** (INT), **Forja**
-(SAB–FUE), **Cocina** (SAB), **Cristalografía Arcana** (INT), **Tatuaje
-Rúnico** (DES–INT), **Extracción de Componentes** (DES–INT) y **Destilación
-Exandriana** (SAB).
+1. **¿Alcance?** Seis interfaces a medida es muchísimo. Mi instinto es
+   **hacer Alquimia entera primero**, con su caldero y su libro, y que sirva de
+   patrón para las otras cinco. Dímelo tú.
+2. **¿Los materiales son objetos de inventario de verdad?** Hoy los seis
+   catálogos son **datos puros**: no existen como objetos, no ocupan hueco en la
+   bolsa, no se pueden tener ni gastar. O entran en `characters.items` (y ocupan
+   sitio, con lo que eso implica: el inventario va por huecos, 20 + 2×mod Fuerza)
+   o llevan un contador aparte. **Es la decisión más grande de la tanda**.
+3. **¿Cómo se descubre una receta?** Ver abajo: ya hay maquinaria para esto.
+4. **¿Dónde vive cada taller?** ¿Una ruta nueva por oficio (`/alquimia`…)? ¿Una
+   sola `/taller` con pestañas? ¿Dentro de `/lugar`, que ya es «estás en…» y
+   tiene tienda y posada? ¿En la ficha?
+5. **¿Qué pasa al fallar la tirada?** ¿Se pierden los materiales? ¿Sale algo
+   malo? ¿Se puede reintentar?
 
-**Dos reglas ya decididas:**
+## Lo que ya existe y no hay que inventar
 
-1. **Aptitud doble = dos tiradas posibles.** La primera es la primaria. Se puede
-   tirar con cualquiera de las dos según pida la situación, pero **la
-   competencia solo suma en la primaria**. La ficha enseña los dos números.
-2. **Cupo de oficio aparte.** Las 7 no compiten con las pericias normales: cada
-   clase mantiene su `pick` de siempre, y además elige **una de oficio a nivel
-   1** y **otra a nivel 7**, restringidas a las que su clase tenga en lista.
+> [!tip] **La maquinaria de «descubrir cosas poco a poco» YA ESTÁ**
+> El sistema de **saber por origen** hace exactamente eso: `characters.lore_unlocked`
+> es un `string[]`, el DM concede entradas desde **Panel DM › Grupo** con
+> `LorePicker` (op `unlockLore` en `/api/dm/character`, que fusiona sin pisar), y
+> leer un tomo in-game también enseña (`openDocument` en `CharacterSheet.tsx`).
+> **Un libro de recetas descubiertas es el mismo patrón**, y como `lore_unlocked`
+> ya es un array, **probablemente no haga falta migración**: el mismo truco que
+> se usó con las pericias de oficio, que viven en `characters.skills` y se
+> separan por pertenencia a un conjunto.
+> La fe se descubre igual desde el 2026-07-31 (`ConcederFe` en `GrupoPanel`).
 
-**Fase 1 — la lista entera con lo que hace cada una.** Las 18 de 2024 existen en
-`data/rules.ts` como `{ name: "Acrobacias", ability: "des" }` y **nada más**: ni
-una línea de para qué sirven. El usuario va a dictar, por cada una de las 25,
-**contra qué se tira** (CD fija, CD del DM, o tirada enfrentada), **qué pasa al
-fallar** (nada, algo malo, o un solo intento) y **quién resuelve** (la app sola,
-como `SaberRoll`, o texto que guía al DM en la mesa).
+**Los seis catálogos** (`data/`): `alquimia.ts` 70 · `cocina.ts` 100 ·
+`forja.ts` 75 · `destilacion.ts` 49 · `cristalografia.ts` 50 · `tatuaje.ts` 25.
+Todos con la misma forma: número de catálogo estable, nombre y descripción.
 
-**Fase 2 — engancharlo.** El tipo `Skill`, `lib/derive.ts:131` (que hoy da **un**
-número por pericia y tendrá que dar dos en las dobles), los 13 archivos de
-clase, el creador y el subir de nivel. **Sin migración**: `characters.skills` ya
-es `string[]` y el cupo se controla por pertenencia al conjunto de oficios.
+**Tres campos que ya separan cosas que no son lo mismo**, y que las recetas
+tienen que respetar:
+- **`herramienta`** (cristalografía, tatuaje): cinceles, pinzas, agujas y paños
+  **no se gastan**. Una receta los exige disponibles, no los consume.
+- **`riesgo`** (destilación): la mitad del catálogo trae contrapartida
+  explícita. Es el catálogo peligroso.
+- **`mecanica`** (forja): es el único con **regla de verdad** —el mithril anula
+  el requisito de Fuerza, la adamantina anula los críticos recibidos, el
+  residuum vuelve mágica el arma—. Conectar eso toca `data/equipment.ts` y
+  `lib/derive.ts`, que hoy **no saben que estos materiales existen**.
 
-**El gate tendrá que verlo**: hoy ningún `check-*` valida `SKILLS`. Es el mismo
-patrón que ya salió caro con `check-clases` y `check-especies`.
+**Las 25 pociones** (`data/pociones.ts`): 23 de la Guía del DM 2024 y 2 de
+Wildemount, con rareza y efecto. **Es lo que sale del caldero.** Curación y
+Fuerza de Gigante son familias con variantes.
 
-**Dónde está hoy lo de pericias**, para que no lo busques a ciegas:
-- `data/rules.ts` — `SKILLS`, las 18 (nombre + aptitud).
-- `lib/derive.ts:131` — calcula el modificador de cada una (competencia
-  incluida). **Es la fuente de verdad de los números**, compartida por la hoja y
-  el panel del DM.
-- `components/CharacterSheet.tsx` — las pinta y las tira.
-- `components/crear/steps/SkillsScene.tsx` — la elección en el creador.
-- `components/lugar/SaberRoll.tsx` — **el precedente más parecido a lo que
-  quieres**: tres pericias con CD y consecuencia de verdad.
-- `data/classes.ts` y `data/classdata/types.ts` — qué pericias puede elegir cada
-  clase, por nombre exacto.
+**El precedente de tirada con consecuencia**: `components/lugar/SaberRoll.tsx`
+tira Historia/Arcanos/Religión contra una CD y el éxito desbloquea saber. Es lo
+más parecido que hay a lo que se va a construir.
+
+**Falta un catálogo**: **Extracción de Componentes**, el séptimo oficio, no
+tiene materiales. Tiene sentido que sea el oficio que *consigue* materiales para
+los otros; pregúntame.
+
+## Lo que sigue pendiente de la sesión anterior
+
+**Quitar el apartado «Dados del grupo» de `/personaje`** — la sección al final de
+`app/personaje/page.tsx` que monta `<DicePanel />`. **Ahí no tiene que salir
+nada.** Decisión tomada: que el jugador pueda lanzar un dado de valor libre se
+aparca, no hay que buscarle otro sitio.
+
+> [!warning] **Pero eso arrastra las peticiones de tirada del DM**
+> El único otro consumidor de `useRollRequests` es `app/dm/DadosPanel.tsx`. Al
+> quitar la sección, **el jugador deja de ver y de poder responder lo que el DM
+> le pide**. Pregúntame qué hago con ellas antes de borrar.
+
+**No se toca**: la tirada de estadísticas (`stat_rolls`, en
+`components/crear/steps/AbilitiesStep.tsx`) **no usa `DicePanel`** —comprobado—,
+el `DicePanel` del Panel DM se queda, y los dados 3D (`DiceBoard` en el layout)
+también.
 
 ## Cómo trabajamos (esto ya está rodado, respétalo)
 
 - **Antes de escribir nada**: brainstorming → spec → plan → ejecución con las
   skills de superpowers. Specs y planes en `docs/superpowers/{specs,plans}/`.
-- Rama feature por tarea → gate **`npx tsc --noEmit` + `npx next build` + los 25
-  `scripts/check-*.ts`** (no hay tests; ese es el gate real) → commit por tarea →
-  actualizar `HANDOFF.md` y el vault → merge a `master` y push.
+- **Rama feature por tarea.** (La tanda de la fe y los ingredientes se fue a
+  `master` directamente; no lo repitas.)
+- Gate: **`npx tsc --noEmit` + `npx next build` + los 30 `scripts/check-*.ts`**
+  (no hay tests; ese es el gate real) → commit por tarea → actualizar
+  `HANDOFF.md` y el vault → merge a `master` y push.
 - **Si esta tanda toca datos, el gate tiene que verlo.** Es la lección de las
-  tres últimas: `check-clases.ts` no miraba las subclases, `check-especies.ts` no
-  existía, y `check-acceso.ts` nació clasificando solo el primer nivel de `app/`
-  (una ruta anidada se colaba abierta con el gate en verde). **Si añades reglas
-  nuevas, pruébalas por mutación**: rómpelo a propósito, comprueba que el gate
-  falla, restaura. Un dato de pericias sin gate es un dato que se pudre solo.
-- **No uses `git checkout --` para restaurar tras una prueba de mutación** si
-  tienes cambios sin commitear en ese archivo: te los llevas por delante (me pasó
-  el 2026-07-30). Usa `git stash` o haz la mutación sobre una copia.
-- Ejecutar con subagentes funciona bien, pero **revisa lo que devuelven**: han
-  llegado a afirmar verificaciones que no habían hecho. Y **la revisión final de
-  la rama vale la pena**: en la tanda del 2026-07-30 encontró dos fallos reales
-  que ni el spec ni el plan tenían (un enlace a ruta cerrada en el pie de página,
-  que se pinta en *todas* las páginas, y el agujero del gate anidado).
+  cuatro últimas. Las recetas necesitarán su propio check: que toda receta
+  apunte a materiales que existen, que no gaste herramientas, que lo que produce
+  exista en `data/pociones.ts`. **Y con prueba de mutación**: rómpelo a
+  propósito, comprueba que el gate falla, restaura.
+- **Commitea ANTES de mutar.** `git checkout --` no restaura un archivo que git
+  aún no conoce; me pasó con `data/alquimia.ts` y hubo que reponer la línea a
+  mano.
+- Ejecutar con subagentes funciona bien, pero **revisa lo que devuelven**. Y **la
+  revisión final de la rama vale la pena**: en la tanda del alcance del jugador
+  encontró dos fallos reales que ni el spec ni el plan tenían.
 - Commits acaban con `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
   Autor `CarlosAlbertt` (Vercel bloquea otros emails). Con backticks en el
   mensaje, usar `git commit -F -` con heredoc y el **bash tool** (el shell por
@@ -121,48 +134,44 @@ patrón que ya salió caro con `check-clases` y `check-especies`.
 - `AGENTS.md`: este Next.js 16 tiene cambios rompedores. Ante dudas de API, lee
   `node_modules/next/dist/docs/`, no tires de memoria.
 
+> [!danger] **Toda ruta nueva pasa por `lib/acceso.ts`**
+> Desde el 2026-07-30 el jugador **solo ve** `/`, `/crear`, `/personaje`,
+> `/inventario`, `/reino` y `/lugar`. Si los talleres van en rutas nuevas,
+> **hay que añadirlas a `RUTAS_JUGADOR`** o el jugador se chocará contra
+> «esto se abrirá más adelante». Y `scripts/check-acceso.ts` **te hará fallar**
+> si añades una página sin clasificarla, anidada incluida.
+
 > [!warning] **No puedes ver la app**
 > Todo está detrás del login y **no debes meter credenciales**. Para verificar UI
 > puedes montar un banco de pruebas estático con el CSS real y servirlo por
 > `/dice-box/` (esa ruta está excluida del proxy), pero **bórralo antes de
-> commitear**. La comprobación en la app viva la hago yo.
+> commitear**. La comprobación en la app viva la hago yo. **Esta tanda es sobre
+> todo interfaz**, así que cuenta con que la validación visual real la hago yo y
+> habrá idas y venidas.
 
-> [!danger] **Ojo con el alcance del jugador**
-> Desde el 2026-07-30 el jugador **solo ve** `/`, `/crear`, `/personaje`,
-> `/inventario`, `/reino` y `/lugar`. Todo lo demás pinta `/cerrado`. Si lo que
-> construyas esta sesión necesita una ruta o un enlace nuevo, **tiene que pasar
-> por `lib/acceso.ts`** o el jugador se choca contra una puerta cerrada — y
-> `scripts/check-acceso.ts` te lo hará fallar si añades una página sin
-> clasificarla. Las pericias caen en `/personaje` y `/lugar`, que están abiertas.
+## Dónde lo dejamos (31 de julio de 2026)
 
-## Dónde lo dejamos (30 de julio de 2026)
-
-- **El alcance del jugador, cerrado de verdad.** `lib/acceso.ts` es la fuente
-  única (`RUTAS_JUGADOR`, `NAV_LINKS`, `PUERTAS_JUGADOR`, `puedeVer`); la puerta
-  vive en `lib/supabase/proxy-session.ts` y hace `rewrite` a `/cerrado`; la barra
-  y el pie filtran con **la misma función**, así que no pueden divergir. `/` es
-  el panel del jugador; el DM conserva su portada intacta. Gate 25:
-  `scripts/check-acceso.ts`. **Sin migración.**
-- **Las 65 subclases, con mecánica.** 13 clases × 5 (sin Artificiero). Nombre y
-  blurb en `data/classes.ts`; los rasgos por nivel en
-  `data/classdata/subclases/<clase>.ts`. El gate exige 65/65.
-- **El creador, rehecho.** Especie y Clase con flechas, tira de miniaturas y
-  ventanas emergentes (subclase, linaje). Las 36 especies con emblema en
-  `public/species/<slug>.jpg`.
-- **Gate: 25 `scripts/check-*.ts` en verde**, con `tsc` y `next build` limpios.
+- **Los seis catálogos de oficio**, 369 entradas, cada uno con numeración
+  propia. Gates 28, 29 y 30; el 30 centraliza el cruce entre los seis.
+- **Las 25 pociones** de los libros (`data/pociones.ts`).
+- **Las pericias de oficio**: las 7 existen, la aptitud doble da dos tiradas
+  (competencia solo en la primaria), y el cupo es aparte —una a nivel 1 en el
+  creador y otra a nivel 7 en `LevelPanel`—. Gate 26.
+- **La fe ya no se elige**: la impone la subclase o la concede el DM.
+- **El alcance del jugador**, cerrado de verdad en el proxy. Gate 25.
+- **Gate: 30 `scripts/check-*.ts` en verde**, con `tsc` y `next build` limpios.
 
 ## Lo que sigue pendiente y NO es esto
 
 No lo empieces sin decírmelo: **jugar una sesión de prueba** (siete features
-desplegadas y nunca vistas en partida; la fase 2 del combate está bloqueada a
-propósito hasta que eso pase), **`/api/*` sin control de rol** (un jugador puede
-llamar `/api/ia` aunque `/taberna` esté cerrada), poblar Issylra, Marquet y los
-Dientes Rotos, deshacer el aplastamiento `capital`/`pueblo`→`ciudad` en esos tres
-continentes, ampliar la biblioteca de conjuros, los pozos de las 5 clases que
-faltan, el bestiario a medias (124 monstruos, solo CR 0–1/2), Fase P (downtime),
-Fase Q (misiones IA), C2 (regateo), y los **retratos de linaje**
-(`public/species/lineages/` sigue vacío).
+desplegadas y nunca vistas en partida), **qué hace cada una de las 18 pericias
+del reglamento** (la plantilla sigue en `docs/pericias-borrador.md` §5; esta
+tanda cubre los oficios, no las 18 de siempre), **`/api/*` sin control de rol**,
+poblar Issylra, Marquet y los Dientes Rotos, ampliar la biblioteca de conjuros,
+los pozos de las 5 clases que faltan, el bestiario a medias (124 monstruos, solo
+CR 0–1/2), Fase P (downtime), Fase Q (misiones IA), C2 (regateo), y los
+**retratos de linaje** (`public/species/lineages/` sigue vacío).
 
-**Empieza leyendo `HANDOFF.md`. Luego pregúntame lo de las peticiones de tirada
-(punto 1) y el alcance de las pericias (punto 2). No escribas código hasta que
-lo tengas.**
+**Empieza leyendo `HANDOFF.md`. Luego pregúntame las cinco decisiones de arriba
+y qué hago con las peticiones de tirada. No escribas código hasta que las
+tengas.**

@@ -51,9 +51,29 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > dice en qué dos catálogos está).
 >
 > **Lo que sigue sin existir son las recetas**: qué materiales hacen falta para
-> cada cosa, con qué CD y qué pasa al fallar. Los tres catálogos y las 25
-> pociones están sueltos hasta que llegue el contenido de
-> `docs/pericias-borrador.md` §5.
+> cada cosa, con qué CD y qué pasa al fallar. Los seis catálogos y las 25
+> pociones están sueltos.
+>
+> **LO SIGUIENTE está en `docs/PROMPT-SIGUIENTE-SESION.md`**: darle cuerpo a los
+> oficios, en dos partes. **(1)** Una **interfaz propia para cada uno**, no una
+> pantalla genérica de fabricar — en Alquimia, un **caldero** y un **libro de
+> recetas que el jugador va descubriendo**; y por el estilo el yunque, el
+> alambique, las agujas, el tallado y los fuegos. **(2)** Las **recetas y
+> mezclas** que unen los 369 materiales con lo que sale de ellos.
+> **Lo que ya existe y no hay que inventar**: la maquinaria de descubrir poco a
+> poco es la del saber por origen (`lore_unlocked` + `LorePicker` + `unlockLore`
+> en `/api/dm/character`), y por el mismo truco que las pericias de oficio
+> **probablemente no haga falta migración**. El precedente de tirada con
+> consecuencia es `components/lugar/SaberRoll.tsx`.
+> **La decisión más gorda de esa tanda**: si los materiales son objetos de
+> inventario de verdad —y ocupan hueco en la bolsa— o llevan un contador aparte.
+> Hoy son datos puros: no se pueden tener ni gastar.
+> **Y ojo**: si los talleres van en rutas nuevas, **tienen que entrar en
+> `lib/acceso.ts`** o el jugador se choca contra `/cerrado`.
+>
+> **Sigue pendiente de antes**: quitar el apartado «Dados del grupo» de
+> `/personaje` (con la pregunta abierta de qué pasa entonces con las peticiones
+> de tirada del DM, que solo se ven ahí).
 
 ## 🚦 Antes de eso (2026-07-31, tarde)
 
