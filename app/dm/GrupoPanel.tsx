@@ -11,6 +11,8 @@ import { xpForNext } from "@/data/leveling";
 import { derive } from "@/lib/derive";
 import { createClient } from "@/lib/supabase/client";
 import LorePicker from "@/components/LorePicker";
+import { RECETAS, recetaPorSlug, produceNombre } from "@/data/recetas";
+import { recetasSabidas, sabeOficio, idReceta, slugDeId } from "@/lib/recetario";
 import { ALL_DEITIES } from "@/data/saber";
 import PozosClase from "@/components/personaje/PozosClase";
 import EstadoVivo from "@/components/personaje/EstadoVivo";
@@ -215,6 +217,12 @@ export default function GrupoPanel() {
 
             <ConcederFe userId={c.user_id} nombre={c.username} actual={c.deity ?? null} />
             <EnsenarSaber userId={c.user_id} nombre={c.username} />
+            <EnsenarRecetas
+              userId={c.user_id}
+              nombre={c.username}
+              skills={skills}
+              loreUnlocked={Array.isArray(c.lore_unlocked) ? c.lore_unlocked : []}
+            />
 
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
               <div className="flex items-center gap-2">
@@ -489,6 +497,98 @@ function EnsenarSaber({ userId, nombre }: { userId: string; nombre: string }) {
           <i className="fas fa-graduation-cap mr-1.5" />Enseñar {ids.length} a {nombre}
         </button>
       )}
+      {msg && <p className="font-ui text-[12px] italic" style={{ color: "var(--color-primitivo)" }}>{msg}</p>}
+    </div>
+  );
+}
+
+/**
+ * Enseñar recetas de oficio. Es el mismo mecanismo que «Enseñar saber» —y no
+ * uno nuevo— a propósito: las recetas descubiertas viven en `lore_unlocked` con
+ * el prefijo `receta:`, así que la op `unlockLore` de `/api/dm/character` ya
+ * sabe fusionarlas sin pisar lo que el personaje supiera.
+ *
+ * Solo ofrece **lo que ese personaje aún no sabe**: una lista con las 32
+ * siempre visibles obligaría al DM a recordar qué concedió la sesión pasada.
+ */
+function EnsenarRecetas({
+  userId, nombre, skills, loreUnlocked,
+}: { userId: string; nombre: string; skills: string[]; loreUnlocked: string[] }) {
+  const [ids, setIds] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const tieneOficio = sabeOficio(skills, "alquimia");
+  const sabidas = new Set(recetasSabidas("alquimia", skills, loreUnlocked).map((r) => r.slug));
+  // Sin la pericia, `recetasSabidas` devuelve vacío, así que se mira también lo
+  // ya concedido: si no, a un personaje sin Alquimia se le ofrecerían una y otra
+  // vez recetas que ya tiene guardadas.
+  const concedidas = new Set(
+    loreUnlocked.map(slugDeId).filter((s): s is string => s !== null)
+  );
+  const disponibles = RECETAS.filter((r) => !sabidas.has(r.slug) && !concedidas.has(r.slug));
+
+  async function give() {
+    if (ids.length === 0 || busy) return;
+    setBusy(true); setMsg(null);
+    await dmPatch(userId, { unlockLore: ids.map(idReceta) });
+    setMsg(`${nombre} ha aprendido ${ids.length} receta${ids.length === 1 ? "" : "s"}.`);
+    setIds([]);
+    setBusy(false);
+  }
+
+  return (
+    <div className="mt-4 pt-3 border-t border-[var(--color-line)] space-y-2">
+      <p className="eyebrow !text-[9px]">Enseñar recetas</p>
+
+      {!tieneOficio && (
+        // No se bloquea: el DM puede querer dar la receta antes que la pericia.
+        // Pero se dice, porque hasta que la tenga el libro le saldrá vacío.
+        <p className="font-ui text-[11px] italic" style={{ color: "var(--color-dim)" }}>
+          {nombre} no tiene la pericia Alquimia: guardará la receta, pero no podrá
+          usar el caldero hasta tenerla.
+        </p>
+      )}
+
+      {disponibles.length === 0 ? (
+        <p className="font-ui text-[12px] italic" style={{ color: "var(--color-dim)" }}>
+          Ya conoce todas las recetas de alquimia.
+        </p>
+      ) : (
+        <select
+          className="bg-[var(--color-night)] rounded-lg px-3 py-2 font-ui text-[13px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)] transition-colors w-full"
+          style={{ color: "var(--color-warm)" }}
+          value=""
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v && !ids.includes(v)) setIds([...ids, v]);
+          }}
+        >
+          <option value="">— elegir receta —</option>
+          {disponibles.map((r) => (
+            <option key={r.slug} value={r.slug} disabled={ids.includes(r.slug)}>
+              {produceNombre(r)} · CD {r.cd}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {ids.length > 0 && (
+        <>
+          <div className="flex flex-wrap gap-1.5">
+            {ids.map((slug) => (
+              <button key={slug} className="chip" data-on onClick={() => setIds(ids.filter((x) => x !== slug))}>
+                {produceNombre(recetaPorSlug(slug)!)}
+                <i className="fas fa-xmark ml-1.5 text-[9px]" />
+              </button>
+            ))}
+          </div>
+          <button className="btn-gold !py-1.5 !px-3 text-[12px]" onClick={give} disabled={busy}>
+            <i className="fas fa-mortar-pestle mr-1.5" />Enseñar {ids.length} a {nombre}
+          </button>
+        </>
+      )}
+
       {msg && <p className="font-ui text-[12px] italic" style={{ color: "var(--color-primitivo)" }}>{msg}</p>}
     </div>
   );

@@ -4,6 +4,68 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-31)
 
+> **Lo último (2026-07-31, madrugada): ALQUIMIA SE JUEGA.**
+> Rama `alquimia-jugable`. **Sin migración.** Los 369 materiales dejan de ser
+> listas sueltas: se tienen, se gastan y salen pociones de ellos.
+>
+> **Las ocho decisiones se tomaron con el usuario antes de escribir código**
+> (están en la tabla del spec, `docs/superpowers/specs/2026-07-31-alquimia-jugable-design.md`).
+> Las tres que más arrastran:
+> 1. **Los materiales son objetos de inventario de verdad**, pero **un montón
+>    ocupa UN hueco** lleve 1 unidad o 50. Recolectar doce hierbas ya no se come
+>    media mochila; llevar treinta materiales **distintos** sí llena la bolsa.
+>    La regla vive en `huecosUsados()` (`lib/inventario.ts`), que sustituye a un
+>    `reduce` que estaba **duplicado** en `/inventario` y en la ficha.
+> 2. **Al fallar la tirada los materiales se gastan igual.** Lo único que cambia
+>    entre éxito y fallo es si además entra la poción.
+> 3. **El libro de recetas vive en `lore_unlocked`** con prefijo `receta:`, así
+>    que hereda gratis el `unlockLore` del DM y los tomos in-game, y **no hace
+>    falta migración**. Comprobado que no ensucia `/reino`: sus consumidores
+>    recorren el catálogo `SABER`, no el array del personaje.
+>
+> **Lo nuevo, por piezas:**
+> - **`lib/materiales.ts`**: índice único de los seis catálogos. El **nombre** se
+>   puede usar como clave porque el gate 30 ya garantiza que no hay ninguno
+>   repetido entre los seis (comprobado: cero ambiguos). Es el mismo truco que
+>   `esOficio()` sobre `characters.skills`.
+> - **`data/recetas.ts`: 32 recetas** — una por **cosa preparable**, no por
+>   entrada del catálogo, así que las dos familias se despliegan y **las 25
+>   pociones del libro son preparables**. La **CD sale de la rareza** (común 10 →
+>   legendaria 22), no se inventa receta a receta.
+> - **`/taller`**: una ruta con **pestañas por oficio** (no una ruta por oficio,
+>   justo para no volver a tocar `lib/acceso.ts`). Hoy solo el **caldero** de
+>   alquimia; las otras cinco dicen «aún no».
+> - **`/oficios`**, DM-only: los 369 + las 25 + las 32, buscables y filtrables,
+>   con **entregar** (`addItems`/`unlockLore`) y **editar sin desplegar**
+>   (`app_config`, claves `materiales_custom` y `recetas_custom`).
+> - **Panel DM › Grupo** gana «Enseñar recetas», junto a «Enseñar saber».
+> - **Fuera «Dados del grupo» de `/personaje`.** Las peticiones de tirada del DM
+>   se mudan a un **aviso flotante** en el layout: antes había que estar en la
+>   ficha para enterarse de que te habían pedido algo.
+>
+> **Gate 31 `scripts/check-recetas.ts`**, con **prueba de mutación de seis
+> roturas** (material inexistente, herramienta gastada, CD que no cuadra con la
+> rareza, receta borrada, materiales contando por unidad, nombre repetido entre
+> catálogos). **La mutación encontró un fallo real**: el índice copiaba campo a
+> campo y descartaba `herramienta` en silencio, así que la regla de «ninguna
+> receta gasta una herramienta» estaba **vacía** —verde por casualidad—. Se
+> arregló con spread, y el gate ahora comprueba además que el **detector
+> dispara** contra una receta que la rompe a propósito.
+>
+> ⚠️ **Nada probado en la app viva** (todo tras el login). **Esta tanda es sobre
+> todo interfaz**, así que la validación visual la hace el usuario y habrá idas y
+> venidas. Lo primero que conviene mirar: que preparar una poción **descuente los
+> materiales y sobreviva a recargar**, y que el aviso de petición de tirada
+> aparezca fuera de `/personaje`.
+>
+> **Lo que sigue sin hacerse**: los otros **cinco talleres** (el patrón ya está),
+> **Extracción de Componentes** —decidido que es el oficio que *consigue*
+> materiales, pero sin mecánica—, y el campo **`mecanica` de forja sigue sin
+> conectar**: forjar con mithril no quita ningún requisito. `data/equipment.ts` y
+> `lib/derive.ts` no se tocaron.
+
+## 🚦 Antes de eso (2026-07-31, noche)
+
 > **Lo último (2026-07-31, noche): los SEIS catálogos de oficio.**
 > Rama `cocina-ingredientes`. **Sin migración.** **369 entradas** en total, cada
 > catálogo con **numeración propia**; no se buscan entre sí.

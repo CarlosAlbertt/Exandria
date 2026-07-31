@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
 import { useInventarioVivo } from "@/lib/useInventarioVivo";
-import { devolver, huecosDe, quitarUno } from "@/lib/inventario";
+import { devolver, huecosDe, huecosUsados, quitarUno } from "@/lib/inventario";
 import { CATALOG, type ItemCat } from "@/data/equipment";
 import Paperdoll from "@/components/Paperdoll";
 import BolsaAgrupada from "@/components/inventario/BolsaAgrupada";
@@ -57,7 +57,7 @@ function InventarioInner() {
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const seleccionado = inv.items.find((i) => i.id === seleccionadoId) ?? null;
 
-  const usados = useMemo(() => inv.items.reduce((s, i) => s + i.qty, 0), [inv.items]);
+  const usados = useMemo(() => huecosUsados(inv.items), [inv.items]);
   const capacidad = huecosDe(inv.mods.fue);
   const lleno = usados >= capacidad;
 
