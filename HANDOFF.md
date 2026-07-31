@@ -4,6 +4,62 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-31)
 
+> **Lo último (2026-07-31, noche): TU REGIÓN EXISTE EN LOS CINCO CONTINENTES.**
+> Rama `feat/origen-todos-los-continentes`. **Sin migración.**
+>
+> El usuario avisó de que al crear personaje solo Tal'Dorei ofrecía subregión;
+> los otros continentes, nada. El desplegable estaba condicionado a ese nombre
+> a mano y solo existía una lista de regiones (`REGIONS` de `data/taldorei.ts`).
+>
+> **No era cosmético.** `originRegion` decide la entrada **"Tu tierra"** del
+> saber inicial, y `regionEntries()` recorría únicamente las regiones de
+> Tal'Dorei: un personaje de Marquet, Issylra o los Dientes Rotos **arrancaba
+> con menos saber** que uno de Tal'Dorei, y no por diseño.
+>
+> Lo que **no** hizo falta: inventarse lore. `data/atlas.ts` ya sembraba
+> regiones para los cinco continentes (`seedContinent` desde
+> `REGIONS_BY_CONTINENT`), e Issylra (4/4) y Marquet (7/7) **ya traían blurb**
+> desde `WORLD_POIS`. Las regiones de origen salen de esa **misma semilla**
+> (`regionesDeOrigen` / `todasLasRegionesDeOrigen`): no hay una segunda lista a
+> mano que se pueda desincronizar del mapa. Lee la semilla **estática** y no el
+> atlas guardado del DM a propósito — el catálogo `SABER` se construye a nivel
+> de módulo, así que una región que el DM añadiera después se ofrecería **sin
+> ninguna entrada de saber detrás**.
+>
+> De paso, **`placeOf` archivaba TODO id `reg:` en Tal'Dorei**. Con regiones de
+> los cinco continentes eso habría colado las de Marquet o Issylra bajo
+> Tal'Dorei en `/reino`, en silencio.
+>
+> **`DETALLE_REGION`** (`data/world.ts`) pone plaza principal y rasgo a las
+> once regiones sembradas, que salían con `capital: "—"` y `feature: ""` —
+> media entrada de "Tu tierra" frente a la entera de Tal'Dorei. **Mismos
+> nombres y mismos slugs**: el atlas no cambia de forma, así que los
+> `atlas_defs` ya guardados no necesitan `ATLAS_FIXES` ni migración.
+>
+> **Gate 33 `scripts/check-origen.ts`**, con prueba de mutación de **cinco**
+> roturas. La invariante que vigila es la que faltaba: **ninguna región que el
+> selector ofrece puede quedarse sin entrada de saber detrás**.
+>
+> > **La lección, y esta duele**: la primera versión del check comparaba los
+> > slugs congelados de Tal'Dorei contra `REGIONS`… que es de donde el atlas los
+> > saca. **Los dos lados se movían juntos: verde por construcción.** Cambiar un
+> > slug no tumbaba nada. Lo destapó la prueba de mutación, no la lectura. Ahora
+> > los ocho van escritos a mano en el script. Es la **tercera vez** que la
+> > mutación encuentra algo real — y la segunda que lo que encuentra es *una
+> > regla que no podía fallar*.
+>
+> **Pendiente de decisión tuya**: **los Dientes Rotos siguen siendo UNA región**
+> para todo el archipiélago, así que elegirlos como origen no dice nada. La wiki
+> da islas con nombre (Kalutha, Slival, Igthuldus, Ruukva, Evaterena,
+> Athova-Rae, Shardborne) y **dos sociedades enfrentadas** —la Hueste Osendida,
+> tribus pescadoras aisladas que veneran los sueños, y la Asamblea Wanderman,
+> compañía mercante naufragada de la Costa del Serrallo—, que como origen dicen
+> mucho más que una isla. **Cuáles son origen jugable lo dictas tú.** Ojo: son
+> regiones **nuevas**, así que ahí sí entra `mergeAtlas` (solo SUMA regiones) y
+> conviene mirar qué pasa con la región genérica que ya esté guardada.
+>
+> **Falta verlo en la app viva**: el asistente no puede pasar del login.
+
 > **Lo último (2026-07-31, tarde): LOS DADOS NUNCA USARON SUS CARAS.**
 > Ramas `fix/tirada-aptitudes-4d6` y `fix/dice-box-lectura-caras`, ambas en
 > `master`. **Sin migración.**
@@ -43,7 +99,11 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > > mirarla. Desconfía de cualquier puente con una librería externa que no tenga
 > > una prueba de forma.
 >
-> **Falta verlo en la app viva**: el asistente no puede pasar del login.
+> **VISTO EN LA APP (2026-07-31, noche)**: el usuario confirma que **la tirada
+> de 4d6 de `/crear` funciona**. Eso es lo que se probó y es lo único que se da
+> por visto. **Siguen SIN comprobarse en partida** las otras tiradas que pasan
+> por el mismo `rollVisual` —el caldero de `/taller`, `SaberRoll` en `/lugar` y
+> el feed de dados— y **alquimia entera**, que sigue sin verse jugada.
 
 > **Lo último (2026-07-31, madrugada): ALQUIMIA SE JUEGA.**
 > Rama `alquimia-jugable`. **Sin migración.** Los 369 materiales dejan de ser
