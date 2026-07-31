@@ -30,9 +30,32 @@ con su plantilla y sus agujas, la **cristalografía** con su tallado, la
 Lo que une los catálogos con lo que sale de ellos: **qué materiales lleva cada
 cosa**, contra qué se tira y qué pasa al fallar. Hoy no existe ni una.
 
+### 3. Un apartado de DM para verlo TODO
+
+Quiero **una pantalla mía**, de máster, donde estén **todos** los ingredientes,
+las recetas, las pociones y lo que vaya saliendo: **ordenado, buscable y
+manipulable**.
+
+Hoy los 369 materiales y las 25 pociones **solo existen dentro de archivos de
+código**. Yo no los veo en ningún sitio de la app: para saber qué hay tengo que
+abrir `data/alquimia.ts` en un editor. Eso no vale.
+
+Lo que necesito de esa pantalla:
+- **Todo junto**, los seis catálogos más las pociones más las recetas.
+- **Buscar por texto** y **filtrar** por oficio, por categoría, por rareza, por
+  si es herramienta, por si tiene riesgo.
+- **Manipular**. Aquí necesito que me preguntes qué significa exactamente (ver
+  abajo): no es lo mismo editar el catálogo que dárselo a un jugador.
+
+**El precedente exacto ya existe en el repo**: `/bestiario` es una pantalla con
+buscador y filtros sobre datos que vienen del código, **y encima deja al DM
+añadir monstruos propios**. Míratela antes de diseñar nada
+(`app/bestiario/BestiarioView.tsx`), y también **Panel DM › Baúl**
+(`app/dm/BaulPanel.tsx`), que es cómo el DM entrega cosas hoy.
+
 ## Lo que quiero que me preguntes antes de escribir código
 
-Hay al menos cinco decisiones que no puedes tomar tú:
+Hay al menos siete decisiones que no puedes tomar tú:
 
 1. **¿Alcance?** Seis interfaces a medida es muchísimo. Mi instinto es
    **hacer Alquimia entera primero**, con su caldero y su libro, y que sirva de
@@ -48,6 +71,22 @@ Hay al menos cinco decisiones que no puedes tomar tú:
    tiene tienda y posada? ¿En la ficha?
 5. **¿Qué pasa al fallar la tirada?** ¿Se pierden los materiales? ¿Sale algo
    malo? ¿Se puede reintentar?
+6. **¿Qué es «manipular» en la pantalla de máster?** No es lo mismo:
+   - **Solo consultar** (buscar, filtrar, leer). Lo más barato con diferencia.
+   - **Entregar**: darle materiales o recetas a un jugador desde ahí. Ya existe
+     la fontanería (`/api/dm/character` con `addItems` y `unlockLore`), pero
+     depende de la decisión 2: si los materiales no son objetos, no hay nada que
+     entregar.
+   - **Editar el catálogo**: añadir materiales y recetas propios sin tocar
+     código, como haces con los monstruos del bestiario. Esto es lo caro, y hay
+     un precedente exacto de cómo se hace en este repo: el **atlas** se siembra
+     desde el código y se persiste como JSON en `app_config` (`atlas_defs`),
+     que es lo que permite editarlo sin desplegar.
+     ⚠️ **`app_config` NO está en la publicación realtime** — hace falta update
+     optimista. Es una lección ya pagada dos veces.
+7. **¿Dónde vive esa pantalla?** ¿Pestaña nueva del Panel DM —que ya tiene
+   Narración, Grupo, Baúl, Dados, Crónica, Mesa, Tiempo, Regiones, Mapa,
+   Usuarios— o ruta propia tipo `/bestiario`, DM-only?
 
 ## Lo que ya existe y no hay que inventar
 
@@ -172,6 +211,6 @@ los pozos de las 5 clases que faltan, el bestiario a medias (124 monstruos, solo
 CR 0–1/2), Fase P (downtime), Fase Q (misiones IA), C2 (regateo), y los
 **retratos de linaje** (`public/species/lineages/` sigue vacío).
 
-**Empieza leyendo `HANDOFF.md`. Luego pregúntame las cinco decisiones de arriba
+**Empieza leyendo `HANDOFF.md`. Luego pregúntame las siete decisiones de arriba
 y qué hago con las peticiones de tirada. No escribas código hasta que las
 tengas.**

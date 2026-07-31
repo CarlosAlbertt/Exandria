@@ -55,11 +55,17 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > pociones están sueltos.
 >
 > **LO SIGUIENTE está en `docs/PROMPT-SIGUIENTE-SESION.md`**: darle cuerpo a los
-> oficios, en dos partes. **(1)** Una **interfaz propia para cada uno**, no una
+> oficios, en tres partes. **(1)** Una **interfaz propia para cada uno**, no una
 > pantalla genérica de fabricar — en Alquimia, un **caldero** y un **libro de
 > recetas que el jugador va descubriendo**; y por el estilo el yunque, el
 > alambique, las agujas, el tallado y los fuegos. **(2)** Las **recetas y
-> mezclas** que unen los 369 materiales con lo que sale de ellos.
+> mezclas** que unen los 369 materiales con lo que sale de ellos. **(3)** Una
+> **pantalla de máster** con TODO —los seis catálogos, las pociones y las
+> recetas— **ordenado, buscable y manipulable**: hoy los 369 materiales solo
+> existen dentro de archivos de código y el DM no los ve en ninguna pantalla.
+> El precedente exacto de eso es **`/bestiario`**, que ya es buscador + filtros
+> sobre datos del código **y además deja al DM añadir monstruos propios**; y
+> para editar sin desplegar, el **atlas** (`atlas_defs` en `app_config`).
 > **Lo que ya existe y no hay que inventar**: la maquinaria de descubrir poco a
 > poco es la del saber por origen (`lore_unlocked` + `LorePicker` + `unlockLore`
 > en `/api/dm/character`), y por el mismo truco que las pericias de oficio
