@@ -14,6 +14,14 @@ export type CharClass = {
   skillCount: number;
   /** lista de pericias elegibles (nombres exactos de rules.SKILLS) */
   skillList: string[];
+  /**
+   * Pericias de **oficio** que esta clase puede aprender (nombres exactos de
+   * `rules.OFICIOS`). Cupo aparte de `skillCount`: una a nivel 1 y otra a
+   * nivel 7 (`oficioPicks` en `data/leveling.ts`), así que **cada clase
+   * necesita al menos dos** o el cupo del nivel 7 se queda sin nada que
+   * elegir. El gate lo exige.
+   */
+  oficios: string[];
   subclassLabel: string;
   subclasses: { name: string; blurb: string }[];
   tagline: string;
@@ -26,6 +34,7 @@ export const CLASSES: CharClass[] = [
     slug: "barbaro", name: "Bárbaro", group: "primitivo", hitDie: 12,
     primary: ["fue"], saves: ["fue", "con"], skillCount: 2,
     skillList: ["Atletismo", "Intimidación", "Naturaleza", "Percepción", "Supervivencia", "Trato con Animales"],
+    oficios: ["Forja", "Cocina", "Destilación Exandriana"],
     subclassLabel: "Senda primigenia",
     subclasses: [
       { name: "Senda de la Furia Bermellón", blurb: "Canalizan el terror alienígena y el daño psíquico de la luna roja de Ruidus." },
@@ -41,6 +50,7 @@ export const CLASSES: CharClass[] = [
     slug: "bardo", name: "Bardo", group: "arcano", hitDie: 8,
     primary: ["car"], saves: ["des", "car"], skillCount: 3,
     skillList: ["Acrobacias", "Arcanos", "Atletismo", "Engaño", "Historia", "Interpretación", "Intimidación", "Investigación", "Juego de Manos", "Medicina", "Naturaleza", "Percepción", "Perspicacia", "Persuasión", "Religión", "Sigilo", "Supervivencia", "Trato con Animales"],
+    oficios: ["Alquimia", "Cocina", "Cristalografía Arcana", "Destilación Exandriana"],
     subclassLabel: "Colegio bárdico",
     subclasses: [
       { name: "Colegio del Lamento", blurb: "Roban recuerdos y usan la tristeza del Páramo Sombrío para quebrar la mente del enemigo." },
@@ -56,6 +66,7 @@ export const CLASSES: CharClass[] = [
     slug: "brujo", name: "Brujo", group: "arcano", hitDie: 8,
     primary: ["car"], saves: ["sab", "car"], skillCount: 2,
     skillList: ["Arcanos", "Engaño", "Historia", "Intimidación", "Investigación", "Naturaleza", "Religión"],
+    oficios: ["Cristalografía Arcana", "Tatuaje Rúnico"],
     subclassLabel: "Patrón sobrenatural",
     subclasses: [
       { name: "Patrón del Heraldo de Ruidus", blurb: "Roban los bufos, curaciones y escudos enemigos devorando su magia con pura radiación lunar." },
@@ -71,6 +82,7 @@ export const CLASSES: CharClass[] = [
     slug: "clerigo", name: "Clérigo", group: "divino", hitDie: 8,
     primary: ["sab"], saves: ["sab", "car"], skillCount: 2,
     skillList: ["Historia", "Medicina", "Perspicacia", "Persuasión", "Religión"],
+    oficios: ["Forja", "Destilación Exandriana"],
     subclassLabel: "Dominio divino",
     subclasses: [
       { name: "Dominio de la Convergencia", blurb: "Sacerdotes estelares que alternan entre la curación radiante y el castigo psíquico." },
@@ -86,6 +98,7 @@ export const CLASSES: CharClass[] = [
     slug: "druida", name: "Druida", group: "primitivo", hitDie: 8,
     primary: ["sab"], saves: ["int", "sab"], skillCount: 2,
     skillList: ["Arcanos", "Medicina", "Naturaleza", "Percepción", "Perspicacia", "Religión", "Supervivencia", "Trato con Animales"],
+    oficios: ["Alquimia", "Cocina", "Extracción de Componentes", "Destilación Exandriana"],
     subclassLabel: "Círculo druídico",
     subclasses: [
       { name: "Círculo de la Ceniza", blurb: "Se transforman en espíritus de ascuas puras; su magia ígnea quema todo a su paso." },
@@ -101,6 +114,7 @@ export const CLASSES: CharClass[] = [
     slug: "explorador", name: "Explorador", group: "primitivo", hitDie: 10,
     primary: ["des", "sab"], saves: ["fue", "des"], skillCount: 3,
     skillList: ["Atletismo", "Investigación", "Naturaleza", "Percepción", "Perspicacia", "Sigilo", "Supervivencia", "Trato con Animales"],
+    oficios: ["Cocina", "Extracción de Componentes", "Destilación Exandriana"],
     subclassLabel: "Arquetipo del explorador",
     subclasses: [
       { name: "Cazador de Malicia", blurb: "Sombras del Underdark que se teletransportan por la oscuridad para castigar a quienes huyen." },
@@ -116,6 +130,7 @@ export const CLASSES: CharClass[] = [
     slug: "guerrero", name: "Guerrero", group: "marcial", hitDie: 10,
     primary: ["fue", "des"], saves: ["fue", "con"], skillCount: 2,
     skillList: ["Acrobacias", "Atletismo", "Historia", "Intimidación", "Percepción", "Perspicacia", "Persuasión", "Supervivencia"],
+    oficios: ["Forja", "Cocina"],
     subclassLabel: "Arquetipo marcial",
     subclasses: [
       { name: "Guerrero Elementalista", blurb: "Combinan los golpes físicos pesados con la destrucción de la magia primaria elemental." },
@@ -131,6 +146,7 @@ export const CLASSES: CharClass[] = [
     slug: "hechicero", name: "Hechicero", group: "arcano", hitDie: 6,
     primary: ["car"], saves: ["con", "car"], skillCount: 2,
     skillList: ["Arcanos", "Engaño", "Intimidación", "Perspicacia", "Persuasión", "Religión"],
+    oficios: ["Cristalografía Arcana", "Tatuaje Rúnico"],
     subclassLabel: "Origen de hechicería",
     subclasses: [
       { name: "Alma del Luxon", blurb: "Curvan la gravedad con cada hechizo e incluso pueden rebobinar su propio turno en el tiempo." },
@@ -146,6 +162,7 @@ export const CLASSES: CharClass[] = [
     slug: "mago", name: "Mago", group: "arcano", hitDie: 6,
     primary: ["int"], saves: ["int", "sab"], skillCount: 2,
     skillList: ["Arcanos", "Historia", "Investigación", "Medicina", "Naturaleza", "Perspicacia", "Religión"],
+    oficios: ["Alquimia", "Cristalografía Arcana", "Tatuaje Rúnico", "Extracción de Componentes"],
     subclassLabel: "Tradición arcana",
     subclasses: [
       { name: "Tradición del Invocador de Ecos (Nigromante)", blurb: "Levantan los residuos espectrales de las almas en lugar de podrir cadáveres." },
@@ -161,6 +178,7 @@ export const CLASSES: CharClass[] = [
     slug: "monje", name: "Monje", group: "marcial", hitDie: 8,
     primary: ["des", "sab"], saves: ["fue", "des"], skillCount: 2,
     skillList: ["Acrobacias", "Atletismo", "Historia", "Interpretación", "Perspicacia", "Religión", "Sigilo"],
+    oficios: ["Cocina", "Tatuaje Rúnico"],
     subclassLabel: "Tradición marcial",
     subclasses: [
       { name: "Camino del Hilo del Destino", blurb: "Artes marciales de la probabilidad; aseguran sus golpes y obligan a los enemigos a fallar en el último segundo." },
@@ -176,6 +194,7 @@ export const CLASSES: CharClass[] = [
     slug: "paladin", name: "Paladín", group: "divino", hitDie: 10,
     primary: ["fue", "car"], saves: ["sab", "car"], skillCount: 2,
     skillList: ["Atletismo", "Intimidación", "Medicina", "Perspicacia", "Persuasión", "Religión"],
+    oficios: ["Forja", "Cocina"],
     subclassLabel: "Juramento sagrado",
     subclasses: [
       { name: "Juramento de la Reclamación", blurb: "Cazatesoros acorazados especializados en desactivar trampas y proteger Vestigios mágicos." },
@@ -191,6 +210,7 @@ export const CLASSES: CharClass[] = [
     slug: "picaro", name: "Pícaro", group: "marcial", hitDie: 8,
     primary: ["des"], saves: ["des", "int"], skillCount: 4,
     skillList: ["Acrobacias", "Atletismo", "Engaño", "Interpretación", "Intimidación", "Investigación", "Juego de Manos", "Percepción", "Perspicacia", "Persuasión", "Sigilo"],
+    oficios: ["Extracción de Componentes", "Destilación Exandriana"],
     subclassLabel: "Arquetipo de pícaro",
     subclasses: [
       { name: "Sombra Dunamántica", blurb: "Cortan la línea temporal para golpear de nuevo a sus enemigos o intercambiar posiciones con sus ecos." },
@@ -206,6 +226,7 @@ export const CLASSES: CharClass[] = [
     slug: "cazador-de-sangre", name: "Cazador de Sangre", group: "marcial", hitDie: 10,
     primary: ["fue", "des"], saves: ["fue", "int"], skillCount: 3,
     skillList: ["Acrobacias", "Arcanos", "Atletismo", "Historia", "Investigación", "Intimidación", "Perspicacia", "Religión", "Supervivencia"],
+    oficios: ["Alquimia", "Cristalografía Arcana", "Tatuaje Rúnico", "Extracción de Componentes"],
     subclassLabel: "Orden sanguínea",
     subclasses: [
       { name: "Orden del Velo Carmesí", blurb: "Gastan su propia salud para crear copias físicas perfectas y hacerse indetectables a la visión verdadera." },

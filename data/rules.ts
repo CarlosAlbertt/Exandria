@@ -18,7 +18,24 @@ export function abbrOf(key: string): string {
   return ABILITIES.find((a) => a.key === key)?.abbr ?? key.toUpperCase();
 }
 
-export type Skill = { name: string; ability: AbilityKey };
+export type Skill = {
+  name: string;
+  /** Aptitud primaria: la ÚNICA que suma el bono de competencia. */
+  ability: AbilityKey;
+  /**
+   * Aptitud secundaria, solo en las pericias de oficio de aptitud doble.
+   * Se puede tirar con ella cuando la situación lo pida, pero **a aptitud
+   * pelada**: la competencia no entra. Por eso la ficha enseña dos números.
+   */
+  ability2?: AbilityKey;
+  /**
+   * Pericia de **oficio**: homebrew de esta campaña, no del reglamento 2024.
+   * No compiten con las 18 de siempre — tienen su propio cupo (ver
+   * `oficioPicks` en `data/leveling.ts`) y su propia lista por clase
+   * (`CharClass.oficios` en `data/classes.ts`).
+   */
+  oficio?: true;
+};
 
 export const SKILLS: Skill[] = [
   { name: "Acrobacias", ability: "des" },
@@ -39,7 +56,25 @@ export const SKILLS: Skill[] = [
   { name: "Sigilo", ability: "des" },
   { name: "Supervivencia", ability: "sab" },
   { name: "Trato con Animales", ability: "sab" },
+
+  // --- Pericias de oficio (homebrew de campaña) ----------------------------
+  // Las siete no son del reglamento 2024. Tres llevan aptitud doble: la
+  // primera es la primaria (la que suma competencia) y la segunda se tira a
+  // pelo.
+  { name: "Alquimia", ability: "int", oficio: true },
+  { name: "Forja", ability: "sab", ability2: "fue", oficio: true },
+  { name: "Cocina", ability: "sab", oficio: true },
+  { name: "Cristalografía Arcana", ability: "int", oficio: true },
+  { name: "Tatuaje Rúnico", ability: "des", ability2: "int", oficio: true },
+  { name: "Extracción de Componentes", ability: "des", ability2: "int", oficio: true },
+  { name: "Destilación Exandriana", ability: "sab", oficio: true },
 ];
+
+/** Solo las pericias de oficio, en el orden de `SKILLS`. */
+export const OFICIOS: Skill[] = SKILLS.filter((s) => s.oficio);
+
+/** Solo las 18 del reglamento 2024. */
+export const SKILLS_2024: Skill[] = SKILLS.filter((s) => !s.oficio);
 
 // Compra de puntos (Point Buy 2024): 27 puntos, rango 8–15.
 export const POINT_BUY_COST: Record<number, number> = {
