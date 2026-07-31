@@ -18,9 +18,10 @@ import AbilitiesStep from "@/components/crear/steps/AbilitiesStep";
 import SkillsScene from "@/components/crear/steps/SkillsScene";
 import SummaryScene from "@/components/crear/steps/SummaryScene";
 import {
-  ABILITIES, AbilityKey, abilityMod, fmtMod,
+  ABILITIES, AbilityKey, abilityMod, fmtMod, esOficio,
   POINT_BUY_COST, POINT_BUY_BUDGET,
 } from "@/data/rules";
+import { oficioPicks } from "@/data/leveling";
 import { ASSIGN_EMPTY, deriveAssign, isAssignComplete, loadStatRoll } from "@/lib/statRolls";
 
 const EMPTY_SCORES: Record<AbilityKey, number> = { fue: 8, des: 8, con: 8, int: 8, sab: 8, car: 8 };
@@ -206,8 +207,13 @@ export default function CrearPage() {
   // pericias del trasfondo (fijas) + de clase (elegidas)
   const bgSkills = bg?.skills ?? [];
   const classPool = (cls?.skillList ?? []).filter((s) => !bgSkills.includes(s));
-  const classSkills = b.skills;
-  const allSkills = useMemo(() => Array.from(new Set([...bgSkills, ...classSkills])), [bgSkills, classSkills]);
+  // `b.skills` guarda los dos cupos juntos; se separan por pertenencia al
+  // conjunto de oficios (no hay columna nueva en la base de datos).
+  const classSkills = b.skills.filter((s) => !esOficio(s));
+  const oficioSkills = b.skills.filter((s) => esOficio(s));
+  const oficioPool = cls?.oficios ?? [];
+  const oficioNeed = oficioPicks(1); // el creador siempre monta un nivel 1
+  const allSkills = useMemo(() => Array.from(new Set([...bgSkills, ...b.skills])), [bgSkills, b.skills]);
 
   // «Empezar de nuevo» rehace el personaje, NO la tirada: `stat_rolls` es
   // inmutable en la BD (PK sin policy de update) y solo el DM puede borrarla.
@@ -284,7 +290,7 @@ export default function CrearPage() {
     (b.statMethod === "pointbuy"
       ? pointsSpent <= POINT_BUY_BUDGET
       : b.statMethod !== null && isAssignComplete(b.assign)) && bonusTotal(b.bonus) === 3,
-    !!cls && classSkills.length === cls.skillCount,
+    !!cls && classSkills.length === cls.skillCount && oficioSkills.length === oficioNeed,
     true,
   ];
   const firstIncomplete = stepDone.findIndex((d) => !d);
@@ -315,7 +321,11 @@ export default function CrearPage() {
           ? "Reparte los +3 del trasfondo"
           : null)
       : b.step === 4
-      ? (cls && classSkills.length !== cls.skillCount ? `Elige tus pericias (${classSkills.length}/${cls.skillCount})` : null)
+      ? (cls && classSkills.length !== cls.skillCount
+          ? `Elige tus pericias (${classSkills.length}/${cls.skillCount})`
+          : cls && oficioSkills.length !== oficioNeed
+          ? `Elige tu oficio (${oficioSkills.length}/${oficioNeed})`
+          : null)
       : null;
 
   // Si el estado guardado apunta a un paso aún no alcanzable, retrocede.
@@ -424,7 +434,7 @@ export default function CrearPage() {
         />
       )}
 
-      {b.step === 4 && <SkillsScene b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} />}
+      {b.step === 4 && <SkillsScene b={b} set={set} cls={cls} bgSkills={bgSkills} classPool={classPool} oficioPool={oficioPool} oficioNeed={oficioNeed} />}
 
       {b.step === 5 && (
         <SummaryScene b={b} set={set} finalScores={finalScores} hp={hp} allSkills={allSkills} onCopy={copySheet} onReset={reset} onCreate={onCreate} />

@@ -76,6 +76,17 @@ export const OFICIOS: Skill[] = SKILLS.filter((s) => s.oficio);
 /** Solo las 18 del reglamento 2024. */
 export const SKILLS_2024: Skill[] = SKILLS.filter((s) => !s.oficio);
 
+const NOMBRES_OFICIO = new Set(OFICIOS.map((s) => s.name));
+
+/**
+ * ¿Es una pericia de oficio? `characters.skills` guarda las 25 en un solo
+ * array, así que los dos cupos se separan **por pertenencia**, no por un campo
+ * nuevo en la base de datos.
+ */
+export function esOficio(name: string): boolean {
+  return NOMBRES_OFICIO.has(name);
+}
+
 // Compra de puntos (Point Buy 2024): 27 puntos, rango 8–15.
 export const POINT_BUY_COST: Record<number, number> = {
   8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9,

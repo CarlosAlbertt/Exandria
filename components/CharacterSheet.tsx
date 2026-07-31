@@ -9,7 +9,7 @@ import { archivedOf, MAX_CHARACTERS } from "@/lib/archive";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { getBackground } from "@/data/backgrounds";
-import { ABILITIES, AbilityKey, fmtMod } from "@/data/rules";
+import { ABILITIES, AbilityKey, fmtMod, abbrOf } from "@/data/rules";
 import { reachedAsiLevels } from "@/data/leveling";
 // Los helpers de la bolsa viven en la capa pura (lib/inventario.ts), donde el
 // gate los comprueba y donde /inventario los comparte: aquí solo se usan.
@@ -215,14 +215,18 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     await fetch("/api/dm/character", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: targetUserId, patch }) });
   }
 
-  // Guardado de la ficha (nivel, oro, asi, items, equipo, tiradas PG). No toca los campos de build.
+  // Guardado de la ficha (nivel, oro, asi, items, equipo, tiradas PG, pericias).
+  // No toca los campos de build.
+  // `skills` entra aquí desde que existe el cupo de oficio: la elección del
+  // nivel 7 se hace en la ficha, no en el creador, así que la ficha ya no puede
+  // tratarlas como solo lectura.
   useEffect(() => {
     if (!loaded) return;
     if (readOnly) return;
-    const t = setTimeout(() => { persistSheet({ level, gold, asi, items, equipment, hp_rolls: hpRolls }); }, 700);
+    const t = setTimeout(() => { persistSheet({ level, gold, asi, items, equipment, hp_rolls: hpRolls, skills }); }, 700);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, gold, asi, items, equipment, hpRolls, loaded, readOnly, targetUserId, saveMode, characterId]);
+  }, [level, gold, asi, items, equipment, hpRolls, skills, loaded, readOnly, targetUserId, saveMode, characterId]);
 
   /* --- datos derivados --- */
   const species = build.species ? getSpecies(build.species) : undefined;
@@ -467,7 +471,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-6">
           {/* NIVEL + ASI */}
-          <LevelPanel level={level} onLevel={onLevel} clsSlug={build.cls} hitDie={hitDie} preAsi={preAsi} asi={asi} onAsi={onAsi} hpRolls={hpRolls} onRollHp={canRollHp ? onRollHp : () => {}} readOnly={readOnly} canRollHp={canRollHp} xp={xp} />
+          <LevelPanel level={level} onLevel={onLevel} clsSlug={build.cls} hitDie={hitDie} preAsi={preAsi} asi={asi} onAsi={onAsi} hpRolls={hpRolls} onRollHp={canRollHp ? onRollHp : () => {}} readOnly={readOnly} canRollHp={canRollHp} xp={xp} skills={skills} onSkills={setSkills} oficios={cls?.oficios ?? []} />
 
           {/* APTITUDES */}
           <section className="panel p-5">
@@ -590,7 +594,7 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
           <section className="panel p-5">
             <p className="eyebrow mb-3">Pericias</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {d.skills.map((s) => (
+              {d.skills.filter((s) => !s.oficio).map((s) => (
                 <div key={s.name} className="panel-raised px-3 py-1.5 flex items-center justify-between gap-2">
                   <span className="font-ui text-[12px] font-semibold flex items-center gap-1.5" style={{ color: s.proficient ? "var(--color-bronze-bright)" : "var(--color-muted)" }}>
                     {s.proficient && <i className="fas fa-circle text-[5px]" style={{ color: "var(--color-bronze)" }} />}
@@ -618,6 +622,55 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
               ))}
             </div>
             {rollErr && <p className="text-[12px] mt-2 italic" style={{ color: "var(--color-ember)" }}>{rollErr}</p>}
+          </section>
+
+          {/* OFICIOS — cupo aparte de las 18. Las de aptitud doble tienen DOS
+              tiradas: la primaria suma competencia, la secundaria no. */}
+          <section className="panel p-5">
+            <p className="eyebrow mb-1">Oficios</p>
+            <p className="text-[11px] mb-3 italic" style={{ color: "var(--color-dim)" }}>
+              Las de dos aptitudes se pueden tirar con cualquiera de ellas, pero la competencia
+              solo cuenta en la primera.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {d.skills.filter((s) => s.oficio).map((s) => (
+                <div key={s.name} className="panel-raised px-3 py-1.5 flex items-center justify-between gap-2">
+                  <span className="font-ui text-[12px] font-semibold flex items-center gap-1.5" style={{ color: s.proficient ? "var(--color-bronze-bright)" : "var(--color-muted)" }}>
+                    {s.proficient && <i className="fas fa-circle text-[5px]" style={{ color: "var(--color-bronze)" }} />}
+                    {s.name}
+                  </span>
+                  <span className="flex items-center gap-3">
+                    {([
+                      { ab: s.ability, mod: s.mod, competente: s.proficient },
+                      ...(s.ability2 !== undefined && s.mod2 !== undefined
+                        ? [{ ab: s.ability2, mod: s.mod2, competente: false }]
+                        : []),
+                    ]).map((t) => (
+                      <span key={t.ab} className="flex items-center gap-1">
+                        <span className="font-ui text-[10px]" style={{ color: "var(--color-dim)" }}>{abbrOf(t.ab)}</span>
+                        {isOwner && (
+                          <button
+                            className="w-5 h-5 flex items-center justify-center rounded-md transition-colors"
+                            style={{ color: "var(--color-bronze)" }}
+                            title={`Tirar ${s.name} (${abbrOf(t.ab)})`}
+                            onClick={async () => {
+                              const etiqueta = s.ability2 ? `${s.name} (${abbrOf(t.ab)})` : s.name;
+                              const { error } = await publishRoll(session!.id, "skill", etiqueta, "1d20", { mod: t.mod, adv: ventajaDe(playState, "prueba") ?? undefined });
+                              setRollErr(error);
+                            }}
+                          >
+                            <i className="fas fa-dice-d20 text-[10px]" />
+                          </button>
+                        )}
+                        <span className="font-ui text-[12px] font-bold" style={{ color: t.competente ? "var(--color-bronze-bright)" : "var(--color-dim)" }}>
+                          {fmtMod(t.mod)}
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              ))}
+            </div>
           </section>
 
           {/* RASGOS DE CLASE + RECURSOS */}
