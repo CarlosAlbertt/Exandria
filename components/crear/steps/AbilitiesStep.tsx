@@ -89,9 +89,13 @@ export default function AbilitiesStep({
     const scores: number[] = [];
     for (let i = 0; i < 6; i++) {
       setProgress(i + 1);
-      const r = await rollVisual("4d6", { label: `Aptitud ${i + 1} de 6` });
-      const dice = r ? r.rolls : (rollFallback("4d6")?.rolls ?? []);
-      scores.push(dropLowest(dice));
+      // `keep: 3` hace el descarte DENTRO de rollVisual, así que el número que
+      // se ve en el tablero es ya la aptitud. Descartarlo aquí otra vez era el
+      // fallo: el overlay pintaba la suma de los cuatro dados y se guardaba la
+      // de los tres mejores. `hold` deja el resultado en pantalla antes de
+      // pedir la tirada siguiente.
+      const r = await rollVisual("4d6", { label: `Aptitud ${i + 1} de 6`, keep: 3, hold: 1500 });
+      scores.push(r ? r.total : dropLowest(rollFallback("4d6")?.rolls ?? []));
     }
     onRolled(scores);
     const err = await saveStatRoll(userId, "dados", scores);

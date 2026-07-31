@@ -2,7 +2,10 @@
 // No es un hook: publishRoll (lib/useDiceFeed) lo llama directamente. Guardado
 // contra SSR y contra la ausencia de WebGL / prefers-reduced-motion, en cuyo
 // caso rollVisual() devuelve null y el llamador usa el fallback aleatorio.
-import { parseFormula, rollFromDice, d20FromDice, critState, type RollResult } from "@/lib/dice";
+import {
+  parseFormula, rollFromDice, keepHighestFromDice, droppedIndexes, d20FromDice, critState,
+  type RollResult,
+} from "@/lib/dice";
 
 const COLOR_KEY = "exandria:diceColor";
 const SOUND_KEY = "exandria:diceSound";
@@ -34,6 +37,11 @@ export type DiceBoardEvent = {
   mod: number;
   total: number | null;
   crit: "crit" | "fumble" | null;
+  // Caras que salieron, para el desglose bajo el total. `dropped` son los
+  // índices que NO cuentan (4d6 descartando el menor); vacío en el resto de
+  // tiradas, donde todos los dados suman.
+  rolls: number[] | null;
+  dropped: number[];
 };
 let boardListener: ((e: DiceBoardEvent) => void) | null = null;
 export function setBoardListener(fn: ((e: DiceBoardEvent) => void) | null): void {
@@ -166,9 +174,17 @@ export function initDiceBox(selector: string): Promise<DiceBoxInstance | null> {
 // construido con las caras reales. Devuelve null si el tablero no está
 // soportado/listo (→ el llamador usa el roll() aleatorio) o si ya hay otra
 // tirada pendiente. `formula` ya debe estar validada por el llamador.
+//
+// `keep`: quédate solo con las N caras más altas (4d6 descartando el menor).
+//   El total que se emite al tablero es YA el de las conservadas — si el
+//   llamador descartara por su cuenta, el número visto y el guardado no serían
+//   el mismo (pasó justo eso en la tirada de aptitudes).
+// `hold`: milisegundos que el resultado se queda antes de resolver. Sin esto,
+//   una tirada en bucle emite "ready" de la siguiente en la misma cadena de
+//   microtareas y el resultado se borra sin llegar a pintarse.
 export async function rollVisual(
   formula: string,
-  opts?: { mod?: number; adv?: "adv" | "dis"; check?: boolean; label?: string }
+  opts?: { mod?: number; adv?: "adv" | "dis"; check?: boolean; label?: string; keep?: number; hold?: number }
 ): Promise<RollResult | null> {
   if (!isDiceBoxSupported()) return null;
   // Init perezoso: dice-box (y su bucle de render WebGL) solo arranca en la
@@ -182,13 +198,16 @@ export async function rollVisual(
   const isCheck = !!opts?.check && typeof opts.mod === "number";
   const mod = isCheck ? (opts!.mod as number) : (parseFormula(formula)?.mod ?? 0);
 
+  const quiet = { label, mod, total: null, crit: null, rolls: null, dropped: [] };
+
   // Fase "ready": dado a la espera de que el jugador lo lance.
-  emitBoard({ phase: "ready", label, mod, total: null, crit: null });
+  emitBoard({ phase: "ready", ...quiet });
   await new Promise<void>((resolve) => { awaitingThrow = resolve; });
 
-  emitBoard({ phase: "rolling", label, mod, total: null, crit: null });
+  emitBoard({ phase: "rolling", ...quiet });
   try {
     let result: RollResult;
+    let dropped: number[] = [];
     if (isCheck) {
       const qty = opts!.adv ? 2 : 1;
       const groups = await box.roll(`${qty}d20`, { themeColor: getDiceColor() });
@@ -196,17 +215,25 @@ export async function rollVisual(
       result = d20FromDice(dice, opts!.mod as number, opts!.adv);
     } else {
       const parsed = parseFormula(formula);
-      if (!parsed) { emitBoard({ phase: "hidden", label, mod, total: null, crit: null }); return null; }
+      if (!parsed) { emitBoard({ phase: "hidden", ...quiet }); return null; }
       const groups = await box.roll(`${parsed.n}d${parsed.die}`, { themeColor: getDiceColor() });
       const dice = groups[0].rolls.map((r) => r.value);
-      result = rollFromDice(formula, dice, parsed.mod);
+      if (typeof opts?.keep === "number" && opts.keep < dice.length) {
+        dropped = droppedIndexes(dice, opts.keep);
+        result = keepHighestFromDice(formula, dice, opts.keep, parsed.mod);
+      } else {
+        result = rollFromDice(formula, dice, parsed.mod);
+      }
     }
     const crit = critState(result.formula, result.rolls);
-    emitBoard({ phase: "result", label, mod, total: result.total, crit });
+    emitBoard({ phase: "result", label, mod, total: result.total, crit, rolls: result.rolls, dropped });
+    // El resultado se queda en pantalla antes de devolver el control: quien
+    // tira en bucle no puede tapar su propio número con la tirada siguiente.
+    if (opts?.hold) await new Promise<void>((r) => setTimeout(r, opts.hold));
     return result;
   } catch (e) {
     console.warn("[diceBox] rollVisual falló; fallback.", e);
-    emitBoard({ phase: "hidden", label, mod, total: null, crit: null });
+    emitBoard({ phase: "hidden", ...quiet });
     return null;
   }
 }
