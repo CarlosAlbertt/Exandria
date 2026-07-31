@@ -852,13 +852,25 @@ Comprobar despliegue: `curl https://exandria.vercel.app/api/version`.
 ## Scripts de comprobación
 No hay tests; el gate real es `npx tsc --noEmit` + `npx next build` **más** los
 `scripts/check-*.ts` que apliquen. Se ejecutan a mano: `npx tsx scripts/check-X.ts`
-(no hay entrada en `package.json`). **Son 30**: a los de siempre se sumaron
+(no hay entrada en `package.json`). **Son 33**: a los de siempre se sumaron
 `check-especies` (subclases), `check-acceso` (alcance del jugador),
 `check-pericias` (oficios), `check-alquimia` (ingredientes y pociones),
 `check-cocina`, `check-forja` y `check-materiales` (los otros tres catálogos
-más el cruce entre los seis). Las secciones RESUELTO solo nombran los que tocó
-cada tanda — los demás siguen vivos aunque no se citen. Recuento del
-**2026-07-31, los 30 en verde**:
+más el cruce entre los seis), `check-dados` (el puente con `dice-box`) y
+`check-origen` (selector de origen ↔ saber). Las secciones RESUELTO solo
+nombran los que tocó cada tanda — los demás siguen vivos aunque no se citen.
+
+**La tabla de abajo se quedó desfasada** (decía «son 30» cuando ya eran 32) y
+no se ha recontado entera: fíese del recuento total, no de que la tabla liste
+todos. Los 33 en verde el **2026-07-31, noche**. `check-dados` no imprime
+líneas `OK`, solo `check-dados: ok` — por eso no tiene número aquí.
+
+| Script | OK |
+|---|---|
+| **`check-origen`** | **22** |
+| **`check-dados`** | (sin conteo, ver arriba) |
+
+Recuento anterior:
 
 | Script | OK | Script | OK |
 |---|---|---|---|
