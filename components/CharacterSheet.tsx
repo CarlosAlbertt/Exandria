@@ -13,7 +13,7 @@ import { ABILITIES, AbilityKey, fmtMod, abbrOf } from "@/data/rules";
 import { reachedAsiLevels } from "@/data/leveling";
 // Los helpers de la bolsa viven en la capa pura (lib/inventario.ts), donde el
 // gate los comprueba y donde /inventario los comparte: aquí solo se usan.
-import { devolver } from "@/lib/inventario";
+import { devolver, huecosUsados } from "@/lib/inventario";
 import LevelPanel from "@/components/LevelPanel";
 import Paperdoll from "@/components/Paperdoll";
 import ResumenEquipo from "@/components/inventario/ResumenEquipo";
@@ -295,10 +295,13 @@ export default function CharacterSheet({ targetUserId, readOnly, saveMode }: Cha
     return d.spellSlots.map((n, i) => ({ lvl: i + 1, n })).filter((s) => s.n > 0);
   }, [d.spellSlots]);
 
-  // Huecos ocupados de la bolsa. La capacidad ya no se calcula aquí: la pinta
-  // VitalesEquipo (dentro de ResumenEquipo) a partir de huecosDe(mod. Fuerza),
-  // que es la misma fórmula comprobada por scripts/check-inventario.ts.
-  const used = useMemo(() => items.reduce((s, i) => s + i.qty, 0), [items]);
+  // Huecos ocupados de la bolsa. Ni esto ni la capacidad se calculan aquí: la
+  // capacidad la pinta VitalesEquipo (dentro de ResumenEquipo) con
+  // huecosDe(mod. Fuerza), y lo ocupado sale de huecosUsados —que cuenta un
+  // solo hueco por montón de material de oficio—. Las dos viven en
+  // lib/inventario.ts, que es lo que ven scripts/check-inventario.ts y
+  // check-recetas.ts.
+  const used = useMemo(() => huecosUsados(items), [items]);
   const acValue = ac ?? d.ac;
   // Documentos in-game que llevas encima (cartas, contratos, tomos). Se quedan
   // en la hoja aunque la bolsa se haya ido a /inventario: leerlos no es

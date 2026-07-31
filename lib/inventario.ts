@@ -5,6 +5,8 @@ import { CATALOG } from "@/data/equipment";
 import { ARMAS } from "@/data/weapons";
 import { ARMOR_LOOKUP, SHIELD_NAME } from "@/lib/derive";
 import { ACCESSORY_SLOTS, FIXED_ACCESSORY } from "@/data/leveling";
+import { esMaterial } from "@/lib/materiales";
+import { norm } from "@/lib/slug";
 import type { Item } from "@/lib/character";
 
 export type CategoriaId = "Armas" | "Armaduras" | "Aventura" | "Consumibles" | "Herramientas" | "Otro";
@@ -43,14 +45,18 @@ export function metaDe(cat: CategoriaId): Categoria {
 /**
  * Normaliza para comparar: sin mayúsculas, sin tildes, sin espacios de sobra.
  *
- * Se exporta **para que las comprobaciones normalicen igual que el índice**. Un
- * check que compara los nombres de otra forma tiene un punto ciego justo donde
- * el índice es más permisivo (las tildes), y entonces no vigila lo que dice
- * vigilar.
+ * **Se mudó a `lib/slug.ts`** (módulo neutral) cuando `lib/materiales.ts` pasó a
+ * necesitarla: los dos índices se importan mutuamente —la bolsa pregunta si un
+ * objeto es material, el índice de materiales normaliza igual que la bolsa— y
+ * tenerla aquí creaba un ciclo de módulos. Se reexporta para que nadie que ya la
+ * importaba de aquí tenga que cambiar.
+ *
+ * Sigue siendo compartida **para que las comprobaciones normalicen igual que el
+ * índice**: un check que compare los nombres de otra forma tiene un punto ciego
+ * justo donde el índice es más permisivo (las tildes), y entonces no vigila lo
+ * que dice vigilar.
  */
-export function norm(s: string): string {
-  return s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
+export { norm };
 
 // Índice nombre normalizado → categoría, armado una vez a partir de las listas
 // que ya existen. Ninguna se duplica aquí: si el catálogo crece, esto crece solo.
@@ -80,6 +86,27 @@ export function categoriaDe(nombre: string): CategoriaId {
 /** Huecos de la bolsa: 20 + 2 × mod. Fuerza, con un suelo de 10. */
 export function huecosDe(modFuerza: number): number {
   return Math.max(10, 20 + 2 * Math.round(modFuerza));
+}
+
+/**
+ * Huecos que ocupa lo que llevas encima. **Los materiales de oficio son la
+ * excepción**: un montón ocupa **un solo hueco** lleve 1 unidad o 50; todo lo
+ * demás cuenta por unidad, exactamente como siempre.
+ *
+ * La excepción existe porque los dos sistemas miden cosas distintas. La bolsa
+ * cuenta bultos: dos espadas estorban el doble que una. Los materiales se
+ * recolectan a puñados —una receta pide tres raíces— y contarlos por unidad
+ * dejaría sin bolsa a cualquiera que junte para una poción: con 20 + 2×FUE
+ * huecos, doce hierbas se comen más de media mochila. Ocupar sitio sí ocupan:
+ * llevar treinta materiales **distintos** llena la bolsa igual.
+ *
+ * Vive aquí, en una sola función, porque antes era un `reduce` **duplicado** en
+ * `app/inventario/page.tsx` y en `components/CharacterSheet.tsx`. Dos copias de
+ * la regla de capacidad son dos sitios donde puede divergir, y el gate no veía
+ * ninguna de las dos.
+ */
+export function huecosUsados(items: Item[]): number {
+  return items.reduce((s, i) => s + (esMaterial(i.name) ? 1 : i.qty), 0);
 }
 
 /**
