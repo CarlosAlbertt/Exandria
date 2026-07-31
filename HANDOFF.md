@@ -54,6 +54,16 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > **Nada probado en la app en vivo** (todo tras el login): lo que tiene que
 > probar el usuario está al final de
 > `docs/superpowers/plans/2026-07-30-alcance-jugador-arranque.md`.
+>
+> **LO SIGUIENTE está en `docs/PROMPT-SIGUIENTE-SESION.md`**, y son dos cosas:
+> **(1)** quitar el apartado **«Dados del grupo»** de `/personaje` —la sección de
+> `app/personaje/page.tsx` que monta `DicePanel`—, teniendo en cuenta que ahí es
+> donde el jugador ve y responde las **peticiones de tirada del DM**
+> (`useRollRequests`) y **no hay otro sitio donde las vea**; y **(2)** empezar las
+> **mecánicas jugables de las pericias**: primero la lista entera de las 18 (hoy
+> en `data/rules.ts` son solo nombre + aptitud, sin una línea de qué hacen) y de
+> ahí la mecánica de cada una. El precedente más parecido que ya existe es
+> `components/lugar/SaberRoll.tsx`.
 
 > **Lo último (2026-07-30, tarde): el creador rehecho y el arte de las especies.**
 > **Escenas de Especie y Clase**: navegan igual (flechas a los lados, emblema
@@ -75,11 +85,9 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > 1024×1024, 3,1 MB; llegaron como PNG de 151 MB y se reencodearon).
 > Gate: tsc + next build + **24 checks** en verde. UI verificada en navegador con
 > banco de pruebas estático; en la app viva la aprobó el usuario.
-> **Lo siguiente está escrito en `docs/PROMPT-SIGUIENTE-SESION.md`**: estrechar
-> la app para el arranque de campaña (el jugador solo `/crear` + `/personaje`,
-> `/inventario` y `/reino`). Ojo: `proxy.ts` **solo refresca sesión, no cierra
-> rutas por rol**, así que ocultar enlaces del nav no basta. `/personaje` no
-> tiene enlace en la barra, pero se llega desde `/inventario` («Ver la hoja»).
+> *(Lo que este bloque anunciaba como «lo siguiente» —estrechar la app para el
+> arranque— **ya está hecho**: es el bloque de arriba, del 2026-07-30 por la
+> noche. `docs/PROMPT-SIGUIENTE-SESION.md` apunta ahora a otra cosa.)*
 
 > **Lo último (2026-07-30): subclases rehechas (fase 1, foundation).** Se
 > borraron las **52 subclases** viejas (4/clase) y se pusieron **65 nuevas** (13
