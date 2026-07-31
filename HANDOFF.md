@@ -4,6 +4,47 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-31)
 
+> **Lo último (2026-07-31, tarde): LOS DADOS NUNCA USARON SUS CARAS.**
+> Ramas `fix/tirada-aptitudes-4d6` y `fix/dice-box-lectura-caras`, ambas en
+> `master`. **Sin migración.**
+>
+> El usuario avisó de que la tirada de aptitudes de `/crear` guardaba un número
+> distinto del que salía en el tablero, y de que la animación se cortaba antes
+> de enseñar el resultado. Eran **dos fallos encadenados**, y el segundo era
+> mucho más gordo de lo que parecía:
+>
+> 1. **`rollVisual` sumaba los cuatro dados y `AbilitiesStep` descartaba el
+>    menor por su cuenta**, así que el overlay pintaba un total y la ficha
+>    guardaba otro. Ahora el descarte se hace **dentro** de `rollVisual` con la
+>    opción `keep`, y bajo el total salen las caras con la descartada tachada.
+>    La opción `hold` deja el resultado en pantalla antes de devolver el
+>    control: el bucle de seis tiradas se pisaba su propio resultado.
+> 2. **La causa de verdad: `dice-box` 1.1.4 resuelve `roll()` con un array
+>    PLANO de dados**, no con grupos. Leíamos `res[0].rolls`, que es
+>    `undefined`, así que el `.map` lanzaba un `TypeError`, se lo comía el
+>    `catch` de `rollVisual`, devolvía `null` y **el llamador tiraba del
+>    fallback aleatorio**. Los dados 3D eran decoración: el número salía de un
+>    `Math.random()` que no tenía nada que ver con las caras. Llevaba así
+>    **desde que existe el tablero**, y afectaba a TODO — aptitudes, el
+>    caldero, `SaberRoll` y el feed.
+>
+> `facesFrom()` (`lib/diceBox.ts`) lee **las dos formas** posibles (dados
+> sueltos y grupos con `rolls` dentro) por si cambia la versión, y si no salen
+> tantas caras como dados se pidieron **lanza** en vez de componer un total con
+> lo que haya: mejor caer al fallback que guardar un número a medias en
+> silencio.
+>
+> **Gate 32 `scripts/check-dados.ts`**, con **prueba de mutación de cuatro
+> roturas** — incluida la de volver a leer `res[0].rolls`, que es el fallo
+> original: las cuatro tumbaron el gate y al restaurar volvió a verde.
+>
+> > **La lección**: el fallo sobrevivió tanto porque **la lectura del resultado
+> > no era comprobable**. Por eso `facesFrom` se exporta: para que el gate pueda
+> > mirarla. Desconfía de cualquier puente con una librería externa que no tenga
+> > una prueba de forma.
+>
+> **Falta verlo en la app viva**: el asistente no puede pasar del login.
+
 > **Lo último (2026-07-31, madrugada): ALQUIMIA SE JUEGA.**
 > Rama `alquimia-jugable`. **Sin migración.** Los 369 materiales dejan de ser
 > listas sueltas: se tienen, se gastan y salen pociones de ellos.

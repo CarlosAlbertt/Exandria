@@ -9,84 +9,88 @@ CarlosAlbertt/Exandria, rama `master`, desplegada en exandria.vercel.app.
 
 **Lee primero `HANDOFF.md`** — es el documento de estado vivo.
 
-## Lo primero, y no es código: PROBAR ALQUIMIA EN LA APP
+## Lo primero, y no es código: PROBAR LOS DADOS EN LA APP
 
-La tanda anterior (31 de julio, madrugada) dejó **Alquimia jugable** y **nada de
-ello se ha visto en la app viva**: todo está tras el login y el asistente no
-mete credenciales. La tanda fue **sobre todo interfaz**, así que cuenta con idas
-y venidas.
+La tanda anterior arregló algo que llevaba roto **desde que existe el tablero**:
+ninguna tirada visual usaba las caras de los dados. `dice-box` devuelve un array
+plano y el código leía `res[0].rolls`, así que el `TypeError` mandaba todo al
+fallback aleatorio — **los dados 3D eran decoración**. Está corregido y con gate,
+pero **no se ha visto en la app viva**: todo está tras el login.
 
-Lo que hay que mirar, por orden de sospecha:
+Por orden de sospecha:
 
-1. **`/taller` → Alquimia**. ¿Sale el libro? Un personaje con la pericia debe
-   ver **3 recetas iniciales** (Entendimiento, Trepar, Poción de curación). Sin
-   la pericia, la pantalla dice que no sabes de Alquimia.
-2. **Preparar una poción**: que descuente los materiales, que la poción entre en
-   la bolsa, y sobre todo **que sobreviva a recargar la página**. El guardado va
-   con debounce de 700 ms como el resto de la app.
-3. **Los huecos**. Un montón de material ocupa **1 hueco** por muchas unidades
-   que lleve; un arma sigue contando por unidad. Míralo en `/inventario`.
-4. **Panel DM › Grupo → «Enseñar recetas»**: conceder una y ver que aparece en
-   el libro del jugador.
-5. **`/oficios`** (solo DM): que se vean los 369 materiales, que los filtros
-   filtren, que **entregar** un material llegue a la bolsa del jugador, y que un
-   material propio **siga ahí tras recargar**.
-6. **El aviso de petición de tirada**: el DM pide una tirada desde Panel DM ›
-   Dados y el jugador la ve **estando en cualquier página**, no solo en
-   `/personaje` (que ya no tiene la sección de dados).
+1. **`/crear` → Aptitudes → «Tirar 4d6»**. Que el número grande del overlay sea
+   **el mismo** que acaba en «Tus valores», seis veces. Debajo del total tienen
+   que salir **las cuatro caras con la menor tachada**; si ese desglose no
+   aparece, `rollVisual` sigue devolviendo `null` y hay que mirar la consola.
+   > **La tirada es de una sola vez.** `stat_rolls` tiene PK por usuario y no hay
+   > policy de UPDATE: para repetir, resetéala en **Panel DM › Grupo**.
+2. **Que el resultado dé tiempo a leerse** entre tirada y tirada (`hold`, 1,5 s).
+3. **Que el resto de tiradas sigan bien**: el caldero de `/taller`, `SaberRoll`
+   en `/lugar` y el feed de dados. Todas pasan por el mismo `rollVisual`, así que
+   el arreglo las toca a todas — conviene mirar al menos una.
+4. **Alquimia**, que sigue sin verse en partida: el libro con 3 recetas
+   iniciales, preparar una poción, que **sobreviva a recargar**, los huecos en
+   `/inventario` (un montón = 1 hueco), «Enseñar recetas» del DM y `/oficios`.
 
 Si algo de esto falla, arreglarlo va **antes** que empezar nada nuevo.
 
-## La tarea de esta sesión (elige tú, pregúntame si dudas)
+## La tarea de esta sesión: LOS TALLERES JUGABLES
 
-### Opción A — los otros cinco talleres
+Hay un **boceto interactivo ya aprobado** con el usuario (dos bancos de trabajo,
+alquimia y forja). Lo que propone, y que es la dirección acordada:
 
-El patrón ya está y **es replicable**: `/taller` es una ruta con pestañas, así
-que un oficio nuevo **no toca `lib/acceso.ts`**. Lo que hace falta por oficio:
+- **La manipulación NO sustituye la tirada de pericia: la modifica**, con tope
+  **±3** para no romper la matemática del reglamento.
+- **Cada oficio manipula lo suyo.** Alquimia: echar materiales al **caldero**,
+  dosificar con la **pipeta** (mantener pulsado, soltar dentro de una banda) y
+  **cocer** (parar una aguja en su punto). Forja: **caldear** con el fuelle hasta
+  el rojo cereza, **martillar** tres golpes a compás y **templar** a tiempo.
+- **Cuando algo se mueve solo, hay un botón rojo que lo para** con la acción
+  escrita, y **`espacio` hace lo mismo**. Nunca hay que adivinar qué se pulsa.
+- **Cada material es un hueco cuadrado** como el de la bolsa, con la imagen del
+  objeto dentro. Una tira arriba dice **qué pide la receta y qué sale**.
+- **Siempre hay salida**: «preparar sin manipular» tira a pelo, sin bonificador
+  — accesibilidad, y atajo para la décima poción.
 
-- **Recetas** en `data/recetas.ts` (el tipo `Receta` ya soporta los seis).
-- **Su interfaz**, que tiene que parecerse a lo que hace: el **yunque y el
-  temple** de la forja, el **alambique** de la destilación, los **fuegos** de la
-  cocina, el **tallado** de la cristalografía, la **plantilla y las agujas** del
-  tatuaje. No una pantalla genérica de fabricar.
+### Lo que hay que decidirme ANTES de escribir código
 
-**Dos oficios traen algo que alquimia no tenía**, y el andamio ya lo contempla:
-- **Cristalografía y tatuaje usan `herramientas`**, que se exigen a mano pero
-  **no se gastan**. El campo existe en `Receta` y el gate ya lo vigila (incluso
-  comprueba que el detector dispara), pero **ninguna receta lo usa todavía**.
-- **Destilación tiene `riesgo`**: la mitad del catálogo trae contrapartida. Hoy
-  el fallo solo cuesta los materiales; ese catálogo pide algo peor.
+Son las decisiones que el boceto deja abiertas. **Pregúntamelas, no las supongas:**
 
-**Lo que sale de cada oficio no existe.** Alquimia tenía las 25 pociones de los
-libros. Cocina, forja, destilación, cristalografía y tatuaje **no tienen
-producto**: no hay una lista de qué comidas, armas, elixires, cristales o
-tatuajes se pueden hacer. **Eso lo dictas tú y no se rellena a ojo** — pregúntame
-antes de inventarte un catálogo de productos.
+1. **De dónde salen las imágenes de los materiales.** Son **369**. ¿Un PNG por
+   material (encargo de arte enorme) o **un icono por categoría** —planta,
+   mineral, animal, esencia…—, que son unos pocos? `public/species/lineages/`
+   sigue vacío, así que hay precedente de que el arte se atasca.
+2. **Si el minijuego entra en alquimia**, que ya está desplegada y jugable sin
+   él, **o solo en los talleres nuevos**. Cambia algo que un jugador quizá ya ha
+   usado.
+3. **Qué se puede fabricar en los otros cinco oficios.** Alquimia tenía las 25
+   pociones de los libros. Cocina, forja, destilación, cristalografía y tatuaje
+   **no tienen producto**: no hay lista de comidas, armas, elixires, cristales ni
+   tatuajes. **Eso lo dicto yo y no se rellena a ojo.**
+4. **Cuánto pesa cada fase** del minijuego dentro de ese ±3, y si un desastre
+   puede hacer algo peor que perder los materiales (la destilación tiene
+   `riesgo` en medio catálogo y hoy no cuesta nada).
 
-### Opción B — conectar la `mecanica` de forja
+### Lo que el andamio ya contempla y ninguna receta usa
 
-**Es la deuda más señalada del repo.** 25 materiales de forja llevan **regla de
-verdad** en el campo `mecanica`: el mithril anula el requisito de Fuerza de la
-armadura pesada, la adamantina anula los críticos recibidos, el residuum vuelve
-mágica el arma, la azuremita le cambia la aptitud, la madera de bruma da Sutil a
-un arma pesada.
+- **`herramientas`** (cristalografía y tatuaje): se exigen a mano pero **no se
+  gastan**. El campo existe en `Receta` y el gate ya lo vigila —incluso comprueba
+  que el detector dispara—, pero **ninguna receta lo usa todavía**.
+- **`riesgo`** (destilación): la mitad del catálogo trae contrapartida y hoy el
+  fallo solo cuesta los materiales.
 
-**Nada de eso está conectado**: `data/equipment.ts` y `lib/derive.ts` no saben
-que estos materiales existen, así que forjar un peto de mithril **hoy no quita
-ningún requisito**. Es la única parte del sistema que promete una regla y no la
-cumple, y está dicho en la propia pantalla de `/oficios` para que no engañe.
+## La otra opción, si prefieres deuda a features
 
-Esto es lo más delicado de la lista: toca el motor de ficha derivada, que es
-fuente de verdad para la hoja **y** para el panel del DM.
-
-### Opción C — Extracción de Componentes
-
-El séptimo oficio. Ya está decidido **qué es**: el oficio que **consigue**
-materiales para los otros seis, así que no lleva catálogo propio. Lo que no
-existe es la mecánica: contra qué se tira al despiezar un monstruo abatido o al
-recolectar en un entorno, y qué sale.
-
-Encaja con `/bestiario` (124 monstruos) y con `/lugar`.
+**Conectar la `mecanica` de forja.** Es la deuda más señalada del repo: 25
+materiales llevan **regla de verdad** en el campo `mecanica` —el mithril anula el
+requisito de Fuerza de la armadura pesada, la adamantina anula los críticos
+recibidos, el residuum vuelve mágica el arma, la madera de bruma da Sutil— y
+**nada de eso está conectado**: `data/equipment.ts` y `lib/derive.ts` no saben que
+existen, así que forjar un peto de mithril **hoy no quita ningún requisito**. Es
+la única parte del sistema que promete una regla y no la cumple, y está dicho en
+la propia pantalla de `/oficios` para que no engañe. Toca el motor de ficha
+derivada, que es fuente de verdad para la hoja **y** para el panel del DM.
 
 ## Cómo trabajamos (esto ya está rodado, respétalo)
 
@@ -96,18 +100,21 @@ Encaja con `/bestiario` (124 monstruos) y con `/lugar`.
   `docs/superpowers/{specs,plans}/`.
 - **Rama feature por tarea**, y **un commit por pieza** — así se puede parar en
   cualquier punto con el árbol limpio.
-- Gate: **`npx tsc --noEmit` + `npx next build` + los 31 `scripts/check-*.ts`**
+- Gate: **`npx tsc --noEmit` + `npx next build` + los 32 `scripts/check-*.ts`**
   (no hay tests; ese es el gate real).
 - **Si la tanda toca datos, el gate tiene que verlo**, y **con prueba de
   mutación**: rómpelo a propósito, comprueba que el gate falla, restaura.
-  > En la tanda de alquimia la mutación **encontró un fallo real**: el índice de
-  > materiales copiaba campo a campo y descartaba `herramienta` en silencio, así
-  > que la regla de «ninguna receta gasta una herramienta» estaba **vacía** —
-  > verde por casualidad—. Sin mutar, eso no se ve. Hazla siempre.
-  > Y desconfía de una regla que **no puede fallar**: comprueba también que el
-  > detector **dispara** contra una entrada mala.
+  > Dos veces ya ha encontrado un fallo real. En alquimia, el índice de
+  > materiales descartaba `herramienta` en silencio y la regla estaba **vacía**,
+  > verde por casualidad. En los dados, el puente con `dice-box` **no era
+  > comprobable** y por eso sobrevivió tanto. Desconfía de una regla que **no
+  > puede fallar**, y desconfía de un puente con una librería externa que no
+  > tenga prueba de forma.
 - **Commitea ANTES de mutar**: `git checkout --` no restaura un archivo que git
   aún no conoce.
+- **Cuidado con los pipes al comprobar el gate**: `npx tsx x.ts | tail` devuelve
+  el código de salida de `tail`, no el del script, así que un `&&` detrás miente.
+  Mira la salida, no solo el `$?`.
 - **Nunca `git add -A` a ciegas**: añade los archivos que has tocado.
 - Commits acaban con `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
   Autor `CarlosAlbertt` (Vercel bloquea otros emails). Con backticks en el
@@ -134,29 +141,32 @@ Encaja con `/bestiario` (124 monstruos) y con `/lugar`.
 > montar un banco de pruebas estático y servirlo por `/dice-box/` (excluida del
 > proxy), pero **bórralo antes de commitear**. La comprobación en vivo la hago yo.
 
-## Dónde lo dejamos (31 de julio de 2026, madrugada)
+## Dónde lo dejamos (31 de julio de 2026, tarde)
 
-- **Alquimia se juega**: 32 recetas, el caldero en `/taller`, el libro en
-  `lore_unlocked` con prefijo `receta:` (sin migración), los materiales como
-  objetos apilables que ocupan **1 hueco por montón**, y `/oficios` para el DM.
-- **Gate 31 `check-recetas.ts`**, probado por mutación con seis roturas.
-- **Fuera «Dados del grupo»** de `/personaje`; las peticiones de tirada del DM
-  van en un aviso flotante del layout.
-- **Los seis catálogos** (369 materiales) y **las 25 pociones**, de antes.
-- **Gate: 31 checks en verde**, con `tsc` y `next build` limpios.
+- **Los dados usan por fin sus caras.** `facesFrom()` lee las dos formas
+  posibles del resultado de `dice-box`; si no salen tantas caras como dados se
+  pidieron, se cae al fallback en vez de guardar un total a medias.
+- **4d6 descartando el menor** se resuelve dentro de `rollVisual` (`keep: 3`), y
+  el overlay enseña las cuatro caras con la menor tachada. `hold` deja el
+  resultado en pantalla entre tirada y tirada.
+- **Gate 32 `check-dados.ts`**, probado por mutación con cuatro roturas.
+- **Alquimia se juega** (32 recetas, el caldero, el libro en `lore_unlocked`,
+  `/oficios` para el DM) — de la tanda anterior, y **aún sin ver en partida**.
+- **Gate: 32 checks en verde**, con `tsc` y `next build` limpios.
 - **Migraciones v1–v23 al día.** Esta tanda **no llevó ninguna**.
 
 ## Lo que sigue pendiente y NO es esto
 
-No lo empieces sin decírmelo: **jugar una sesión de prueba** (siguen las
-features desplegadas y nunca vistas en partida), **qué hace cada una de las 18
-pericias del reglamento** (plantilla en `docs/pericias-borrador.md` §5),
+No lo empieces sin decírmelo: **jugar una sesión de prueba**, **qué hace cada una
+de las 18 pericias del reglamento** (plantilla en `docs/pericias-borrador.md` §5),
 **`/api/*` sin control de rol** —un jugador con la consola abierta puede llamar
-`/api/ia` aunque `/taberna` esté cerrada—, poblar Issylra, Marquet y los Dientes
-Rotos, ampliar la biblioteca de conjuros, los pozos de las 5 clases que faltan,
-el bestiario a medias (124 monstruos, solo CR 0–1/2), Fase P (downtime), Fase Q
-(misiones IA), C2 (regateo), y los **retratos de linaje**
-(`public/species/lineages/` sigue vacío).
+`/api/ia` aunque `/taberna` esté cerrada—, **Extracción de Componentes** (el
+séptimo oficio: el que *consigue* materiales, sin catálogo propio; falta la
+mecánica de despiece y recolección, y encaja con `/bestiario` y `/lugar`), poblar
+Issylra, Marquet y los Dientes Rotos, ampliar la biblioteca de conjuros, los
+pozos de las 5 clases que faltan, el bestiario a medias (124 monstruos, solo
+CR 0–1/2), Fase P (downtime), Fase Q (misiones IA), C2 (regateo), y los
+**retratos de linaje** (`public/species/lineages/` sigue vacío).
 
-**Empieza leyendo `HANDOFF.md`. Luego prueba Alquimia en la app viva y dime qué
+**Empieza leyendo `HANDOFF.md`. Luego prueba los dados en `/crear` y dime qué
 falla. No empieces tarea nueva hasta que eso esté visto.**
