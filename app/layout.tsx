@@ -4,6 +4,7 @@ import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
 import EpicOverlay from "@/components/EpicOverlay";
 import DiceBoard from "@/components/DiceBoard";
+import PeticionesTirada from "@/components/PeticionesTirada";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { SessionProvider } from "@/components/SessionProvider";
 import { getSessionProfile, isConfigured } from "@/lib/auth";
@@ -44,6 +45,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <EpicOverlay />
             </ErrorBoundary>
             <DiceBoard />
+            {/* Las peticiones de tirada del DM, encima de cualquier pantalla.
+                Van en el layout y no en una página porque su gracia es
+                justamente que te encuentren estés donde estés; cuando no hay
+                nada pedido no pintan nada. */}
+            <ErrorBoundary>
+              <PeticionesTirada />
+            </ErrorBoundary>
           </SessionProvider>
         ) : (
           <div className="flex-1">{children}</div>
