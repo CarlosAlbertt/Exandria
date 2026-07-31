@@ -11,14 +11,39 @@ const COLOR_KEY = "exandria:diceColor";
 const SOUND_KEY = "exandria:diceSound";
 const DEFAULT_COLOR = "#b3202e"; // rojo D&D: números blancos del tema resaltan bien
 
-// dice-box no publica tipos; describimos lo mínimo que usamos.
-type DieRoll = { value: number };
-type RollGroup = { value: number; rolls: DieRoll[] };
+// dice-box no publica tipos; describimos lo mínimo que usamos. `roll()` se
+// tipa como `unknown` a propósito: su forma la resuelve facesFrom().
 type DiceBoxInstance = {
   init: () => Promise<unknown>;
-  roll: (notation: string, opts?: { theme?: string; themeColor?: string }) => Promise<RollGroup[]>;
+  roll: (notation: string, opts?: { theme?: string; themeColor?: string }) => Promise<unknown>;
   onCollision?: (a: number, b: number, force: number) => void;
 };
+
+// Caras que salieron, a partir de lo que resuelve `box.roll()`.
+//
+// OJO: dice-box 1.1.4 NO devuelve grupos, devuelve un array PLANO de dados
+// ({ value, sides, groupId, rollId }) — la colección nace con `rolls: []` y se
+// le empuja un dado por tirada. Leer `res[0].rolls` daba undefined y el .map
+// reventaba: el TypeError se comía el `catch`, rollVisual devolvía null y
+// TODA tirada de la app caía al fallback aleatorio. Los dados de la mesa eran
+// decoración y el número salía de otro sitio.
+//
+// Aceptamos las dos formas (dados sueltos y grupos con `rolls`) para que un
+// cambio de versión no vuelva a dejarlo mudo.
+// Se exporta para que el gate pueda mirarla: este fallo pasó desapercibido
+// justo porque no había forma de comprobar la lectura del resultado.
+export function facesFrom(res: unknown): number[] {
+  if (!Array.isArray(res)) return [];
+  const out: number[] = [];
+  for (const el of res as Array<{ value?: unknown; rolls?: Array<{ value?: unknown }> }>) {
+    if (el && Array.isArray(el.rolls)) {
+      for (const die of el.rolls) if (typeof die?.value === "number") out.push(die.value);
+    } else if (typeof el?.value === "number") {
+      out.push(el.value);
+    }
+  }
+  return out;
+}
 
 let instance: DiceBoxInstance | null = null;
 let initPromise: Promise<DiceBoxInstance | null> | null = null;
@@ -210,14 +235,16 @@ export async function rollVisual(
     let dropped: number[] = [];
     if (isCheck) {
       const qty = opts!.adv ? 2 : 1;
-      const groups = await box.roll(`${qty}d20`, { themeColor: getDiceColor() });
-      const dice = groups[0].rolls.map((r) => r.value);
+      const dice = facesFrom(await box.roll(`${qty}d20`, { themeColor: getDiceColor() }));
+      // Si no salen tantas caras como dados se pidieron, no inventamos un
+      // total con lo que haya: se cae al fallback, que al menos es honesto.
+      if (dice.length !== qty) throw new Error(`dice-box devolvió ${dice.length} caras de ${qty}`);
       result = d20FromDice(dice, opts!.mod as number, opts!.adv);
     } else {
       const parsed = parseFormula(formula);
       if (!parsed) { emitBoard({ phase: "hidden", ...quiet }); return null; }
-      const groups = await box.roll(`${parsed.n}d${parsed.die}`, { themeColor: getDiceColor() });
-      const dice = groups[0].rolls.map((r) => r.value);
+      const dice = facesFrom(await box.roll(`${parsed.n}d${parsed.die}`, { themeColor: getDiceColor() }));
+      if (dice.length !== parsed.n) throw new Error(`dice-box devolvió ${dice.length} caras de ${parsed.n}`);
       if (typeof opts?.keep === "number" && opts.keep < dice.length) {
         dropped = droppedIndexes(dice, opts.keep);
         result = keepHighestFromDice(formula, dice, opts.keep, parsed.mod);
