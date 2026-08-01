@@ -7,7 +7,7 @@
 import { REGIONS, type Region } from "@/data/taldorei";
 import { POIS, type Poi, type PoiType } from "@/data/pois";
 import { WILDEMOUNT_REGIONS, WILDEMOUNT_POIS } from "@/data/wildemount";
-import { REGIONS_BY_CONTINENT, CONTINENT_VIEW, WORLD_POIS, type WorldType } from "@/data/world";
+import { REGIONS_BY_CONTINENT, CONTINENT_VIEW, DETALLE_REGION, WORLD_POIS, type WorldType } from "@/data/world";
 import { slugify } from "@/lib/slug";
 
 export type ContinentAtlas = { regions: Region[]; pois: Record<string, Poi[]> }; // pois keyed por region.slug
@@ -116,7 +116,17 @@ function seedContinent(cont: string, usedSlugs: Set<string>): ContinentAtlas {
 
     const map = worldMatch ? { x: worldMatch.x, y: worldMatch.y } : fallbackMapPos(cont, idx, names.length);
 
-    regions.push({ slug: finalSlug, name, capital: "—", accent, feature: "", blurb, image: "", map });
+    const detalle = DETALLE_REGION[name];
+    regions.push({
+      slug: finalSlug,
+      name,
+      capital: detalle?.capital ?? "—",
+      accent,
+      feature: detalle?.feature ?? "",
+      blurb,
+      image: "",
+      map,
+    });
 
     pois[finalSlug] = WORLD_POIS.filter(
       (p) => p.continent === cont && p.region === name && p.type !== "continente" && p.type !== "region"
@@ -147,6 +157,33 @@ export function seedAtlas(taldoreiOverride?: { regions: Region[]; pois: Record<s
   }
 
   return atlas;
+}
+
+// --- REGIONES DE ORIGEN -----------------------------------------------------
+// De dónde es tu personaje, para el selector de /crear y para el saber inicial
+// (data/saber.ts). Salen de la MISMA semilla que el atlas: no hay una segunda
+// lista escrita a mano que se pueda desincronizar de las regiones de verdad.
+//
+// A propósito lee la semilla ESTÁTICA y no el atlas que el DM tenga guardado
+// en `app_config`: el catálogo SABER se construye a nivel de módulo, así que
+// si el selector ofreciera una región que el DM ha añadido después, esa
+// elección no tendría ninguna entrada de saber detrás y el jugador se quedaría
+// sin su "Tu tierra" sin que nada avisara. Selector y saber miran lo mismo.
+let semillaCache: AtlasDefs | null = null;
+function semilla(): AtlasDefs {
+  return (semillaCache ??= seedAtlas());
+}
+
+/** Regiones elegibles como origen en un continente ("Mares" no tiene: []). */
+export function regionesDeOrigen(continente: string): Region[] {
+  return semilla()[continente]?.regions ?? [];
+}
+
+/** Todas las regiones de origen, con el continente al que pertenecen. */
+export function todasLasRegionesDeOrigen(): { continente: string; region: Region }[] {
+  return Object.entries(semilla()).flatMap(([continente, atlas]) =>
+    atlas.regions.map((region) => ({ continente, region }))
+  );
 }
 
 // Correcciones puntuales sobre POIs que ya viajaron a un `atlas_defs`

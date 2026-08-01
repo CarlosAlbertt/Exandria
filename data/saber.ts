@@ -9,7 +9,8 @@
 // continente a fondo, su subregión y su deidad. El resto se descubre jugando.
 
 import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS, type Deity, type DeitySide } from "@/data/pantheon";
-import { REGIONS, FACTIONS, HISTORY } from "@/data/taldorei";
+import { FACTIONS, HISTORY } from "@/data/taldorei";
+import { todasLasRegionesDeOrigen } from "@/data/atlas";
 import { HISTORY_TIMELINE } from "@/data/history";
 import { WORLD_POIS } from "@/data/world";
 import { PLANES, MOONS } from "@/data/cosmology";
@@ -129,9 +130,17 @@ function continentEntries(): Omit<SaberEntry, "place" | "category">[] {
   return out;
 }
 
-// --- SUBREGIONES DE TAL'DOREI: solo la tuya (o descubierta) -----------------
+// --- SUBREGIONES: solo la tuya (o descubierta) ------------------------------
+// Los CINCO continentes, no solo Tal'Dorei. Mientras esto recorría únicamente
+// `REGIONS`, un personaje de Marquet o Issylra elegía continente y se quedaba
+// sin entrada "Tu tierra": arrancaba con menos saber que uno de Tal'Dorei, y
+// no por diseño.
+//
+// En Wildemount esto convive con las 7 regiones narrativas (`wmreg:`), que se
+// entregan por CONTINENTE y son otro corte del mapa: aquellas son historia
+// curada, estas son las regiones-hoja del atlas. Se solapan de tema, no de id.
 function regionEntries(): Omit<SaberEntry, "place" | "category">[] {
-  return REGIONS.map((r) => ({
+  return todasLasRegionesDeOrigen().map(({ region: r }) => ({
     id: `reg:${r.slug}`,
     scope: { kind: "region" as const, regionSlug: r.slug },
     depth: "profundo" as const,
@@ -144,6 +153,13 @@ function regionEntries(): Omit<SaberEntry, "place" | "category">[] {
     ].filter(Boolean).join(" "),
   }));
 }
+
+// Continente de cada slug de región, para que `placeOf` archive la entrada en
+// su sitio. Antes bastaba con devolver "Tal'Dorei" a bulto porque no había
+// regiones de ningún otro continente; ahora las hay de los cinco.
+const CONTINENTE_POR_REGION = new Map<string, string>(
+  todasLasRegionesDeOrigen().map(({ continente, region }) => [region.slug, continente])
+);
 
 // --- DEIDADES: solo la tuya (o descubierta) ---------------------------------
 function deityEntries(): Omit<SaberEntry, "place" | "category">[] {
@@ -297,7 +313,11 @@ function placeOf(e: Omit<SaberEntry, "place" | "category">): SaberPlace {
   if (e.scope.kind === "continente" && (PLACES as readonly string[]).includes(e.scope.continent)) {
     return e.scope.continent as SaberPlace;
   }
-  if (e.id.startsWith("reg:") || e.id.startsWith("fac:")) return "Tal'Dorei";
+  if (e.id.startsWith("reg:")) {
+    const cont = CONTINENTE_POR_REGION.get(e.id.slice("reg:".length));
+    return (PLACES as readonly string[]).includes(cont ?? "") ? (cont as SaberPlace) : "Tal'Dorei";
+  }
+  if (e.id.startsWith("fac:")) return "Tal'Dorei";
   if (e.id.startsWith("wm") || e.id.startsWith("lang:") || e.id.startsWith("vida:")) return "Wildemount";
   if (e.id.startsWith("cl:")) {
     const found = PLACES.find((p) => e.id.startsWith(`cl:${slugKey(p)}:`));
