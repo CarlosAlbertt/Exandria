@@ -4,6 +4,58 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-01)
 
+> **Lo último (2026-08-01): EL DM YA PUEDE ENTRAR EN EL TALLER.**
+> Rama `taller-modo-dm`. **Sin migración.**
+>
+> **El fallo era de acceso, y explica tres tandas de silencio**: `Caldero.tsx`
+> se cerraba dos veces —`!inv.characterId` («no tienes un personaje en juego») y
+> `!tieneOficio` (la pericia de Alquimia)—, y **el DM no tiene ficha**. Así que
+> la única persona que necesitaba probar el taller era la única que no podía
+> abrirlo, y por eso alquimia llevaba desde el 2026-07-31 desplegada sin que
+> nadie la hubiera visto.
+>
+> **Las cuatro decisiones las tomó el usuario antes de escribir código**: el DM
+> **teclea el modificador** (sin ficha no hay `derive` de donde sacarlo),
+> **materiales infinitos y sin guardar nada**, **las 32 recetas** y **el cupo no
+> le aplica** (vive en `play_state`, que es de la ficha).
+>
+> **Dónde vive**: en `app/taller/page.tsx`, **la cáscara, no el caldero**. Hoy
+> solo alquimia está construida; si el modo naciera dentro de cada oficio, el
+> siguiente taller nacería otra vez invisible. Los cinco que faltan lo heredan y
+> lo dicen en su hueco, para que no parezca que el modo no funciona.
+>
+> **`bolsaDeArena` no es un camino aparte**: fabrica justo lo que la receta pide
+> y se la pasa a las MISMAS funciones que usa el jugador (`requisitos`,
+> `puedePreparar`, `consumir`). Un modo DM con lógica propia sería lógica que
+> nadie prueba — la pantalla que el máster revisa no sería la que juega la mesa.
+> La tirada también es la de verdad, por el mismo `rollVisual`.
+>
+> ⚠️ **Lo que este modo NO prueba, y hay que decirlo**: como no guarda nada,
+> **no comprueba que los materiales se descuenten ni que sobreviva a recargar**,
+> que es justo lo más sospechoso de alquimia. Eso sigue necesitando **un
+> personaje de verdad con la pericia**. Tampoco prueba el cupo. El modo DM sirve
+> para ver la interfaz, el libro y la tirada; el circuito de datos, no.
+>
+> **Quién la ve**: solo el DM, y el rol viene del **servidor**
+> (`getSessionProfile` en `app/layout.tsx`). Pero es un filtro de **interfaz, no
+> una puerta**: se evalúa en el navegador. Está bien así **porque no hay nada
+> que proteger** — el modo no escribe en la bolsa (no hay pociones que robar) y
+> las 32 recetas ya viajan en el bundle de todos los jugadores desde que
+> `Caldero` es `"use client"` e importa `@/data/recetas`. **El día que el modo
+> DM escriba algo, esto deja de valer** y hay que comprobarlo en el servidor.
+>
+> **`check-recetas` pasa de ~474 a 486 comprobaciones**, con **prueba de
+> mutación de cuatro roturas**: la bolsa olvidando las herramientas, la bolsa
+> trayendo de más, `modDmValido` sin el guardia de `NaN` —sin él el `NaN` llega
+> al total, `NaN >= cd` es `false` y **todas las recetas fallarían sin decir por
+> qué**— y la arena ofreciendo solo las recetas iniciales. Las cuatro tumbaron
+> el gate y al restaurar volvió a verde.
+>
+> **Los 33 gates en verde**, con `tsc` y `next build` limpios. **Sin probar en
+> la app viva.**
+
+## 🚦 Antes de eso (2026-08-01): TU REGIÓN EN LOS CINCO CONTINENTES
+
 > **Lo último (2026-08-01, mergeado a `master`): TU REGIÓN EXISTE EN LOS CINCO
 > CONTINENTES.** Rama `feat/origen-todos-los-continentes`. **Sin migración.**
 >
@@ -55,15 +107,18 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > > mutación encuentra algo real — y la segunda que lo que encuentra es *una
 > > regla que no podía fallar*.
 >
-> **Pendiente de decisión tuya**: **los Dientes Rotos siguen siendo UNA región**
-> para todo el archipiélago, así que elegirlos como origen no dice nada. La wiki
-> da islas con nombre (Kalutha, Slival, Igthuldus, Ruukva, Evaterena,
-> Athova-Rae, Shardborne) y **dos sociedades enfrentadas** —la Hueste Osendida,
-> tribus pescadoras aisladas que veneran los sueños, y la Asamblea Wanderman,
-> compañía mercante naufragada de la Costa del Serrallo—, que como origen dicen
-> mucho más que una isla. **Cuáles son origen jugable lo dictas tú.** Ojo: son
-> regiones **nuevas**, así que ahí sí entra `mergeAtlas` (solo SUMA regiones) y
-> conviene mirar qué pasa con la región genérica que ya esté guardada.
+> **DECIDIDO (2026-08-01): los Dientes Rotos van POR ISLA.** Siguen siendo UNA
+> sola región para todo el archipiélago —el único continente así—, y el usuario
+> ha decidido partirlos por las **siete islas** de la wiki: Kalutha, Slival,
+> Igthuldus, Ruukva, Evaterena, Athova-Rae y Shardborne. La vía de las **dos
+> sociedades** (Hueste Osendida y Asamblea Wanderman) **queda descartada como
+> división de origen**; sirve como lore dentro del texto de cada isla.
+> Ojo al implementarlo: son regiones **nuevas**, así que ahí sí entra
+> `mergeAtlas` (solo SUMA regiones), hay que mirar qué pasa con la región
+> genérica ya guardada en `atlas_defs`, y **el gate 33 exigirá entrada de saber
+> y `DETALLE_REGION` para las siete**. El texto **lo dicta el usuario**: aquí no
+> hay blurb sembrado del que tirar, al revés que en las once de esta tanda.
+> Detalle en `docs/PROMPT-SIGUIENTE-SESION.md`.
 >
 > **Los 33 gates en verde ya sobre el `master` mergeado** (no solo sobre la base
 > vieja de la rama), con `tsc --noEmit` y `next build` limpios.

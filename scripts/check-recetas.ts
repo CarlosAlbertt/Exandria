@@ -14,7 +14,8 @@ import { RECETAS, CD_POR_RAREZA, RECETAS_CON_CUPO, recetasDe, recetaPorSlug, rec
 import { POCIONES } from "../data/pociones";
 import { MATERIALES, materialPorN, materialPorNombre, materialesDe, esMaterial, OFICIOS_ORDEN, OFICIO_PERICIA, type Oficio } from "../lib/materiales";
 import { huecosUsados } from "../lib/inventario";
-import { recetasSabidas, requisitos, puedePreparar, consumir, anadirProducto, idReceta, slugDeId, cupoLibre, cupoHasta, diasDeCupo } from "../lib/recetario";
+import { recetasSabidas, recetasDeArena, bolsaDeArena, requisitos, puedePreparar, consumir, anadirProducto, idReceta, slugDeId, cupoLibre, cupoHasta, diasDeCupo } from "../lib/recetario";
+import { modDmValido, MOD_DM_MIN, MOD_DM_MAX } from "../lib/tallerDm";
 import { MINUTES_PER_DAY } from "../lib/gameClock";
 import { SKILLS } from "../data/rules";
 import { norm } from "../lib/slug";
@@ -268,6 +269,54 @@ check("la herramienta NO se gasta",
   trasHerr.find((i) => i.name === cincel.name)?.qty === 1);
 check("el material sí se gasta",
   trasHerr.find((i) => i.name === piedra.name) === undefined);
+
+/* --------------------- La caja de arena del DM --------------------- */
+// El máster no tiene ficha, así que el caldero lo paraba en la primera puerta y
+// alquimia llevaba tres tandas desplegada sin que nadie pudiera mirarla. El modo
+// DM le da todas las recetas y una bolsa a medida, y esa bolsa tiene que pasar
+// por las MISMAS funciones que usa el jugador: si el modo DM tuviera su propio
+// camino, la pantalla que el máster revisa no sería la que juega la mesa.
+
+check("la arena ofrece TODAS las recetas del oficio, no solo las sabidas",
+  recetasDeArena("alquimia").length === recetasDe("alquimia").length &&
+  recetasDeArena("alquimia").length > recetasSabidas("alquimia", [OFICIO_PERICIA.alquimia], []).length);
+check("la arena no mezcla oficios",
+  recetasDeArena("alquimia").every((r) => r.oficio === "alquimia"));
+
+// La razón de ser del modo: el DM nunca se queda mirando un botón apagado.
+check("con la bolsa de arena se puede preparar CUALQUIER receta",
+  RECETAS.every((r) => puedePreparar(r, bolsaDeArena(r))));
+check("y ninguna línea de requisitos sale corta",
+  RECETAS.every((r) => requisitos(r, bolsaDeArena(r)).every((f) => f.tiene >= f.necesita)));
+
+// Exacta, no generosa: si la bolsa trajera de más, dejaría de contar lo que la
+// receta pide de verdad y un requisito mal escrito pasaría desapercibido.
+check("la bolsa trae exactamente las líneas que la receta pide",
+  RECETAS.every((r) => bolsaDeArena(r).length === r.materiales.length + (r.herramientas?.length ?? 0)));
+check("los materiales se agotan justos al preparar en la arena",
+  RECETAS.every((r) => consumir(bolsaDeArena(r), r).length === (r.herramientas?.length ?? 0)));
+
+// Las herramientas son el caso que más fácil se olvida: no se gastan, así que
+// una basta, pero si faltaran en la bolsa el botón se apagaría sin motivo el día
+// que cristalografía y tatuaje tengan recetas.
+check("la bolsa de arena incluye la herramienta que la receta exige",
+  puedePreparar(conHerramienta, bolsaDeArena(conHerramienta)) === true);
+check("y la herramienta sigue ahí después de preparar",
+  consumir(bolsaDeArena(conHerramienta), conHerramienta)
+    .some((i) => norm(i.name) === norm(cincel.name)));
+
+// Ids estables: esta bolsa no llega nunca a la base de datos, y un id fijo es lo
+// que hace la función comprobable.
+check("la bolsa de arena es determinista",
+  JSON.stringify(bolsaDeArena(RECETAS[0])) === JSON.stringify(bolsaDeArena(RECETAS[0])));
+
+// El modificador lo teclea el DM: sin ficha no hay `derive` de donde sacarlo.
+check("el modificador del DM se acota por arriba y por abajo",
+  modDmValido(99) === MOD_DM_MAX && modDmValido(-99) === MOD_DM_MIN);
+check("un modificador imposible cae a 0 y no envenena la tirada",
+  modDmValido(NaN) === 0 && modDmValido(Infinity) === 0);
+check("el modificador es entero",
+  modDmValido(3.7) === 3 && modDmValido(-1.2) === -1);
 
 console.log(failures === 0 ? `\nTodo OK` : `\n${failures} FALLOS`);
 process.exit(failures === 0 ? 0 : 1);

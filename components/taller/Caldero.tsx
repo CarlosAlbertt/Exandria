@@ -8,8 +8,9 @@ import { roll as rollFallback } from "@/lib/dice";
 import { loadActiveCharacter, saveCharacter } from "@/lib/character";
 import { recetaPorSlug, produceNombre, produceRareza, type Receta } from "@/data/recetas";
 import { RAREZA_LABEL } from "@/data/pociones";
-import { recetasSabidas, sabeOficio, requisitos, puedePreparar, consumir, anadirProducto, cupoLibre, cupoHasta, diasDeCupo } from "@/lib/recetario";
+import { recetasSabidas, recetasDeArena, bolsaDeArena, sabeOficio, requisitos, puedePreparar, consumir, anadirProducto, cupoLibre, cupoHasta, diasDeCupo } from "@/lib/recetario";
 import { OFICIO_PERICIA } from "@/lib/materiales";
+import type { ModoDm } from "@/lib/tallerDm";
 import type { PlayState } from "@/lib/recursos";
 import { fmtMod } from "@/data/rules";
 
@@ -25,8 +26,13 @@ import { fmtMod } from "@/data/rules";
  * escribe las columnas `items`/`equipment` con el mismo debounce y por el mismo
  * camino. Así preparar una poción y soltar un objeto no son dos formas distintas
  * de tocar la bolsa.
+ *
+ * **`dm` es la caja de arena del máster**: sin ficha, sin la pericia, con todas
+ * las recetas y materiales infinitos, y **sin guardar nada**. No es un camino
+ * aparte —se le pasa `bolsaDeArena` a las mismas funciones que usa el jugador—
+ * porque una pantalla que solo mira el DM no sería la que juega la mesa.
  */
-export default function Caldero({ userId }: { userId: string | null }) {
+export default function Caldero({ userId, dm }: { userId: string | null; dm: ModoDm | null }) {
   const inv = useInventarioVivo(userId, "self");
   // El cupo se mide en días de JUEGO, así que se compara con el reloj de
   // campaña y no con la hora real: adelantar días desde Panel DM › Tiempo tiene
@@ -47,7 +53,12 @@ export default function Caldero({ userId }: { userId: string | null }) {
   );
 
   const tieneOficio = sabeOficio(skills, "alquimia");
-  const libro = useMemo(() => recetasSabidas("alquimia", skills, lore), [skills, lore]);
+  // El DM ve las 32: no está jugando un personaje, está mirando si el taller
+  // funciona, y con el libro del descubrimiento no llegaría ni a la mitad.
+  const libro = useMemo(
+    () => (dm ? recetasDeArena("alquimia") : recetasSabidas("alquimia", skills, lore)),
+    [dm, skills, lore],
+  );
 
   const filtrado = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -57,8 +68,9 @@ export default function Caldero({ userId }: { userId: string | null }) {
 
   // El modificador de la tirada sale de `derive`, la misma fuente que la ficha:
   // si aquí se recalculara, el caldero podría prometer un +5 que la hoja no da.
+  // En la caja de arena no hay ficha de la que derivarlo, así que lo pone el DM.
   const pericia = inv.derived.skills.find((s) => s.name === OFICIO_PERICIA.alquimia);
-  const mod = pericia?.mod ?? 0;
+  const mod = dm ? dm.mod : pericia?.mod ?? 0;
 
   const play: PlayState = useMemo(
     () => (inv.character?.play_state && typeof inv.character.play_state === "object"
@@ -68,12 +80,21 @@ export default function Caldero({ userId }: { userId: string | null }) {
   );
 
   const receta = sel ? recetaPorSlug(sel) ?? null : null;
-  const lineas = receta ? requisitos(receta, inv.items) : [];
+  // La bolsa contra la que se mide todo. En modo DM es la de arena, que trae
+  // justo lo que la receta pide: así el caldero no necesita un caso especial en
+  // cada comprobación, y las que corren son las mismas que le corren al jugador.
+  const bolsa = useMemo(
+    () => (dm && receta ? bolsaDeArena(receta) : inv.items),
+    [dm, receta, inv.items],
+  );
+  const lineas = receta ? requisitos(receta, bolsa) : [];
   // El cupo solo frena a las recetas que lo llevan. Es lo que hace que gastarlo
   // no te deje sin poder prepararte una curación.
-  const cupoPillado = !!receta?.cupo && !cupoLibre(play, nowGameMin);
+  // **Al DM no le aplica**: vive en `play_state`, que es de la ficha, y sin
+  // ficha no hay dónde guardarlo ni nada que liberar adelantando días.
+  const cupoPillado = !dm && !!receta?.cupo && !cupoLibre(play, nowGameMin);
   const diasQueFaltan = cupoPillado ? diasDeCupo(play, nowGameMin) : 0;
-  const listo = receta ? puedePreparar(receta, inv.items) && !cupoPillado : false;
+  const listo = receta ? puedePreparar(receta, bolsa) && !cupoPillado : false;
 
   /**
    * Gasta el cupo tras acertar una receta que lo lleva.
@@ -94,10 +115,11 @@ export default function Caldero({ userId }: { userId: string | null }) {
   }
 
   async function preparar(r: Receta) {
-    if (busy || !inv.characterId) return;
+    if (busy) return;
+    if (!dm && !inv.characterId) return;
     // Segunda comprobación, contra el reloj de este instante: entre que se
     // pintó el botón y se pulsa, el DM puede haber adelantado (o no) los días.
-    if (r.cupo && !cupoLibre(play, nowGameMin)) {
+    if (!dm && r.cupo && !cupoLibre(play, nowGameMin)) {
       setMsg({ texto: `El alambique aún no se ha asentado. Vuelve dentro de ${diasDeCupo(play, nowGameMin)} día(s).`, exito: false });
       return;
     }
@@ -108,6 +130,21 @@ export default function Caldero({ userId }: { userId: string | null }) {
     const tirada = await rollVisual("1d20", { mod, check: true, label: `Alquimia · ${nombre}` });
     const total = tirada ? tirada.total : (rollFallback("1d20")?.total ?? 0) + mod;
     const exito = total >= r.cd;
+
+    // La caja de arena termina aquí: **no toca la bolsa ni el cupo**. No hay
+    // ficha donde escribirlos, y lo que sale del caldero se tira. Lo que sí es
+    // de verdad es la tirada —pasa por el mismo `rollVisual` que la mesa—, que
+    // es justo lo que hay que poder mirar.
+    if (dm) {
+      setMsg({
+        texto: exito
+          ? `${total} contra CD ${r.cd}: sale bien. Saldría ${nombre} — en la caja de arena no se guarda nada.`
+          : `${total} contra CD ${r.cd}: la mezcla se echa a perder. En la caja de arena no se gasta nada.`,
+        exito,
+      });
+      setBusy(false);
+      return;
+    }
 
     // La comprobación se repite DENTRO del updater, contra la bolsa de ese
     // instante y no contra la que se pintó. La bolsa es viva: el DM puede
@@ -147,7 +184,9 @@ export default function Caldero({ userId }: { userId: string | null }) {
   if (!inv.ready) {
     return <p className="text-center italic" style={{ color: "var(--color-dim)" }}>Encendiendo el fuego…</p>;
   }
-  if (!inv.characterId) {
+  // Las dos puertas son del JUGADOR. El DM no las cruza: no tiene ficha ni
+  // pericia, y era exactamente lo que le impedía mirar su propio taller.
+  if (!dm && !inv.characterId) {
     return (
       <div className="panel-raised p-10 text-center">
         <p className="font-ui text-[13px]" style={{ color: "var(--color-muted)" }}>
@@ -156,7 +195,7 @@ export default function Caldero({ userId }: { userId: string | null }) {
       </div>
     );
   }
-  if (!tieneOficio) {
+  if (!dm && !tieneOficio) {
     return (
       <div className="panel-raised p-10 text-center">
         <i className="fas fa-flask text-3xl mb-4 block" style={{ color: "var(--color-dim)" }} />
@@ -177,14 +216,14 @@ export default function Caldero({ userId }: { userId: string | null }) {
       <section>
         <p className="eyebrow mb-3">
           <i className="fas fa-book mr-2" style={{ color: "var(--color-bronze)" }} />
-          Tu libro de recetas
+          {dm ? "El recetario entero" : "Tu libro de recetas"}
         </p>
 
         <div className="panel-raised p-4">
           <div className="flex items-baseline justify-between gap-2 mb-3">
             <p className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>
               {libro.length} receta{libro.length === 1 ? "" : "s"} · Alquimia {fmtMod(mod)}
-              {pericia?.proficient && <i className="fas fa-star ml-1.5 text-[9px]" style={{ color: "var(--color-bronze)" }} />}
+              {!dm && pericia?.proficient && <i className="fas fa-star ml-1.5 text-[9px]" style={{ color: "var(--color-bronze)" }} />}
             </p>
           </div>
 
@@ -208,7 +247,7 @@ export default function Caldero({ userId }: { userId: string | null }) {
             <ul className="space-y-2">
               {filtrado.map((r) => {
                 const rareza = produceRareza(r);
-                const puede = puedePreparar(r, inv.items);
+                const puede = puedePreparar(r, dm ? bolsaDeArena(r) : inv.items);
                 return (
                   <li key={r.slug}>
                     <button
@@ -291,7 +330,9 @@ export default function Caldero({ userId }: { userId: string | null }) {
               </ul>
 
               <p className="font-ui text-[11px] mb-3" style={{ color: "var(--color-dim)" }}>
-                Al fallar, los ingredientes se pierden igual.
+                {dm
+                  ? "Caja de arena: la tirada es de verdad, pero no se gasta ni se guarda nada."
+                  : "Al fallar, los ingredientes se pierden igual."}
               </p>
 
               {/* El cupo se explica ANTES de tocar el botón: un botón apagado sin

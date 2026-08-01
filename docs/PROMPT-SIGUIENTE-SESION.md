@@ -106,46 +106,19 @@ El libro con sus recetas iniciales, preparar una poción, que **sobreviva a
 recargar**, los huecos en `/inventario` (un montón = 1 hueco), «Enseñar recetas»
 del DM y `/oficios`.
 
-> [!danger] **Y el DM no puede probarlo: por eso lleva tres tandas sin verse.**
-> `/taller` está abierta al DM, pero el caldero se cierra **dos veces** dentro de
-> `components/taller/Caldero.tsx`, y las dos miran a un personaje:
-> 1. `if (!inv.characterId)` → «No tienes un personaje en juego». **El DM no
->    tiene ficha, así que se queda aquí** y no ve nada de nada.
-> 2. `if (!tieneOficio)` → exige la pericia de oficio **Alquimia**, que se elige
->    al crear el personaje o al llegar a nivel 7.
+> [!tip] **La caja de arena del DM ya está: entra por `/taller`.**
+> El caldero se cerraba **dos veces** y las dos miraban a un personaje
+> (`!inv.characterId` y `!tieneOficio`), así que el DM no podía abrirlo — de ahí
+> las tres tandas de silencio. Ahora hay un interruptor **«Caja de arena del
+> DM»** arriba de las pestañas, **encendido de entrada**, con un campo para
+> teclear el modificador con el que tiras. Apágalo para ver el taller como lo ve
+> la mesa.
 >
-> El resultado es que **la única persona que necesita probar los talleres es la
-> única que no puede entrar en ellos**. Arreglar esto va **antes** de construir
-> más talleres: si no, el siguiente nace igual de invisible.
-
-## Lo que hay que añadir: EL DM PRUEBA LOS TALLERES SIN FICHA
-
-**Siendo DM tengo que poder abrir cualquier taller y usarlo**, sin personaje y
-sin la pericia. No es una comodidad: es la única forma de ver funcionar lo que se
-construye, porque el asistente no pasa del login y yo no juego con ficha.
-
-**Ojo con el alcance**: hoy **solo alquimia existe**. Las otras cinco pestañas de
-`/taller` son la promesa («este taller se abrirá más adelante»), así que «probar
-todo tipo de talleres» empieza por el caldero y se hereda según se vayan
-construyendo — **el modo DM tiene que quedar en el patrón**, no parcheado en
-alquimia, o los cinco siguientes repiten el fallo.
-
-### Lo que hay que decidirme antes de tocarlo
-
-1. **Con qué tira el DM.** El modificador sale de `derive` sobre la ficha, y sin
-   ficha no hay número. ¿Tira con **+0**, con un valor que él fije, o el modo DM
-   **se salta la tirada** y sirve para ver la interfaz y el resultado?
-2. **De dónde salen los materiales y a dónde va lo que sale.** Preparar descuenta
-   del inventario del personaje y guarda la poción en él. Sin ficha no hay bolsa:
-   ¿el DM tiene **materiales infinitos** y lo fabricado se tira, o el modo DM
-   **elige la ficha de un jugador** y trabaja sobre ella?
-3. **Qué libro de recetas ve.** El libro enseña solo lo descubierto
-   (`lore_unlocked`). El DM debería ver **las 32**, pero eso es otra pantalla
-   distinta de la del jugador — o es justo lo que ya hace `/oficios`, y entonces
-   lo que falta es solo **poder ejecutar** desde ahí.
-4. **Si el cupo de las dos pociones cumbre le aplica.** Vive en
-   `play_state.tallerCupo`, que es de la ficha. Probando sin ficha no hay dónde
-   guardarlo — y probar el cupo es justo una de las cosas pendientes de ver.
+> ⚠️ **Pero la caja de arena NO guarda nada**, así que **no prueba que los
+> materiales se descuenten ni que sobreviva a recargar** — que es justo lo más
+> sospechoso — ni el cupo. Para eso sigue haciendo falta **un personaje de
+> verdad con la pericia de Alquimia**. La caja sirve para el libro, la interfaz
+> y la tirada.
 
 ## La tarea de esta sesión: LOS TALLERES JUGABLES
 
@@ -192,19 +165,41 @@ Son las decisiones que el boceto deja abiertas. **Pregúntamelas, no las suponga
 - **`riesgo`** (destilación): la mitad del catálogo trae contrapartida y hoy el
   fallo solo cuesta los materiales.
 
-## Decisión abierta que dejó la tanda del origen
+## Tarea decidida: LOS DIENTES ROTOS, POR ISLA
 
-**Los Dientes Rotos son UNA sola región** para todo el archipiélago, así que
-elegirlos como origen no dice nada — es el único continente que sigue así. La
-wiki da islas con nombre (Kalutha, Slival, Igthuldus, Ruukva, Evaterena,
-Athova-Rae, Shardborne) y, sobre todo, **dos sociedades enfrentadas**: la
-**Hueste Osendida**, tribus pescadoras aisladas que veneran sueños y pesadillas,
-y la **Asamblea Wanderman**, compañía mercante de la Costa del Serrallo que
-naufragó allí. Como origen, la sociedad dice mucho más que la isla.
+**Ya está decidido: van por isla, no por sociedad.** Hoy el archipiélago entero
+es **UNA sola región**, así que elegirlo como origen no dice nada — es el único
+continente que sigue así, y el selector de `/crear` le ofrece una única opción
+frente a las 7 u 8 de los demás.
 
-**Cuáles son origen jugable lo dicto yo.** Ojo al implementarlo: serían regiones
-**nuevas**, así que ahí sí entra `mergeAtlas` (solo SUMA regiones) y hay que
-mirar qué pasa con la región genérica que ya esté guardada en `atlas_defs`.
+Las islas con nombre que da la wiki son **siete**: Kalutha, Slival, Igthuldus,
+Ruukva, Evaterena, Athova-Rae y Shardborne. *(La otra vía que se barajó —las dos
+sociedades enfrentadas, la Hueste Osendida y la Asamblea Wanderman— **queda
+descartada como división de origen**. Sigue siendo buen material de lore y puede
+entrar en el texto de cada isla: qué sociedad manda en ella dice mucho.)*
+
+**Lo que hay que tener en cuenta al hacerlo, y no es poco:**
+
+1. **Son regiones NUEVAS**, así que aquí sí entra `mergeAtlas` (solo SUMA
+   regiones). Y hay que decidir **qué pasa con la región genérica que ya esté
+   guardada** en `atlas_defs` de partidas en curso: si se queda, el continente
+   tendría ocho opciones y una de ellas sería la vieja «Dientes Rotos» a secas.
+2. **El gate 33 te va a parar, y con razón.** `check-origen` vigila que
+   **ninguna región que el selector ofrece se quede sin entrada de saber
+   detrás**. Cada isla necesita su entrada en el catálogo `SABER` **y** su
+   `DETALLE_REGION` en `data/world.ts` (plaza principal y rasgo), o saldrá con
+   `capital: "—"` y rasgo vacío — media entrada de «Tu tierra» frente a la
+   entera de Tal'Dorei. Ese fue exactamente el agujero de la tanda anterior.
+3. **El texto de las siete lo dicto yo, o sale de la wiki. No se rellena a ojo.**
+   La tanda del origen salió bien porque **no hizo falta inventarse lore**: las
+   regiones ya venían sembradas con blurb desde `WORLD_POIS`. Aquí no es el
+   caso, así que **pregúntame por el contenido antes de escribirlo**.
+4. **Los slugs de Tal'Dorei no se tocan**: van escritos a mano en el script
+   desde que se descubrió que el check era tautológico. Añadir islas no los
+   mueve, pero el conteo sí cambia: **de 28 regiones se pasaría a 34** (o 35 si
+   la genérica se queda), y con él los números que hay que comprobar en la app.
+5. **Sin migración**, si se hace como la anterior: los slugs existentes no
+   cambian, así que las fichas ya guardadas siguen valiendo.
 
 ## La otra opción, si prefieres deuda a features
 
@@ -285,6 +280,12 @@ derivada, que es fuente de verdad para la hoja **y** para el panel del DM.
 
 Todo en `master` y desplegado. **Nada de esto se ha visto en la app viva.**
 
+- **El DM entra al taller sin ficha ni pericia.** Caja de arena en
+  `app/taller/page.tsx` —la cáscara, no el caldero, para que los cinco talleres
+  que faltan la hereden—: todas las recetas, `bolsaDeArena` con lo que la receta
+  pide, modificador tecleado y **nada que se guarde**. La bolsa pasa por las
+  mismas funciones que usa el jugador, a propósito. `check-recetas` sube a 486
+  comprobaciones, con **cuatro mutaciones** probadas.
 - **La región de origen existe en los cinco continentes.** 28 regiones:
   Tal'Dorei 8, Wildemount 8, Marquet 7, Issylra 4, Dientes Rotos 1. Salen de la
   **misma semilla que el atlas** (`regionesDeOrigen`), no de una segunda lista a
@@ -331,8 +332,15 @@ CR 0–1/2), Fase P (downtime), Fase Q (misiones IA), C2 (regateo), y los
 cosas sin ver: **el origen** (lo más reciente y lo menos mirado), el cupo, el
 bestiario y los dados.
 
-**Lo de alquimia no te lo puedo decir hasta que el DM pueda entrar al taller**,
-así que esa es la primera pieza de código: pregúntame sus cuatro decisiones y
-déjala en el patrón, no parcheada en el caldero. **Los talleres jugables van
-después**, y también con sus cuatro decisiones preguntadas antes de escribir
-nada: sin saber qué produce cada oficio no hay nada que fabricar.
+De alquimia ya puedo mirar el libro, la interfaz y la tirada por la **caja de
+arena del DM**; lo que sigue sin poder comprobarse así es que **se descuenten los
+materiales y sobreviva a recargar**, que necesita un personaje con la pericia.
+
+**Y luego sigue con lo pendiente, en este orden:**
+
+1. **Los Dientes Rotos por isla** — ya está decidido, así que no hay que
+   preguntar *si*, solo **el texto de las siete**: no hay blurb sembrado del que
+   tirar y el gate 33 no deja pasar una región sin saber detrás.
+2. **Los talleres jugables** — aquí sí, **las cuatro decisiones antes de
+   escribir nada**: sin saber qué produce cada oficio no hay nada que fabricar.
+3. **La `mecanica` de forja**, si prefieres pagar deuda a añadir features.
