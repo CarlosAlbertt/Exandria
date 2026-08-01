@@ -7,9 +7,13 @@ CarlosAlbertt/Exandria, rama `master`, desplegada en exandria.vercel.app.
 > Alquimia **ya estaba hecho y desplegado**, y se reconstruyó desde cero con
 > otro diseño hasta que el merge lo destapó. Hubo que tirarlo y quedarse solo
 > con lo nuevo.
+>
+> **Y el desfase va en los DOS sentidos.** Ese mismo día se descubrió lo
+> contrario: este clon tenía **trabajo que el remoto no tenía** (ver «la rama
+> local», abajo). Estar «al día» no es solo no ir por detrás.
+>
 > **`HANDOFF.md` y el vault describen el clon LOCAL, no el remoto: ninguno de
-> los dos sirve para saber si estás al día.** Si `status` dice «behind»,
-> ponte al día antes de planificar nada.
+> los dos sirve para saber si estás al día.** Solo `git fetch` lo sabe.
 
 > **Ojo con la ruta**: hay clon en `C:\Users\carlo_pjou9vc\Exandria` y en
 > `C:\Users\carlo\Downloads\dnd-campaign-app` — **son máquinas distintas**;
@@ -17,13 +21,64 @@ CarlosAlbertt/Exandria, rama `master`, desplegada en exandria.vercel.app.
 > gate no corre sin él**. `npm install` toca `package-lock.json` y los assets de
 > `public/dice-box/`; eso **no es tuyo, no lo commitees**.
 
-**Lee primero `HANDOFF.md`** — es el documento de estado vivo (del clon local:
-ver el aviso de arriba).
+## Qué es esto, en cuatro líneas
 
-## Lo primero, y no es código: PROBAR EN LA APP
+App web multijugador en tiempo real para una campaña de **D&D 2024** en
+**Exandria**. Dos roles: **DM** (lo ve todo) y **jugador**. Next.js 16 (App
+Router, Turbopack) · React 19 · Tailwind v4 · TypeScript · Supabase (Auth +
+Postgres + Realtime) · IA local con Ollama por túnel cloudflared. **No hay
+tests**: el gate es `tsc` + `next build` + los `scripts/check-*.ts`.
 
-Hay **tres cosas seguidas con gate y sin ver en vivo**. La guía paso a paso de
-las dos últimas está en el vault (`00 Meta/Pendientes.md`):
+**Lee `HANDOFF.md`** después del `fetch` — es el documento de estado vivo, con
+una sección por tanda y las lecciones pagadas.
+
+## Lo primero: PONER EL REPO EN UNA SOLA PIEZA
+
+Ahora mismo el trabajo está partido en dos mitades que **no se conocen**:
+
+- **`master` (`73c2456`)**, con lo hecho desde la otra máquina: el **cupo de las
+  dos pociones cumbre** y el **bestiario optimista**. **32 gates.**
+- **`feat/origen-todos-los-continentes`, 6 commits, SOLO EN ESTE CLON** — sin
+  pushear y sin mergear. Sale de `5c5eea0`, y `master` ha avanzado **7 commits**
+  desde ahí. **33 gates** (añade `check-origen`).
+
+**Empieza por asegurar esa rama**: mientras siga sin pushear, existe en un solo
+disco. Comprobado que **el código no se solapa** — la rama toca
+`data/atlas.ts`, `data/saber.ts`, `data/world.ts`,
+`components/crear/steps/BackgroundScene.tsx` y `scripts/check-origen.ts`, y
+`master` no ha tocado ninguno. **El único choque son los dos documentos**,
+`HANDOFF.md` y este mismo archivo. Después del merge, **el gate hay que
+volver a correrlo entero**: nunca se ha visto la rama sobre este `master`.
+
+### Qué arregla esa rama, y qué hay que mirar en la app antes de mergear
+
+Al crear personaje, **solo Tal'Dorei ofrecía subregión**. Y no era cosmético:
+`originRegion` decide la entrada **«Tu tierra»** del saber inicial, y
+`regionEntries()` solo recorría las regiones de Tal'Dorei, así que un personaje
+de Marquet, Issylra o los Dientes Rotos **arrancaba con menos saber**, y no por
+diseño.
+
+Compruébalo en `/crear` → Trasfondos → «Origen y fe»:
+
+1. Elige **Marquet** y mira que aparece «Tu región» con **7** opciones. Luego
+   Issylra (**4**), Wildemount (**8**), Tal'Dorei (**8**), Dientes Rotos (**1**).
+   Antes solo salía en Tal'Dorei.
+2. Al **cambiar de continente**, la región elegida se limpia (el slug era de
+   otro continente).
+3. Termina una ficha con origen de **Marquet** y mira que en el saber sale su
+   entrada **«Tu tierra»** con su texto — plaza principal y rasgo incluidos.
+   Ese era el agujero.
+4. En `/reino`, que la región de Marquet **NO** aparezca archivada bajo
+   Tal'Dorei. (`placeOf` mandaba todo id `reg:` a Tal'Dorei; está corregido.)
+
+> **Sin migración.** Los slugs no cambian, así que las fichas y ubicaciones ya
+> guardadas siguen valiendo, y los `atlas_defs` del DM no necesitan
+> `ATLAS_FIXES`.
+
+## Lo segundo, y tampoco es código: PROBAR EN LA APP
+
+Se acumulan **cuatro tandas con gate en verde y sin ver en partida**. La guía
+paso a paso de las dos primeras está en el vault (`00 Meta/Pendientes.md`).
 
 - **El cupo** de Posibilidad y la legendaria: que fallar **no** lo gaste, que
   acertar bloquee **solo esas dos**, y que **adelantar días desde Panel DM ›
@@ -31,31 +86,31 @@ las dos últimas está en el vault (`00 Meta/Pendientes.md`):
   fácil falla).
 - **El bestiario**: añadir, editar, borrar y marcar como descubierto **sin
   recargar**, y que sobreviva a recargar.
-- **Los dados**, abajo.
+- **Los dados** (abajo).
+- **Alquimia entera**, que lleva tres tandas desplegada y sin jugarse: el libro
+  con sus recetas iniciales, preparar una poción, que **sobreviva a recargar**,
+  los huecos en `/inventario` (un montón = 1 hueco), «Enseñar recetas» del DM
+  y `/oficios`.
 
 ### Los dados
 
-La tanda anterior arregló algo que llevaba roto **desde que existe el tablero**:
-ninguna tirada visual usaba las caras de los dados. `dice-box` devuelve un array
-plano y el código leía `res[0].rolls`, así que el `TypeError` mandaba todo al
-fallback aleatorio — **los dados 3D eran decoración**. Está corregido y con gate,
-pero **no se ha visto en la app viva**: todo está tras el login.
+Se arregló algo que llevaba roto **desde que existe el tablero**: ninguna tirada
+visual usaba las caras. `dice-box` devuelve un array plano y el código leía
+`res[0].rolls`, así que el `TypeError` mandaba todo al fallback aleatorio — **los
+dados 3D eran decoración**. Corregido y con gate.
 
-Por orden de sospecha:
+**El usuario confirmó la tirada de 4d6 de `/crear`**; eso y solo eso se da por
+visto. Por orden de sospecha, lo que queda:
 
-1. **`/crear` → Aptitudes → «Tirar 4d6»**. Que el número grande del overlay sea
-   **el mismo** que acaba en «Tus valores», seis veces. Debajo del total tienen
-   que salir **las cuatro caras con la menor tachada**; si ese desglose no
-   aparece, `rollVisual` sigue devolviendo `null` y hay que mirar la consola.
+1. Que el desglose de las cuatro caras **con la menor tachada** siga saliendo
+   bajo el total; si no aparece, `rollVisual` devuelve `null` y hay que mirar la
+   consola.
    > **La tirada es de una sola vez.** `stat_rolls` tiene PK por usuario y no hay
    > policy de UPDATE: para repetir, resetéala en **Panel DM › Grupo**.
-2. **Que el resultado dé tiempo a leerse** entre tirada y tirada (`hold`, 1,5 s).
-3. **Que el resto de tiradas sigan bien**: el caldero de `/taller`, `SaberRoll`
-   en `/lugar` y el feed de dados. Todas pasan por el mismo `rollVisual`, así que
-   el arreglo las toca a todas — conviene mirar al menos una.
-4. **Alquimia**, que sigue sin verse en partida: el libro con 3 recetas
-   iniciales, preparar una poción, que **sobreviva a recargar**, los huecos en
-   `/inventario` (un montón = 1 hueco), «Enseñar recetas» del DM y `/oficios`.
+2. Que el resultado dé tiempo a leerse entre tirada y tirada (`hold`, 1,5 s).
+3. **Las otras tiradas, aún sin ver**: el caldero de `/taller`, `SaberRoll` en
+   `/lugar` y el feed de dados. Todas pasan por el mismo `rollVisual`, así que el
+   arreglo las toca a todas — mira al menos una.
 
 Si algo de esto falla, arreglarlo va **antes** que empezar nada nuevo.
 
@@ -104,6 +159,20 @@ Son las decisiones que el boceto deja abiertas. **Pregúntamelas, no las suponga
 - **`riesgo`** (destilación): la mitad del catálogo trae contrapartida y hoy el
   fallo solo cuesta los materiales.
 
+## Decisión abierta que dejó la rama del origen
+
+**Los Dientes Rotos son UNA sola región** para todo el archipiélago, así que
+elegirlos como origen no dice nada — es el único continente que sigue así. La
+wiki da islas con nombre (Kalutha, Slival, Igthuldus, Ruukva, Evaterena,
+Athova-Rae, Shardborne) y, sobre todo, **dos sociedades enfrentadas**: la
+**Hueste Osendida**, tribus pescadoras aisladas que veneran sueños y pesadillas,
+y la **Asamblea Wanderman**, compañía mercante de la Costa del Serrallo que
+naufragó allí. Como origen, la sociedad dice mucho más que la isla.
+
+**Cuáles son origen jugable lo dicto yo.** Ojo al implementarlo: serían regiones
+**nuevas**, así que ahí sí entra `mergeAtlas` (solo SUMA regiones) y hay que
+mirar qué pasa con la región genérica que ya esté guardada en `atlas_defs`.
+
 ## La otra opción, si prefieres deuda a features
 
 **Conectar la `mecanica` de forja.** Es la deuda más señalada del repo: 25
@@ -123,23 +192,37 @@ derivada, que es fuente de verdad para la hoja **y** para el panel del DM.
 - Brainstorming → spec → plan → ejecución. Specs y planes en
   `docs/superpowers/{specs,plans}/`.
 - **Rama feature por tarea**, y **un commit por pieza** — así se puede parar en
-  cualquier punto con el árbol limpio.
-- Gate: **`npx tsc --noEmit` + `npx next build` + los 32 `scripts/check-*.ts`**
-  (no hay tests; ese es el gate real).
+  cualquier punto con el árbol limpio. **Y púshéala**: una rama que solo existe
+  en un disco es la mitad de un desastre.
+- Gate: **`npx tsc --noEmit` + `npx next build` + los `scripts/check-*.ts`**
+  (32 en `master`, 33 con la rama del origen; cuéntalos, no te fíes del número
+  escrito aquí).
 - **Si la tanda toca datos, el gate tiene que verlo**, y **con prueba de
   mutación**: rómpelo a propósito, comprueba que el gate falla, restaura.
-  > Dos veces ya ha encontrado un fallo real. En alquimia, el índice de
-  > materiales descartaba `herramienta` en silencio y la regla estaba **vacía**,
-  > verde por casualidad. En los dados, el puente con `dice-box` **no era
-  > comprobable** y por eso sobrevivió tanto. Desconfía de una regla que **no
-  > puede fallar**, y desconfía de un puente con una librería externa que no
-  > tenga prueba de forma.
+  > **Tres veces ya ha encontrado un fallo real**, y **dos de esas tres el fallo
+  > era una regla que NO PODÍA FALLAR**:
+  > - En alquimia, el índice de materiales descartaba `herramienta` en silencio
+  >   y la regla estaba **vacía**, verde por casualidad.
+  > - En los dados, el puente con `dice-box` **no era comprobable**, y por eso
+  >   `facesFrom` se exporta.
+  > - En el origen, el check de «los slugs de Tal'Dorei no se mueven» comparaba
+  >   `REGIONS` contra los slugs que el atlas **saca de `REGIONS`**: los dos
+  >   lados se movían juntos, **verde por construcción**. Se arregló escribiendo
+  >   los ocho a mano en el script.
+  >
+  > Moraleja: cuando escribas un check, pregúntate **qué tendría que romperse
+  > para que fallara**. Si la respuesta es «las dos mitades a la vez», no vigila
+  > nada. Y desconfía de un puente con una librería externa sin prueba de forma.
 - **Commitea ANTES de mutar**: `git checkout --` no restaura un archivo que git
-  aún no conoce.
+  aún no conoce — y si el archivo **sí** está trackeado, te borra el trabajo sin
+  commitear que tengas dentro. En la tanda del origen pasó exactamente eso:
+  restaurar una mutación se llevó por delante una tabla nueva a medio escribir.
 - **Cuidado con los pipes al comprobar el gate**: `npx tsx x.ts | tail` devuelve
   el código de salida de `tail`, no el del script, así que un `&&` detrás miente.
   Mira la salida, no solo el `$?`.
 - **Nunca `git add -A` a ciegas**: añade los archivos que has tocado.
+- **Comprueba en qué directorio está el shell**: ya pasó que se reseteó a otro
+  repo a mitad de tanda y varios comandos corrieron en el sitio equivocado.
 - Commits acaban con `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
   Autor `CarlosAlbertt` (Vercel bloquea otros emails). Con backticks en el
   mensaje, usar `git commit -F -` con heredoc y el **bash tool** (el shell por
@@ -169,6 +252,8 @@ derivada, que es fuente de verdad para la hoja **y** para el panel del DM.
 
 ## Dónde lo dejamos (1 de agosto de 2026)
 
+En `master` (`73c2456`), desplegado:
+
 - **El cupo de las dos pociones cumbre.** Posibilidad y Fuerza de gigante
   (tormentas) se fabrican, pero con los componentes más difíciles del catálogo y
   **una cada 1d6 días**. Cupo **compartido** entre las dos, **solo las bloquea a
@@ -176,20 +261,30 @@ derivada, que es fuente de verdad para la hoja **y** para el panel del DM.
   minuto de juego absoluto: va por **reloj de campaña**, así que adelantar días
   desde Panel DM › Tiempo lo libera. Al gastarlo se **relee y fusiona**
   `play_state` — ahí viven también los PG.
-- **El bestiario se ve al instante.** Añadir, borrar o marcar como descubierto
-  un monstruo **no se veía hasta recargar**: las mutaciones escribían en
-  `app_config` sin tocar el estado local y el hook confiaba en una suscripción
-  realtime **que no entrega nunca**. Ahora aplican en local y luego persisten,
-  como `useOficios`, y la mezcla es capa pura que el gate comprueba.
-  **Cuarta vez que se paga esta lección.**
-- **Los dados usan por fin sus caras** (tanda anterior). `facesFrom()` lee las
-  dos formas posibles del resultado de `dice-box`; si no salen tantas caras como
-  dados se pidieron, se cae al fallback en vez de guardar un total a medias.
+- **El bestiario se ve al instante.** Las mutaciones escribían en `app_config`
+  sin tocar el estado local y el hook confiaba en una suscripción realtime **que
+  no entrega nunca**. Ahora aplican en local y luego persisten, como
+  `useOficios`, y la mezcla es capa pura que el gate comprueba.
+- **Los dados usan por fin sus caras.** `facesFrom()` lee las dos formas posibles
+  del resultado de `dice-box`; si no salen tantas caras como dados se pidieron,
+  se cae al fallback en vez de guardar un total a medias.
 - **Alquimia se juega** (32 recetas, el caldero, el libro en `lore_unlocked`,
-  `/oficios` para el DM) — **aún sin ver en partida**.
+  `/oficios` para el DM).
 - **Gate: 32 checks en verde**, con `tsc` y `next build` limpios.
-- **Migraciones v1–v23 al día.** Ninguna de estas tandas llevó migración.
-- **Nada de lo de hoy se ha visto en la app viva.**
+
+En la rama local `feat/origen-todos-los-continentes`, **sin pushear ni mergear**:
+
+- **La región de origen existe en los cinco continentes.** 28 regiones:
+  Tal'Dorei 8, Wildemount 8, Marquet 7, Issylra 4, Dientes Rotos 1. Salen de la
+  **misma semilla que el atlas** (`regionesDeOrigen`), no de una segunda lista a
+  mano.
+- **`DETALLE_REGION`** (`data/world.ts`) da plaza principal y rasgo a las once
+  regiones sembradas, que salían con `capital: "—"` y rasgo vacío.
+- **Gate 33 `check-origen.ts`** (22 comprobaciones), probado por mutación con
+  cinco roturas — una destapó que el propio check era tautológico.
+- Verde **sobre su base**, `5c5eea0`. **Sin volver a correr sobre este `master`.**
+
+**Migraciones v1–v23 al día**; ninguna de estas tandas llevó migración.
 
 ## Lo que sigue pendiente y NO es esto
 
@@ -204,8 +299,12 @@ pozos de las 5 clases que faltan, el bestiario a medias (124 monstruos, solo
 CR 0–1/2), Fase P (downtime), Fase Q (misiones IA), C2 (regateo), y los
 **retratos de linaje** (`public/species/lineages/` sigue vacío).
 
-**Empieza por `git fetch` y `git status -sb`** —no por leer archivos—, **luego
-`HANDOFF.md`**. Después dime qué falla de las tres cosas sin ver (el cupo, el
+---
+
+**El orden de arranque, sin saltarse pasos:** `git fetch` y `git status -sb`
+—no leer archivos—, luego `HANDOFF.md`. Después **pon el repo en una sola
+pieza**: la rama del origen sin pushear es lo más frágil que hay ahora mismo.
+Luego dime qué falla de las cuatro cosas sin ver (el origen, el cupo, el
 bestiario y los dados). **No empieces tarea nueva hasta que eso esté visto**, y
 **para los talleres jugables pregúntame las cuatro decisiones antes de escribir
 código**: sin saber qué produce cada oficio no hay nada que fabricar.
