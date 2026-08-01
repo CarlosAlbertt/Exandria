@@ -3,7 +3,7 @@
 // para que `scripts/check-recetas.ts` pueda comprobar las reglas del caldero
 // sin montar una pantalla.
 
-import { RECETAS, recetasIniciales, type Receta } from "@/data/recetas";
+import { RECETAS, recetasDe, recetasIniciales, type Receta } from "@/data/recetas";
 import { OFICIO_PERICIA, materialPorN, type Oficio } from "@/lib/materiales";
 import { MINUTES_PER_DAY } from "@/lib/gameClock";
 import { norm } from "@/lib/slug";
@@ -60,6 +60,52 @@ export function recetasSabidas(oficio: Oficio, skills: string[], loreUnlocked: s
   return RECETAS.filter(
     (r) => r.oficio === oficio && (iniciales.has(r.slug) || concedidas.has(r.slug))
   );
+}
+
+/**
+ * Todas las recetas de un oficio, sepa o no el personaje prepararlas.
+ *
+ * Es lo que ve **el DM en su caja de arena**, y por eso no pasa por `skills` ni
+ * por `lore_unlocked`: no está jugando un personaje, está mirando si el taller
+ * funciona. Al jugador se le sigue dando `recetasSabidas`, que es la que
+ * respeta el descubrimiento — la gracia del oficio es ir aprendiendo.
+ */
+export function recetasDeArena(oficio: Oficio): Receta[] {
+  return recetasDe(oficio);
+}
+
+/**
+ * La bolsa de la caja de arena: exactamente lo que esta receta pide, materiales
+ * y herramientas.
+ *
+ * El DM prueba **con materiales infinitos y sin guardar nada**, así que en vez
+ * de darle un caso especial a cada comprobación del caldero se le fabrica una
+ * bolsa a medida y se le pasa a las MISMAS funciones que usa el jugador
+ * (`requisitos`, `puedePreparar`, `consumir`). Si el modo DM tuviera su propio
+ * camino, sería un camino que nadie prueba: la pantalla que el máster mira no
+ * sería la que juega la mesa.
+ *
+ * Los ids son **estables** (`arena:oficio:n`) y no `randomUUID`: esta bolsa no
+ * llega nunca a la base de datos —lo que sale del caldero en modo DM se tira— y
+ * un id fijo hace la función comprobable.
+ *
+ * **Las herramientas van con qty 1**: se exigen disponibles pero no se gastan,
+ * así que una basta. Si faltaran aquí, `puedePreparar` diría que no y el DM se
+ * comería un botón apagado sin motivo en cristalografía y tatuaje.
+ */
+export function bolsaDeArena(r: Receta): Item[] {
+  const out: Item[] = [];
+  for (const m of r.materiales) {
+    const mat = materialPorN(r.oficio, m.n);
+    if (!mat) continue; // el gate impide que esto pase; aquí no se revienta
+    out.push({ id: `arena:${r.oficio}:${m.n}`, name: mat.name, qty: m.qty });
+  }
+  for (const n of r.herramientas ?? []) {
+    const mat = materialPorN(r.oficio, n);
+    if (!mat) continue;
+    out.push({ id: `arena:${r.oficio}:h${n}`, name: mat.name, qty: 1 });
+  }
+  return out;
 }
 
 /** Cuántas unidades de este material lleva encima. */
