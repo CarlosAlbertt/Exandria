@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useBestiary, setDiscovered } from "@/lib/useBestiary";
+import { useBestiary } from "@/lib/useBestiary";
 import { searchMonsters } from "@/data/bestiary";
 import { nombresNumerados, cuentaEnMesa, cantidadValida } from "@/lib/combate";
 import { d20Check } from "@/lib/dice";
@@ -20,7 +20,7 @@ type Props = {
 // (~25 KB comprimidos de estadísticas) en el bundle de CUALQUIER pantalla que
 // monte el tracker, incluida /combate, que ven los jugadores.
 export default function SelectorMonstruos({ faltaMigracion, nombresExistentes }: Props) {
-  const { monsters } = useBestiary();
+  const { monsters, marcarDescubierto } = useBestiary();
   const [busqueda, setBusqueda] = useState("");
   const [slugSel, setSlugSel] = useState("");
   const [cantidad, setCantidad] = useState("1");
@@ -66,7 +66,7 @@ export default function SelectorMonstruos({ faltaMigracion, nombresExistentes }:
         // Si os lo habéis peleado, lo habéis visto: queda descubierto en
         // /bestiario para los jugadores. Un fallo aquí no debe deshacer las
         // filas ya creadas, así que solo se avisa.
-        const { error: descError } = await setDiscovered(monstruoSel.slug, true);
+        const { error: descError } = await marcarDescubierto(monstruoSel.slug, true);
         if (descError) setErr(`Añadido, pero no se pudo marcar como descubierto: ${descError}`);
         setBusqueda("");
         setSlugSel("");

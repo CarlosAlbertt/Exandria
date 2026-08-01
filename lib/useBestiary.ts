@@ -1,17 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 import { ALL_MONSTERS, type Monster } from "@/data/bestiary";
 import { CR_XP } from "@/data/encounters";
 
 // Bestiario: monstruos estáticos (data/bestiary, extraídos del manual) +
 // monstruos personalizados del DM, guardados en app_config sin migración de
-// esquema (mismo patrón que useAtlas/useDmStash). Dos claves independientes:
-// "custom_monsters" (Monster[] completo, JSON) y "bestiary_discovered"
-// (string[] de slugs visibles para jugadores). El hook no sabe ni le importa
-// cuántos monstruos estáticos hay (124 hoy, más lotes después): siempre
-// arranca de ALL_MONSTERS y superpone los personalizados por slug.
+// esquema. Dos claves independientes: "custom_monsters" (Monster[] completo,
+// JSON) y "bestiary_discovered" (string[] de slugs visibles para jugadores). El
+// hook no sabe ni le importa cuántos monstruos estáticos hay (124 hoy, más
+// lotes después): siempre arranca de ALL_MONSTERS y superpone los
+// personalizados por slug.
+//
+// ⚠️ **`app_config` NO está en la publicación realtime.** Aquí hubo una
+// suscripción a `postgres_changes` sobre esas dos claves que **no entregaba
+// nunca**, y como las mutaciones no tocaban el estado local, el DM añadía un
+// monstruo y **no lo veía hasta recargar** — lo mismo al borrarlo y al marcarlo
+// como descubierto, que es justo lo que hace que los jugadores lo vean. Se
+// retiró la suscripción y las mutaciones pasaron a ser **optimistas**, como en
+// `lib/useOficios.ts`. Es la misma lección por cuarta vez: si algo vive en
+// `app_config`, se pinta en local y luego se persiste.
 
 export type CustomMonster = Monster & { custom: true };
 
@@ -41,103 +50,124 @@ function parseDiscovered(value: string | null | undefined): string[] {
 // Mezcla: parte de ALL_MONSTERS y superpone los personalizados por slug (un
 // personalizado con el mismo slug que un estático lo sustituye; uno nuevo se
 // añade). Orden alfabético por nombre ES.
-function mergeMonsters(customs: Monster[]): Monster[] {
+export function mergeMonsters(customs: Monster[]): Monster[] {
   const bySlug = new Map<string, Monster>();
   for (const m of ALL_MONSTERS) bySlug.set(m.slug, m);
   for (const c of customs) bySlug.set(c.slug, { ...c, custom: true } as CustomMonster);
   return [...bySlug.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
 }
 
-export function useBestiary(): { monsters: Monster[]; discovered: Set<string>; ready: boolean } {
+/* --------------------- Las mezclas, como capa pura --------------------- */
+/* Se exportan para que `scripts/check-bestiary.ts` pueda comprobar que una */
+/* mutación deja el array como debe, sin montar React ni Supabase.          */
+
+/** Inserta o sustituye por slug. Devuelve un array nuevo. */
+export function conMonstruo(customs: Monster[], m: Monster): Monster[] {
+  const idx = customs.findIndex((c) => c.slug === m.slug);
+  if (idx < 0) return [...customs, m];
+  const next = [...customs];
+  next[idx] = m;
+  return next;
+}
+
+/** Quita por slug. Devuelve un array nuevo. */
+export function sinMonstruo(customs: Monster[], slug: string): Monster[] {
+  return customs.filter((c) => c.slug !== slug);
+}
+
+/** Marca o desmarca un slug como descubierto. Sin duplicados y sin mutar. */
+export function conDescubierto(slugs: string[], slug: string, on: boolean): string[] {
+  const set = new Set(slugs);
+  if (on) set.add(slug);
+  else set.delete(slug);
+  return [...set];
+}
+
+export type Bestiary = {
+  monsters: Monster[];
+  discovered: Set<string>;
+  ready: boolean;
+  /**
+   * Error del GUARDADO, que sí se sabe nombrar (Supabase devuelve el mensaje).
+   * El de la carga no cabe aquí: no se distingue de «todavía no hay nada
+   * guardado», y mentir sobre eso es peor que callar.
+   */
+  error: string | null;
+  /**
+   * Las tres mutaciones DEVUELVEN además el error, no solo lo dejan en `error`.
+   * No es redundancia: quien marca un monstruo desde el combate compone su
+   * propio aviso («añadido, pero no se pudo marcar…»), y con el error solo en
+   * el estado del hook no podría distinguir su fallo del de otra pantalla.
+   */
+  guardarMonstruo: (m: Monster) => Promise<{ error: string | null }>;
+  borrarMonstruo: (slug: string) => Promise<{ error: string | null }>;
+  marcarDescubierto: (slug: string, on: boolean) => Promise<{ error: string | null }>;
+};
+
+export function useBestiary(): Bestiary {
   // Sin Supabase configurado, los monstruos estáticos se conocen desde el
   // primer render (inicializador perezoso de useState, no un efecto).
-  const [monsters, setMonsters] = useState<Monster[]>(() => mergeMonsters([]));
-  const [discovered, setDiscovered] = useState<Set<string>>(() => new Set());
+  const [customs, setCustoms] = useState<Monster[]>([]);
+  const [discoveredSlugs, setDiscoveredSlugs] = useState<string[]>([]);
   const [ready, setReady] = useState(() => !supabaseConfigured);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabaseConfigured) return;
     const supabase = createClient();
-    let mounted = true;
-
-    const loadCustoms = () =>
-      supabase
+    let vivo = true;
+    (async () => {
+      const { data } = await supabase
         .from("app_config")
-        .select("value")
-        .eq("key", KEY_CUSTOM)
-        .maybeSingle()
-        .then(({ data }) => { if (mounted) setMonsters(mergeMonsters(parseCustoms(data?.value))); });
-
-    const loadDiscovered = () =>
-      supabase
-        .from("app_config")
-        .select("value")
-        .eq("key", KEY_DISCOVERED)
-        .maybeSingle()
-        .then(({ data }) => { if (mounted) setDiscovered(new Set(parseDiscovered(data?.value))); });
-
-    Promise.all([loadCustoms(), loadDiscovered()]).then(() => { if (mounted) setReady(true); });
-
-    const ch = supabase
-      .channel(`bestiary_rt_${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "app_config", filter: `key=eq.${KEY_CUSTOM}` }, () => loadCustoms())
-      .on("postgres_changes", { event: "*", schema: "public", table: "app_config", filter: `key=eq.${KEY_DISCOVERED}` }, () => loadDiscovered())
-      .subscribe();
-
-    return () => { mounted = false; supabase.removeChannel(ch); };
+        .select("key, value")
+        .in("key", [KEY_CUSTOM, KEY_DISCOVERED]);
+      if (!vivo) return;
+      const filas = (data ?? []) as { key: string; value: string | null }[];
+      setCustoms(parseCustoms(filas.find((f) => f.key === KEY_CUSTOM)?.value));
+      setDiscoveredSlugs(parseDiscovered(filas.find((f) => f.key === KEY_DISCOVERED)?.value));
+      setReady(true);
+    })();
+    return () => { vivo = false; };
   }, []);
 
-  return { monsters, discovered, ready };
-}
+  const monsters = useMemo(() => mergeMonsters(customs), [customs]);
+  const discovered = useMemo(() => new Set(discoveredSlugs), [discoveredSlugs]);
 
-/* ------------------------------ Mutaciones ------------------------------ */
-/* Solo el DM puede escribir (RLS de app_config); estas funciones no */
-/* comprueban rol, se limitan a leer/actualizar y devolver { error }. */
+  // Escribe el array entero: `app_config` guarda JSON en una columna de texto y
+  // no admite parches parciales, así que toda mutación es read-modify-write
+  // sobre lo que ya tenemos en memoria.
+  const persistir = useCallback(async (key: string, valor: unknown[]): Promise<{ error: string | null }> => {
+    if (!supabaseConfigured) return { error: "Supabase no configurado" };
+    const { error: e } = await createClient()
+      .from("app_config")
+      .upsert({ key, value: JSON.stringify(valor), updated_at: new Date().toISOString() });
+    // El estado local ya se ha movido (optimista). Si la escritura falla se
+    // NOMBRA en vez de revertir en silencio: revertir dejaría al DM viendo
+    // desaparecer lo que acaba de escribir sin saber por qué.
+    const msg = e?.message ?? null;
+    setError(msg);
+    return { error: msg };
+  }, []);
 
-// Inserta o sustituye (por slug) un monstruo personalizado. Lee la fila
-// actual primero (read-modify-write): app_config no soporta parches parciales
-// de un JSON, así que hay que traer el array completo antes de reescribirlo.
-export async function saveCustomMonster(m: Monster): Promise<{ error: string | null }> {
-  if (!supabaseConfigured) return { error: "Supabase no configurado" };
-  const supabase = createClient();
-  const { data, error: readError } = await supabase.from("app_config").select("value").eq("key", KEY_CUSTOM).maybeSingle();
-  if (readError) return { error: readError.message };
-  const customs = parseCustoms(data?.value);
-  const idx = customs.findIndex((c) => c.slug === m.slug);
-  if (idx >= 0) customs[idx] = m;
-  else customs.push(m);
-  const { error } = await supabase
-    .from("app_config")
-    .upsert({ key: KEY_CUSTOM, value: JSON.stringify(customs), updated_at: new Date().toISOString() });
-  return { error: error?.message ?? null };
-}
+  const guardarMonstruo = useCallback(async (m: Monster) => {
+    const siguiente = conMonstruo(customs, m);
+    setCustoms(siguiente);
+    return persistir(KEY_CUSTOM, siguiente);
+  }, [customs, persistir]);
 
-export async function deleteCustomMonster(slug: string): Promise<{ error: string | null }> {
-  if (!supabaseConfigured) return { error: "Supabase no configurado" };
-  const supabase = createClient();
-  const { data, error: readError } = await supabase.from("app_config").select("value").eq("key", KEY_CUSTOM).maybeSingle();
-  if (readError) return { error: readError.message };
-  const customs = parseCustoms(data?.value).filter((c) => c.slug !== slug);
-  const { error } = await supabase
-    .from("app_config")
-    .upsert({ key: KEY_CUSTOM, value: JSON.stringify(customs), updated_at: new Date().toISOString() });
-  return { error: error?.message ?? null };
-}
+  const borrarMonstruo = useCallback(async (slug: string) => {
+    const siguiente = sinMonstruo(customs, slug);
+    setCustoms(siguiente);
+    return persistir(KEY_CUSTOM, siguiente);
+  }, [customs, persistir]);
 
-// Marca (o desmarca) un slug como descubierto por los jugadores. Igual
-// read-modify-write que saveCustomMonster, sobre el array de slugs.
-export async function setDiscovered(slug: string, on: boolean): Promise<{ error: string | null }> {
-  if (!supabaseConfigured) return { error: "Supabase no configurado" };
-  const supabase = createClient();
-  const { data, error: readError } = await supabase.from("app_config").select("value").eq("key", KEY_DISCOVERED).maybeSingle();
-  if (readError) return { error: readError.message };
-  const slugs = new Set(parseDiscovered(data?.value));
-  if (on) slugs.add(slug);
-  else slugs.delete(slug);
-  const { error } = await supabase
-    .from("app_config")
-    .upsert({ key: KEY_DISCOVERED, value: JSON.stringify([...slugs]), updated_at: new Date().toISOString() });
-  return { error: error?.message ?? null };
+  const marcarDescubierto = useCallback(async (slug: string, on: boolean) => {
+    const siguiente = conDescubierto(discoveredSlugs, slug, on);
+    setDiscoveredSlugs(siguiente);
+    return persistir(KEY_DISCOVERED, siguiente);
+  }, [discoveredSlugs, persistir]);
+
+  return { monsters, discovered, ready, error, guardarMonstruo, borrarMonstruo, marcarDescubierto };
 }
 
 /* -------------------------------- CR / BC -------------------------------- */
