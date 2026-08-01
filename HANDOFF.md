@@ -4,6 +4,50 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-01)
 
+> **Lo último (2026-08-01): EL DM YA PUEDE ENTRAR EN EL TALLER.**
+> Rama `taller-modo-dm`. **Sin migración.**
+>
+> **El fallo era de acceso, y explica tres tandas de silencio**: `Caldero.tsx`
+> se cerraba dos veces —`!inv.characterId` («no tienes un personaje en juego») y
+> `!tieneOficio` (la pericia de Alquimia)—, y **el DM no tiene ficha**. Así que
+> la única persona que necesitaba probar el taller era la única que no podía
+> abrirlo, y por eso alquimia llevaba desde el 2026-07-31 desplegada sin que
+> nadie la hubiera visto.
+>
+> **Las cuatro decisiones las tomó el usuario antes de escribir código**: el DM
+> **teclea el modificador** (sin ficha no hay `derive` de donde sacarlo),
+> **materiales infinitos y sin guardar nada**, **las 32 recetas** y **el cupo no
+> le aplica** (vive en `play_state`, que es de la ficha).
+>
+> **Dónde vive**: en `app/taller/page.tsx`, **la cáscara, no el caldero**. Hoy
+> solo alquimia está construida; si el modo naciera dentro de cada oficio, el
+> siguiente taller nacería otra vez invisible. Los cinco que faltan lo heredan y
+> lo dicen en su hueco, para que no parezca que el modo no funciona.
+>
+> **`bolsaDeArena` no es un camino aparte**: fabrica justo lo que la receta pide
+> y se la pasa a las MISMAS funciones que usa el jugador (`requisitos`,
+> `puedePreparar`, `consumir`). Un modo DM con lógica propia sería lógica que
+> nadie prueba — la pantalla que el máster revisa no sería la que juega la mesa.
+> La tirada también es la de verdad, por el mismo `rollVisual`.
+>
+> ⚠️ **Lo que este modo NO prueba, y hay que decirlo**: como no guarda nada,
+> **no comprueba que los materiales se descuenten ni que sobreviva a recargar**,
+> que es justo lo más sospechoso de alquimia. Eso sigue necesitando **un
+> personaje de verdad con la pericia**. Tampoco prueba el cupo. El modo DM sirve
+> para ver la interfaz, el libro y la tirada; el circuito de datos, no.
+>
+> **`check-recetas` pasa de ~474 a 486 comprobaciones**, con **prueba de
+> mutación de cuatro roturas**: la bolsa olvidando las herramientas, la bolsa
+> trayendo de más, `modDmValido` sin el guardia de `NaN` —sin él el `NaN` llega
+> al total, `NaN >= cd` es `false` y **todas las recetas fallarían sin decir por
+> qué**— y la arena ofreciendo solo las recetas iniciales. Las cuatro tumbaron
+> el gate y al restaurar volvió a verde.
+>
+> **Los 33 gates en verde**, con `tsc` y `next build` limpios. **Sin probar en
+> la app viva.**
+
+## 🚦 Antes de eso (2026-08-01): TU REGIÓN EN LOS CINCO CONTINENTES
+
 > **Lo último (2026-08-01, mergeado a `master`): TU REGIÓN EXISTE EN LOS CINCO
 > CONTINENTES.** Rama `feat/origen-todos-los-continentes`. **Sin migración.**
 >

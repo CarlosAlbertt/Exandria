@@ -106,46 +106,19 @@ El libro con sus recetas iniciales, preparar una poción, que **sobreviva a
 recargar**, los huecos en `/inventario` (un montón = 1 hueco), «Enseñar recetas»
 del DM y `/oficios`.
 
-> [!danger] **Y el DM no puede probarlo: por eso lleva tres tandas sin verse.**
-> `/taller` está abierta al DM, pero el caldero se cierra **dos veces** dentro de
-> `components/taller/Caldero.tsx`, y las dos miran a un personaje:
-> 1. `if (!inv.characterId)` → «No tienes un personaje en juego». **El DM no
->    tiene ficha, así que se queda aquí** y no ve nada de nada.
-> 2. `if (!tieneOficio)` → exige la pericia de oficio **Alquimia**, que se elige
->    al crear el personaje o al llegar a nivel 7.
+> [!tip] **La caja de arena del DM ya está: entra por `/taller`.**
+> El caldero se cerraba **dos veces** y las dos miraban a un personaje
+> (`!inv.characterId` y `!tieneOficio`), así que el DM no podía abrirlo — de ahí
+> las tres tandas de silencio. Ahora hay un interruptor **«Caja de arena del
+> DM»** arriba de las pestañas, **encendido de entrada**, con un campo para
+> teclear el modificador con el que tiras. Apágalo para ver el taller como lo ve
+> la mesa.
 >
-> El resultado es que **la única persona que necesita probar los talleres es la
-> única que no puede entrar en ellos**. Arreglar esto va **antes** de construir
-> más talleres: si no, el siguiente nace igual de invisible.
-
-## Lo que hay que añadir: EL DM PRUEBA LOS TALLERES SIN FICHA
-
-**Siendo DM tengo que poder abrir cualquier taller y usarlo**, sin personaje y
-sin la pericia. No es una comodidad: es la única forma de ver funcionar lo que se
-construye, porque el asistente no pasa del login y yo no juego con ficha.
-
-**Ojo con el alcance**: hoy **solo alquimia existe**. Las otras cinco pestañas de
-`/taller` son la promesa («este taller se abrirá más adelante»), así que «probar
-todo tipo de talleres» empieza por el caldero y se hereda según se vayan
-construyendo — **el modo DM tiene que quedar en el patrón**, no parcheado en
-alquimia, o los cinco siguientes repiten el fallo.
-
-### Lo que hay que decidirme antes de tocarlo
-
-1. **Con qué tira el DM.** El modificador sale de `derive` sobre la ficha, y sin
-   ficha no hay número. ¿Tira con **+0**, con un valor que él fije, o el modo DM
-   **se salta la tirada** y sirve para ver la interfaz y el resultado?
-2. **De dónde salen los materiales y a dónde va lo que sale.** Preparar descuenta
-   del inventario del personaje y guarda la poción en él. Sin ficha no hay bolsa:
-   ¿el DM tiene **materiales infinitos** y lo fabricado se tira, o el modo DM
-   **elige la ficha de un jugador** y trabaja sobre ella?
-3. **Qué libro de recetas ve.** El libro enseña solo lo descubierto
-   (`lore_unlocked`). El DM debería ver **las 32**, pero eso es otra pantalla
-   distinta de la del jugador — o es justo lo que ya hace `/oficios`, y entonces
-   lo que falta es solo **poder ejecutar** desde ahí.
-4. **Si el cupo de las dos pociones cumbre le aplica.** Vive en
-   `play_state.tallerCupo`, que es de la ficha. Probando sin ficha no hay dónde
-   guardarlo — y probar el cupo es justo una de las cosas pendientes de ver.
+> ⚠️ **Pero la caja de arena NO guarda nada**, así que **no prueba que los
+> materiales se descuenten ni que sobreviva a recargar** — que es justo lo más
+> sospechoso — ni el cupo. Para eso sigue haciendo falta **un personaje de
+> verdad con la pericia de Alquimia**. La caja sirve para el libro, la interfaz
+> y la tirada.
 
 ## La tarea de esta sesión: LOS TALLERES JUGABLES
 
@@ -285,6 +258,12 @@ derivada, que es fuente de verdad para la hoja **y** para el panel del DM.
 
 Todo en `master` y desplegado. **Nada de esto se ha visto en la app viva.**
 
+- **El DM entra al taller sin ficha ni pericia.** Caja de arena en
+  `app/taller/page.tsx` —la cáscara, no el caldero, para que los cinco talleres
+  que faltan la hereden—: todas las recetas, `bolsaDeArena` con lo que la receta
+  pide, modificador tecleado y **nada que se guarde**. La bolsa pasa por las
+  mismas funciones que usa el jugador, a propósito. `check-recetas` sube a 486
+  comprobaciones, con **cuatro mutaciones** probadas.
 - **La región de origen existe en los cinco continentes.** 28 regiones:
   Tal'Dorei 8, Wildemount 8, Marquet 7, Issylra 4, Dientes Rotos 1. Salen de la
   **misma semilla que el atlas** (`regionesDeOrigen`), no de una segunda lista a
@@ -331,8 +310,9 @@ CR 0–1/2), Fase P (downtime), Fase Q (misiones IA), C2 (regateo), y los
 cosas sin ver: **el origen** (lo más reciente y lo menos mirado), el cupo, el
 bestiario y los dados.
 
-**Lo de alquimia no te lo puedo decir hasta que el DM pueda entrar al taller**,
-así que esa es la primera pieza de código: pregúntame sus cuatro decisiones y
-déjala en el patrón, no parcheada en el caldero. **Los talleres jugables van
-después**, y también con sus cuatro decisiones preguntadas antes de escribir
-nada: sin saber qué produce cada oficio no hay nada que fabricar.
+De alquimia ya puedo mirar el libro, la interfaz y la tirada por la **caja de
+arena del DM**; lo que sigue sin poder comprobarse así es que **se descuenten los
+materiales y sobreviva a recargar**, que necesita un personaje con la pericia.
+
+**Para los talleres jugables, pregúntame las cuatro decisiones antes de escribir
+nada**: sin saber qué produce cada oficio no hay nada que fabricar.
