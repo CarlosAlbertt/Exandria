@@ -1,15 +1,39 @@
 Retomo Exandria, mi app de campaña de D&D 2024. Repo privado
 CarlosAlbertt/Exandria, rama `master`, desplegada en exandria.vercel.app.
 
-> **Ojo con la ruta**: el clon está en `C:\Users\carlo_pjou9vc\Exandria`. Los
-> docs viejos dicen `C:\Users\carlo\Downloads\dnd-campaign-app` — es otra
-> máquina. Si `node_modules` no está, `npm install` primero: **el gate no corre
-> sin él**. `npm install` toca `package-lock.json` y los assets de
+> [!danger] **LO PRIMERO DE TODO: `git fetch` Y `git status -sb`.**
+> **Antes de leer un solo archivo.** El 2026-08-01 se perdió una sesión entera
+> por saltarse esto: el clon estaba **15 commits por detrás**, el taller de
+> Alquimia **ya estaba hecho y desplegado**, y se reconstruyó desde cero con
+> otro diseño hasta que el merge lo destapó. Hubo que tirarlo y quedarse solo
+> con lo nuevo.
+> **`HANDOFF.md` y el vault describen el clon LOCAL, no el remoto: ninguno de
+> los dos sirve para saber si estás al día.** Si `status` dice «behind»,
+> ponte al día antes de planificar nada.
+
+> **Ojo con la ruta**: hay clon en `C:\Users\carlo_pjou9vc\Exandria` y en
+> `C:\Users\carlo\Downloads\dnd-campaign-app` — **son máquinas distintas**;
+> mira en cuál estás. Si `node_modules` no está, `npm install` primero: **el
+> gate no corre sin él**. `npm install` toca `package-lock.json` y los assets de
 > `public/dice-box/`; eso **no es tuyo, no lo commitees**.
 
-**Lee primero `HANDOFF.md`** — es el documento de estado vivo.
+**Lee primero `HANDOFF.md`** — es el documento de estado vivo (del clon local:
+ver el aviso de arriba).
 
-## Lo primero, y no es código: PROBAR LOS DADOS EN LA APP
+## Lo primero, y no es código: PROBAR EN LA APP
+
+Hay **tres cosas seguidas con gate y sin ver en vivo**. La guía paso a paso de
+las dos últimas está en el vault (`00 Meta/Pendientes.md`):
+
+- **El cupo** de Posibilidad y la legendaria: que fallar **no** lo gaste, que
+  acertar bloquee **solo esas dos**, y que **adelantar días desde Panel DM ›
+  Tiempo lo libere** (va por reloj de campaña, no por hora real — es lo que más
+  fácil falla).
+- **El bestiario**: añadir, editar, borrar y marcar como descubierto **sin
+  recargar**, y que sobreviva a recargar.
+- **Los dados**, abajo.
+
+### Los dados
 
 La tanda anterior arregló algo que llevaba roto **desde que existe el tablero**:
 ninguna tirada visual usaba las caras de los dados. `dice-box` devuelve un array
@@ -131,29 +155,41 @@ derivada, que es fuente de verdad para la hoja **y** para el panel del DM.
 > sin actualizarlo.
 
 > [!warning] **`app_config` NO está en la publicación realtime**
-> Lección pagada **tres veces** ya. Todo lo que se guarde ahí necesita **update
-> optimista**; no te suscribas esperando eventos. `lib/useOficios.ts` lo hace
-> bien y lo explica; `lib/useBestiary.ts` tiene una suscripción que **no entrega
-> nunca** y sigue ahí.
+> Lección pagada **cuatro veces** ya — la cuarta fue el bestiario el 2026-08-01,
+> y era un fallo de cara al usuario, no teoría: el DM añadía un monstruo y no lo
+> veía hasta recargar. Todo lo que se guarde ahí necesita **update optimista**;
+> no te suscribas esperando eventos. `lib/useOficios.ts` y `lib/useBestiary.ts`
+> lo hacen bien y lo explican. **Si escribes un hook nuevo sobre `app_config`,
+> el patrón es ese y no hay excusa para repetirlo.**
 
 > [!warning] **No puedes ver la app**
 > Todo está tras el login y **no debes meter credenciales**. Para UI puedes
 > montar un banco de pruebas estático y servirlo por `/dice-box/` (excluida del
 > proxy), pero **bórralo antes de commitear**. La comprobación en vivo la hago yo.
 
-## Dónde lo dejamos (31 de julio de 2026, tarde)
+## Dónde lo dejamos (1 de agosto de 2026)
 
-- **Los dados usan por fin sus caras.** `facesFrom()` lee las dos formas
-  posibles del resultado de `dice-box`; si no salen tantas caras como dados se
-  pidieron, se cae al fallback en vez de guardar un total a medias.
-- **4d6 descartando el menor** se resuelve dentro de `rollVisual` (`keep: 3`), y
-  el overlay enseña las cuatro caras con la menor tachada. `hold` deja el
-  resultado en pantalla entre tirada y tirada.
-- **Gate 32 `check-dados.ts`**, probado por mutación con cuatro roturas.
+- **El cupo de las dos pociones cumbre.** Posibilidad y Fuerza de gigante
+  (tormentas) se fabrican, pero con los componentes más difíciles del catálogo y
+  **una cada 1d6 días**. Cupo **compartido** entre las dos, **solo las bloquea a
+  ellas** y **solo se consume al acertar**. Vive en `play_state.tallerCupo` como
+  minuto de juego absoluto: va por **reloj de campaña**, así que adelantar días
+  desde Panel DM › Tiempo lo libera. Al gastarlo se **relee y fusiona**
+  `play_state` — ahí viven también los PG.
+- **El bestiario se ve al instante.** Añadir, borrar o marcar como descubierto
+  un monstruo **no se veía hasta recargar**: las mutaciones escribían en
+  `app_config` sin tocar el estado local y el hook confiaba en una suscripción
+  realtime **que no entrega nunca**. Ahora aplican en local y luego persisten,
+  como `useOficios`, y la mezcla es capa pura que el gate comprueba.
+  **Cuarta vez que se paga esta lección.**
+- **Los dados usan por fin sus caras** (tanda anterior). `facesFrom()` lee las
+  dos formas posibles del resultado de `dice-box`; si no salen tantas caras como
+  dados se pidieron, se cae al fallback en vez de guardar un total a medias.
 - **Alquimia se juega** (32 recetas, el caldero, el libro en `lore_unlocked`,
-  `/oficios` para el DM) — de la tanda anterior, y **aún sin ver en partida**.
+  `/oficios` para el DM) — **aún sin ver en partida**.
 - **Gate: 32 checks en verde**, con `tsc` y `next build` limpios.
-- **Migraciones v1–v23 al día.** Esta tanda **no llevó ninguna**.
+- **Migraciones v1–v23 al día.** Ninguna de estas tandas llevó migración.
+- **Nada de lo de hoy se ha visto en la app viva.**
 
 ## Lo que sigue pendiente y NO es esto
 
@@ -168,5 +204,8 @@ pozos de las 5 clases que faltan, el bestiario a medias (124 monstruos, solo
 CR 0–1/2), Fase P (downtime), Fase Q (misiones IA), C2 (regateo), y los
 **retratos de linaje** (`public/species/lineages/` sigue vacío).
 
-**Empieza leyendo `HANDOFF.md`. Luego prueba los dados en `/crear` y dime qué
-falla. No empieces tarea nueva hasta que eso esté visto.**
+**Empieza por `git fetch` y `git status -sb`** —no por leer archivos—, **luego
+`HANDOFF.md`**. Después dime qué falla de las tres cosas sin ver (el cupo, el
+bestiario y los dados). **No empieces tarea nueva hasta que eso esté visto**, y
+**para los talleres jugables pregúntame las cuatro decisiones antes de escribir
+código**: sin saber qué produce cada oficio no hay nada que fabricar.
