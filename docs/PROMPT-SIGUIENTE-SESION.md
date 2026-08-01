@@ -106,6 +106,47 @@ El libro con sus recetas iniciales, preparar una poción, que **sobreviva a
 recargar**, los huecos en `/inventario` (un montón = 1 hueco), «Enseñar recetas»
 del DM y `/oficios`.
 
+> [!danger] **Y el DM no puede probarlo: por eso lleva tres tandas sin verse.**
+> `/taller` está abierta al DM, pero el caldero se cierra **dos veces** dentro de
+> `components/taller/Caldero.tsx`, y las dos miran a un personaje:
+> 1. `if (!inv.characterId)` → «No tienes un personaje en juego». **El DM no
+>    tiene ficha, así que se queda aquí** y no ve nada de nada.
+> 2. `if (!tieneOficio)` → exige la pericia de oficio **Alquimia**, que se elige
+>    al crear el personaje o al llegar a nivel 7.
+>
+> El resultado es que **la única persona que necesita probar los talleres es la
+> única que no puede entrar en ellos**. Arreglar esto va **antes** de construir
+> más talleres: si no, el siguiente nace igual de invisible.
+
+## Lo que hay que añadir: EL DM PRUEBA LOS TALLERES SIN FICHA
+
+**Siendo DM tengo que poder abrir cualquier taller y usarlo**, sin personaje y
+sin la pericia. No es una comodidad: es la única forma de ver funcionar lo que se
+construye, porque el asistente no pasa del login y yo no juego con ficha.
+
+**Ojo con el alcance**: hoy **solo alquimia existe**. Las otras cinco pestañas de
+`/taller` son la promesa («este taller se abrirá más adelante»), así que «probar
+todo tipo de talleres» empieza por el caldero y se hereda según se vayan
+construyendo — **el modo DM tiene que quedar en el patrón**, no parcheado en
+alquimia, o los cinco siguientes repiten el fallo.
+
+### Lo que hay que decidirme antes de tocarlo
+
+1. **Con qué tira el DM.** El modificador sale de `derive` sobre la ficha, y sin
+   ficha no hay número. ¿Tira con **+0**, con un valor que él fije, o el modo DM
+   **se salta la tirada** y sirve para ver la interfaz y el resultado?
+2. **De dónde salen los materiales y a dónde va lo que sale.** Preparar descuenta
+   del inventario del personaje y guarda la poción en él. Sin ficha no hay bolsa:
+   ¿el DM tiene **materiales infinitos** y lo fabricado se tira, o el modo DM
+   **elige la ficha de un jugador** y trabaja sobre ella?
+3. **Qué libro de recetas ve.** El libro enseña solo lo descubierto
+   (`lore_unlocked`). El DM debería ver **las 32**, pero eso es otra pantalla
+   distinta de la del jugador — o es justo lo que ya hace `/oficios`, y entonces
+   lo que falta es solo **poder ejecutar** desde ahí.
+4. **Si el cupo de las dos pociones cumbre le aplica.** Vive en
+   `play_state.tallerCupo`, que es de la ficha. Probando sin ficha no hay dónde
+   guardarlo — y probar el cupo es justo una de las cosas pendientes de ver.
+
 ## La tarea de esta sesión: LOS TALLERES JUGABLES
 
 Hay un **boceto interactivo ya aprobado** con el usuario (dos bancos de trabajo,
@@ -288,6 +329,10 @@ CR 0–1/2), Fase P (downtime), Fase Q (misiones IA), C2 (regateo), y los
 **El orden de arranque, sin saltarse pasos:** `git fetch` y `git status -sb`
 —no leer archivos—, luego `HANDOFF.md`. Después dime qué falla de las cuatro
 cosas sin ver: **el origen** (lo más reciente y lo menos mirado), el cupo, el
-bestiario y los dados. **No empieces tarea nueva hasta que eso esté visto**, y
-**para los talleres jugables pregúntame las cuatro decisiones antes de escribir
-código**: sin saber qué produce cada oficio no hay nada que fabricar.
+bestiario y los dados.
+
+**Lo de alquimia no te lo puedo decir hasta que el DM pueda entrar al taller**,
+así que esa es la primera pieza de código: pregúntame sus cuatro decisiones y
+déjala en el patrón, no parcheada en el caldero. **Los talleres jugables van
+después**, y también con sus cuatro decisiones preguntadas antes de escribir
+nada: sin saber qué produce cada oficio no hay nada que fabricar.
