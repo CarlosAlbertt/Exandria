@@ -44,6 +44,19 @@ const PROMESA: Record<Oficio, string> = {
 
 export default function TallerPage() {
   const session = useSession();
+  // El rol viene del SERVIDOR (`getSessionProfile` en `app/layout.tsx`), así que
+  // un jugador no puede hacer que diga «dm».
+  //
+  // Pero esto es un filtro de INTERFAZ, no una puerta: se evalúa en el
+  // navegador, y con las devtools se puede forzar el estado. Está bien que sea
+  // así **porque la caja de arena no da nada que proteger**: no escribe en la
+  // bolsa —`preparar` corta antes de `setItems`—, así que no hay pociones que
+  // robar; y las 32 recetas ya viajan en el bundle de todos los jugadores desde
+  // que `Caldero` es "use client" e importa `@/data/recetas`, de modo que
+  // forzarlo enseñaría una lista que ya está descargada.
+  //
+  // Si algún día el modo DM llega a escribir algo, esto deja de valer y tiene
+  // que comprobarse en el servidor.
   const role = useRole();
   const esDm = role === "dm";
   const [oficio, setOficio] = useState<Oficio>("alquimia");

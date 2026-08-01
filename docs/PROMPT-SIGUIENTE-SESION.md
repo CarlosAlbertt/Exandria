@@ -165,19 +165,41 @@ Son las decisiones que el boceto deja abiertas. **Pregúntamelas, no las suponga
 - **`riesgo`** (destilación): la mitad del catálogo trae contrapartida y hoy el
   fallo solo cuesta los materiales.
 
-## Decisión abierta que dejó la tanda del origen
+## Tarea decidida: LOS DIENTES ROTOS, POR ISLA
 
-**Los Dientes Rotos son UNA sola región** para todo el archipiélago, así que
-elegirlos como origen no dice nada — es el único continente que sigue así. La
-wiki da islas con nombre (Kalutha, Slival, Igthuldus, Ruukva, Evaterena,
-Athova-Rae, Shardborne) y, sobre todo, **dos sociedades enfrentadas**: la
-**Hueste Osendida**, tribus pescadoras aisladas que veneran sueños y pesadillas,
-y la **Asamblea Wanderman**, compañía mercante de la Costa del Serrallo que
-naufragó allí. Como origen, la sociedad dice mucho más que la isla.
+**Ya está decidido: van por isla, no por sociedad.** Hoy el archipiélago entero
+es **UNA sola región**, así que elegirlo como origen no dice nada — es el único
+continente que sigue así, y el selector de `/crear` le ofrece una única opción
+frente a las 7 u 8 de los demás.
 
-**Cuáles son origen jugable lo dicto yo.** Ojo al implementarlo: serían regiones
-**nuevas**, así que ahí sí entra `mergeAtlas` (solo SUMA regiones) y hay que
-mirar qué pasa con la región genérica que ya esté guardada en `atlas_defs`.
+Las islas con nombre que da la wiki son **siete**: Kalutha, Slival, Igthuldus,
+Ruukva, Evaterena, Athova-Rae y Shardborne. *(La otra vía que se barajó —las dos
+sociedades enfrentadas, la Hueste Osendida y la Asamblea Wanderman— **queda
+descartada como división de origen**. Sigue siendo buen material de lore y puede
+entrar en el texto de cada isla: qué sociedad manda en ella dice mucho.)*
+
+**Lo que hay que tener en cuenta al hacerlo, y no es poco:**
+
+1. **Son regiones NUEVAS**, así que aquí sí entra `mergeAtlas` (solo SUMA
+   regiones). Y hay que decidir **qué pasa con la región genérica que ya esté
+   guardada** en `atlas_defs` de partidas en curso: si se queda, el continente
+   tendría ocho opciones y una de ellas sería la vieja «Dientes Rotos» a secas.
+2. **El gate 33 te va a parar, y con razón.** `check-origen` vigila que
+   **ninguna región que el selector ofrece se quede sin entrada de saber
+   detrás**. Cada isla necesita su entrada en el catálogo `SABER` **y** su
+   `DETALLE_REGION` en `data/world.ts` (plaza principal y rasgo), o saldrá con
+   `capital: "—"` y rasgo vacío — media entrada de «Tu tierra» frente a la
+   entera de Tal'Dorei. Ese fue exactamente el agujero de la tanda anterior.
+3. **El texto de las siete lo dicto yo, o sale de la wiki. No se rellena a ojo.**
+   La tanda del origen salió bien porque **no hizo falta inventarse lore**: las
+   regiones ya venían sembradas con blurb desde `WORLD_POIS`. Aquí no es el
+   caso, así que **pregúntame por el contenido antes de escribirlo**.
+4. **Los slugs de Tal'Dorei no se tocan**: van escritos a mano en el script
+   desde que se descubrió que el check era tautológico. Añadir islas no los
+   mueve, pero el conteo sí cambia: **de 28 regiones se pasaría a 34** (o 35 si
+   la genérica se queda), y con él los números que hay que comprobar en la app.
+5. **Sin migración**, si se hace como la anterior: los slugs existentes no
+   cambian, así que las fichas ya guardadas siguen valiendo.
 
 ## La otra opción, si prefieres deuda a features
 
@@ -314,5 +336,11 @@ De alquimia ya puedo mirar el libro, la interfaz y la tirada por la **caja de
 arena del DM**; lo que sigue sin poder comprobarse así es que **se descuenten los
 materiales y sobreviva a recargar**, que necesita un personaje con la pericia.
 
-**Para los talleres jugables, pregúntame las cuatro decisiones antes de escribir
-nada**: sin saber qué produce cada oficio no hay nada que fabricar.
+**Y luego sigue con lo pendiente, en este orden:**
+
+1. **Los Dientes Rotos por isla** — ya está decidido, así que no hay que
+   preguntar *si*, solo **el texto de las siete**: no hay blurb sembrado del que
+   tirar y el gate 33 no deja pasar una región sin saber detrás.
+2. **Los talleres jugables** — aquí sí, **las cuatro decisiones antes de
+   escribir nada**: sin saber qué produce cada oficio no hay nada que fabricar.
+3. **La `mecanica` de forja**, si prefieres pagar deuda a añadir features.
