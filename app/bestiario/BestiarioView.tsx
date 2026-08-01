@@ -1,11 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  useBestiary,
-  saveCustomMonster, deleteCustomMonster, setDiscovered as setMonsterDiscovered,
-  pbForCr, CR_OPTIONS,
-} from "@/lib/useBestiary";
+import { useBestiary, pbForCr, CR_OPTIONS } from "@/lib/useBestiary";
 import { useRole } from "@/components/SessionProvider";
 import { xpForCr } from "@/data/encounters";
 import { slugify } from "@/lib/slug";
@@ -23,7 +19,10 @@ const fmtMod = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const isCustom = (m: Monster): boolean => (m as Monster & { custom?: boolean }).custom === true;
 
 export default function BestiarioView() {
-  const { monsters, discovered, ready } = useBestiary();
+  // Las mutaciones son del hook, no funciones sueltas: así el cambio se pinta
+  // en el acto. `app_config` no publica por realtime, y cuando esto se escribía
+  // a pelo el DM añadía un monstruo y no lo veía hasta recargar.
+  const { monsters, discovered, ready, error, guardarMonstruo, borrarMonstruo, marcarDescubierto } = useBestiary();
   const role = useRole();
   const isDM = role === "dm";
 
@@ -61,8 +60,8 @@ export default function BestiarioView() {
 
   async function handleDelete(slug: string) {
     if (!confirm("¿Borrar este monstruo personalizado? Esta acción no se puede deshacer.")) return;
-    const { error } = await deleteCustomMonster(slug);
-    if (!error) setSelected(null);
+    setSelected(null);
+    await borrarMonstruo(slug);
   }
 
   return (
@@ -157,6 +156,7 @@ export default function BestiarioView() {
           onClose={() => setSelected(null)}
           onEdit={() => openEdit(selected)}
           onDelete={() => handleDelete(selected.slug)}
+          onToggleDiscovered={(on) => marcarDescubierto(selected.slug, on)}
         />
       )}
 
@@ -164,7 +164,16 @@ export default function BestiarioView() {
         <MonsterForm
           editing={editing}
           onClose={closeForm}
+          onSave={guardarMonstruo}
         />
+      )}
+
+      {/* El fallo del guardado se NOMBRA. Como el cambio ya se ha pintado
+          (optimista), callarlo dejaría al DM creyendo que se guardó. */}
+      {error && (
+        <p className="font-ui text-[12px] mt-6 text-center" style={{ color: "var(--color-ember)" }}>
+          No se pudo guardar: {error}
+        </p>
       )}
     </main>
   );
@@ -173,16 +182,17 @@ export default function BestiarioView() {
 /* ------------------------------ STATBLOCK ------------------------------ */
 
 function StatblockModal({
-  monster, isDM, discovered, onClose, onEdit, onDelete,
+  monster, isDM, discovered, onClose, onEdit, onDelete, onToggleDiscovered,
 }: {
   monster: Monster; isDM: boolean; discovered: boolean;
   onClose: () => void; onEdit: () => void; onDelete: () => void;
+  onToggleDiscovered: (on: boolean) => Promise<{ error: string | null }>;
 }) {
   const [busy, setBusy] = useState(false);
 
   async function toggleDiscovered() {
     setBusy(true);
-    await setMonsterDiscovered(monster.slug, !discovered);
+    await onToggleDiscovered(!discovered);
     setBusy(false);
   }
 
@@ -413,7 +423,11 @@ function buildMonster(f: FormState, slug: string): Monster {
   return m;
 }
 
-function MonsterForm({ editing, onClose }: { editing: Monster | null; onClose: () => void }) {
+function MonsterForm({ editing, onClose, onSave }: {
+  editing: Monster | null;
+  onClose: () => void;
+  onSave: (m: Monster) => Promise<{ error: string | null }>;
+}) {
   const [f, setF] = useState<FormState>(() => (editing ? monsterToForm(editing) : EMPTY_FORM));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -436,10 +450,12 @@ function MonsterForm({ editing, onClose }: { editing: Monster | null; onClose: (
     const problem = validate(f);
     if (problem) { setErr(problem); return; }
     setBusy(true); setErr(null);
-    const monster = buildMonster(f, slug);
-    const { error } = await saveCustomMonster(monster);
+    // El guardado es optimista: la lista ya enseña el monstruo al volver de
+    // aquí. Si la escritura falla, el hook lo dice en la pantalla de detrás —
+    // por eso este formulario se cierra igual en vez de quedarse colgado.
+    await onSave(buildMonster(f, slug));
     setBusy(false);
-    if (error) setErr(error); else onClose();
+    onClose();
   }
 
   return (

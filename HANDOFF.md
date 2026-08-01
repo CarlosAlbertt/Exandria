@@ -4,6 +4,37 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
 ## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-01)
 
+> **Lo último (2026-08-01, después del cupo): EL BESTIARIO SE VEÍA TARDE.**
+> Rama `bestiario-optimista`. **Sin migración.**
+>
+> **El fallo**: `saveCustomMonster`, `deleteCustomMonster` y `setDiscovered`
+> escribían en `app_config` y **no tocaban el estado local**; `useBestiary`
+> confiaba en una suscripción realtime sobre `app_config`, **que no entrega
+> nunca**. Así que el DM añadía un monstruo, lo borraba o lo marcaba como
+> descubierto y **no pasaba nada hasta recargar** — y lo tercero es justo lo que
+> hace que los jugadores lo vean aparecer.
+>
+> **Es la misma lección por cuarta vez**, y estaba señalada en el prompt de la
+> sesión: «`useBestiary` tiene una suscripción que no entrega nunca y sigue
+> ahí».
+>
+> **El arreglo**: las mutaciones se mudan **dentro del hook**, aplican en local
+> y luego persisten —el patrón de `lib/useOficios.ts`—, y la suscripción muerta
+> se retira con el porqué escrito. **Devuelven además el error**, no solo lo
+> dejan en `error`: `SelectorMonstruos` compone su propio aviso («añadido, pero
+> no se pudo marcar…») y con el error solo en el estado del hook no podría
+> distinguir su fallo del de otra pantalla.
+>
+> **La mezcla pasa a ser capa pura** (`mergeMonsters`, `conMonstruo`,
+> `sinMonstruo`, `conDescubierto`) y `check-bestiary` la comprueba: sustituir en
+> vez de duplicar, no mutar el array recibido, no duplicar al marcar dos veces y
+> que un personalizado con el slug de uno del manual lo **sustituya** quedando
+> marcado. **Tres mutaciones probadas.**
+>
+> **Los 32 gates en verde.** **Sin probar en la app viva.**
+
+## 🚦 Antes de eso (2026-08-01): EL CUPO DE LAS DOS POCIONES CUMBRE
+
 > **Lo último (2026-08-01): EL CUPO DE LAS DOS POCIONES CUMBRE.**
 > Rama `cupo-alquimia`. **Sin migración.**
 >

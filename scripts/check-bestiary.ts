@@ -2,7 +2,7 @@
 // Uso: npx tsx scripts/check-bestiary.ts
 import { ALL_MONSTERS, searchMonsters, type Monster } from "../data/bestiary";
 import { CR_XP } from "../data/encounters";
-import { pbForCr, CR_OPTIONS } from "../lib/useBestiary";
+import { pbForCr, CR_OPTIONS, mergeMonsters, conMonstruo, sinMonstruo, conDescubierto } from "../lib/useBestiary";
 
 let failures = 0;
 
@@ -113,6 +113,66 @@ const inventado: Monster = { ...ALL_MONSTERS[0], slug: "bicho-inventado", name: 
 check("busca sobre la lista recibida, no sobre ALL_MONSTERS", searchMonsters([...ALL_MONSTERS, inventado], "Bicho Inventado").some((m) => m.slug === "bicho-inventado"));
 check("un personalizado no aparece si no está en la lista", searchMonsters(ALL_MONSTERS, "Bicho Inventado").length === 0);
 check("con lista vacía no devuelve nada", searchMonsters([], "").length === 0);
+
+// --- Las mutaciones del bestiario, como capa pura -------------------------
+// Antes vivían dentro de funciones que escribían en Supabase y NO tocaban el
+// estado local: el hook confiaba en una suscripción realtime a `app_config`,
+// que no entrega nunca, así que el DM añadía un monstruo y no lo veía hasta
+// recargar. Ahora la mezcla es pura y se comprueba aquí; la escritura es lo
+// único que queda en el hook.
+const bicho = (slug: string, name: string) => ({ ...ALL_MONSTERS[0], slug, name });
+
+check("conMonstruo añade uno que no estaba",
+  conMonstruo([], bicho("nuevo", "Nuevo")).length === 1);
+check("conMonstruo SUSTITUYE por slug en vez de duplicar",
+  conMonstruo([bicho("x", "Viejo")], bicho("x", "Nuevo")).length === 1);
+check("y el que queda es el nuevo",
+  conMonstruo([bicho("x", "Viejo")], bicho("x", "Nuevo"))[0].name === "Nuevo");
+check("conMonstruo no muta el array que recibe", (() => {
+  const antes = [bicho("x", "Viejo")];
+  conMonstruo(antes, bicho("y", "Otro"));
+  return antes.length === 1;
+})());
+
+check("sinMonstruo quita por slug",
+  sinMonstruo([bicho("x", "X"), bicho("y", "Y")], "x").length === 1);
+check("sinMonstruo con un slug que no está no rompe nada",
+  sinMonstruo([bicho("x", "X")], "z").length === 1);
+check("sinMonstruo no muta el array que recibe", (() => {
+  const antes = [bicho("x", "X")];
+  sinMonstruo(antes, "x");
+  return antes.length === 1;
+})());
+
+check("conDescubierto marca", conDescubierto([], "orco", true).includes("orco"));
+check("conDescubierto desmarca", conDescubierto(["orco"], "orco", false).length === 0);
+check("marcar dos veces no duplica",
+  conDescubierto(conDescubierto([], "orco", true), "orco", true).length === 1);
+check("desmarcar algo que no estaba no rompe nada",
+  conDescubierto(["orco"], "trasgo", false).length === 1);
+check("conDescubierto no muta el array que recibe", (() => {
+  const antes = ["orco"];
+  conDescubierto(antes, "trasgo", true);
+  return antes.length === 1;
+})());
+
+// mergeMonsters es lo que ve la pantalla: un personalizado con el slug de uno
+// del manual lo SUSTITUYE, y queda marcado como personalizado.
+check("mergeMonsters sin personalizados devuelve el bestiario entero",
+  mergeMonsters([]).length === ALL_MONSTERS.length);
+check("un personalizado nuevo suma uno",
+  mergeMonsters([bicho("bicho-inventado", "Bicho")]).length === ALL_MONSTERS.length + 1);
+check("un personalizado con el slug de uno del manual NO suma, sustituye",
+  mergeMonsters([bicho(ALL_MONSTERS[0].slug, "Reescrito")]).length === ALL_MONSTERS.length);
+check("y el que queda es el personalizado, marcado como tal", (() => {
+  const m = mergeMonsters([bicho(ALL_MONSTERS[0].slug, "Reescrito")])
+    .find((x) => x.slug === ALL_MONSTERS[0].slug);
+  return m?.name === "Reescrito" && (m as { custom?: boolean }).custom === true;
+})());
+check("mergeMonsters ordena por nombre en español", (() => {
+  const n = mergeMonsters([]).map((m) => m.name);
+  return n.every((x, i) => i === 0 || n[i - 1].localeCompare(x, "es") <= 0);
+})());
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
 process.exit(failures === 0 ? 0 : 1);
