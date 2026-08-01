@@ -10,14 +10,16 @@
 //  3. Que la CD concuerde con la rareza de lo que produce, para que la escala no
 //     dependa de que quien escribió la receta mirase la tabla.
 
-import { RECETAS, CD_POR_RAREZA, recetasDe, recetaPorSlug, recetasIniciales, produceNombre, produceRareza } from "../data/recetas";
+import { RECETAS, CD_POR_RAREZA, RECETAS_CON_CUPO, recetasDe, recetaPorSlug, recetasIniciales, recetasConCupo, produceNombre, produceRareza } from "../data/recetas";
 import { POCIONES } from "../data/pociones";
 import { MATERIALES, materialPorN, materialPorNombre, materialesDe, esMaterial, OFICIOS_ORDEN, OFICIO_PERICIA, type Oficio } from "../lib/materiales";
 import { huecosUsados } from "../lib/inventario";
-import { recetasSabidas, requisitos, puedePreparar, consumir, anadirProducto, idReceta, slugDeId } from "../lib/recetario";
+import { recetasSabidas, requisitos, puedePreparar, consumir, anadirProducto, idReceta, slugDeId, cupoLibre, cupoHasta, diasDeCupo } from "../lib/recetario";
+import { MINUTES_PER_DAY } from "../lib/gameClock";
 import { SKILLS } from "../data/rules";
 import { norm } from "../lib/slug";
 import type { Item } from "../lib/character";
+import type { PlayState } from "../lib/recursos";
 
 let failures = 0;
 function check(label: string, condition: boolean) {
@@ -134,6 +136,50 @@ check("las 25 pociones del libro están cubiertas",
 check("hay 3 recetas iniciales", recetasIniciales("alquimia").length === 3);
 check("las iniciales son todas comunes (CD 10)",
   recetasIniciales("alquimia").every((r) => r.cd === CD_POR_RAREZA["comun"] && produceRareza(r) === "comun"));
+
+/* ------------------------------- El cupo ------------------------------- */
+// Las dos recetas cumbre comparten un cupo de 1d6 días. Se vigila QUIÉNES lo
+// llevan, no solo cuántas: marcar una tercera abriría el techo de la campaña, y
+// «son 2» seguiría en verde si alguien cambiara una por otra.
+check(`hay exactamente ${RECETAS_CON_CUPO} recetas con cupo`,
+  recetasConCupo().length === RECETAS_CON_CUPO);
+check("las del cupo son Posibilidad y la legendaria, ni una más ni una menos",
+  JSON.stringify(recetasConCupo().map((r) => r.slug).sort())
+    === JSON.stringify(["fuerza-de-gigante-tormentas", "posibilidad"]));
+// Que sean las MÁS caras no es decorativo: es lo que justifica el freno.
+check("las dos del cupo son las de mayor CD del libro",
+  recetasConCupo().every((r) => r.cd >= 19));
+
+const AHORA = 100_000;
+check("sin cupo gastado, el taller está libre", cupoLibre({}, AHORA) === true);
+check("un cupo en el futuro bloquea", cupoLibre({ tallerCupo: AHORA + 1 }, AHORA) === false);
+check("justo en el minuto de vencimiento ya está libre",
+  cupoLibre({ tallerCupo: AHORA }, AHORA) === true);
+check("un cupo pasado no bloquea", cupoLibre({ tallerCupo: AHORA - 1 }, AHORA) === true);
+// Un dato corrupto tiene que dejar jugar, no bloquear el caldero para siempre.
+check("un tallerCupo no numérico cuenta como libre",
+  cupoLibre({ tallerCupo: NaN }, AHORA) === true
+  && cupoLibre({ tallerCupo: "mañana" } as unknown as PlayState, AHORA) === true);
+
+for (const d of [1, 2, 3, 4, 5, 6]) {
+  check(`un ${d} en el 1d6 bloquea ${d} día(s)`,
+    cupoHasta(AHORA, d) === AHORA + d * MINUTES_PER_DAY);
+}
+// El clamp NO es paranoia: Math.min/Math.max propagan NaN, y como cupoLibre
+// trata lo no finito como libre, un dado corrupto sin este guardia sería justo
+// el que DESACTIVA el freno que debía imponer.
+for (const malo of [0, -3, 99, 2.7, NaN, Infinity, -Infinity]) {
+  const hasta = cupoHasta(AHORA, malo);
+  check(`cupoHasta(${String(malo)}) da un número finito`, Number.isFinite(hasta));
+  check(`cupoHasta(${String(malo)}) se queda entre 1 y 6 días`,
+    hasta >= AHORA + MINUTES_PER_DAY && hasta <= AHORA + 6 * MINUTES_PER_DAY);
+}
+
+check("diasDeCupo dice 0 cuando está libre", diasDeCupo({}, AHORA) === 0);
+check("diasDeCupo redondea hacia arriba el día a medias",
+  diasDeCupo({ tallerCupo: AHORA + MINUTES_PER_DAY + 1 }, AHORA) === 2);
+check("diasDeCupo cuadra con lo que puso cupoHasta",
+  diasDeCupo({ tallerCupo: cupoHasta(AHORA, 4) }, AHORA) === 4);
 
 /* ------------------------- El libro del personaje ------------------------- */
 check("idReceta y slugDeId son inversas",

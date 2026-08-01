@@ -33,6 +33,15 @@ export type PlayState = {
   preparados?: string[];
   /** Id del conjuro de concentración activo; ausente ⇒ ninguno (O2). */
   concentrando?: string;
+  /**
+   * Cupo del taller: el **minuto de juego absoluto** en que vuelve a estar
+   * libre. Ausente ⇒ nunca se ha gastado.
+   *
+   * Se compara contra el reloj de campaña y NO contra la hora real, para que el
+   * cupo avance cuando el DM adelanta días desde Panel DM › Tiempo. Lo leen y lo
+   * escriben `lib/recetario.ts` y el caldero.
+   */
+  tallerCupo?: number;
   [otros: string]: unknown;
 };
 

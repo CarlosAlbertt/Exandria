@@ -22,7 +22,10 @@ export type GameMoment = {
   dateStr: string; // "D de Mes, AAAA PD"
 };
 
-const MINUTES_PER_DAY = 24 * 60;
+// Exportado porque el cupo del taller cuenta días de juego y necesita la misma
+// definición de «día» que el reloj. Copiar el 1440 en otro archivo sería una
+// segunda fuente de verdad esperando a divergir.
+export const MINUTES_PER_DAY = 24 * 60;
 const YEAR_DAYS = CALENDAR.yearDays; // 328
 const YEAR_MINUTES = YEAR_DAYS * MINUTES_PER_DAY;
 

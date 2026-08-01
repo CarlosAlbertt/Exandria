@@ -2,12 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useInventarioVivo } from "@/lib/useInventarioVivo";
+import { useGameClock } from "@/lib/useGameClock";
 import { rollVisual } from "@/lib/diceBox";
 import { roll as rollFallback } from "@/lib/dice";
+import { loadActiveCharacter, saveCharacter } from "@/lib/character";
 import { recetaPorSlug, produceNombre, produceRareza, type Receta } from "@/data/recetas";
 import { RAREZA_LABEL } from "@/data/pociones";
-import { recetasSabidas, sabeOficio, requisitos, puedePreparar, consumir, anadirProducto } from "@/lib/recetario";
+import { recetasSabidas, sabeOficio, requisitos, puedePreparar, consumir, anadirProducto, cupoLibre, cupoHasta, diasDeCupo } from "@/lib/recetario";
 import { OFICIO_PERICIA } from "@/lib/materiales";
+import type { PlayState } from "@/lib/recursos";
 import { fmtMod } from "@/data/rules";
 
 /**
@@ -25,6 +28,10 @@ import { fmtMod } from "@/data/rules";
  */
 export default function Caldero({ userId }: { userId: string | null }) {
   const inv = useInventarioVivo(userId, "self");
+  // El cupo se mide en días de JUEGO, así que se compara con el reloj de
+  // campaña y no con la hora real: adelantar días desde Panel DM › Tiempo tiene
+  // que liberarlo, que es como la mesa entiende «vuelve dentro de tres días».
+  const { nowGameMin } = useGameClock();
   const [sel, setSel] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ texto: string; exito: boolean } | null>(null);
@@ -53,12 +60,47 @@ export default function Caldero({ userId }: { userId: string | null }) {
   const pericia = inv.derived.skills.find((s) => s.name === OFICIO_PERICIA.alquimia);
   const mod = pericia?.mod ?? 0;
 
+  const play: PlayState = useMemo(
+    () => (inv.character?.play_state && typeof inv.character.play_state === "object"
+      ? inv.character.play_state as PlayState
+      : {}),
+    [inv.character],
+  );
+
   const receta = sel ? recetaPorSlug(sel) ?? null : null;
   const lineas = receta ? requisitos(receta, inv.items) : [];
-  const listo = receta ? puedePreparar(receta, inv.items) : false;
+  // El cupo solo frena a las recetas que lo llevan. Es lo que hace que gastarlo
+  // no te deje sin poder prepararte una curación.
+  const cupoPillado = !!receta?.cupo && !cupoLibre(play, nowGameMin);
+  const diasQueFaltan = cupoPillado ? diasDeCupo(play, nowGameMin) : 0;
+  const listo = receta ? puedePreparar(receta, inv.items) && !cupoPillado : false;
+
+  /**
+   * Gasta el cupo tras acertar una receta que lo lleva.
+   *
+   * Relee la ficha antes de escribir y **fusiona** `play_state`: ahí viven
+   * también los PG, las condiciones y los usos de clase, así que escribir el
+   * objeto que teníamos en memoria borraría lo que el combate haya movido
+   * mientras el caldero estaba abierto.
+   */
+  async function gastarCupo(characterId: string, uid: string, dados: number): Promise<number> {
+    const actual = await loadActiveCharacter(uid);
+    const previo = (actual?.play_state && typeof actual.play_state === "object"
+      ? actual.play_state as PlayState
+      : play);
+    const hasta = cupoHasta(nowGameMin, dados);
+    await saveCharacter(characterId, { play_state: { ...previo, tallerCupo: hasta } });
+    return hasta;
+  }
 
   async function preparar(r: Receta) {
     if (busy || !inv.characterId) return;
+    // Segunda comprobación, contra el reloj de este instante: entre que se
+    // pintó el botón y se pulsa, el DM puede haber adelantado (o no) los días.
+    if (r.cupo && !cupoLibre(play, nowGameMin)) {
+      setMsg({ texto: `El alambique aún no se ha asentado. Vuelve dentro de ${diasDeCupo(play, nowGameMin)} día(s).`, exito: false });
+      return;
+    }
     setBusy(true);
     setMsg(null);
 
@@ -87,7 +129,15 @@ export default function Caldero({ userId }: { userId: string | null }) {
     if (estado.faltaMaterial) {
       setMsg({ texto: "Te has quedado sin algún ingrediente mientras preparabas. No se ha gastado nada.", exito: false });
     } else if (exito) {
-      setMsg({ texto: `${total} contra CD ${r.cd}: sale bien. Ya llevas ${nombre}.`, exito: true });
+      // El cupo se gasta SOLO al acertar: fallar ya cuesta los materiales, que
+      // en estas dos recetas son los más difíciles del catálogo.
+      let cola = "";
+      if (r.cupo && inv.characterId && userId) {
+        const dados = rollFallback("1d6")?.total ?? 1;
+        const hasta = await gastarCupo(inv.characterId, userId, dados);
+        cola = ` El alambique queda asentándose ${diasDeCupo({ tallerCupo: hasta }, nowGameMin)} día(s).`;
+      }
+      setMsg({ texto: `${total} contra CD ${r.cd}: sale bien. Ya llevas ${nombre}.${cola}`, exito: true });
     } else {
       setMsg({ texto: `${total} contra CD ${r.cd}: la mezcla se echa a perder y los ingredientes con ella.`, exito: false });
     }
@@ -178,6 +228,7 @@ export default function Caldero({ userId }: { userId: string | null }) {
                       <p className="font-ui text-[11px] mt-1" style={{ color: "var(--color-muted)" }}>
                         {rareza && rareza !== "variable" ? RAREZA_LABEL[rareza] : ""}
                         {r.inicial && " · la sabes de siempre"}
+                        {r.cupo && " · una cada 1d6 días"}
                       </p>
                       {!puede && (
                         <p className="font-ui text-[11px] mt-1" style={{ color: "var(--color-dim)" }}>
@@ -243,13 +294,30 @@ export default function Caldero({ userId }: { userId: string | null }) {
                 Al fallar, los ingredientes se pierden igual.
               </p>
 
+              {/* El cupo se explica ANTES de tocar el botón: un botón apagado sin
+                  motivo se lee como «te faltan cosas», que es justo lo que no es. */}
+              {receta.cupo && (
+                <p className="font-ui text-[11px] mb-3" style={{ color: cupoPillado ? "var(--color-ember)" : "var(--color-arcane-bright)" }}>
+                  <i className="fas fa-hourglass-half mr-1.5" />
+                  {cupoPillado
+                    ? `El alambique se está asentando: faltan ${diasQueFaltan} día(s) para volver a intentar una de las dos grandes.`
+                    : "Solo una de las dos grandes cada 1d6 días, y el cupo se gasta únicamente si sale bien."}
+                </p>
+              )}
+
               <button
                 onClick={() => preparar(receta)}
                 disabled={busy || !listo}
                 className="btn-gold w-full !py-2.5 text-[13px] disabled:opacity-40"
               >
                 <i className="fas fa-mortar-pestle mr-2" />
-                {busy ? "Preparando…" : listo ? "Preparar" : "Te faltan ingredientes"}
+                {busy
+                  ? "Preparando…"
+                  : cupoPillado
+                    ? `El alambique descansa (${diasQueFaltan} día/s)`
+                    : listo
+                      ? "Preparar"
+                      : "Te faltan ingredientes"}
               </button>
 
               {msg && (
