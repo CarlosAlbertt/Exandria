@@ -2,9 +2,50 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-07-31)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-01)
 
-> **Lo último (2026-07-31, tarde): LOS DADOS NUNCA USARON SUS CARAS.**
+> **Lo último (2026-08-01): EL CUPO DE LAS DOS POCIONES CUMBRE.**
+> Rama `cupo-alquimia`. **Sin migración.**
+>
+> **Posibilidad** y **Fuerza de gigante (tormentas)** —la única legendaria— se
+> siguen fabricando, pero dejan de ser dos recetas caras más y pasan a ser el
+> **techo de poder de la campaña**:
+> - **Los componentes más difíciles del catálogo.** Posibilidad pide ahora
+>   Polvo de Hielo Negro de Aeor y Extracto de Luz de Catha además de la Arena
+>   Dunamántica y el Residuum; la legendaria, Escama de Dragón Cromático y
+>   Turmalina.
+> - **Una cada `1d6` días.** Al **acertar** una de las dos se tira 1d6 y durante
+>   esos días **ninguna de las dos** se puede intentar.
+>
+> **Tres decisiones de alcance, tomadas a propósito:** el cupo es **compartido**
+> entre las dos, **solo las bloquea a ellas** —gastarlo no te deja sin poder
+> prepararte una curación— y **solo se consume al acertar**, porque fallar ya
+> cuesta esos materiales.
+>
+> **Dónde vive**: `play_state.tallerCupo`, el **minuto de juego absoluto** en
+> que se libera. Se compara con el **reloj de campaña y no con la hora real**,
+> así que **adelantar días desde Panel DM › Tiempo lo libera** — que es como la
+> mesa entiende «vuelve dentro de tres días».
+>
+> ⚠️ **Al gastarlo se RELEE la ficha y se fusiona `play_state`.** Ahí viven
+> también los PG, las condiciones y los usos de clase: escribir el objeto que el
+> caldero tenía en memoria borraría lo que el combate hubiera movido mientras la
+> pantalla estaba abierta.
+>
+> **En el tipo**: `Receta` gana `cupo?: true` y `RECETAS_CON_CUPO` dice cuántas
+> lo llevan. El gate no comprueba solo **cuántas** sino **cuáles, por slug** —
+> probado por mutación: cambiar una por otra deja el número en 2 y el gate lo
+> canta igual. También caza quitar el guardia de `NaN` de `cupoHasta` (sin él,
+> `Math.min`/`Math.max` propagan el `NaN`, y como `cupoLibre` trata lo no finito
+> como libre, **el peor 1d6 sería el que desactiva el freno**) y cambiar el
+> `>=` del vencimiento por `>`.
+>
+> **Los 32 gates en verde.** `check-recetas` pasa de 227 a ~474 comprobaciones.
+> **Sin probar en la app viva.**
+
+## 🚦 Antes de eso (2026-07-31, tarde)
+
+> **LOS DADOS NUNCA USARON SUS CARAS.**
 > Ramas `fix/tirada-aptitudes-4d6` y `fix/dice-box-lectura-caras`, ambas en
 > `master`. **Sin migración.**
 >
