@@ -67,7 +67,25 @@ export type Receta = {
    * personaje que deja de tener Alquimia deja de saberlas, que es lo correcto.
    */
   inicial?: true;
+  /**
+   * Receta con **cupo**: el techo de poder de la campaña. Tras acertar una,
+   * NINGUNA receta con cupo se puede volver a intentar hasta que pasen `1d6`
+   * días de juego.
+   *
+   * El cupo es **compartido** entre todas las que lo llevan y **solo las bloquea
+   * a ellas**: gastarlo no te deja sin poder prepararte una curación. Y **solo
+   * se consume al acertar**, porque fallar ya cuesta los materiales, que en
+   * estas dos son los más difíciles del catálogo.
+   */
+  cupo?: true;
 };
+
+/**
+ * Cuántas recetas llevan cupo. Vive aquí y el gate lo exige contra los slugs
+ * concretos: marcar una tercera «sin querer» abriría el techo de la campaña sin
+ * que nadie se enterase.
+ */
+export const RECETAS_CON_CUPO = 2;
 
 export const RECETAS: Receta[] = [
   // --- Las comunes: con las que arranca el libro --------------------------
@@ -127,8 +145,10 @@ export const RECETAS: Receta[] = [
     materiales: [{ n: 65, qty: 3 }, { n: 38, qty: 2 }, { n: 46, qty: 1 }] },
   { slug: "longevidad", oficio: "alquimia", produce: "longevidad", cd: 19,
     materiales: [{ n: 34, qty: 2 }, { n: 64, qty: 1 }, { n: 48, qty: 2 }, { n: 46, qty: 1 }] },
-  { slug: "posibilidad", oficio: "alquimia", produce: "posibilidad", cd: 19,
-    materiales: [{ n: 48, qty: 3 }, { n: 46, qty: 2 }, { n: 57, qty: 1 }] },
+  // Con cupo: el artefacto dunamántico de Wildemount. Lleva lo de Aeor y lo de
+  // Catha porque es el techo, no una poción cara más.
+  { slug: "posibilidad", oficio: "alquimia", produce: "posibilidad", cd: 19, cupo: true,
+    materiales: [{ n: 48, qty: 3 }, { n: 46, qty: 2 }, { n: 51, qty: 1 }, { n: 70, qty: 1 }] },
   { slug: "velocidad", oficio: "alquimia", produce: "velocidad", cd: 19,
     materiales: [{ n: 31, qty: 2 }, { n: 68, qty: 1 }, { n: 48, qty: 2 }] },
   { slug: "vitalidad", oficio: "alquimia", produce: "vitalidad", cd: 19,
@@ -141,8 +161,10 @@ export const RECETAS: Receta[] = [
     materiales: [{ n: 26, qty: 3 }, { n: 68, qty: 2 }, { n: 46, qty: 1 }] },
 
   // --- Legendaria ----------------------------------------------------------
-  { slug: "fuerza-de-gigante-tormentas", oficio: "alquimia", produce: "fuerza-de-gigante", variante: "Fuerza de gigante (tormentas)", cd: 22,
-    materiales: [{ n: 26, qty: 3 }, { n: 68, qty: 2 }, { n: 46, qty: 2 }, { n: 47, qty: 1 }] },
+  // Con cupo: la única legendaria del libro. La turmalina guarda la tormenta y
+  // la escala cromática pone el dragón; ninguna de las dos se encuentra andando.
+  { slug: "fuerza-de-gigante-tormentas", oficio: "alquimia", produce: "fuerza-de-gigante", variante: "Fuerza de gigante (tormentas)", cd: 22, cupo: true,
+    materiales: [{ n: 26, qty: 3 }, { n: 68, qty: 2 }, { n: 46, qty: 3 }, { n: 57, qty: 2 }, { n: 24, qty: 1 }] },
 ];
 
 /** Las recetas de un oficio. Hoy solo alquimia tiene ninguna. */
@@ -157,6 +179,11 @@ export function recetaPorSlug(slug: string): Receta | undefined {
 /** Las que se saben por tener la pericia, sin que nadie las enseñe. */
 export function recetasIniciales(oficio: Oficio): Receta[] {
   return RECETAS.filter((r) => r.oficio === oficio && r.inicial);
+}
+
+/** Las que comparten el cupo. Hoy son las dos cumbre de alquimia. */
+export function recetasConCupo(): Receta[] {
+  return RECETAS.filter((r) => r.cupo);
 }
 
 /**

@@ -5,8 +5,10 @@
 
 import { RECETAS, recetasIniciales, type Receta } from "@/data/recetas";
 import { OFICIO_PERICIA, materialPorN, type Oficio } from "@/lib/materiales";
+import { MINUTES_PER_DAY } from "@/lib/gameClock";
 import { norm } from "@/lib/slug";
 import type { Item } from "@/lib/character";
+import type { PlayState } from "@/lib/recursos";
 
 /**
  * Las recetas descubiertas viven en `characters.lore_unlocked` con este
@@ -101,6 +103,49 @@ export function requisitos(r: Receta, items: Item[]): Falta[] {
 /** ¿Están todos los materiales y todas las herramientas? */
 export function puedePreparar(r: Receta, items: Item[]): boolean {
   return requisitos(r, items).every((f) => f.tiene >= f.necesita);
+}
+
+/* ------------------------------- El cupo ------------------------------- */
+/* Las recetas con `cupo` son el techo de la campaña: una cada 1d6 días,      */
+/* compartido entre ellas y solo bloqueándolas a ellas.                      */
+
+/**
+ * ¿Está libre el cupo del taller a esta hora de campaña?
+ *
+ * `gameMinActual` es el minuto de juego absoluto (`nowGameMin` de
+ * `useGameClock`), NO la hora real: así el cupo corre cuando el DM adelanta
+ * días desde Panel DM › Tiempo.
+ *
+ * Un `tallerCupo` que no sea un número finito cuenta como libre: preferimos que
+ * un dato corrupto deje jugar antes que bloquear el caldero para siempre sin
+ * que nadie sepa por qué.
+ */
+export function cupoLibre(play: PlayState, gameMinActual: number): boolean {
+  const hasta = play.tallerCupo;
+  if (typeof hasta !== "number" || !Number.isFinite(hasta)) return true;
+  return gameMinActual >= hasta;
+}
+
+/**
+ * Hasta cuándo queda pillado el cupo tras acertar una receta que lo lleva.
+ *
+ * `dados` es el 1d6 **ya tirado**: la aleatoriedad se queda fuera para que esta
+ * capa siga siendo pura y comprobable.
+ *
+ * El `Number.isFinite` no es paranoia de más: `Math.min`/`Math.max` propagan
+ * `NaN`, así que sin él un dado corrupto no se acotaría a 1..6 —se quedaría en
+ * `NaN`—, y como `cupoLibre` trata lo no finito como libre, **el 1d6 que peor
+ * sale sería justo el que desactiva el freno que debía imponer**.
+ */
+export function cupoHasta(gameMinActual: number, dados: number): number {
+  const dias = Number.isFinite(dados) ? Math.max(1, Math.min(6, Math.floor(dados))) : 1;
+  return gameMinActual + dias * MINUTES_PER_DAY;
+}
+
+/** Cuántos días de juego faltan para que el cupo vuelva. 0 = ya está libre. */
+export function diasDeCupo(play: PlayState, gameMinActual: number): number {
+  if (cupoLibre(play, gameMinActual)) return 0;
+  return Math.ceil(((play.tallerCupo as number) - gameMinActual) / MINUTES_PER_DAY);
 }
 
 /**
