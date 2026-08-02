@@ -1,0 +1,266 @@
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Manrope:wght@400;600;700;800&display=swap");
+
+.cx{
+  --ink:#090c11;--night:#0d121a;--panel:#131b25;--raised:#1b2532;--line:#2a3848;
+  --bronze:#c9a35c;--bronze-bright:#f0d79a;--arcane:#45c7bd;--arcane-bright:#7df0e6;
+  --ember:#ef6a3d;--verdant:#5fbf7a;--violet:#9d8cf0;
+  --warm:#d8cdb4;--muted:#94a0ad;--dim:#6b7785;
+  background:radial-gradient(120% 90% at 50% 0%,#171a2a 0%,var(--ink) 68%);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  font-family:"Manrope",system-ui,sans-serif;color:var(--warm)
+}
+.cx-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);background:rgba(9,12,17,.6)}
+.cx-tab{padding:8px 16px;font-size:12px;font-weight:700;color:var(--dim);border-radius:8px 8px 0 0}
+.cx-tab.on{color:var(--bronze-bright);background:var(--panel);border:1px solid var(--line);border-bottom:none;box-shadow:inset 0 2px 0 var(--violet)}
+.cx-body{padding:16px}
+.cx-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(180deg,var(--raised),var(--panel));border:1px solid var(--line);
+  border-radius:10px;padding:9px 14px;margin-bottom:6px}
+.cx-strip .name{font-family:"Cinzel",serif;font-weight:700;font-size:16px;color:var(--bronze-bright)}
+.cx-cd{font-size:11px;font-weight:800;color:var(--arcane-bright);border:1px solid rgba(69,199,189,.35);border-radius:999px;padding:2px 9px}
+.cx-aviso{display:flex;gap:9px;align-items:flex-start;border:1px solid rgba(239,106,61,.4);
+  background:rgba(239,106,61,.08);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#f6c3ad}
+.cx-eyebrow{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--bronze);margin:14px 0 7px;text-align:center}
+.cx-slots{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.cx-slot{width:56px;height:56px;border-radius:9px;border:1px solid var(--line);position:relative;
+  background:linear-gradient(160deg,var(--raised),#101823);display:flex;align-items:center;justify-content:center;font-size:21px}
+.cx-slot.gema{border-color:rgba(157,140,240,.5);background:linear-gradient(160deg,rgba(157,140,240,.16),#101823)}
+.cx-slot.util{border-color:rgba(201,163,92,.55);background:linear-gradient(160deg,rgba(201,163,92,.12),#101823);border-style:dashed}
+.cx-slot .qty{position:absolute;right:3px;bottom:2px;font-size:9px;font-weight:800;color:var(--bronze)}
+.cx-name{text-align:center;font-size:9px;color:var(--muted);width:56px;margin-top:4px;line-height:1.15}
+.cx-nogasta{font-size:8.5px;color:var(--bronze);font-style:italic}
+.cx-phases{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+.cx-phase{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.cx-phase.on{border-color:var(--violet);box-shadow:0 0 0 1px rgba(157,140,240,.28),0 6px 20px rgba(0,0,0,.5)}
+.cx-phase h4{font-family:"Cinzel",serif;font-size:12px;font-weight:700;color:var(--bronze-bright);margin:0 0 5px}
+.cx-phase p{font-size:10px;color:var(--muted);margin:0;line-height:1.35}
+/* Fase 2: la fuerza se CARGA manteniendo pulsado y se suelta. */
+.cx-fuerza{height:13px;border-radius:7px;margin:8px 0 4px;position:relative;background:#1b2532;overflow:hidden}
+.cx-fuerza .relleno{position:absolute;left:0;top:0;bottom:0;width:58%;
+  background:linear-gradient(90deg,#2f6f8f,var(--verdant) 62%,var(--verdant) 78%,#c4402c 100%)}
+.cx-fuerza .zona{position:absolute;top:-2px;bottom:-2px;left:52%;width:16%;
+  border:2px solid var(--bronze-bright);border-radius:6px}
+/* Fase 3: el pulido NO vuelve. Barra de un solo sentido con punto de rotura. */
+.cx-pulido{height:15px;border-radius:8px;margin:8px 0 4px;position:relative;background:#161e29;overflow:hidden}
+.cx-pulido .hecho{position:absolute;left:0;top:0;bottom:0;width:61%;
+  background:linear-gradient(90deg,#3a4a5e,#7df0e6)}
+.cx-pulido .rotura{position:absolute;top:-3px;bottom:-3px;left:79%;width:2px;background:var(--ember);box-shadow:0 0 8px var(--ember)}
+.cx-pulido .rotulo{position:absolute;right:4px;top:-16px;font-size:8.5px;font-weight:800;color:var(--ember)}
+.cx-stop{margin-top:14px;display:flex;gap:9px}
+.cx-stop .btn{flex:1;text-align:center;font-weight:800;font-size:13px;padding:12px;border-radius:9px;
+  background:linear-gradient(180deg,#c4402c,#8e2a1c);color:#ffe9e2;border:1px solid #e0745c;
+  box-shadow:0 4px 16px rgba(196,64,44,.35)}
+.cx-stop .alt{padding:12px 14px;border-radius:9px;border:1px solid var(--line);color:var(--muted);
+  font-size:12px;font-weight:700;background:var(--panel)}
+.cx-mod{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.cx-pip{display:inline-flex;min-width:22px;height:21px;padding:0 5px;border-radius:5px;align-items:center;justify-content:center;
+  font-weight:800;font-size:11px;border:1px solid var(--line);background:var(--night);color:var(--dim)}
+.cx-pip.good{color:var(--verdant);border-color:rgba(95,191,122,.5)}
+.cx-pip.bad{color:var(--ember);border-color:rgba(239,106,61,.5)}
+
+@keyframes cx-brillo{0%,100%{opacity:.45}50%{opacity:.95}}
+@keyframes cx-destello{0%,100%{opacity:0;transform:scale(.4)}45%{opacity:.9;transform:scale(1)}}
+@keyframes cx-veta{0%{transform:rotate(-16deg)}50%{transform:rotate(26deg)}100%{transform:rotate(-16deg)}}
+@keyframes cx-polvo{0%{transform:translate(0,0);opacity:.9}100%{transform:translate(var(--px),16px);opacity:0}}
+.brillo{animation:cx-brillo 3.4s ease-in-out infinite}
+.destello{animation:cx-destello 2.6s ease-in-out infinite}
+.veta{animation:cx-veta 5s ease-in-out infinite;transform-origin:190px 150px}
+.polvo{animation:cx-polvo 1.6s ease-out infinite}
+</style>
+
+<h2>La cristalografía</h2>
+<p class="subtitle">Es el oficio en el que <strong>la pieza se rompe</strong>. El propio catálogo lo dice: «extremadamente volátil de tallar», «se hace añicos solo», «tallarlo es un infierno». Y es el único de los seis cuyo catálogo ya trae <strong>herramientas que se exigen pero no se gastan</strong> — cinceles, pinzas y paños que hoy ninguna receta usa.</p>
+
+<div class="cx">
+  <div class="cx-tabs">
+    <div class="cx-tab">📖 Tu libro</div>
+    <div class="cx-tab on">💎 El banco de tallar</div>
+    <div class="cx-tab">Oficios</div>
+  </div>
+
+  <div class="cx-body">
+    <div class="cx-strip">
+      <div>
+        <div class="name">Piedra Lunar de Catha</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">
+          Pide 1 gema y 2 herramientas · sale 1 talla · <span style="color:var(--warm)">Cristalografía Arcana +5</span>
+        </div>
+      </div>
+      <div class="cx-cd">CD 16</div>
+    </div>
+
+    <div class="cx-aviso">
+      <span style="font-size:14px">💥</span>
+      <span><strong>Aquí no se pierde una mezcla: se pierde la piedra.</strong> Hendir contra la veta la parte en dos, y pulirla de más la agrieta. Las herramientas <em>no</em> se rompen — solo la gema.</span>
+    </div>
+
+    <svg viewBox="0 0 470 300" style="width:100%;max-width:480px;display:block;margin:0 auto" role="img" aria-label="Banco de tallar con la gema sujeta en las pinzas">
+      <defs>
+        <linearGradient id="cgema" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#e8f6ff"/><stop offset="30%" stop-color="#9fd8ee"/>
+          <stop offset="62%" stop-color="#6a8fd8"/><stop offset="100%" stop-color="#3b3f8f"/>
+        </linearGradient>
+        <linearGradient id="cfaceta" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity=".55"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="cmadera" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#5c422a"/><stop offset="100%" stop-color="#2b1e13"/>
+        </linearGradient>
+        <linearGradient id="cacero" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#8b96a5"/><stop offset="55%" stop-color="#39424f"/><stop offset="100%" stop-color="#1b2029"/>
+        </linearGradient>
+        <radialGradient id="chalo" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#9fd8ee" stop-opacity=".45"/><stop offset="100%" stop-color="#6a8fd8" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="csoft"><feGaussianBlur stdDeviation="6"/></filter>
+        <clipPath id="cdentro">
+          <polygon points="190,86 234,120 230,184 190,214 150,184 146,120"/>
+        </clipPath>
+      </defs>
+
+      <!-- halo de la gema -->
+      <ellipse cx="190" cy="150" rx="120" ry="100" fill="url(#chalo)"/>
+
+      <!-- banco -->
+      <path d="M20,236 h430 v22 h-430 Z" fill="url(#cmadera)"/>
+      <path d="M20,236 h430 v4 h-430 Z" fill="#7a5e2c" opacity=".55"/>
+      <path d="M40,258 h20 v30 h-20 Z" fill="#2b1e13"/>
+      <path d="M410,258 h20 v30 h-20 Z" fill="#2b1e13"/>
+
+      <!-- pinzas que sujetan la gema: son HERRAMIENTA, no se gastan -->
+      <path d="M150,236 q6,-46 34,-62" fill="none" stroke="url(#cacero)" stroke-width="9" stroke-linecap="round"/>
+      <path d="M230,236 q-6,-46 -34,-62" fill="none" stroke="url(#cacero)" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="190" cy="228" r="8" fill="#39424f" stroke="#8b96a5" stroke-width="1.5"/>
+
+      <!-- LA GEMA -->
+      <polygon points="190,86 234,120 230,184 190,214 150,184 146,120" fill="url(#cgema)"/>
+      <g clip-path="url(#cdentro)">
+        <polygon points="190,86 234,120 190,150" fill="url(#cfaceta)"/>
+        <polygon points="190,86 146,120 190,150" fill="#ffffff" opacity=".22"/>
+        <polygon points="146,120 150,184 190,150" fill="#2b3a86" opacity=".35"/>
+        <polygon points="230,184 190,214 190,150" fill="#1f2a6b" opacity=".4"/>
+        <!-- LA VETA: el plano por el que la piedra quiere partirse. Gira. -->
+        <g class="veta">
+          <rect x="120" y="146" width="140" height="7" fill="#7df0e6" opacity=".85"/>
+          <rect x="120" y="148" width="140" height="2" fill="#ffffff" opacity=".9"/>
+        </g>
+      </g>
+      <polygon points="190,86 234,120 230,184 190,214 150,184 146,120"
+        fill="none" stroke="#cfeaff" stroke-width="2" opacity=".7"/>
+      <g fill="#ffffff">
+        <circle class="destello" cx="212" cy="112" r="3"/>
+        <circle class="destello" style="animation-delay:1.1s" cx="164" cy="176" r="2.4"/>
+        <circle class="destello" style="animation-delay:1.9s" cx="200" cy="196" r="2"/>
+      </g>
+
+      <!-- cincel apoyado en el filo de la veta, y mazo -->
+      <g>
+        <path d="M262,96 l58,-34 8,13 -58,34 Z" fill="url(#cmadera)"/>
+        <path d="M256,100 l16,-9 10,17 -16,9 Z" fill="url(#cacero)"/>
+        <path d="M248,105 l10,-6 7,12 -10,6 Z" fill="#b9c3d1"/>
+        <path d="M340,52 q26,-6 34,14 q8,20 -14,28 q-22,8 -32,-12" fill="url(#cmadera)" opacity=".95"/>
+      </g>
+
+      <!-- polvo de tallar cayendo -->
+      <g fill="#cfeaff">
+        <circle class="polvo" style="--px:-6px" cx="238" cy="120" r="1.8"/>
+        <circle class="polvo" style="--px:4px;animation-delay:.6s" cx="242" cy="126" r="1.4"/>
+        <circle class="polvo" style="--px:-2px;animation-delay:1.1s" cx="236" cy="132" r="1.2"/>
+      </g>
+
+      <!-- lupa de joyero -->
+      <g class="brillo">
+        <circle cx="86" cy="150" r="26" fill="none" stroke="url(#cacero)" stroke-width="6"/>
+        <circle cx="86" cy="150" r="22" fill="#7df0e6" opacity=".12"/>
+        <path d="M104,168 l22,26" stroke="url(#cacero)" stroke-width="7" stroke-linecap="round"/>
+      </g>
+
+      <!-- utillaje colgado: se exige, no se gasta -->
+      <g>
+        <path d="M370,120 h84" stroke="#3b2a1a" stroke-width="4"/>
+        <path d="M382,124 l0,44 M382,168 l-5,10 h10 Z" stroke="#8b96a5" stroke-width="4" fill="#8b96a5"/>
+        <path d="M404,124 q10,26 0,44 M414,124 q-10,26 0,44" stroke="#8b96a5" stroke-width="3.5" fill="none"/>
+        <rect x="430" y="126" width="18" height="26" rx="4" fill="#5c422a"/>
+        <text x="412" y="192" font-size="8.5" font-family="Manrope" font-weight="800" fill="#c9a35c" text-anchor="middle">NO SE GASTAN</text>
+      </g>
+    </svg>
+
+    <div class="cx-eyebrow">Lo que pide la receta</div>
+    <div class="cx-slots">
+      <div><div class="cx-slot gema">💎</div><div class="cx-name">Piedra Lunar de Catha</div></div>
+      <div><div class="cx-slot util">🔨</div><div class="cx-name">Cincel de Adamantina<br><span class="cx-nogasta">no se gasta</span></div></div>
+      <div><div class="cx-slot util">🥄</div><div class="cx-name">Pinzas de Hueso de Dragón<br><span class="cx-nogasta">no se gasta</span></div></div>
+    </div>
+
+    <div class="cx-phases">
+      <div class="cx-phase on">
+        <h4>1 · Leer la veta</h4>
+        <p><strong>Gira la piedra</strong> hasta que su veta quede alineada con el cincel. No es una barra: es un <strong>ángulo</strong>.</p>
+        <svg viewBox="0 0 120 56" width="100%" height="52" style="margin-top:6px">
+          <path d="M10,48 A50,50 0 0 1 110,48" fill="none" stroke="#2a3848" stroke-width="8" stroke-linecap="round"/>
+          <path d="M54,9.6 A50,50 0 0 1 72,11.6" fill="none" stroke="#9d8cf0" stroke-width="8"/>
+          <line x1="60" y1="48" x2="46" y2="14" stroke="#f0d79a" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="60" cy="48" r="4" fill="#c9a35c"/>
+          <text x="60" y="20" font-size="8" font-family="Manrope" font-weight="800" fill="#9d8cf0" text-anchor="middle">veta</text>
+        </svg>
+      </div>
+
+      <div class="cx-phase">
+        <h4>2 · Hendir</h4>
+        <p><strong>Mantén pulsado para cargar</strong> y suelta. Flojo no abre la piedra; fuerte la parte en dos.</p>
+        <div class="cx-fuerza"><span class="relleno"></span><span class="zona"></span></div>
+        <p style="font-size:9.5px;color:var(--dim);margin-top:3px">roce · toque · <strong style="color:var(--verdant)">golpe justo</strong> · seco · añicos</p>
+      </div>
+
+      <div class="cx-phase">
+        <h4>3 · Pulir</h4>
+        <p><strong>Esto no vuelve atrás.</strong> Cuanto más pules, mejor sale — hasta que se agrieta. Tú decides cuándo parar.</p>
+        <div class="cx-pulido">
+          <span class="hecho"></span><span class="rotura"></span><span class="rotulo">se agrieta</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cx-stop">
+      <div class="btn">■ &nbsp;PARAR DE PULIR &nbsp;<span style="opacity:.8;font-weight:600">(o espacio)</span></div>
+      <div class="alt">Tallar sin manipular</div>
+    </div>
+
+    <div class="cx-mod">
+      Manipulación:
+      <span class="cx-pip good">+1</span><span class="cx-pip good">+1</span><span class="cx-pip">0</span>
+      → tirada <strong style="color:var(--bronze-bright)">1d20 +5 +2</strong> contra CD 16
+      &nbsp;·&nbsp; <span style="color:#8fdca6">la piedra aguanta</span>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:22px">Por qué estas tres y no otras</h3>
+<p class="subtitle" style="max-width:680px">Los cuatro talleres tienen que sentirse distintos con el mando en la mano, no solo con otro dibujo. Hasta ahora: alquimia <em>ordena</em> y para dos cursores; forja <em>aguanta un compás</em>; destilación <em>captura una ventana</em>. Cristalografía trae tres cosas que no hace ninguno:</p>
+<ul style="font-size:13px;line-height:1.6;color:var(--muted);max-width:680px">
+  <li><strong>Un ángulo, no una barra.</strong> Alinear la veta es la única fase de los cuatro oficios que se juega en círculo.</li>
+  <li><strong>Cargar y soltar.</strong> La fuerza se acumula mientras mantienes pulsado; la sueltas tú. En los demás talleres el cursor se mueve solo y tú solo lo paras.</li>
+  <li><strong>Una barra que no vuelve.</strong> Pulir siempre mejora… hasta el punto de rotura. Nadie te obliga a seguir: es lo único de los cuatro oficios donde <em>tú</em> eliges cuánto arriesgar.</li>
+</ul>
+
+<h3>Lo que hay que decidir</h3>
+<div class="options">
+  <div class="option" data-choice="rompe" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>El desastre rompe la gema</h3>
+      <p>Hendir con fuerza de más o pasarse puliendo <strong>parte la piedra</strong>: se pierde la gema y no sale nada, tires lo que tires. Las herramientas nunca se rompen. Es el equivalente al 1d4 de alquimia, pero en material en vez de en PG.</p></div>
+  </div>
+  <div class="option" data-choice="penaliza" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>Solo resta al dado</h3>
+      <p>Romperla es un −1 más y ya: se pierde el material como en cualquier fallo, sin regla aparte.</p></div>
+  </div>
+  <div class="option" data-choice="mediotalla" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Sale una talla menor</h3>
+      <p>La piedra rota no se tira: da una pieza peor —un fragmento, una esquirla— en vez de la talla buena. Hace falta que cada receta declare su versión pobre.</p></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px"><strong>Y el tope de siempre</strong>: cristalografía tampoco tiene catálogo de qué produce. Los 50 son gemas en bruto y utillaje, no piezas talladas. Sin esa lista el banco enciende y no sale ninguna talla.</p>
