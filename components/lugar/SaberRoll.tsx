@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
 import { loadActiveCharacter, saveCharacter, type CharacterData } from "@/lib/character";
 import { derive } from "@/lib/derive";
-import { rollVisual } from "@/lib/diceBox";
+import { rollVisual, RESULTADO_MS } from "@/lib/diceBox";
 import { roll as rollFallback } from "@/lib/dice";
 import { loadLoreRoll, saveLoreRoll, unlockCount } from "@/lib/loreRolls";
 import { SABER, saberById } from "@/data/saber";
@@ -51,7 +51,9 @@ export default function SaberRoll({ poiName, regionSlug, continent }: { poiName:
     const s = skills.find((x) => x.name === skillName);
     const mod = s?.mod ?? 0;
     setBusy(true); setMsg(null);
-    const r = await rollVisual("1d20", { mod, check: true, label: `${skillName} · ${poiName}` });
+    // Mismo motivo que en el caldero: lo que se aprende se cuenta cuando el
+    // dado ya se ha visto, no encima de él.
+    const r = await rollVisual("1d20", { mod, check: true, label: `${skillName} · ${poiName}`, hold: RESULTADO_MS });
     const total = r ? r.total : ((rollFallback("1d20")?.total ?? 0) + mod);
 
     const n = unlockCount(total);

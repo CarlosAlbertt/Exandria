@@ -513,6 +513,12 @@ canvas.dice-box-canvas {
   color: var(--color-dim);
   text-decoration: line-through;
 }
+/* El modificador no es una cara: sin recuadro, para que no se confunda con un
+   dado que estuviera en la mesa. */
+.dice-result-dice .is-mod {
+  background: transparent;
+  color: var(--color-bronze-bright);
+}
 .dice-result-badge {
   display: inline-block;
   margin-top: 6px;

@@ -68,6 +68,12 @@ export type DiceBoardEvent = {
   rolls: number[] | null;
   dropped: number[];
 };
+// Milisegundos que el resultado se queda en pantalla. **Es el tablero quien
+// manda**: DiceBoard esconde el overlay pasado este tiempo, así que subir el
+// `hold` del llamador NO alarga lo que se ve — solo retrasa cuándo sigue el
+// código. Los dos números tienen que ser el mismo, y por eso vive aquí.
+export const RESULTADO_MS = 2400;
+
 let boardListener: ((e: DiceBoardEvent) => void) | null = null;
 export function setBoardListener(fn: ((e: DiceBoardEvent) => void) | null): void {
   boardListener = fn;
@@ -240,6 +246,13 @@ export async function rollVisual(
       // total con lo que haya: se cae al fallback, que al menos es honesto.
       if (dice.length !== qty) throw new Error(`dice-box devolvió ${dice.length} caras de ${qty}`);
       result = d20FromDice(dice, opts!.mod as number, opts!.adv);
+      // Con ventaja/desventaja ruedan dos d20 y solo uno cuenta. Se marca cuál
+      // se cae, igual que el descarte del 4d6: si no, la mesa ve dos caras y el
+      // total no cuadra con ninguna suma que pueda hacer mirando el tablero.
+      if (opts!.adv && dice.length === 2) {
+        const primero = opts!.adv === "adv" ? dice[0] >= dice[1] : dice[0] <= dice[1];
+        dropped = [primero ? 1 : 0];
+      }
     } else {
       const parsed = parseFormula(formula);
       if (!parsed) { emitBoard({ phase: "hidden", ...quiet }); return null; }

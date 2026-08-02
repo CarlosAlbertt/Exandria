@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   setBoardListener,
   triggerThrow,
+  RESULTADO_MS,
   type DiceBoardEvent,
   type DiceBoardPhase,
 } from "@/lib/diceBox";
@@ -36,7 +37,7 @@ export default function DiceBoard() {
       setRolls(e.rolls);
       setDropped(e.dropped);
       if (e.phase === "result") {
-        hideTimer.current = setTimeout(() => setPhase("hidden"), 2000);
+        hideTimer.current = setTimeout(() => setPhase("hidden"), RESULTADO_MS);
       }
     });
     return () => {
@@ -85,14 +86,17 @@ export default function DiceBoard() {
           <div className={`dice-result${crit === "crit" ? " is-crit" : crit === "fumble" ? " is-fumble" : ""}`}>
             {label && <div className="dice-result-label">{label}</div>}
             <div className="dice-result-total">{total}</div>
-            {/* Desglose solo cuando hay dados que no cuentan (4d6 descartando
-                el menor): así se ve que el total no es la suma de lo que hay
-                en la mesa, y cuál se ha caído. */}
-            {dropped.length > 0 && rolls && (
+            {/* De dónde sale el total: las caras que rodaron, tachadas las que
+                no cuentan, y el modificador aparte.
+                Antes esto solo salía con descarte (4d6), así que un chequeo con
+                bonificador enseñaba un d20 parado en 12 y un 17 encima sin
+                explicar nada — se leía como que el dado daba otro número. */}
+            {rolls && (dropped.length > 0 || rolls.length > 1 || mod !== 0) && (
               <div className="dice-result-dice">
                 {rolls.map((v, i) => (
                   <span key={i} className={dropped.includes(i) ? "is-dropped" : undefined}>{v}</span>
                 ))}
+                {modStr && <span className="is-mod">{modStr}</span>}
               </div>
             )}
             {crit === "crit" && <div className="dice-result-badge">¡CRÍTICO!</div>}

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useInventarioVivo } from "@/lib/useInventarioVivo";
 import { useGameClock } from "@/lib/useGameClock";
-import { rollVisual } from "@/lib/diceBox";
+import { rollVisual, RESULTADO_MS } from "@/lib/diceBox";
 import { roll as rollFallback } from "@/lib/dice";
 import { loadActiveCharacter, saveCharacter } from "@/lib/character";
 import { recetaPorSlug, produceNombre, produceRareza, type Receta } from "@/data/recetas";
@@ -127,7 +127,9 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
     setMsg(null);
 
     const nombre = produceNombre(r);
-    const tirada = await rollVisual("1d20", { mod, check: true, label: `Alquimia · ${nombre}` });
+    // `hold`: el veredicto se escribe DESPUÉS de que el dado se haya visto. Sin
+    // esto, «sale bien» aparecía bajo el botón con los dados todavía rodando.
+    const tirada = await rollVisual("1d20", { mod, check: true, label: `Alquimia · ${nombre}`, hold: RESULTADO_MS });
     const total = tirada ? tirada.total : (rollFallback("1d20")?.total ?? 0) + mod;
     const exito = total >= r.cd;
 

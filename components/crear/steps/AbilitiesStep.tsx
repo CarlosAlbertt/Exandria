@@ -7,7 +7,7 @@ import {
   type AbilityKey,
 } from "@/data/rules";
 import { STANDARD_ARRAY, dropLowest, loadStatRoll, saveStatRoll, type Assign, type StatMethod } from "@/lib/statRolls";
-import { rollVisual } from "@/lib/diceBox";
+import { rollVisual, RESULTADO_MS } from "@/lib/diceBox";
 import { roll as rollFallback } from "@/lib/dice";
 
 // El insert en `stat_rolls` choca con la PK si ya hay tirada. No debería
@@ -94,7 +94,7 @@ export default function AbilitiesStep({
       // fallo: el overlay pintaba la suma de los cuatro dados y se guardaba la
       // de los tres mejores. `hold` deja el resultado en pantalla antes de
       // pedir la tirada siguiente.
-      const r = await rollVisual("4d6", { label: `Aptitud ${i + 1} de 6`, keep: 3, hold: 2250 });
+      const r = await rollVisual("4d6", { label: `Aptitud ${i + 1} de 6`, keep: 3, hold: RESULTADO_MS });
       scores.push(r ? r.total : dropLowest(rollFallback("4d6")?.rolls ?? []));
     }
     onRolled(scores);
