@@ -25,6 +25,34 @@ export const RUTAS_JUGADOR = [
 /** La página que se pinta en lugar de una ruta cerrada. */
 export const RUTA_CERRADA = "/cerrado";
 
+/**
+ * Rutas que dejan de tener sentido **en cuanto el jugador tiene ficha**.
+ *
+ * `/crear` no se cierra por permisos —el jugador puede crear— sino porque ya lo
+ * ha hecho: dejarla en la barra invita a empezar otra, y el jugador solo tiene
+ * tres huecos. **Al DM no se le esconde**: monta fichas para la mesa.
+ *
+ * Una fila a medio crear NO cuenta como ficha (`tienePersonaje` en
+ * `lib/character.ts`): si contara, quien dejó el asistente por la mitad se
+ * quedaría sin poder volver a él.
+ */
+export const RUTAS_SOLO_SIN_PERSONAJE = ["/crear"] as const;
+
+/**
+ * ¿Se le enseña esta ruta a este rol **ahora mismo**?
+ *
+ * Es `puedeVer` más el estado de la partida. Se separa a propósito: `puedeVer`
+ * es la puerta (quién puede entrar) y esto es el escaparate (qué tiene sentido
+ * enseñar). El proxy sigue usando `puedeVer` — esconder `/crear` no es una
+ * medida de seguridad y no debe comportarse como si lo fuera.
+ */
+export function puedeVerAhora(role: Role, href: string, tienePersonaje: boolean): boolean {
+  if (!puedeVer(role, href)) return false;
+  if (role === "dm") return true;
+  if (tienePersonaje && (RUTAS_SOLO_SIN_PERSONAJE as readonly string[]).includes(href)) return false;
+  return true;
+}
+
 /** Los enlaces de la barra, en orden. `SiteNav` los filtra con `puedeVer`. */
 export const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/", label: "Inicio" },

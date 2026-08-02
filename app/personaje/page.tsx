@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
 import CharacterSheet from "@/components/CharacterSheet";
+import HistoriaPropia from "@/components/personaje/HistoriaPropia";
 
 function PersonajeInner() {
   const session = useSession();
@@ -15,7 +16,15 @@ function PersonajeInner() {
     return <CharacterSheet targetUserId={wantUser} readOnly={false} saveMode="dm" />;
   }
   // Hoja propia: editable solo si eres DM; el jugador la ve en solo lectura.
-  return <CharacterSheet targetUserId={session?.id ?? null} readOnly={role !== "dm"} saveMode="self" />;
+  // **La historia es la excepción**: la hoja no se toca, pero el pasado del
+  // personaje sí lo escribe su jugador, y casi nadie lo trae listo el día que
+  // lo crea. Hasta ahora la única forma era volver al asistente entero.
+  return (
+    <>
+      <CharacterSheet targetUserId={session?.id ?? null} readOnly={role !== "dm"} saveMode="self" />
+      <HistoriaPropia userId={session?.id ?? null} />
+    </>
+  );
 }
 
 export default function PersonajePage() {

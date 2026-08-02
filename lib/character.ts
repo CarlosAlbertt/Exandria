@@ -130,6 +130,23 @@ export const __FIELD_LIST = FIELD_LIST;
 
 // La ficha activa del jugador, con su id. null si no tiene ninguna en juego
 // (p. ej. acaba de archivar la suya y aún no se ha hecho otra).
+/**
+ * ¿Esta fila es un personaje de verdad, o un hueco reservado?
+ *
+ * **Una fila sin especie NI clase es una ficha a medio crear**: se reservó el
+ * hueco pero el guardado no llegó a cuajar. Cuenta como «sin personaje», que es
+ * justo lo que ya hacen `app/crear/page.tsx` y `components/CharacterSheet.tsx`
+ * por su cuenta; esto es esa misma regla, en un solo sitio y comprobable.
+ *
+ * Importa que sea **o** y no **y**: con `&&` una ficha a la que le falte solo la
+ * clase contaría como personaje, y el asistente dejaría de poder terminarla.
+ */
+export function tienePersonaje(
+  row: { species?: string | null; cls?: string | null } | null | undefined,
+): boolean {
+  return !!row && (!!row.species || !!row.cls);
+}
+
 export async function loadActiveCharacter(userId: string): Promise<(Partial<CharacterData> & { id: string }) | null> {
   if (!supabaseConfigured || !userId) return null;
   const supabase = createClient();

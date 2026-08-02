@@ -1,6 +1,7 @@
 // Comprobación manual del alcance del jugador (lib/acceso.ts).
 // Uso: npx tsx scripts/check-acceso.ts
-import { puedeVer, RUTAS_JUGADOR, RUTA_CERRADA, NAV_LINKS, PUERTAS_JUGADOR } from "../lib/acceso";
+import { puedeVer, puedeVerAhora, RUTAS_JUGADOR, RUTAS_SOLO_SIN_PERSONAJE, RUTA_CERRADA, NAV_LINKS, PUERTAS_JUGADOR } from "../lib/acceso";
+import { tienePersonaje } from "../lib/character";
 import { readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -106,6 +107,43 @@ check("puertas: sin hrefs duplicados",
   new Set(PUERTAS_JUGADOR.map((p) => p.href)).size === PUERTAS_JUGADOR.length);
 check("puertas: ninguna etiqueta, texto o icono vacío",
   PUERTAS_JUGADOR.every((p) => p.label.trim() && p.text.trim() && p.icon.trim() && p.accent.trim()));
+
+// --- Lo que se retira cuando el jugador YA tiene ficha ---------------------
+// `puedeVer` es la PUERTA (quién puede entrar) y `puedeVerAhora` el ESCAPARATE
+// (qué tiene sentido enseñar). Esconder `/crear` no es seguridad y no debe
+// comportarse como si lo fuera: el proxy sigue mirando `puedeVer`.
+
+check("sin ficha, el jugador ve todo lo suyo",
+  NAV_LINKS.filter((l) => puedeVer("player", l.href))
+    .every((l) => puedeVerAhora("player", l.href, false)));
+check("con ficha, al jugador se le retira /crear",
+  puedeVerAhora("player", "/crear", true) === false);
+check("y solo /crear: lo demás sigue en pie",
+  NAV_LINKS.filter((l) => puedeVer("player", l.href) && l.href !== "/crear")
+    .every((l) => puedeVerAhora("player", l.href, true)));
+// Al DM no se le esconde: monta fichas para la mesa.
+check("al DM no se le retira /crear aunque tenga ficha",
+  puedeVerAhora("dm", "/crear", true) === true);
+// Y esconder no es abrir: una ruta cerrada sigue cerrada tenga ficha o no.
+check("esconder no abre: una ruta cerrada lo sigue estando",
+  puedeVerAhora("player", "/dm", false) === false && puedeVerAhora("player", "/dm", true) === false);
+// Todo lo que se retira tiene que ser algo que el jugador pudiera ver: retirar
+// una ruta que ya estaba cerrada sería una regla muerta que nadie notaría.
+check("todo lo que se retira estaba abierto",
+  RUTAS_SOLO_SIN_PERSONAJE.every((r) => puedeVer("player", r)));
+
+// --- La regla de «tiene personaje» -----------------------------------------
+// Vivía copiada en `app/crear/page.tsx` y en `components/CharacterSheet.tsx`.
+// Es un **o**, no un **y**: con `&&`, a una ficha a la que le falte solo la
+// clase se le retiraría el asistente y no habría forma de terminarla.
+check("una fila con especie y clase es personaje",
+  tienePersonaje({ species: "elfo", cls: "mago" }) === true);
+check("una fila a medias NO es personaje",
+  tienePersonaje({ species: null, cls: null }) === false);
+check("con solo especie ya cuenta", tienePersonaje({ species: "elfo", cls: null }) === true);
+check("con solo clase ya cuenta", tienePersonaje({ species: null, cls: "mago" }) === true);
+check("sin fila no hay personaje",
+  tienePersonaje(null) === false && tienePersonaje(undefined) === false);
 
 console.log(failures === 0 ? `\nTodo OK` : `\n${failures} FALLOS`);
 process.exit(failures === 0 ? 0 : 1);

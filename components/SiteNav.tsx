@@ -8,7 +8,9 @@ import ClockPopover from "@/components/ClockPopover";
 import PartyLocationWidget from "@/components/PartyLocationWidget";
 import { createClient } from "@/lib/supabase/client";
 import type { Role } from "@/lib/auth";
-import { NAV_LINKS, puedeVer } from "@/lib/acceso";
+import { NAV_LINKS, puedeVerAhora } from "@/lib/acceso";
+import { useSession } from "@/components/SessionProvider";
+import { usePersonajeActivo } from "@/lib/usePersonajeActivo";
 
 export default function SiteNav({ role, username }: { role: Role; username: string }) {
   const pathname = usePathname();
@@ -17,8 +19,10 @@ export default function SiteNav({ role, username }: { role: Role; username: stri
   const active = (h: string) => (h === "/" ? pathname === "/" : pathname.startsWith(h));
 
   // Una sola lista, filtrada por la misma función que usa la puerta del proxy:
-  // así el nav no puede enseñar un enlace que lleve a puerta cerrada.
-  const links = NAV_LINKS.filter((l) => puedeVer(role, l.href));
+  // así el nav no puede enseñar un enlace que lleve a puerta cerrada. Y además
+  // por el estado de la partida: «Crear» desaparece en cuanto hay ficha.
+  const { tiene } = usePersonajeActivo(useSession()?.id ?? null);
+  const links = NAV_LINKS.filter((l) => puedeVerAhora(role, l.href, tiene));
 
   async function logout() {
     await createClient().auth.signOut();

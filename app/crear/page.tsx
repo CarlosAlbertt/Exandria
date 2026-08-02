@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/components/SessionProvider";
-import { loadActiveCharacter, saveCharacter, createCharacter, listCharacters, type Build } from "@/lib/character";
+import { loadActiveCharacter, saveCharacter, createCharacter, listCharacters, tienePersonaje, type Build } from "@/lib/character";
 import { canCreate, type CharSlot } from "@/lib/archive";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
@@ -57,6 +58,8 @@ export default function CrearPage() {
   // Todos sus personajes: para saber si puede crear otro (límite de 3).
   const [slots, setSlots] = useState<CharSlot[]>([]);
   const [limitError, setLimitError] = useState<string | null>(null);
+  // Ficha ya hecha: el asistente se retira. Lo pone la carga de la fila de abajo.
+  const [yaTienePersonaje, setYaTiene] = useState(false);
 
   // Sesión: si hay usuario, la ficha vive en la NUBE (fuente de verdad).
   const session = useSession();
@@ -101,6 +104,10 @@ export default function CrearPage() {
       // para restaurar el borrador — si no, se entraba a rellenar de cero
       // teniendo el borrador ahí al lado.
       const aMedias = !!row && !row.species && !row.cls;
+      // Misma regla, un solo sitio: `tienePersonaje` es lo contrario de
+      // `aMedias` para una fila que existe, y es lo que miran también la barra
+      // y la portada para retirar «Crear».
+      setYaTiene(tienePersonaje(row));
       if (!row || aMedias) {
         // Sin personaje activo (nuevo, o acaba de archivar): restaura el
         // borrador de ESTE usuario si lo dejó a medias. La fila no se crea aquí.
@@ -349,6 +356,29 @@ export default function CrearPage() {
   const pickSubclass = (name: string) =>
     set({ subclass: name, deity: deityForSubclass(name) ?? null });
   const pickBackground = (slug: string) => set({ background: slug, bonus: { ...NO_BONUS } });
+
+  // Ya hay ficha: el asistente se retira. No es una puerta cerrada —el enlace
+  // ha desaparecido de la barra y de la portada—, es que no hay nada que crear.
+  // **Solo cuenta una ficha hecha**: una fila a medias deja seguir, que es
+  // justo lo que trae aquí a quien dejó el asistente por la mitad.
+  if (yaTienePersonaje) {
+    return (
+      <main className="max-w-2xl mx-auto px-6 py-24 text-center">
+        <i className="fas fa-user-check text-4xl mb-4" style={{ color: "var(--color-verdant)" }} />
+        <h1 className="font-display text-2xl font-bold mb-3" style={{ color: "var(--color-parch)" }}>
+          Ya tienes personaje
+        </h1>
+        <p className="font-ui text-[14px] mb-6" style={{ color: "var(--color-muted)" }}>
+          Solo se lleva uno a la vez. Para empezar otro, archiva el que tienes desde tu ficha.
+        </p>
+        <div className="flex flex-wrap gap-3 justify-center">
+          <Link href="/personaje" className="btn-gold"><i className="fas fa-scroll mr-2" />Ver tu ficha</Link>
+          <Link href="/" className="panel px-4 py-2 font-ui text-[13px] font-bold"
+            style={{ color: "var(--color-muted)" }}>Volver al inicio</Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-10">
