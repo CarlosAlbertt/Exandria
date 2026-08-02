@@ -60,18 +60,60 @@ las listas que bloquean a forja, destilación, cristalografía y tatuaje.
 - **`/taller`** es una ruta con pestañas: abrir la séptima **no vuelve a pasar
   por `lib/acceso.ts` ni por el nav**, que es justo para lo que se hizo así.
 
-## 5. Lo que hay que decidir antes de escribir código
+## 5. Las decisiones, cerradas
 
-1. **Dónde se despieza.** ¿En el sitio, nada más matarlo (`/lugar`, con el
-   cadáver fresco), o en el taller a la vuelta? Lo primero pide un estado nuevo
-   («hay un cadáver aquí»); lo segundo, un inventario de restos.
-2. **Cuántas veces se puede despiezar un monstruo.** ¿Uno por cadáver, o el
-   bestiario recuerda que ya lo despiezaste y no deja repetir?
-3. **Qué pasa al fallar.** Los otros oficios pierden material; aquí **no hay
-   material que perder** — lo que se pierde es el cadáver, o la pieza buena, y
-   sale una peor.
-4. **Si necesita herramientas** (cuchillos, frascos), que el campo `herramienta`
-   ya soporta.
+**Tomadas por el DM el 2026-08-02.**
+
+| # | Decisión | Elegido |
+|---|---|---|
+| 1 | Dónde se despieza | **En el sitio, con el cadáver fresco** (`/lugar`). No se arrastra el bicho al taller. |
+| 2 | Cuánto da un monstruo | **1d4 componentes en total**, por cadáver. |
+| 3 | Qué se pierde al fallar | **El material.** Cada intento fallido se come una de las piezas que ese cadáver tenía. |
+| 4 | ¿Herramientas? | **Sí.** Cuchillos y frascos: se exigen a mano y no se gastan. |
+
+Consecuencias que salen de ahí, y conviene tenerlas escritas:
+
+- **El cadáver es un recurso que se agota.** 1d4 se tira **al abrirlo**, no por
+  intento: el jugador ve cuántas piezas hay y cada fallo se lleva una. Tirarlo
+  por intento haría que fallar saliera gratis.
+- **Fallar cuesta de verdad**, y es lo que hace que el oficio sea una habilidad y
+  no un botón: con cuatro piezas y mala mano, te llevas dos.
+- **Sin herramientas no se abre nada.** Es el segundo oficio que usa el campo
+  `herramienta` (con cristalografía), y el primero que se construiría — así que
+  sería el estreno de una regla que el gate vigila desde alquimia y que **ninguna
+  receta usa todavía**.
+
+## 5 bis. La lista del DM: cadáveres a mano
+
+**Requisito del DM, y manda sobre lo demás:** *la mesa no siempre pasa por la
+app*. Muchos combates se juegan en la mesa y la app no se entera, así que **no
+vale** con que los cadáveres aparezcan solos al derrotar un monstruo en
+`/combate`.
+
+Hace falta que el DM pueda **mantener a mano la lista de monstruos despiezables**:
+añadir «aquí hay un tal cosa recién muerto», quitarlo, y que los jugadores del
+sitio lo vean.
+
+Forma mínima que encaja con lo que ya existe:
+
+- **Una entrada por cadáver**, no por monstruo: el mismo bicho puede caer dos
+  veces en dos sitios. Cada entrada guarda **qué monstruo**, **dónde** y
+  **cuántas piezas le quedan**.
+- **El DM la edita desde su panel**, junto al bestiario, que es donde ya vive la
+  lista de monstruos y donde va a buscarlos.
+- **Se llena de dos formas**: a mano (el caso normal) **y** automáticamente al
+  derrotar uno en `/combate`. Lo segundo es un extra; lo primero es el requisito.
+- **Un cadáver se agota o se retira**: cuando se queda sin piezas desaparece
+  solo, y el DM puede borrarlo antes si la escena se acabó.
+
+> [!warning] **La trampa que ya ha mordido cuatro veces**
+> Esta lista vivirá en **`app_config`**, como el bestiario, el atlas y los mapas.
+> **`app_config` NO está en la publicación `supabase_realtime`**: una suscripción
+> `postgres_changes` sobre esa tabla **no dispara nunca**. El hook que la lea
+> tiene que hacer **update optimista** —mutar el estado local al instante y
+> persistir en paralelo—, como ya hacen `lib/useBestiary.ts` y `lib/useOficios.ts`.
+> Sin eso, el DM añade un cadáver y no lo ve hasta recargar; eso mismo pasó con
+> el bestiario el 2026-08-01 y era un fallo de cara al usuario, no teoría.
 
 ## 6. El aviso técnico: el séptimo oficio rompe suposiciones
 
@@ -90,6 +132,17 @@ exactamente la suposición que hoy no está escrita en ningún sitio. Al añadir
 hay que decidir si es un `Oficio` de pleno derecho (y los checks aprenden que
 puede tener cero materiales) o un tipo aparte. **No conviene resolverlo a ojo el
 día de la prisa.**
+
+## 6 bis. Lo que sigue faltando
+
+**El emparejamiento monstruo → material.** Es lo único que el DM tiene que
+dictar, y sigue siendo mucho más barato que las listas que bloquean a los otros
+cuatro talleres: es elegir, de entre los **88 materiales que ya existen**, cuáles
+suelta cada bicho.
+
+Con 124 monstruos en el bestiario (CR 0–1/2) no hace falta cubrirlos todos para
+empezar: **un monstruo sin emparejar simplemente no es despiezable**, y eso se
+puede decir en pantalla sin que parezca un fallo.
 
 ## 7. Siguiente paso
 
