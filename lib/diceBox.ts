@@ -74,6 +74,19 @@ export type DiceBoardEvent = {
 // código. Los dos números tienen que ser el mismo, y por eso vive aquí.
 export const RESULTADO_MS = 2400;
 
+/**
+ * Milisegundos que los dados se quedan **quietos y solos en la mesa** antes de
+ * que salte el total.
+ *
+ * `box.roll()` resuelve en cuanto la física se duerme, y hasta ahora el número
+ * grande aparecía en ese mismo instante: el ojo se iba al total y **las caras no
+ * se llegaban a ver**. Aquí no se está esperando a que el dado se pare —ya está
+ * parado—, se está dejando que el jugador lo mire.
+ *
+ * Lo que se ve en total es `POSADO_MS + RESULTADO_MS`.
+ */
+export const POSADO_MS = 900;
+
 let boardListener: ((e: DiceBoardEvent) => void) | null = null;
 export function setBoardListener(fn: ((e: DiceBoardEvent) => void) | null): void {
   boardListener = fn;
@@ -266,6 +279,10 @@ export async function rollVisual(
       }
     }
     const crit = critState(result.formula, result.rolls);
+    // Los dados se quedan solos en la mesa antes de que salte el total. Sin esta
+    // pausa el número aparecía en el mismo fotograma en que la física se dormía,
+    // y el jugador no llegaba a ver las caras que le habían salido.
+    await new Promise<void>((r) => setTimeout(r, POSADO_MS));
     emitBoard({ phase: "result", label, mod, total: result.total, crit, rolls: result.rolls, dropped });
     // El resultado se queda en pantalla antes de devolver el control: quien
     // tira en bucle no puede tapar su propio número con la tirada siguiente.
