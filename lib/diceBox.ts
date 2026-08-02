@@ -16,6 +16,8 @@ const DEFAULT_COLOR = "#b3202e"; // rojo D&D: números blancos del tema resaltan
 type DiceBoxInstance = {
   init: () => Promise<unknown>;
   roll: (notation: string, opts?: { theme?: string; themeColor?: string }) => Promise<unknown>;
+  /** Barre la mesa. `roll()` ya limpia, pero eso pasa DESPUÉS del lanzamiento. */
+  clear?: () => void;
   onCollision?: (a: number, b: number, force: number) => void;
 };
 
@@ -231,12 +233,30 @@ export async function rollVisual(
   opts?: { mod?: number; adv?: "adv" | "dis"; check?: boolean; label?: string; keep?: number; hold?: number }
 ): Promise<RollResult | null> {
   if (!isDiceBoxSupported()) return null;
-  // Init perezoso: dice-box (y su bucle de render WebGL) solo arranca en la
-  // primera tirada real, no en cada página. El canvas #dice-board-canvas ya
-  // está montado (y dimensionado) por DiceBoard desde el inicio.
-  const box = instance ?? (await initDiceBox("#dice-board-canvas"));
-  if (!box) return null;
   if (awaitingThrow) return null; // ya hay una tirada esperando lanzamiento
+
+  // **La mesa se barre ANTES de abrir el tablero.** `roll()` también limpia,
+  // pero lo hace después del lanzamiento: sin esto, al abrir el overlay se veían
+  // unos segundos los dados de la tirada ANTERIOR, que desaparecían de golpe al
+  // pulsar. En una tanda seguida —las seis aptitudes de `/crear`— no se notaba
+  // porque siempre había dados nuevos encima; en una tirada suelta era justo lo
+  // que se veía raro.
+  const calienteYa = instance;
+  calienteYa?.clear?.();
+
+  // Init perezoso: dice-box (y su bucle de render WebGL) solo arranca en la
+  // primera tirada real, no en cada página. El canvas #dice-board-canvas ya está
+  // montado (y dimensionado) por DiceBoard desde el inicio.
+  //
+  // **Arranca en paralelo con la espera del lanzamiento**, no antes de ella: la
+  // primera tirada de una sesión tardaba en abrir el tablero lo que tardaran en
+  // cargar Babylon y los assets, con la pantalla quieta y sin explicación. Ahora
+  // esa carga se esconde detrás del tiempo que el jugador tarda en pulsar, que
+  // siempre es más. En frío no hay dados viejos que barrer, así que el orden es
+  // seguro.
+  const promesaBox = calienteYa
+    ? Promise.resolve<DiceBoxInstance | null>(calienteYa)
+    : initDiceBox("#dice-board-canvas");
 
   const label = opts?.label ?? null;
   const isCheck = !!opts?.check && typeof opts.mod === "number";
@@ -247,6 +267,9 @@ export async function rollVisual(
   // Fase "ready": dado a la espera de que el jugador lo lance.
   emitBoard({ phase: "ready", ...quiet });
   await new Promise<void>((resolve) => { awaitingThrow = resolve; });
+
+  const box = await promesaBox;
+  if (!box) { emitBoard({ phase: "hidden", ...quiet }); return null; }
 
   emitBoard({ phase: "rolling", ...quiet });
   try {
