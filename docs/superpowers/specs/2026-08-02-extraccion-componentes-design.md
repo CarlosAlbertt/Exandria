@@ -1,7 +1,7 @@
 # Extracción de Componentes: el oficio que consigue los materiales
 
 **Fecha**: 2 de agosto de 2026
-**Estado**: recogido del DM, **sin boceto y sin construir**
+**Estado**: boceto aprobado, decisiones cerradas, **sin construir**
 
 ---
 
@@ -144,9 +144,41 @@ Con 124 monstruos en el bestiario (CR 0–1/2) no hace falta cubrirlos todos par
 empezar: **un monstruo sin emparejar simplemente no es despiezable**, y eso se
 puede decir en pantalla sin que parezca un fallo.
 
-## 7. Siguiente paso
+## 7. Las tres fases
 
-Un boceto, como los otros cinco: qué se manipula al despiezar. La idea sin
-aprobar todavía es que el minijuego sea una **disección** —dónde se corta y con
-qué cuidado—, que sería lo único de los siete oficios donde el material **te dice
-dónde está lo bueno** si sabes mirar.
+**Boceto aprobado el 2026-08-02**: `docs/bocetos/extraccion-despiece.html`
+
+| Fase | Qué se hace | +1 | 0 | −1 |
+|---|---|---|---|---|
+| **1 · Estudiar** | Leer el cadáver: destapa dónde están las piezas | los ves | intuyes uno | no ves nada |
+| **2 · Cortar** | Elegir el punto y **medir la profundidad** | justo | llegas mal | corto, o tan hondo que revientas la pieza |
+| **3 · Guardar** | Al frasco antes de que se eche a perder | fresca | pasable | se echó a perder |
+
+Mismo ±1 por fase y mismo tope **±3** que los otros seis.
+
+### Y lo que lo hace distinto de los seis
+
+En los talleres se tira **una vez** y lo que salga, salió. Aquí el cadáver es un
+**saldo que se gasta**: 1d4 piezas, y cada fallo se come una. La consecuencia es
+que **la tensión no está dentro de una barra sino entre intentos**: llevas dos
+piezas buenas y queda una, ¿la intentas o te vas?
+
+De ahí sale lo único que ningún otro taller tiene: **un botón de retirarte con lo
+que llevas**. En los demás no hay nada que conservar hasta que termina.
+
+## 8. La decisión: se puede cortar a ciegas
+
+**Elegida por el DM el 2026-08-02 (opción C de tres).**
+
+**Estudiar es opcional.** Sin estudiar se puede cortar igual, pero **no sabes si
+ese punto tenía algo**: cortas donde te parece y te la juegas.
+
+Es lo que convierte estudiar en una **decisión** y no en un trámite, y encaja con
+que cada fallo cueste una pieza: el que tiene prisa paga por tenerla.
+
+Al construirlo, eso significa que la fase 1 **no bloquea** a la 2 —se puede saltar
+y la pantalla tiene que dejarlo claro sin regañar— y que un corte a ciegas necesita
+**su propia forma de resolverse**: no es un −1, es no saber qué había ahí.
+
+Descartadas: *gratis y una sola vez* (estudiar deja de ser una decisión) y *antes
+de cada corte* (alarga demasiado un despiece de cuatro piezas).

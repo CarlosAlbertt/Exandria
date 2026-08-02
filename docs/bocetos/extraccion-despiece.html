@@ -1,0 +1,262 @@
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Manrope:wght@400;600;700;800&display=swap");
+
+.ex{
+  --ink:#090c11;--night:#0d121a;--panel:#131b25;--raised:#1b2532;--line:#2a3848;
+  --bronze:#c9a35c;--bronze-bright:#f0d79a;--arcane:#45c7bd;--arcane-bright:#7df0e6;
+  --ember:#ef6a3d;--verdant:#5fbf7a;--violet:#9d8cf0;
+  --warm:#d8cdb4;--muted:#94a0ad;--dim:#6b7785;
+  background:radial-gradient(120% 90% at 50% 0%,#16211c 0%,var(--ink) 68%);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  font-family:"Manrope",system-ui,sans-serif;color:var(--warm)
+}
+.ex-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);background:rgba(9,12,17,.6)}
+.ex-tab{padding:8px 16px;font-size:12px;font-weight:700;color:var(--dim);border-radius:8px 8px 0 0}
+.ex-tab.on{color:var(--bronze-bright);background:var(--panel);border:1px solid var(--line);border-bottom:none;box-shadow:inset 0 2px 0 var(--verdant)}
+.ex-body{padding:16px}
+.ex-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(180deg,var(--raised),var(--panel));border:1px solid var(--line);
+  border-radius:10px;padding:9px 14px;margin-bottom:6px}
+.ex-strip .name{font-family:"Cinzel",serif;font-weight:700;font-size:16px;color:var(--bronze-bright)}
+.ex-cd{font-size:11px;font-weight:800;color:var(--arcane-bright);border:1px solid rgba(69,199,189,.35);border-radius:999px;padding:2px 9px}
+.ex-piezas{display:flex;gap:6px;align-items:center;border:1px solid rgba(95,191,122,.4);
+  background:rgba(95,191,122,.08);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#bfe8cb}
+.ex-tick{width:22px;height:22px;border-radius:6px;border:1px solid var(--verdant);color:var(--verdant);
+  display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:rgba(95,191,122,.12)}
+.ex-tick.ida{border-color:var(--ember);color:var(--ember);background:rgba(239,106,61,.1);text-decoration:line-through}
+.ex-eyebrow{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--bronze);margin:14px 0 7px;text-align:center}
+.ex-slots{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.ex-slot{width:56px;height:56px;border-radius:9px;border:1px solid var(--line);position:relative;
+  background:linear-gradient(160deg,var(--raised),#101823);display:flex;align-items:center;justify-content:center;font-size:21px}
+.ex-slot.util{border-color:rgba(201,163,92,.55);background:linear-gradient(160deg,rgba(201,163,92,.12),#101823);border-style:dashed}
+.ex-slot.sale{border-color:rgba(95,191,122,.5);background:linear-gradient(160deg,rgba(95,191,122,.14),#101823)}
+.ex-name{text-align:center;font-size:9px;color:var(--muted);width:56px;margin-top:4px;line-height:1.15}
+.ex-nogasta{font-size:8.5px;color:var(--bronze);font-style:italic}
+.ex-phases{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+.ex-phase{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.ex-phase.on{border-color:var(--verdant);box-shadow:0 0 0 1px rgba(95,191,122,.28),0 6px 20px rgba(0,0,0,.5)}
+.ex-phase h4{font-family:"Cinzel",serif;font-size:12px;font-weight:700;color:var(--bronze-bright);margin:0 0 5px}
+.ex-phase p{font-size:10px;color:var(--muted);margin:0;line-height:1.35}
+.ex-puntos{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.ex-punto{font-size:9px;font-weight:700;padding:3px 7px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.ex-punto.bueno{border-color:var(--verdant);color:var(--verdant);background:rgba(95,191,122,.1)}
+.ex-punto.dudoso{border-color:var(--bronze);color:var(--bronze)}
+.ex-prof{height:13px;border-radius:7px;margin:8px 0 3px;position:relative;
+  background:linear-gradient(90deg,#2b3240 0%,#3f5a4a 26%,var(--verdant) 44%,var(--verdant) 58%,#8e2a1c 78%,#5a1c0e 100%)}
+.ex-prof .cur{position:absolute;top:-4px;width:3px;height:21px;background:#fff;border-radius:2px;box-shadow:0 0 9px #fff;transform:translateX(-50%)}
+.ex-frasco{height:13px;border-radius:7px;margin:8px 0 3px;position:relative;background:#1b2532;overflow:hidden}
+.ex-frasco .relleno{position:absolute;left:0;top:0;bottom:0;width:46%;background:linear-gradient(90deg,#2f6f8f,var(--arcane))}
+.ex-frasco .tarde{position:absolute;top:-3px;bottom:-3px;left:72%;width:2px;background:var(--ember);box-shadow:0 0 8px var(--ember)}
+.ex-stop{margin-top:14px;display:flex;gap:9px}
+.ex-stop .btn{flex:1;text-align:center;font-weight:800;font-size:13px;padding:12px;border-radius:9px;
+  background:linear-gradient(180deg,#c4402c,#8e2a1c);color:#ffe9e2;border:1px solid #e0745c;
+  box-shadow:0 4px 16px rgba(196,64,44,.35)}
+.ex-stop .alt{padding:12px 14px;border-radius:9px;border:1px solid var(--verdant);color:var(--verdant);
+  font-size:12px;font-weight:700;background:rgba(95,191,122,.08)}
+.ex-mod{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.ex-pip{display:inline-flex;min-width:22px;height:21px;padding:0 5px;border-radius:5px;align-items:center;justify-content:center;
+  font-weight:800;font-size:11px;border:1px solid var(--line);background:var(--night);color:var(--dim)}
+.ex-pip.good{color:var(--verdant);border-color:rgba(95,191,122,.5)}
+.ex-pip.bad{color:var(--ember);border-color:rgba(239,106,61,.5)}
+
+@keyframes ex-pulso{0%,100%{opacity:.35;r:7}50%{opacity:.95;r:9}}
+@keyframes ex-vaho{0%{transform:translateY(0);opacity:0}30%{opacity:.35}100%{transform:translateY(-26px);opacity:0}}
+@keyframes ex-gota{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(16px);opacity:0}}
+@keyframes ex-lupa{0%,100%{opacity:.5}50%{opacity:.95}}
+.pulso{animation:ex-pulso 2.4s ease-in-out infinite}
+.vahito{animation:ex-vaho 3.6s ease-out infinite}
+.gotita{animation:ex-gota 2s ease-in infinite}
+.lupita{animation:ex-lupa 3s ease-in-out infinite}
+</style>
+
+<h2>El despiece</h2>
+<p class="subtitle">El séptimo oficio, y el único que <strong>consigue</strong> materiales en vez de gastarlos. Hoy las glándulas y los colmillos aparecen de la nada; esto es la primera mitad del bucle. Y es el único que <strong>no te obliga a dictar catálogo</strong>: sus productos ya están escritos — 88 de los 369 materiales son piezas de monstruo.</p>
+
+<div class="ex">
+  <div class="ex-tabs">
+    <div class="ex-tab">📖 El bestiario</div>
+    <div class="ex-tab on">🔪 El despiece</div>
+    <div class="ex-tab">Oficios</div>
+  </div>
+
+  <div class="ex-body">
+    <div class="ex-strip">
+      <div>
+        <div class="name">Monstruo Oxidífero</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">
+          Cadáver fresco · Las Ruinas de Molaesmyr · <span style="color:var(--warm)">Extracción +4</span>
+        </div>
+      </div>
+      <div class="ex-cd">CD 14</div>
+    </div>
+
+    <div class="ex-piezas">
+      <span style="font-size:14px">🩻</span>
+      <span><strong>Este cadáver da 3 piezas</strong> (1d4, tirado al abrirlo).</span>
+      <span class="ex-tick">1</span><span class="ex-tick ida">2</span><span class="ex-tick">3</span>
+      <span style="color:#f6c3ad">· una se ha echado a perder</span>
+    </div>
+
+    <svg viewBox="0 0 470 300" style="width:100%;max-width:480px;display:block;margin:0 auto" role="img" aria-label="Cadáver de monstruo con los puntos de corte señalados">
+      <defs>
+        <linearGradient id="ecuero" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#6a7a5e"/><stop offset="45%" stop-color="#48583f"/><stop offset="100%" stop-color="#23301f"/>
+        </linearGradient>
+        <linearGradient id="eacero" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#b9c3d1"/><stop offset="50%" stop-color="#5c6675"/><stop offset="100%" stop-color="#1b2029"/>
+        </linearGradient>
+        <linearGradient id="emadera" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#5c422a"/><stop offset="100%" stop-color="#2b1e13"/>
+        </linearGradient>
+        <radialGradient id="ehalo" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#5fbf7a" stop-opacity=".35"/><stop offset="100%" stop-color="#5fbf7a" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="esoft"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      <!-- suelo del sitio -->
+      <ellipse cx="235" cy="252" rx="200" ry="30" fill="#141a16"/>
+      <ellipse cx="235" cy="250" rx="170" ry="24" fill="#1b2420"/>
+      <ellipse cx="216" cy="196" rx="140" ry="70" fill="url(#ehalo)"/>
+
+      <!-- EL CADÁVER: bulto tumbado, patas arriba, cabeza a la izquierda -->
+      <path d="M96,208 q-14,-40 26,-56 q46,-18 118,-14 q80,4 106,30 q22,18 -4,40 q-30,14 -120,16 q-96,2 -126,-16 Z"
+        fill="url(#ecuero)"/>
+      <path d="M120,166 q60,-16 130,-12 q66,4 92,24" fill="none" stroke="#8ba07a" stroke-width="5" opacity=".22"/>
+      <!-- costillar marcado -->
+      <g stroke="#2b3826" stroke-width="3" opacity=".55" fill="none">
+        <path d="M172,164 q8,30 4,50"/><path d="M204,160 q8,32 4,54"/>
+        <path d="M236,159 q8,32 4,54"/><path d="M268,161 q8,30 4,52"/>
+      </g>
+      <!-- cabeza y cuerno -->
+      <path d="M96,208 q-30,-6 -34,-24 q-4,-18 18,-24 q22,-6 34,10 Z" fill="#3d4c36"/>
+      <path d="M74,168 l-16,-22 6,-4 20,20 Z" fill="#cfd6c2" opacity=".85"/>
+      <circle cx="86" cy="180" r="4" fill="#1b2029"/>
+      <!-- patas rígidas hacia arriba -->
+      <path d="M170,150 l-10,-42 8,-2 16,40 Z" fill="#3d4c36"/>
+      <path d="M164,108 l-12,-8 4,-6 14,8 Z" fill="#cfd6c2" opacity=".8"/>
+      <path d="M262,146 l6,-44 8,1 -4,44 Z" fill="#3d4c36"/>
+      <path d="M268,102 l-4,-13 7,-2 4,14 Z" fill="#cfd6c2" opacity=".8"/>
+
+      <!-- LOS PUNTOS DE CORTE: dos buenos y uno dudoso -->
+      <g>
+        <circle class="pulso" cx="150" cy="190" r="8" fill="#5fbf7a" opacity=".6"/>
+        <circle cx="150" cy="190" r="3.4" fill="#bdf5c9"/>
+        <text x="150" y="228" font-size="8.5" font-family="Manrope" font-weight="800" fill="#8fdca6" text-anchor="middle">GLÁNDULA</text>
+
+        <circle class="pulso" style="animation-delay:1.2s" cx="286" cy="196" r="8" fill="#5fbf7a" opacity=".6"/>
+        <circle cx="286" cy="196" r="3.4" fill="#bdf5c9"/>
+        <text x="286" y="232" font-size="8.5" font-family="Manrope" font-weight="800" fill="#8fdca6" text-anchor="middle">CAPARAZÓN</text>
+
+        <circle cx="216" cy="186" r="7" fill="none" stroke="#c9a35c" stroke-width="2" stroke-dasharray="3 3"/>
+        <text x="216" y="222" font-size="8.5" font-family="Manrope" font-weight="800" fill="#c9a35c" text-anchor="middle">¿?</text>
+      </g>
+
+      <!-- vaho del cadáver todavía caliente -->
+      <g stroke="#cfe6d8" fill="none" stroke-linecap="round" opacity=".4">
+        <path class="vahito" d="M196,150 c-6,-11 6,-16 0,-26" stroke-width="3.5"/>
+        <path class="vahito" style="animation-delay:1.8s" d="M240,148 c-6,-11 6,-16 0,-24" stroke-width="3"/>
+      </g>
+
+      <!-- el cuchillo en la mano, sobre el punto -->
+      <g>
+        <path d="M156,150 l40,-46 10,9 -40,46 Z" fill="url(#emadera)"/>
+        <path d="M150,158 l14,-16 9,8 -14,16 Z" fill="url(#eacero)"/>
+        <path d="M144,166 l10,-11 6,6 -10,11 Z" fill="#dfe6ee"/>
+        <g fill="#7a2c2c">
+          <ellipse class="gotita" cx="146" cy="172" rx="1.8" ry="2.6"/>
+          <ellipse class="gotita" style="animation-delay:1s" cx="150" cy="174" rx="1.4" ry="2.2"/>
+        </g>
+      </g>
+
+      <!-- lupa: estudiar el bicho antes de cortar -->
+      <g class="lupita">
+        <circle cx="392" cy="120" r="24" fill="none" stroke="url(#eacero)" stroke-width="6"/>
+        <circle cx="392" cy="120" r="20" fill="#7df0e6" opacity=".1"/>
+        <path d="M408,137 l20,24" stroke="url(#eacero)" stroke-width="7" stroke-linecap="round"/>
+      </g>
+
+      <!-- frascos donde va lo que se saca: utillaje, no se gasta -->
+      <g>
+        <path d="M46,244 h22 v-22 l-4,-8 h-14 l-4,8 Z" fill="#22333a" stroke="#5fbf7a" stroke-width="2"/>
+        <path d="M46,236 h22 v8 h-22 Z" fill="#2f6f4f"/>
+        <path d="M76,244 h22 v-22 l-4,-8 h-14 l-4,8 Z" fill="#2a3440" stroke="#3b4a58" stroke-width="2"/>
+        <text x="72" y="262" font-size="8" font-family="Manrope" font-weight="800" fill="#c9a35c" text-anchor="middle">FRASCOS</text>
+      </g>
+    </svg>
+
+    <div class="ex-eyebrow">Lo que hace falta, y lo que sale</div>
+    <div class="ex-slots">
+      <div><div class="ex-slot util">🔪</div><div class="ex-name">Cuchillo de despiece<br><span class="ex-nogasta">no se gasta</span></div></div>
+      <div><div class="ex-slot util">🫙</div><div class="ex-name">Frascos<br><span class="ex-nogasta">no se gastan</span></div></div>
+      <div style="width:14px"></div>
+      <div><div class="ex-slot sale">🧪<span style="position:absolute;right:3px;bottom:2px;font-size:9px;font-weight:800;color:var(--bronze)">1</span></div><div class="ex-name" style="color:var(--verdant)">Glándula Oxidífera</div></div>
+    </div>
+
+    <div class="ex-phases">
+      <div class="ex-phase on">
+        <h4>1 · Estudiar</h4>
+        <p><strong>El bicho te dice dónde está lo bueno</strong>, si sabes mirar. Estudiarlo destapa los puntos; sin estudiar, cortas a ciegas.</p>
+        <div class="ex-puntos">
+          <span class="ex-punto bueno">glándula ✓</span>
+          <span class="ex-punto bueno">caparazón ✓</span>
+          <span class="ex-punto dudoso">¿?</span>
+        </div>
+      </div>
+
+      <div class="ex-phase">
+        <h4>2 · Cortar</h4>
+        <p>Elige el punto y <strong>mide la profundidad</strong>. Corto no llega; hondo revienta lo que ibas a sacar.</p>
+        <div class="ex-prof"><span class="cur" style="left:50%"></span></div>
+        <p style="font-size:9.5px;color:var(--dim);margin-top:3px">roza · piel · <strong style="color:var(--verdant)">justo</strong> · hondo · reventado</p>
+      </div>
+
+      <div class="ex-phase">
+        <h4>3 · Guardar</h4>
+        <p>Al frasco <strong>antes de que se eche a perder</strong>. Una víscera fuera del bicho no aguanta.</p>
+        <div class="ex-frasco"><span class="relleno"></span><span class="tarde"></span></div>
+      </div>
+    </div>
+
+    <div class="ex-stop">
+      <div class="btn">■ &nbsp;CORTAR &nbsp;<span style="opacity:.8;font-weight:600">(o espacio)</span></div>
+      <div class="alt">Retirarte con lo que llevas</div>
+    </div>
+
+    <div class="ex-mod">
+      Manipulación:
+      <span class="ex-pip good">+1</span><span class="ex-pip">0</span><span class="ex-pip good">+1</span>
+      → tirada <strong style="color:var(--bronze-bright)">1d20 +4 +2</strong> contra CD 14
+      &nbsp;·&nbsp; <span style="color:#8fdca6">quedan 2 piezas</span>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:22px">Por qué es distinto de los otros seis</h3>
+<p class="subtitle" style="max-width:680px">En los seis talleres tiras <strong>una vez</strong> y lo que salga, salió. Aquí el cadáver es un <strong>saldo que se gasta</strong>: 1d4 piezas, y cada fallo se come una. Eso cambia la pregunta que se hace el jugador.</p>
+<ul style="font-size:13px;line-height:1.6;color:var(--muted);max-width:680px">
+  <li><strong>Se juega varias veces seguidas, con lo que queda.</strong> Es el único oficio donde la tensión no está dentro de una barra sino <em>entre intentos</em>: llevas dos piezas buenas y queda una, ¿la intentas o te vas?</li>
+  <li><strong>Puedes retirarte.</strong> Ningún otro taller tiene botón de irse a medias, porque en ninguno hay nada que conservar hasta que termina.</li>
+  <li><strong>El material te informa.</strong> Estudiar destapa dónde cortar. Es lo contrario de alquimia, donde la receta te lo da todo escrito de antemano.</li>
+</ul>
+
+<h3>Lo que hay que decidir</h3>
+<div class="options">
+  <div class="option" data-choice="estudiar-gasta" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>Estudiar es gratis y se hace una vez</h3>
+      <p>Al abrir el cadáver se estudia una vez, destapa los puntos y ya. Simple y no castiga a quien mira antes de cortar.</p></div>
+  </div>
+  <div class="option" data-choice="estudiar-pieza" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>Estudiar antes de cada corte</h3>
+      <p>Cada pieza se estudia y se corta. Más juego y más tensión, pero alarga bastante un despiece de cuatro piezas.</p></div>
+  </div>
+  <div class="option" data-choice="ciegas" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Se puede cortar a ciegas</h3>
+      <p>Estudiar es opcional: sin estudiar cortas igual, pero no sabes si ese punto tenía algo. Rápido para el que tiene prisa, caro si falla.</p></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px">Lo demás ya está cerrado: <strong>en el sitio con el cadáver fresco</strong>, <strong>1d4 piezas por cadáver</strong>, <strong>cada fallo se come una</strong> y <strong>pide herramientas</strong>. Y el DM mantiene a mano su lista de cadáveres despiezables, porque la mesa no siempre pasa por la app.</p>

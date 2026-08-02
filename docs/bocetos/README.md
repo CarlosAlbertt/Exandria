@@ -24,6 +24,7 @@ Las maquetas se dibujan en `.superpowers/brainstorm/`, que está en el
 | `cristalografia-banco.html` | La veta, el cincel y el punto de rotura | Aprobado, **sin construir** |
 | `tatuaje-camilla.html` | La plantilla, el trazo y el portador | Aprobado, **sin construir** |
 | `cocina-fuegos.html` | Dos fuegos a la vez y la cata | Aprobado, **sin construir** |
+| `extraccion-despiece.html` | Estudiar, cortar y guardar el cadáver | Aprobado, **sin construir** |
 
 ## Lo que NO son
 
