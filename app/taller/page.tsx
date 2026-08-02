@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession, useRole } from "@/components/SessionProvider";
 import Caldero from "@/components/taller/Caldero";
+import Fragua from "@/components/taller/Fragua";
 import { OFICIOS_ORDEN, OFICIO_LABEL, type Oficio } from "@/lib/materiales";
 import { modDmValido, MOD_DM_MIN, MOD_DM_MAX, type ModoDm } from "@/lib/tallerDm";
 import { fmtMod } from "@/data/rules";
@@ -133,6 +134,12 @@ export default function TallerPage() {
 
       {oficio === "alquimia" ? (
         <Caldero userId={session?.id ?? null} dm={dm} />
+      ) : oficio === "forja" ? (
+        /* La fragua existe y las tres fases se juegan, pero **no hay piezas que
+           forjar**: el catálogo de armas y armaduras lo dicta el DM. Se abre
+           igual porque lo que costó tres tandas de silencio en alquimia fue
+           justo lo contrario — tenerlo hecho y que nadie pudiera mirarlo. */
+        <Fragua userId={session?.id ?? null} dm={dm} />
       ) : (
         <div className="panel-raised p-10 text-center">
           <i className={`fas ${ICONO[oficio]} text-3xl mb-4 block`} style={{ color: "var(--color-dim)" }} />

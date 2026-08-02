@@ -945,3 +945,83 @@ canvas.dice-box-canvas {
 }
 .mat-hueco.is-arrastrable { cursor: grab; }
 .mat-hueco.is-arrastrable:active { cursor: grabbing; transform: scale(0.96); }
+
+/* =====================================================================
+   LA FRAGUA — components/taller/ForjaSvg.tsx
+   ⚠️ El martillazo tiene dos trampas ya pagadas:
+   · el eje es el 0,0 del grupo (colocado con `transform` en el SVG), no un
+     porcentaje: con porcentaje cae en la esquina de la caja y se DESLIZA;
+   · en SVG la `y` crece hacia abajo, así que levantar el martillo con el
+     mango a la izquierda es un ángulo POSITIVO. Con el signo al revés se
+     hunde por debajo del yunque.
+   El ritmo es carga larga → caída seca → rebote → subida lenta. Al revés
+   (subir rápido, bajar despacio) no parece un martillazo.
+   ===================================================================== */
+.forja-svg { width: 100%; max-width: 470px; display: block; margin: 0 auto; }
+
+@keyframes forja-martillo {
+  0%   { transform: rotate(58deg); animation-timing-function: ease-in-out; }
+  38%  { transform: rotate(63deg); animation-timing-function: cubic-bezier(.6, 0, .95, .55); }
+  62%  { transform: rotate(0deg);  animation-timing-function: ease-out; }
+  68%  { transform: rotate(13deg); animation-timing-function: ease-in-out; }
+  74%  { transform: rotate(4deg);  animation-timing-function: ease-in-out; }
+  100% { transform: rotate(58deg); }
+}
+/* Las chispas y el fogonazo salen EN el fotograma del golpe (62%), no antes. */
+@keyframes forja-golpe-chispa {
+  0%, 60% { opacity: 0; transform: translate(0, 0) scale(.35); }
+  63%     { opacity: 1; transform: translate(0, 0) scale(1); }
+  84%     { opacity: 0; transform: translate(var(--bx), -24px) scale(.3); }
+  100%    { opacity: 0; }
+}
+@keyframes forja-flash { 0%, 60% { opacity: 0 } 64% { opacity: .9 } 80% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes forja-yunque { 0%, 60% { transform: translateY(0) } 63% { transform: translateY(1.6px) } 72% { transform: translateY(0) } 100% { transform: translateY(0) } }
+@keyframes forja-carbon { 0%, 100% { opacity: .78 } 50% { opacity: 1 } }
+@keyframes forja-chispa { 0% { transform: translate(0,0) scale(1); opacity: .95 } 100% { transform: translate(var(--dx), -38px) scale(.3); opacity: 0 } }
+@keyframes forja-vapor { 0% { transform: translateY(0); opacity: 0 } 30% { opacity: .45 } 100% { transform: translateY(-34px); opacity: 0 } }
+
+.forja-martillo { transform-origin: 0 0; animation: forja-martillo 1.7s infinite; }
+/* En reposo se queda cargado arriba, no tirado sobre el yunque. */
+.forja-martillo-quieto { transform-origin: 0 0; transform: rotate(58deg); }
+.forja-golpe-chispa { animation: forja-golpe-chispa 1.7s ease-out infinite; }
+.forja-flash { animation: forja-flash 1.7s ease-out infinite; }
+.forja-yunque { animation: forja-yunque 1.7s ease-out infinite; }
+.forja-carbon { animation: forja-carbon 2.2s ease-in-out infinite; }
+.forja-chispa { animation: forja-chispa 1.4s ease-out infinite; }
+.forja-vapor { animation: forja-vapor 3.4s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .forja-martillo, .forja-golpe-chispa, .forja-flash,
+  .forja-yunque, .forja-carbon, .forja-chispa, .forja-vapor { animation: none; }
+  /* Sin animación, el martillo se queda en el golpe: es el fotograma que
+     cuenta lo que está pasando. */
+  .forja-martillo { transform: rotate(0deg); }
+}
+
+/* La escala de temperatura y los golpes del compás */
+.forja-escala {
+  position: relative; height: 14px; border-radius: 7px; margin: 8px 0 2px;
+  background: linear-gradient(90deg,
+    #2b3240 0%, #7a2a12 30%, #c4402c 48%, #ef6a3d 58%, #ffb056 78%, #fff3c4 100%);
+}
+/* Templar no es una escala de calor: es un margen de tiempo, y va del agua fría
+   al metal rajado. Mismo cursor, otra lectura. */
+.forja-escala.is-temple {
+  background: linear-gradient(90deg,
+    #2f6f8f 0%, #2f6f8f 30%, var(--color-verdant) 45%, var(--color-verdant) 55%, #8e2a1c 70%, #8e2a1c 100%);
+}
+.forja-banda {
+  position: absolute; top: -3px; bottom: -3px;
+  border: 2px solid var(--color-bronze-bright); border-radius: 7px;
+}
+.forja-golpe {
+  width: 34px; height: 34px; border-radius: 9px;
+  border: 1px solid var(--color-line); background: var(--color-night);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-ui); font-size: 13px; font-weight: 800; color: var(--color-dim);
+}
+.forja-golpe.is-bien { border-color: var(--color-verdant); color: var(--color-verdant); box-shadow: 0 0 10px rgba(95,191,122,.3); }
+.forja-golpe.is-mal { border-color: var(--color-ember); color: var(--color-ember); }
+.forja-golpe.is-ahora { border-color: var(--color-bronze-bright); color: var(--color-bronze-bright); animation: forja-pulso .9s ease-in-out infinite; }
+@keyframes forja-pulso { 0%, 100% { transform: scale(1); opacity: .85 } 50% { transform: scale(1.12); opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .forja-golpe.is-ahora { animation: none } }

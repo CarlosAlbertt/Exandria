@@ -70,7 +70,16 @@ export const PIPETA = { centro: [0.45, 0.55], banda: [0.32, 0.68] } as const;
 /** Sector estrecho y arco ancho de la aguja de cocer. */
 export const COCER = { centro: [0.46, 0.54], banda: [0.3, 0.7] } as const;
 
-function puntoEnBandas(p: number, b: { centro: readonly [number, number]; banda: readonly [number, number] }): Punto {
+/** Dos bandas concéntricas sobre una posición 0–1: el centro y el arco ancho. */
+export type Bandas = { centro: readonly [number, number]; banda: readonly [number, number] };
+
+/**
+ * El punto que saca una posición dentro de sus bandas. Lo comparten todas las
+ * fases de todos los oficios que se juegan «parando algo»: la pipeta y la aguja
+ * de alquimia, el fuelle y el temple de forja. Si cada oficio se escribiera la
+ * suya, el ±1 significaría cosas distintas en cada taller.
+ */
+export function puntoEnBandas(p: number, b: Bandas): Punto {
   // Una posición que no es un número finito cuenta como fallo y no como acierto:
   // si algún día un `NaN` llega hasta aquí, que cueste, no que regale un +1.
   if (!Number.isFinite(p)) return -1;
