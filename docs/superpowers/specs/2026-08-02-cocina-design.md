@@ -1,7 +1,7 @@
 # Los fuegos: cocina, la atención partida y la cata
 
 **Fecha**: 2 de agosto de 2026
-**Estado**: boceto aprobado. **Decisión de raciones ABIERTA.** Sin construir.
+**Estado**: boceto aprobado, decisión cerrada, **sin construir**
 **Boceto**: `docs/bocetos/cocina-fuegos.html`
 
 ---
@@ -39,20 +39,31 @@ siguiente. Cocina trae dos cosas que ninguno tiene:
   y la habilidad es usar tres cucharadas bien. No lo cubre `puntoEnBandas`:
   hace falta un objetivo oculto y una respuesta por intento.
 
-## 4. La decisión que sigue ABIERTA
+## 4. La decisión: raciones variables
 
-Qué pasa cuando el plato sale mal. Las tres que se pusieron sobre la mesa:
+**Elegida por el DM el 2026-08-02 (opción A de tres).**
 
-- **A · Raciones variables** — la receta declara para cuántos es y la tirada sube
-  o baja ese número. Un guiso regular da de comer a dos en vez de a cuatro.
-  Nadie se queda sin cenar por un mal dado, solo comen menos. *(Recomendada: es
-  la que respeta que aquí el fallo lo paga la mesa y no quien tira.)*
-- **B · Todo o nada** — como los otros seis. Simple y coherente, pero castiga al
-  grupo entero por una tirada.
-- **C · Siempre sale algo, con calidad** — rancho, plato o banquete, y solo el
-  bueno da beneficio. Exige tres versiones por receta.
+La receta declara **para cuántos es**, y la tirada —pericia más manipulación—
+**sube o baja ese número**. Un guiso regular da de comer a dos en vez de a
+cuatro.
 
-**El DM aprobó el boceto pero no cerró esta decisión. No se elige por él.**
+Es la única de las tres que respeta la asimetría del oficio: **aquí el fallo lo
+paga la mesa, no quien tira**. Con todo o nada, una mala tirada deja al grupo
+entero sin cenar por algo que no hizo.
+
+Lo que eso implica al construirlo:
+
+- **`Receta` gana un campo de raciones base** para cocina. Es el primer campo de
+  receta específico de un oficio, así que conviene que sea opcional y que el gate
+  exija que **toda receta de cocina lo traiga** y ninguna de otro oficio lo use.
+- **Las raciones nunca bajan de cero, y probablemente no de uno**: que un desastre
+  deje media mesa sin comer es la gracia; que la deje entera y además pierda los
+  ingredientes es el todo o nada que se acaba de descartar.
+- **Servir es repartir**: hay que decidir a quién alimenta cada ración, y eso ya
+  toca la Fase P.
+
+Descartadas: *todo o nada* (castiga al grupo por una tirada ajena) y *siempre
+sale algo con calidad* (exige tres versiones por receta, y no hay ni una).
 
 ## 5. Lo que falta para poder construirlo
 
