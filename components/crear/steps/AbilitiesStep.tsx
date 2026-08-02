@@ -94,7 +94,7 @@ export default function AbilitiesStep({
       // fallo: el overlay pintaba la suma de los cuatro dados y se guardaba la
       // de los tres mejores. `hold` deja el resultado en pantalla antes de
       // pedir la tirada siguiente.
-      const r = await rollVisual("4d6", { label: `Aptitud ${i + 1} de 6`, keep: 3, hold: 1500 });
+      const r = await rollVisual("4d6", { label: `Aptitud ${i + 1} de 6`, keep: 3, hold: 2250 });
       scores.push(r ? r.total : dropLowest(rollFallback("4d6")?.rolls ?? []));
     }
     onRolled(scores);
