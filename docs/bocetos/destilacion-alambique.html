@@ -1,0 +1,261 @@
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Manrope:wght@400;600;700;800&display=swap");
+
+.dx{
+  --ink:#090c11;--night:#0d121a;--panel:#131b25;--raised:#1b2532;--line:#2a3848;
+  --bronze:#c9a35c;--bronze-bright:#f0d79a;--arcane:#45c7bd;--arcane-bright:#7df0e6;
+  --ember:#ef6a3d;--verdant:#5fbf7a;--violet:#9d8cf0;
+  --warm:#d8cdb4;--muted:#94a0ad;--dim:#6b7785;
+  background:radial-gradient(120% 90% at 50% 0%,#141d22 0%,var(--ink) 68%);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  font-family:"Manrope",system-ui,sans-serif;color:var(--warm)
+}
+.dx-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);background:rgba(9,12,17,.6)}
+.dx-tab{padding:8px 16px;font-size:12px;font-weight:700;color:var(--dim);border-radius:8px 8px 0 0}
+.dx-tab.on{color:var(--bronze-bright);background:var(--panel);border:1px solid var(--line);border-bottom:none;box-shadow:inset 0 2px 0 var(--arcane)}
+.dx-body{padding:16px}
+.dx-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(180deg,var(--raised),var(--panel));border:1px solid var(--line);
+  border-radius:10px;padding:9px 14px;margin-bottom:6px}
+.dx-strip .name{font-family:"Cinzel",serif;font-weight:700;font-size:16px;color:var(--bronze-bright)}
+.dx-cd{font-size:11px;font-weight:800;color:var(--arcane-bright);border:1px solid rgba(69,199,189,.35);border-radius:999px;padding:2px 9px}
+.dx-riesgo{display:flex;gap:9px;align-items:flex-start;border:1px solid rgba(157,140,240,.4);
+  background:rgba(157,140,240,.08);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#cfc6f7}
+.dx-eyebrow{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--bronze);margin:14px 0 7px;text-align:center}
+.dx-phases{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+.dx-phase{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.dx-phase.on{border-color:var(--arcane);box-shadow:0 0 0 1px rgba(69,199,189,.25),0 6px 20px rgba(0,0,0,.5)}
+.dx-phase h4{font-family:"Cinzel",serif;font-size:12px;font-weight:700;color:var(--bronze-bright);margin:0 0 5px}
+.dx-phase p{font-size:10px;color:var(--muted);margin:0;line-height:1.35}
+.dx-band{height:13px;border-radius:7px;margin:8px 0 4px;position:relative}
+.dx-band.fuego{background:linear-gradient(90deg,#2b3240 0%,#5a3a1a 26%,var(--verdant) 44%,var(--verdant) 58%,#c4402c 76%,#8e2a1c 100%)}
+.dx-band.grados{background:linear-gradient(90deg,#2f6f8f 0%,#3f7f6f 30%,var(--verdant) 45%,var(--verdant) 57%,#b07a2a 74%,#8e2a1c 100%)}
+.dx-band .cur{position:absolute;top:-4px;width:3px;height:21px;background:#fff;border-radius:2px;box-shadow:0 0 9px #fff;transform:translateX(-50%)}
+/* El corte: la corriente pasa por cabezas → corazón → colas y hay que ABRIR y
+   CERRAR el frasco dentro del corazón. */
+.dx-corte{position:relative;height:34px;border-radius:8px;margin:8px 0 4px;overflow:hidden;
+  background:linear-gradient(90deg,#5c3a5e 0%,#5c3a5e 26%,#2f6f4f 30%,#2f6f4f 58%,#6b5a2a 62%,#6b5a2a 100%)}
+.dx-corte .etq{position:absolute;top:2px;font-size:9px;font-weight:800;letter-spacing:.04em;color:rgba(255,255,255,.72)}
+.dx-corte .ventana{position:absolute;top:0;bottom:0;border-left:2px solid var(--bronze-bright);
+  border-right:2px solid var(--bronze-bright);background:rgba(240,215,154,.2)}
+.dx-corte .cur{position:absolute;top:-3px;bottom:-3px;width:3px;background:#fff;box-shadow:0 0 10px #fff}
+.dx-stop{margin-top:14px;display:flex;gap:9px}
+.dx-stop .btn{flex:1;text-align:center;font-weight:800;font-size:13px;padding:12px;border-radius:9px;
+  background:linear-gradient(180deg,#c4402c,#8e2a1c);color:#ffe9e2;border:1px solid #e0745c;
+  box-shadow:0 4px 16px rgba(196,64,44,.35)}
+.dx-stop .alt{padding:12px 14px;border-radius:9px;border:1px solid var(--line);color:var(--muted);
+  font-size:12px;font-weight:700;background:var(--panel)}
+.dx-mod{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted)}
+.dx-pip{display:inline-flex;min-width:22px;height:21px;padding:0 5px;border-radius:5px;align-items:center;justify-content:center;
+  font-weight:800;font-size:11px;border:1px solid var(--line);background:var(--night);color:var(--dim)}
+.dx-pip.good{color:var(--verdant);border-color:rgba(95,191,122,.5)}
+.dx-pip.bad{color:var(--ember);border-color:rgba(239,106,61,.5)}
+
+@keyframes dx-burb{0%{transform:translateY(0) scale(.5);opacity:0}20%{opacity:.85}100%{transform:translateY(-30px) scale(1.1);opacity:0}}
+@keyframes dx-vapor{0%{opacity:0;stroke-dashoffset:60}30%{opacity:.5}100%{opacity:0;stroke-dashoffset:0}}
+@keyframes dx-gota{0%{transform:translateY(0);opacity:0}12%{opacity:1}88%{opacity:1}100%{transform:translateY(38px);opacity:0}}
+@keyframes dx-llama{0%,100%{transform:scaleY(1);opacity:.95}40%{transform:scaleY(1.15) translateY(-2px);opacity:1}}
+@keyframes dx-agua{0%,100%{opacity:.55}50%{opacity:.8}}
+.burb{animation:dx-burb 2.4s ease-in infinite}
+.vaporcito{animation:dx-vapor 3s linear infinite;stroke-dasharray:6 8}
+.gota{animation:dx-gota 1.5s ease-in infinite}
+.llamita{animation:dx-llama 1.4s ease-in-out infinite;transform-origin:50% 100%}
+.aguita{animation:dx-agua 3.2s ease-in-out infinite}
+</style>
+
+<h2>La destilación</h2>
+<p class="subtitle">Misma cáscara que el caldero y la fragua. Lo que cambia es lo que se manipula: aquí no se echa ni se martillea — <strong>se corta</strong>. Separar cabezas, corazón y colas es el oficio, y es justo lo que engancha con el campo <code>riesgo</code> que la mitad del catálogo lleva escrito y hoy no hace nada.</p>
+
+<div class="dx">
+  <div class="dx-tabs">
+    <div class="dx-tab">📖 Tu libro</div>
+    <div class="dx-tab on">⚗️ El alambique</div>
+    <div class="dx-tab">Oficios</div>
+  </div>
+
+  <div class="dx-body">
+    <div class="dx-strip">
+      <div>
+        <div class="name">Sangre Viciada de Vampiro</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">
+          Pide 2 materiales · sale 1 frasco · <span style="color:var(--warm)">Destilación Exandriana +4</span>
+        </div>
+      </div>
+      <div class="dx-cd">CD 16</div>
+    </div>
+
+    <div class="dx-riesgo">
+      <span style="font-size:14px">⚠️</span>
+      <span><strong>Esta trae contrapartida.</strong> «Vino rojo oscuro que da un montón de PG temporales, pero hace que el bebedor sufra daño bajo la luz directa del sol.» Un corte malo la deja <em>sucia</em>: el riesgo se dispara igual aunque la tirada salga.</span>
+    </div>
+
+    <svg viewBox="0 0 470 300" style="width:100%;max-width:480px;display:block;margin:0 auto" role="img" aria-label="Alambique de cobre con serpentín y frascos">
+      <defs>
+        <linearGradient id="dcobre" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#e0a060"/><stop offset="38%" stop-color="#b87333"/>
+          <stop offset="78%" stop-color="#7a4a20"/><stop offset="100%" stop-color="#4d2e13"/>
+        </linearGradient>
+        <linearGradient id="dcobre2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#d9975a"/><stop offset="100%" stop-color="#6b3f1c"/>
+        </linearGradient>
+        <radialGradient id="dfuego" cx="50%" cy="70%" r="60%">
+          <stop offset="0%" stop-color="#ffd76a"/><stop offset="55%" stop-color="#ef6a3d"/><stop offset="100%" stop-color="#5a1c0e"/>
+        </radialGradient>
+        <linearGradient id="dmadera" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#5c422a"/><stop offset="100%" stop-color="#2b1e13"/>
+        </linearGradient>
+        <linearGradient id="dagua" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4a9ec0"/><stop offset="100%" stop-color="#1d4a63"/>
+        </linearGradient>
+        <filter id="dsoft"><feGaussianBlur stdDeviation="5"/></filter>
+        <clipPath id="dentro"><ellipse cx="92" cy="176" rx="50" ry="40"/></clipPath>
+      </defs>
+
+      <!-- hornillo de ladrillo -->
+      <path d="M34,214 h116 v34 h-116 Z" fill="#2f3846"/>
+      <path d="M40,248 h104 v8 h-104 Z" fill="#1b2029"/>
+      <ellipse cx="92" cy="236" rx="46" ry="12" fill="url(#dfuego)" opacity=".9" filter="url(#dsoft)"/>
+      <g class="llamita" fill="url(#dfuego)">
+        <path d="M92,242 c-13,-13 -5,-24 2,-31 -2,11 8,13 8,21 0,6 -4,10 -10,10 Z"/>
+        <path d="M70,244 c-10,-10 -4,-19 1,-24 -1,9 6,10 6,16 0,5 -3,8 -7,8 Z" opacity=".85"/>
+        <path d="M114,244 c-10,-10 -4,-19 1,-24 -1,9 6,10 6,16 0,5 -3,8 -7,8 Z" opacity=".85"/>
+      </g>
+
+      <!-- cucúrbita: la panza donde hierve -->
+      <ellipse cx="92" cy="176" rx="52" ry="42" fill="url(#dcobre)"/>
+      <ellipse cx="76" cy="160" rx="20" ry="13" fill="#f0c48a" opacity=".28" filter="url(#dsoft)"/>
+      <g clip-path="url(#dentro)">
+        <ellipse cx="92" cy="196" rx="50" ry="26" fill="#7a2c3a" opacity=".85"/>
+        <g fill="#e8b7c2" opacity=".7">
+          <circle class="burb" cx="76" cy="196" r="3.4"/>
+          <circle class="burb" style="animation-delay:.7s" cx="98" cy="200" r="4.4"/>
+          <circle class="burb" style="animation-delay:1.4s" cx="112" cy="194" r="2.8"/>
+        </g>
+      </g>
+      <ellipse cx="92" cy="176" rx="52" ry="42" fill="none" stroke="#4d2e13" stroke-width="2" opacity=".7"/>
+
+      <!-- capitel (la cabeza de cebolla) y cuello de cisne -->
+      <path d="M64,142 q28,-34 56,0 Z" fill="url(#dcobre2)"/>
+      <ellipse cx="92" cy="142" rx="28" ry="7" fill="#8a5628"/>
+      <path d="M92,112 q4,-16 22,-16 q28,0 34,26 q6,26 34,34"
+        fill="none" stroke="url(#dcobre2)" stroke-width="13" stroke-linecap="round"/>
+      <path d="M92,112 q4,-16 22,-16 q28,0 34,26 q6,26 34,34"
+        fill="none" stroke="#f0c48a" stroke-width="3" opacity=".35" stroke-linecap="round"/>
+      <!-- el vapor subiendo por el cuello -->
+      <path class="vaporcito" d="M92,112 q4,-16 22,-16 q28,0 34,26 q6,26 34,34"
+        fill="none" stroke="#dff3ff" stroke-width="4" stroke-linecap="round"/>
+
+      <!-- tina de refrigeración con el serpentín dentro -->
+      <path d="M188,140 h96 l-10,108 h-76 Z" fill="url(#dmadera)"/>
+      <path d="M190,164 h92" stroke="#7a5e2c" stroke-width="3" opacity=".7"/>
+      <path d="M194,216 h84" stroke="#7a5e2c" stroke-width="3" opacity=".7"/>
+      <ellipse cx="236" cy="140" rx="48" ry="12" fill="#1d2733"/>
+      <ellipse class="aguita" cx="236" cy="140" rx="42" ry="9.5" fill="url(#dagua)"/>
+      <!-- serpentín: se ve a través del agua -->
+      <path d="M214,150 q22,10 44,0 q-22,14 -44,24 q22,10 44,0 q-22,14 -44,24 q22,10 40,2"
+        fill="none" stroke="#b87333" stroke-width="7" stroke-linecap="round" opacity=".92"/>
+      <path d="M214,150 q22,10 44,0 q-22,14 -44,24 q22,10 44,0 q-22,14 -44,24 q22,10 40,2"
+        fill="none" stroke="#f0c48a" stroke-width="2" stroke-linecap="round" opacity=".3"/>
+
+      <!-- caño de salida -->
+      <path d="M262,228 h44 v7 h-44 Z" fill="url(#dcobre2)"/>
+      <path d="M300,228 l14,10 -14,8 Z" fill="#8a5628"/>
+
+      <!-- la gota que cae al frasco del corazón -->
+      <g fill="#cfe0a8">
+        <ellipse class="gota" cx="312" cy="244" rx="3" ry="4.5"/>
+        <ellipse class="gota" style="animation-delay:.75s" cx="312" cy="244" rx="2.4" ry="3.8"/>
+      </g>
+
+      <!-- los tres frascos: cabezas, corazón, colas -->
+      <g>
+        <path d="M330,266 h26 v-22 l-5,-10 h-16 l-5,10 Z" fill="#2a3440" stroke="#5c3a5e" stroke-width="2"/>
+        <path d="M330,258 h26 v8 h-26 Z" fill="#5c3a5e" opacity=".8"/>
+        <text x="343" y="282" font-size="9" font-family="Manrope" font-weight="800" fill="#a98bb0" text-anchor="middle">CABEZAS</text>
+
+        <path d="M370,266 h30 v-26 l-6,-12 h-18 l-6,12 Z" fill="#22333a" stroke="#5fbf7a" stroke-width="2.5"/>
+        <path d="M370,254 h30 v12 h-30 Z" fill="#2f6f4f"/>
+        <text x="385" y="282" font-size="9" font-family="Manrope" font-weight="800" fill="#8fdca6" text-anchor="middle">CORAZÓN</text>
+
+        <path d="M414,266 h26 v-22 l-5,-10 h-16 l-5,10 Z" fill="#2a3440" stroke="#6b5a2a" stroke-width="2"/>
+        <path d="M414,258 h26 v8 h-26 Z" fill="#6b5a2a" opacity=".8"/>
+        <text x="427" y="282" font-size="9" font-family="Manrope" font-weight="800" fill="#bda86a" text-anchor="middle">COLAS</text>
+      </g>
+    </svg>
+
+    <div class="dx-eyebrow">Lo que pide la receta</div>
+    <div style="display:flex;gap:9px;justify-content:center">
+      <div style="text-align:center">
+        <div style="width:56px;height:56px;border-radius:9px;border:1px solid rgba(157,140,240,.5);background:linear-gradient(160deg,rgba(157,140,240,.14),#101823);display:flex;align-items:center;justify-content:center;font-size:21px">🩸</div>
+        <div style="font-size:9px;color:var(--muted);width:56px;margin-top:4px">Sangre de vampiro</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:56px;height:56px;border-radius:9px;border:1px solid rgba(95,191,122,.5);background:linear-gradient(160deg,rgba(95,191,122,.14),#101823);display:flex;align-items:center;justify-content:center;font-size:21px">🌿</div>
+        <div style="font-size:9px;color:var(--muted);width:56px;margin-top:4px">Raíz de Oloore</div>
+      </div>
+    </div>
+
+    <div class="dx-phases">
+      <div class="dx-phase">
+        <h4>1 · Avivar</h4>
+        <p>El fuego, ni flojo ni fuerte. Corto no destila; pasado <strong>se sube</strong> y arrastra lo malo al frasco.</p>
+        <div class="dx-band fuego"><span class="cur" style="left:49%"></span></div>
+        <p style="font-size:9.5px;color:var(--dim);margin-top:3px">apagado · templado · <strong style="color:var(--verdant)">punto</strong> · fuerte · se sube</p>
+      </div>
+
+      <div class="dx-phase on">
+        <h4>2 · El corte</h4>
+        <p><strong>Abre y cierra el frasco dentro del corazón.</strong> Pillar cabezas ensucia lo que salga.</p>
+        <div class="dx-corte">
+          <span class="etq" style="left:6px">CABEZAS</span>
+          <span class="etq" style="left:37%">CORAZÓN</span>
+          <span class="etq" style="right:6px">COLAS</span>
+          <span class="ventana" style="left:34%;width:22%"></span>
+          <span class="cur" style="left:47%"></span>
+        </div>
+      </div>
+
+      <div class="dx-phase">
+        <h4>3 · Rebajar</h4>
+        <p>Bájala de grado con agua. Muy fuerte quema; muy floja no hace nada.</p>
+        <div class="dx-band grados"><span class="cur" style="left:52%"></span></div>
+      </div>
+    </div>
+
+    <div class="dx-stop">
+      <div class="btn">■ &nbsp;CERRAR EL FRASCO &nbsp;<span style="opacity:.8;font-weight:600">(o espacio)</span></div>
+      <div class="alt">Destilar sin manipular</div>
+    </div>
+
+    <div class="dx-mod">
+      Manipulación:
+      <span class="dx-pip good">+1</span><span class="dx-pip">0</span><span class="dx-pip good">+1</span>
+      → tirada <strong style="color:var(--bronze-bright)">1d20 +4 +2</strong> contra CD 16
+      &nbsp;·&nbsp; <span style="color:#cfc6f7">corte limpio: el riesgo no se dispara</span>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:22px">Por qué el corte y no otra cosa</h3>
+<p class="subtitle" style="max-width:660px">Alquimia se juega <em>echando</em> y forja <em>golpeando</em>. Si destilación fuese otra barra que parar, los tres talleres serían el mismo con distinto dibujo. El corte es distinto de verdad: <strong>no se para un instante, se captura una ventana</strong> — se abre y se cierra el frasco —, y es la única fase de los tres oficios que <strong>hace algo más que sumar al dado</strong>.</p>
+
+<h3>Lo que hay que decidir</h3>
+<div class="options">
+  <div class="option" data-choice="riesgo-corte" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>El corte manda sobre el riesgo</h3>
+      <p>Corte limpio (ventana dentro del corazón) = el riesgo <strong>no</strong> se dispara aunque el material lo traiga. Corte sucio = se dispara, aunque la tirada salga bien. Es lo que conecta por fin el campo <code>riesgo</code> de los 25 materiales.</p></div>
+  </div>
+  <div class="option" data-choice="riesgo-siempre" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>El riesgo va siempre</h3>
+      <p>Si el material lo trae, lo trae: se bebe y pasa. El corte solo suma al dado, como las fases de los otros oficios.</p></div>
+  </div>
+  <div class="option" data-choice="riesgo-pifia" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Solo con pifia</h3>
+      <p>Como el desastre de alquimia: el riesgo salta con un 1 natural o con −3 de manipulación, y el corte no lo toca.</p></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px"><strong>Y sigue el mismo tope que en forja</strong>: destilación tampoco tiene catálogo de qué produce. Los 49 del catálogo son <em>ingredientes</em>, no frascos terminados. Sin esa lista el alambique enciende pero no llena ningún frasco.</p>

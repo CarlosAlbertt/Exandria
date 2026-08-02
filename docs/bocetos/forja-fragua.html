@@ -1,0 +1,290 @@
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Manrope:wght@400;600;700;800&display=swap");
+
+.fx {
+  --ink:#090c11; --night:#0d121a; --panel:#131b25; --raised:#1b2532; --line:#2a3848;
+  --bronze:#c9a35c; --bronze-bright:#f0d79a; --bronze-deep:#7a5e2c;
+  --arcane:#45c7bd; --arcane-bright:#7df0e6; --ember:#ef6a3d; --verdant:#5fbf7a;
+  --warm:#d8cdb4; --muted:#94a0ad; --dim:#6b7785;
+  background: radial-gradient(120% 90% at 50% 0%, #211a18 0%, var(--ink) 68%);
+  border:1px solid var(--line); border-radius:14px; overflow:hidden;
+  font-family:"Manrope",system-ui,sans-serif; color:var(--warm);
+}
+.fx-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);background:rgba(9,12,17,.6)}
+.fx-tab{padding:8px 16px;font-size:12px;font-weight:700;color:var(--dim);border-radius:8px 8px 0 0}
+.fx-tab.on{color:var(--bronze-bright);background:var(--panel);border:1px solid var(--line);border-bottom:none;box-shadow:inset 0 2px 0 var(--ember)}
+.fx-body{padding:16px}
+.fx-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(180deg,var(--raised),var(--panel));border:1px solid var(--line);
+  border-radius:10px;padding:9px 14px;margin-bottom:14px}
+.fx-strip .name{font-family:"Cinzel",serif;font-weight:700;font-size:16px;color:var(--bronze-bright)}
+.fx-cd{font-size:11px;font-weight:800;color:var(--arcane-bright);border:1px solid rgba(69,199,189,.35);border-radius:999px;padding:2px 9px}
+.fx-eyebrow{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--bronze);margin:14px 0 7px;text-align:center}
+.fx-slots{display:flex;gap:9px;justify-content:center}
+.fx-slot{width:56px;height:56px;border-radius:9px;border:1px solid var(--line);
+  background:linear-gradient(160deg,var(--raised),#101823);display:flex;align-items:center;justify-content:center;
+  position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);font-size:21px}
+.fx-slot.has{border-color:var(--bronze-deep);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 12px rgba(201,163,92,.16)}
+.fx-slot .qty{position:absolute;right:3px;bottom:2px;font-size:9px;font-weight:800;color:var(--bronze)}
+.fx-name{text-align:center;font-size:9px;color:var(--muted);width:56px;margin-top:4px;line-height:1.15}
+.fx-phases{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}
+.fx-phase{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.fx-phase.on{border-color:var(--ember);box-shadow:0 0 0 1px rgba(239,106,61,.25),0 6px 20px rgba(0,0,0,.5)}
+.fx-phase h4{font-family:"Cinzel",serif;font-size:12px;font-weight:700;color:var(--bronze-bright);margin:0 0 5px}
+.fx-phase p{font-size:10px;color:var(--muted);margin:0;line-height:1.35}
+.fx-heat{height:13px;border-radius:7px;margin:8px 0 4px;position:relative;
+  background:linear-gradient(90deg,#2b3240 0%,#7a2a12 30%,#c4402c 48%,#ef6a3d 56%,#ffd76a 74%,#fff3c4 100%)}
+.fx-heat .band{position:absolute;top:-2px;bottom:-2px;left:47%;width:12%;border:2px solid var(--bronze-bright);border-radius:6px}
+.fx-heat .cursor{position:absolute;top:-4px;width:3px;height:21px;background:#fff;border-radius:2px;box-shadow:0 0 9px #fff;left:51%}
+.fx-beats{display:flex;gap:7px;justify-content:center;margin-top:9px}
+.fx-beat{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--night);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--dim)}
+.fx-beat.hit{border-color:var(--verdant);color:var(--verdant);box-shadow:0 0 10px rgba(95,191,122,.3)}
+.fx-beat.now{border-color:var(--bronze-bright);color:var(--bronze-bright);animation:fx-pulse .9s ease-in-out infinite}
+.fx-stop{margin-top:14px;display:flex;gap:9px}
+.fx-stop .btn{flex:1;text-align:center;font-weight:800;font-size:13px;padding:12px;border-radius:9px;
+  background:linear-gradient(180deg,#c4402c,#8e2a1c);color:#ffe9e2;border:1px solid #e0745c;
+  box-shadow:0 4px 16px rgba(196,64,44,.35)}
+.fx-stop .alt{padding:12px 14px;border-radius:9px;border:1px solid var(--line);color:var(--muted);
+  font-size:12px;font-weight:700;background:var(--panel)}
+.fx-mod{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted)}
+.fx-pip{display:inline-flex;min-width:22px;height:21px;padding:0 5px;border-radius:5px;align-items:center;justify-content:center;
+  font-weight:800;font-size:11px;border:1px solid var(--line);background:var(--night);color:var(--dim)}
+.fx-pip.good{color:var(--verdant);border-color:rgba(95,191,122,.5)}
+.fx-pip.bad{color:var(--ember);border-color:rgba(239,106,61,.5)}
+
+@keyframes fx-pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.12);opacity:1}}
+@keyframes fx-coal{0%,100%{opacity:.75}50%{opacity:1}}
+@keyframes fx-spark{0%{transform:translate(0,0) scale(1);opacity:.95}100%{transform:translate(var(--dx),-38px) scale(.3);opacity:0}}
+/* El martillazo. Tres cosas que antes estaban mal:
+   - el eje: se gira sobre la MANO (0,0 del grupo, colocado con translate en el
+     SVG), no sobre la esquina de la caja del grupo;
+   - el ritmo: carga larga y quieta, caída SECA, rebote corto y vuelta lenta
+     arriba. Antes subía rápido y bajaba despacio, que es un martillazo al revés;
+   - el impacto: el golpe cae sobre la barra, no en el aire. */
+/* OJO CON EL SIGNO: en SVG la `y` crece hacia ABAJO, así que un ángulo positivo
+   gira en el sentido de las agujas del reloj en pantalla. Con el mango apuntando
+   a la izquierda, levantar el martillo es +58, no -58. Con el signo al revés el
+   martillo bajaba por debajo del yunque, que era medio problema de la animación. */
+@keyframes fx-hammer{
+  0%   {transform:rotate(58deg); animation-timing-function:ease-in-out}
+  38%  {transform:rotate(63deg); animation-timing-function:cubic-bezier(.6,0,.95,.55)}
+  62%  {transform:rotate(0deg);  animation-timing-function:ease-out}
+  68%  {transform:rotate(13deg); animation-timing-function:ease-in-out}
+  74%  {transform:rotate(4deg);  animation-timing-function:ease-in-out}
+  100% {transform:rotate(58deg)}
+}
+/* Las chispas y el fogonazo salen EN el fotograma del golpe (62%), no antes. */
+@keyframes fx-burst{
+  0%,60% {opacity:0; transform:translate(0,0) scale(.35)}
+  63%    {opacity:1; transform:translate(0,0) scale(1)}
+  84%    {opacity:0; transform:translate(var(--bx),-24px) scale(.3)}
+  100%   {opacity:0}
+}
+@keyframes fx-flash{0%,60%{opacity:0}64%{opacity:.9}80%{opacity:0}100%{opacity:0}}
+@keyframes fx-yunque{0%,60%{transform:translateY(0)}63%{transform:translateY(1.6px)}72%{transform:translateY(0)}100%{transform:translateY(0)}}
+@keyframes fx-steam2{0%{transform:translateY(0);opacity:0}30%{opacity:.45}100%{transform:translateY(-34px);opacity:0}}
+.coal{animation:fx-coal 2.2s ease-in-out infinite}
+.spark{animation:fx-spark 1.4s ease-out infinite}
+/* El eje es el 0,0 de este grupo, y el grupo se coloca con `translate` en el
+   SVG: así el giro cae en la mano y no en la esquina de la caja. */
+.hammer{animation:fx-hammer 1.7s infinite;transform-origin:0 0}
+.golpe-chispa{animation:fx-burst 1.7s ease-out infinite}
+.golpe-flash{animation:fx-flash 1.7s ease-out infinite}
+.yunque-golpeado{animation:fx-yunque 1.7s ease-out infinite}
+.qsteam{animation:fx-steam2 3.4s ease-out infinite}
+</style>
+
+<h2>La forja</h2>
+<p class="subtitle">Misma cáscara que el caldero de alquimia —tira arriba, escena en medio, huecos de material, tres fases y botón rojo— pero cada oficio manipula lo suyo: aquí se <strong>caldea</strong> con el fuelle, se <strong>martillea</strong> a compás y se <strong>templa</strong> a tiempo.</p>
+
+<div class="fx">
+  <div class="fx-tabs">
+    <div class="fx-tab">📖 Tu libro</div>
+    <div class="fx-tab on">🔨 La fragua</div>
+    <div class="fx-tab">Oficios</div>
+  </div>
+
+  <div class="fx-body">
+    <div class="fx-strip">
+      <div>
+        <div class="name">Peto de mithril</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">
+          Pide 3 materiales · sale 1 pieza · <span style="color:var(--warm)">Forja +6</span>
+        </div>
+      </div>
+      <div class="fx-cd">CD 16</div>
+    </div>
+
+    <svg viewBox="0 0 460 300" style="width:100%;max-width:470px;display:block;margin:0 auto" role="img" aria-label="Fragua con yunque, barra al rojo y martillo">
+      <defs>
+        <linearGradient id="fanvil" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4a5464"/><stop offset="45%" stop-color="#252d39"/><stop offset="100%" stop-color="#0f141b"/>
+        </linearGradient>
+        <linearGradient id="fbar" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#3b424e"/><stop offset="38%" stop-color="#8e2a1c"/>
+          <stop offset="66%" stop-color="#ef6a3d"/><stop offset="100%" stop-color="#ffd76a"/>
+        </linearGradient>
+        <radialGradient id="fforge" cx="50%" cy="60%" r="55%">
+          <stop offset="0%" stop-color="#ffd76a"/><stop offset="45%" stop-color="#ef6a3d"/><stop offset="100%" stop-color="#5a1c0e"/>
+        </radialGradient>
+        <radialGradient id="fglow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ff9a4d" stop-opacity=".5"/><stop offset="100%" stop-color="#ef6a3d" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="fwood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#5c422a"/><stop offset="100%" stop-color="#2b1e13"/>
+        </linearGradient>
+        <filter id="fsoft"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      <!-- resplandor de la fragua -->
+      <ellipse cx="86" cy="150" rx="96" ry="76" fill="url(#fglow)"/>
+
+      <!-- fragua de piedra con carbones -->
+      <path d="M28,196 h116 v20 h-116 Z" fill="#232a34"/>
+      <path d="M34,150 h104 l6,46 h-116 Z" fill="#2f3846"/>
+      <ellipse cx="86" cy="150" rx="52" ry="17" fill="#141a22"/>
+      <ellipse class="coal" cx="86" cy="150" rx="44" ry="13" fill="url(#fforge)"/>
+      <g fill="#ffd76a">
+        <circle class="spark" style="--dx:-14px" cx="70" cy="146" r="2.4"/>
+        <circle class="spark" style="--dx:9px;animation-delay:.5s" cx="92" cy="148" r="2"/>
+        <circle class="spark" style="--dx:-4px;animation-delay:.9s" cx="104" cy="145" r="1.7"/>
+      </g>
+      <!-- fuelle -->
+      <path d="M8,120 l30,-14 8,26 -30,12 Z" fill="url(#fwood)" stroke="#6b4a2a" stroke-width="1.5"/>
+      <path d="M44,116 l26,10" stroke="#4a5464" stroke-width="5" stroke-linecap="round"/>
+
+      <!-- yunque -->
+      <path d="M232,206 h56 v40 h-56 Z" fill="#1b2029"/>
+      <path d="M214,182 h92 l-8,24 h-76 Z" fill="url(#fanvil)"/>
+      <path d="M306,186 l40,-6 -40,14 Z" fill="url(#fanvil)"/>
+      <path d="M214,182 h92 v5 h-92 Z" fill="#5c6675" opacity=".5"/>
+      <path d="M226,246 h68 v10 h-68 Z" fill="#141a22"/>
+
+      <!-- barra al rojo sobre el yunque. Da un respingo al recibir el golpe. -->
+      <g class="yunque-golpeado">
+        <rect x="222" y="168" width="104" height="13" rx="6" fill="url(#fbar)"/>
+        <rect x="222" y="168" width="104" height="13" rx="6" fill="#ffb056" opacity=".28" filter="url(#fsoft)"/>
+        <!-- fogonazo en el punto de impacto -->
+        <ellipse class="golpe-flash" cx="262" cy="170" rx="34" ry="11" fill="#fff3c4" filter="url(#fsoft)"/>
+      </g>
+
+      <!-- chispas del martillazo: saltan EN el fotograma del golpe -->
+      <g fill="#ffd76a">
+        <circle class="golpe-chispa" style="--bx:-20px" cx="256" cy="166" r="2.6"/>
+        <circle class="golpe-chispa" style="--bx:-9px" cx="262" cy="166" r="2"/>
+        <circle class="golpe-chispa" style="--bx:7px" cx="266" cy="167" r="2.3"/>
+        <circle class="golpe-chispa" style="--bx:19px" cx="272" cy="165" r="1.8"/>
+        <circle class="golpe-chispa" style="--bx:29px" cx="278" cy="167" r="1.5"/>
+      </g>
+
+      <!-- El martillo. El grupo se COLOCA con translate (la mano) y se GIRA con
+           CSS sobre su propio 0,0: así el eje es el puño y no la esquina de la
+           caja del grupo, que era lo que lo hacía deslizarse. -->
+      <g transform="translate(368,160)">
+        <g class="hammer">
+          <!-- Mango: se dibuja PRIMERO y entra por el ojo de la cabeza, para que
+               no parezca una cabeza pegada a la punta de un palo. -->
+          <rect x="-118" y="-5" width="118" height="10" rx="5" fill="url(#fwood)"/>
+          <rect x="-30" y="-6" width="26" height="12" rx="5" fill="#3b2a1a"/>
+          <rect x="-30" y="-6" width="26" height="4" rx="2" fill="#6b4a2a" opacity=".5"/>
+
+          <!-- Cabeza de peña cruzada: cara plana de golpear a la izquierda, ojo
+               en medio y peña que se afila a la derecha. Un rectángulo a secas
+               se leía como un ladrillo. -->
+          <path d="M-134,-16 L-108,-16 L-104,-11 L-88,-6 L-82,-2 L-82,4 L-88,8 L-104,12 L-108,16 L-134,16 Z"
+            fill="#39424f"/>
+          <path d="M-134,-16 L-108,-16 L-104,-11 L-88,-6 L-82,-2 L-134,-9 Z" fill="#5c6675" opacity=".5"/>
+          <rect x="-134" y="-16" width="7" height="32" rx="2" fill="#8b96a5" opacity=".7"/>
+          <rect x="-112" y="-17" width="8" height="34" rx="3" fill="#2b323d" opacity=".8"/>
+
+          <!-- El puño. Sin él el martillo giraba solo en mitad del aire, que era
+               justo lo que se veía raro. -->
+          <ellipse cx="-14" cy="0" rx="15" ry="12" fill="#6b4a2a"/>
+          <ellipse cx="-14" cy="-3" rx="13" ry="7" fill="#8a6236" opacity=".65"/>
+          <path d="M-26,-4 h24" stroke="#3b2a1a" stroke-width="2" opacity=".7"/>
+          <path d="M-26,2 h24" stroke="#3b2a1a" stroke-width="2" opacity=".55"/>
+        </g>
+      </g>
+
+      <!-- cubeta de temple -->
+      <g>
+        <path d="M370,190 h72 l-9,58 h-54 Z" fill="url(#fwood)"/>
+        <ellipse cx="406" cy="190" rx="36" ry="10" fill="#1d2733"/>
+        <ellipse cx="406" cy="190" rx="30" ry="7.5" fill="#2f6f8f"/>
+        <path d="M372,210 h68" stroke="#7a5e2c" stroke-width="3" opacity=".7"/>
+        <path d="M376,232 h60" stroke="#7a5e2c" stroke-width="3" opacity=".7"/>
+        <g stroke="#cfe6d8" fill="none" stroke-linecap="round" opacity=".55">
+          <path class="qsteam" d="M394,182 c-7,-12 7,-18 0,-30" stroke-width="4"/>
+          <path class="qsteam" style="animation-delay:1.7s" d="M418,182 c-7,-12 7,-18 0,-28" stroke-width="3.5"/>
+        </g>
+      </g>
+    </svg>
+
+    <div class="fx-eyebrow">Lo que pide la receta</div>
+    <div class="fx-slots">
+      <div><div class="fx-slot has">⛏️<span class="qty">3</span></div><div class="fx-name">Mithril en bruto</div></div>
+      <div><div class="fx-slot has">🪵<span class="qty">2</span></div><div class="fx-name">Carbón de Kraghammer</div></div>
+      <div><div class="fx-slot has">🧵<span class="qty">1</span></div><div class="fx-name">Correaje curtido</div></div>
+    </div>
+
+    <div class="fx-phases">
+      <div class="fx-phase on">
+        <h4>1 · Caldear</h4>
+        <p>Dale al fuelle y <strong>para en el rojo cereza</strong>. Pasarse quema el metal; quedarse corto no deja forjar.</p>
+        <div class="fx-heat"><span class="band"></span><span class="cursor"></span></div>
+        <p style="font-size:9.5px;color:var(--dim);margin-top:3px">frío · rojo oscuro · <strong style="color:var(--bronze-bright)">cereza</strong> · naranja · blanco</p>
+      </div>
+      <div class="fx-phase">
+        <h4>2 · Martillar</h4>
+        <p><strong>Tres golpes a compás.</strong> Cada golpe a tiempo suma; uno a destiempo se lleva lo ganado.</p>
+        <div class="fx-beats">
+          <span class="fx-beat hit">✓</span><span class="fx-beat now">2</span><span class="fx-beat">3</span>
+        </div>
+      </div>
+      <div class="fx-phase">
+        <h4>3 · Templar</h4>
+        <p>Al agua <strong>a tiempo</strong>. Muy pronto y queda blando; muy tarde y se raja.</p>
+        <div class="fx-heat" style="background:linear-gradient(90deg,#2f6f8f 0%,#2f6f8f 34%,var(--verdant) 46%,var(--verdant) 56%,#8e2a1c 70%,#8e2a1c 100%)">
+          <span class="cursor" style="left:38%"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fx-stop">
+      <div class="btn">■ &nbsp;PARAR EL FUELLE &nbsp;<span style="opacity:.8;font-weight:600">(o espacio)</span></div>
+      <div class="alt">Forjar sin manipular</div>
+    </div>
+
+    <div class="fx-mod">
+      Manipulación:
+      <span class="fx-pip good">+1</span><span class="fx-pip">0</span><span class="fx-pip bad">−1</span>
+      → tirada <strong style="color:var(--bronze-bright)">1d20 +6 +0</strong> contra CD 16
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:22px">Lo que este boceto NO puede decidir</h3>
+<p class="subtitle">La interfaz se puede construir hoy. Lo que falta no es código:</p>
+<ul style="font-size:13px;line-height:1.55;color:var(--muted);max-width:640px">
+  <li><strong>Qué se puede forjar.</strong> Alquimia tenía las 25 pociones de los libros; forja <em>no tiene producto</em>: no hay lista de armas, armaduras ni piezas. Sin eso no hay nada que fabricar, y lo dictas tú.</li>
+  <li><strong>La <code>mecanica</code> de los 25 materiales.</strong> El mithril anula el requisito de Fuerza, la adamantina anula los críticos recibidos, el residuum vuelve mágica el arma. Está escrito y <em>no está conectado</em>: forjar un peto de mithril hoy no quitaría ningún requisito.</li>
+</ul>
+
+<div class="options">
+  <div class="option" data-choice="ok" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>La fragua va así</h3>
+      <p>Me gusta el dibujo y las tres fases. Siguiente paso: dictarte qué se forja.</p></div>
+  </div>
+  <div class="option" data-choice="fases" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>Otras fases</h3>
+      <p>El dibujo vale, pero caldear/martillar/templar no es lo que quiero manipular.</p></div>
+  </div>
+  <div class="option" data-choice="dibujo" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Otra fragua</h3>
+      <p>Cambia la escena: más grande, otro encuadre, sin cubeta, con el herrero…</p></div>
+  </div>
+</div>

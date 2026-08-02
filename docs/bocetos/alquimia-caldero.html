@@ -1,0 +1,245 @@
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Manrope:wght@400;600;700;800&display=swap");
+
+.ex {
+  --ink:#090c11; --night:#0d121a; --panel:#131b25; --raised:#1b2532; --line:#2a3848;
+  --bronze:#c9a35c; --bronze-bright:#f0d79a; --bronze-deep:#7a5e2c;
+  --arcane:#45c7bd; --arcane-bright:#7df0e6; --ember:#ef6a3d; --verdant:#5fbf7a;
+  --warm:#d8cdb4; --muted:#94a0ad; --dim:#6b7785;
+  background: radial-gradient(120% 90% at 50% 0%, #16202c 0%, var(--ink) 70%);
+  border:1px solid var(--line); border-radius:14px; padding:0; overflow:hidden;
+  font-family:"Manrope",system-ui,sans-serif; color:var(--warm);
+}
+.ex-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);background:rgba(9,12,17,.6)}
+.ex-tab{padding:8px 16px;font-size:12px;font-weight:700;color:var(--dim);border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0}
+.ex-tab.on{color:var(--bronze-bright);background:var(--panel);border-color:var(--line);box-shadow:inset 0 2px 0 var(--bronze)}
+.ex-body{padding:16px}
+.ex-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(180deg,var(--raised),var(--panel));border:1px solid var(--line);
+  border-radius:10px;padding:9px 14px;margin-bottom:14px}
+.ex-strip .name{font-family:"Cinzel",serif;font-weight:700;font-size:16px;color:var(--bronze-bright)}
+.ex-cd{font-size:11px;font-weight:800;color:var(--arcane-bright);border:1px solid rgba(69,199,189,.35);border-radius:999px;padding:2px 9px}
+.ex-eyebrow{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--bronze);margin-bottom:7px}
+.ex-stage{position:relative;display:flex;justify-content:center;padding:4px 0 0}
+.ex-slots{display:flex;gap:9px;justify-content:center;margin:14px 0 4px}
+.ex-slot{width:56px;height:56px;border-radius:9px;border:1px solid var(--line);
+  background:linear-gradient(160deg,var(--raised),#101823);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;position:relative;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.ex-slot.has{border-color:var(--bronze-deep);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 12px rgba(201,163,92,.16)}
+.ex-slot .glyph{font-size:21px;line-height:1}
+.ex-slot .qty{position:absolute;right:3px;bottom:2px;font-size:9px;font-weight:800;color:var(--bronze)}
+.ex-slot.empty{border-style:dashed;color:var(--dim);font-size:18px}
+.ex-slotname{text-align:center;font-size:9px;color:var(--muted);width:56px;margin-top:4px;line-height:1.15}
+.ex-phases{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}
+.ex-phase{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.ex-phase.on{border-color:var(--bronze);box-shadow:0 0 0 1px rgba(201,163,92,.25),0 6px 20px rgba(0,0,0,.5)}
+.ex-phase h4{font-family:"Cinzel",serif;font-size:12px;font-weight:700;color:var(--bronze-bright);margin:0 0 5px}
+.ex-phase p{font-size:10px;color:var(--muted);margin:0;line-height:1.35}
+.ex-band{height:12px;border-radius:6px;margin:7px 0 5px;position:relative;
+  background:linear-gradient(90deg,#3a2a22 0%,#6b4a2a 26%,var(--verdant) 44%,var(--verdant) 56%,#6b4a2a 74%,#3a2a22 100%)}
+.ex-band .cursor{position:absolute;top:-3px;width:3px;height:18px;background:var(--bronze-bright);
+  border-radius:2px;box-shadow:0 0 8px var(--bronze-bright);left:52%}
+.ex-gauge{position:relative;height:44px;margin:6px 0 2px}
+.ex-stop{margin-top:14px;display:flex;gap:9px;align-items:center}
+.ex-stop .btn{flex:1;text-align:center;font-weight:800;font-size:13px;padding:11px;border-radius:9px;
+  background:linear-gradient(180deg,#c4402c,#8e2a1c);color:#ffe9e2;border:1px solid #e0745c;
+  box-shadow:0 4px 16px rgba(196,64,44,.35)}
+.ex-stop .alt{flex:0 0 auto;padding:11px 14px;border-radius:9px;border:1px solid var(--line);
+  color:var(--muted);font-size:12px;font-weight:700;background:var(--panel)}
+.ex-mod{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;
+  font-size:11px;color:var(--muted)}
+.ex-pip{display:inline-flex;width:20px;height:20px;border-radius:5px;align-items:center;justify-content:center;
+  font-weight:800;font-size:11px;border:1px solid var(--line);background:var(--night);color:var(--dim)}
+.ex-pip.good{color:var(--verdant);border-color:rgba(95,191,122,.5)}
+.ex-pip.bad{color:var(--ember);border-color:rgba(239,106,61,.5)}
+
+@keyframes ex-bub{0%{transform:translateY(0) scale(.55);opacity:0}
+  18%{opacity:.85}80%{opacity:.5}100%{transform:translateY(-26px) scale(1.15);opacity:0}}
+@keyframes ex-flick{0%,100%{transform:scaleY(1) translateY(0);opacity:.95}
+  35%{transform:scaleY(1.12) translateY(-3px);opacity:1}70%{transform:scaleY(.92) translateY(1px);opacity:.85}}
+@keyframes ex-steam{0%{transform:translateY(0) scaleX(1);opacity:0}
+  25%{opacity:.4}100%{transform:translateY(-40px) scaleX(1.5);opacity:0}}
+.bub{animation:ex-bub 2.6s ease-in infinite}
+.flame{animation:ex-flick 1.5s ease-in-out infinite;transform-origin:50% 100%}
+.steam{animation:ex-steam 5s ease-out infinite}
+</style>
+
+<h2>El caldero, dibujado</h2>
+<p class="subtitle">Esto es una maqueta estática con la paleta real de la app (bronce, medianoche, teal de Exandria). El caldero es SVG, no una imagen: se puede colorear por poción, encender y apagar el fuego, y burbujear con el color de lo que se está preparando.</p>
+
+<div class="ex">
+  <div class="ex-tabs">
+    <div class="ex-tab">📖 Tu libro</div>
+    <div class="ex-tab on">🔥 El banco</div>
+    <div class="ex-tab">Oficios</div>
+  </div>
+
+  <div class="ex-body">
+
+    <div class="ex-strip">
+      <div>
+        <div class="name">Poción de curación</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">
+          Pide 3 materiales · sale 1 poción · <span style="color:var(--warm)">Alquimia +5</span>
+        </div>
+      </div>
+      <div class="ex-cd">CD 10</div>
+    </div>
+
+    <div class="ex-stage">
+      <svg viewBox="0 0 400 330" width="100%" style="max-width:430px" role="img" aria-label="Caldero de hierro sobre el fuego">
+        <defs>
+          <linearGradient id="iron" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#414c5e"/><stop offset="38%" stop-color="#232b38"/>
+            <stop offset="72%" stop-color="#12171f"/><stop offset="100%" stop-color="#0b0f15"/>
+          </linearGradient>
+          <linearGradient id="ironRim" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5c6675"/>
+            <stop offset="55%" stop-color="#2c3542"/><stop offset="100%" stop-color="#171d26"/>
+          </linearGradient>
+          <radialGradient id="brew" cx="50%" cy="38%" r="65%">
+            <stop offset="0%" stop-color="#a8f0b8"/><stop offset="45%" stop-color="#5fbf7a"/>
+            <stop offset="100%" stop-color="#1f6f4a"/>
+          </radialGradient>
+          <radialGradient id="fireGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffb056" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#ef6a3d" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="flameG" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#8e2a1c"/><stop offset="45%" stop-color="#ef6a3d"/>
+            <stop offset="100%" stop-color="#ffd76a"/>
+          </linearGradient>
+          <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
+          <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="inside"><ellipse cx="200" cy="122" rx="96" ry="23"/></clipPath>
+        </defs>
+
+        <!-- resplandor del fuego en el suelo -->
+        <ellipse cx="200" cy="292" rx="150" ry="34" fill="url(#fireGlow)"/>
+
+        <!-- asa de hierro -->
+        <path d="M104,118 A98,86 0 0 1 296,118" fill="none" stroke="#39424f" stroke-width="7" stroke-linecap="round" opacity=".9"/>
+        <path d="M104,118 A98,86 0 0 1 296,118" fill="none" stroke="#5a6473" stroke-width="2.5" stroke-linecap="round" opacity=".55"/>
+
+        <!-- vapor -->
+        <g stroke="#cfe6d8" fill="none" stroke-linecap="round" opacity=".5">
+          <path class="steam" d="M170,112 c-8,-14 8,-22 0,-36" stroke-width="4"/>
+          <path class="steam" style="animation-delay:1.6s" d="M204,108 c-9,-16 9,-24 1,-40" stroke-width="5"/>
+          <path class="steam" style="animation-delay:3.1s" d="M238,112 c-8,-13 7,-21 0,-34" stroke-width="4"/>
+        </g>
+
+        <!-- cuerpo -->
+        <path d="M96,124 C86,196 128,258 200,258 C272,258 314,196 304,124 Z" fill="url(#iron)"/>
+        <path d="M112,140 C108,196 142,242 200,244" fill="none" stroke="#6d7a8c" stroke-width="4" opacity=".22" stroke-linecap="round"/>
+        <path d="M96,150 C104,150 296,150 304,150" stroke="#0a0e14" stroke-width="7" opacity=".45" fill="none"/>
+        <path d="M99,168 C110,170 290,170 301,168" stroke="#5a6473" stroke-width="2" opacity=".18" fill="none"/>
+
+        <!-- patas -->
+        <path d="M126,244 l-16,34 h13 l14,-28 Z" fill="#1a2029"/>
+        <path d="M274,244 l16,34 h-13 l-14,-28 Z" fill="#1a2029"/>
+        <path d="M193,257 h14 v26 h-14 Z" fill="#141a22"/>
+
+        <!-- borde -->
+        <ellipse cx="200" cy="122" rx="108" ry="27" fill="url(#ironRim)"/>
+        <ellipse cx="200" cy="122" rx="108" ry="27" fill="none" stroke="#c9a35c" stroke-width="1.4" opacity=".38"/>
+        <ellipse cx="200" cy="124" rx="96" ry="23" fill="#080b10"/>
+
+        <!-- brebaje -->
+        <g clip-path="url(#inside)">
+          <ellipse cx="200" cy="124" rx="96" ry="23" fill="url(#brew)"/>
+          <ellipse cx="200" cy="118" rx="70" ry="12" fill="#bdf5c9" opacity=".22" filter="url(#soft)"/>
+          <g fill="#dffbe6">
+            <circle class="bub" cx="172" cy="132" r="4" opacity=".8"/>
+            <circle class="bub" style="animation-delay:.8s" cx="205" cy="136" r="5.5" opacity=".75"/>
+            <circle class="bub" style="animation-delay:1.5s" cx="232" cy="130" r="3.4" opacity=".7"/>
+            <circle class="bub" style="animation-delay:2.1s" cx="190" cy="138" r="3" opacity=".65"/>
+          </g>
+        </g>
+        <ellipse cx="200" cy="124" rx="96" ry="23" fill="none" stroke="#7df0e6" stroke-width="1.2" opacity=".3" filter="url(#glow)"/>
+
+        <!-- leña y fuego -->
+        <g>
+          <rect x="150" y="276" width="100" height="9" rx="4" fill="#3a2a1e"/>
+          <rect x="163" y="284" width="74" height="8" rx="4" fill="#2c2017" transform="rotate(-4 200 288)"/>
+          <g class="flame" fill="url(#flameG)" opacity=".95">
+            <path d="M200,282 c-16,-16 -6,-30 2,-38 -2,14 10,16 10,26 0,8 -5,12 -12,12 Z"/>
+            <path d="M172,284 c-12,-12 -5,-23 1,-29 -1,11 8,12 8,20 0,6 -4,9 -9,9 Z" opacity=".85"/>
+            <path d="M228,284 c-12,-12 -5,-23 1,-29 -1,11 8,12 8,20 0,6 -4,9 -9,9 Z" opacity=".85"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="ex-eyebrow" style="margin-top:6px;text-align:center">Lo que pide la receta</div>
+    <div class="ex-slots">
+      <div><div class="ex-slot has"><span class="glyph">🌿</span><span class="qty">2</span></div>
+        <div class="ex-slotname">Hoja de sombravid</div></div>
+      <div><div class="ex-slot has"><span class="glyph">🪨</span><span class="qty">1</span></div>
+        <div class="ex-slotname">Polvo de Kraghammer</div></div>
+      <div><div class="ex-slot has"><span class="glyph">💧</span><span class="qty">1</span></div>
+        <div class="ex-slotname">Rocío de Pyrah</div></div>
+      <div><div class="ex-slot empty">+</div>
+        <div class="ex-slotname" style="color:var(--dim)">vacío</div></div>
+    </div>
+
+    <div class="ex-phases">
+      <div class="ex-phase on">
+        <h4>1 · Echar</h4>
+        <p>Arrastra cada material al caldero <strong>en el orden que pide la receta</strong>. Fuera de orden, −1.</p>
+        <div style="display:flex;gap:4px;margin-top:7px">
+          <span class="ex-pip good">✓</span><span class="ex-pip good">✓</span><span class="ex-pip">3</span>
+        </div>
+      </div>
+      <div class="ex-phase">
+        <h4>2 · Pipeta</h4>
+        <p>Mantén pulsado y suelta dentro de la banda verde. Centro +1, fuera −1.</p>
+        <div class="ex-band"><span class="cursor"></span></div>
+      </div>
+      <div class="ex-phase">
+        <h4>3 · Cocer</h4>
+        <p>La aguja va y viene. Párala en el sector claro.</p>
+        <div class="ex-gauge">
+          <svg viewBox="0 0 120 52" width="100%" height="46">
+            <path d="M10,46 A50,50 0 0 1 110,46" fill="none" stroke="#2a3848" stroke-width="9" stroke-linecap="round"/>
+            <path d="M52,8.5 A50,50 0 0 1 74,12.5" fill="none" stroke="#5fbf7a" stroke-width="9" stroke-linecap="round"/>
+            <line x1="60" y1="46" x2="38" y2="16" stroke="#f0d79a" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="60" cy="46" r="4" fill="#c9a35c"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="ex-stop">
+      <div class="btn">■ &nbsp;PARAR LA AGUJA &nbsp;<span style="opacity:.8;font-weight:600">(o espacio)</span></div>
+      <div class="alt">Preparar sin manipular</div>
+    </div>
+
+    <div class="ex-mod">
+      Manipulación acumulada:
+      <span class="ex-pip good">+1</span><span class="ex-pip good">+1</span><span class="ex-pip">0</span>
+      → tirada <strong style="color:var(--bronze-bright)">1d20 +5 +2</strong> contra CD 10
+    </div>
+
+  </div>
+</div>
+
+<h3 style="margin-top:22px">¿Voy por aquí?</h3>
+<div class="options">
+  <div class="option" data-choice="si" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>Sí, este es el caldero</h3>
+      <p>Sigo con este dibujo y esta disposición, y paso a escribir la spec.</p></div>
+  </div>
+  <div class="option" data-choice="forma" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>El caldero sí, la disposición no</h3>
+      <p>El dibujo vale, pero quiero otra colocación de huecos, fases y botón.</p></div>
+  </div>
+  <div class="option" data-choice="otro" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Otro caldero</h3>
+      <p>Más panzudo, más medieval, de cobre en vez de hierro, colgado de una cadena… dime qué falla.</p></div>
+  </div>
+</div>
