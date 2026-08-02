@@ -16,6 +16,11 @@ import { MATERIALES, materialPorN, materialPorNombre, materialesDe, esMaterial, 
 import { huecosUsados } from "../lib/inventario";
 import { recetasSabidas, recetasDeArena, bolsaDeArena, requisitos, puedePreparar, consumir, anadirProducto, idReceta, slugDeId, cupoLibre, cupoHasta, diasDeCupo } from "../lib/recetario";
 import { modDmValido, MOD_DM_MIN, MOD_DM_MAX } from "../lib/tallerDm";
+import {
+  TOPE, totalManipulacion, puntoEchar, puntoPipeta, puntoCocer, ordenDeReceta,
+  categoriaDominante, danoDeReceta, esDesastre, DANO_POR_CATEGORIA, PIPETA, COCER,
+  type Punto,
+} from "../lib/manipulacion";
 import { MINUTES_PER_DAY } from "../lib/gameClock";
 import { SKILLS } from "../data/rules";
 import { norm } from "../lib/slug";
@@ -317,6 +322,89 @@ check("un modificador imposible cae a 0 y no envenena la tirada",
   modDmValido(NaN) === 0 && modDmValido(Infinity) === 0);
 check("el modificador es entero",
   modDmValido(3.7) === 3 && modDmValido(-1.2) === -1);
+
+/* -------------------------- La manipulación --------------------------- */
+// El minijuego del banco de trabajo. **No sustituye la tirada de pericia: la
+// modifica**, y el tope de ±3 es lo único que impide que unas manos buenas se
+// coman la matemática del reglamento.
+
+// El clamp, con TODAS las combinaciones posibles de las tres fases. Es la regla
+// que hoy parece decorativa —tres fases de ±1 no pueden pasarse de ±3— y que
+// mañana, con una cuarta fase, es lo único que separa el ±3 del ±4.
+const PUNTOS: Punto[] = [-1, 0, 1];
+const combinaciones: Punto[][] = [];
+for (const a of PUNTOS) for (const b of PUNTOS) for (const c of PUNTOS) combinaciones.push([a, b, c]);
+const fueraDeTope = combinaciones.filter((c) => {
+  const t = totalManipulacion(c);
+  return t < -TOPE || t > TOPE;
+}).length;
+check(`ninguna de las ${combinaciones.length} combinaciones se sale de ±${TOPE}`, fueraDeTope === 0);
+// Y el clamp muerde de verdad: con cuatro fases perfectas el total sigue siendo 3.
+check("el clamp acota una cuarta fase imaginaria",
+  totalManipulacion([1, 1, 1, 1]) === TOPE && totalManipulacion([-1, -1, -1, -1]) === -TOPE);
+
+// Echar: el orden es el de la receta, y no hay término medio.
+check("acertar el orden entero da +1",
+  RECETAS.every((r) => puntoEchar(ordenDeReceta(r), ordenDeReceta(r)) === 1));
+check("cambiar dos materiales de sitio cuesta -1",
+  RECETAS.filter((r) => r.materiales.length > 1).every((r) => {
+    const o = ordenDeReceta(r);
+    // Solo cuenta si de verdad ha cambiado algo: dos materiales iguales no.
+    return o[0] === o[1] || puntoEchar([o[1], o[0], ...o.slice(2)], o) === -1;
+  }));
+check("echar de menos también cuesta -1",
+  RECETAS.every((r) => puntoEchar(ordenDeReceta(r).slice(1), ordenDeReceta(r)) === -1));
+
+// Pipeta y aguja: las bandas salen de `lib/manipulacion.ts`, no se repiten aquí.
+// Si se copiaran los números, el check sería verde por construcción — el fallo
+// exacto que destapó `check-origen`.
+check("el centro de la pipeta da +1",
+  puntoPipeta((PIPETA.centro[0] + PIPETA.centro[1]) / 2) === 1);
+check("la banda de la pipeta da 0",
+  puntoPipeta(PIPETA.banda[0] + 0.001) === 0 && puntoPipeta(PIPETA.banda[1] - 0.001) === 0);
+check("fuera de la banda cuesta -1", puntoPipeta(0) === -1 && puntoPipeta(1) === -1);
+check("clavar la aguja da +1", puntoCocer((COCER.centro[0] + COCER.centro[1]) / 2) === 1);
+check("pasarse con la aguja cuesta -1", puntoCocer(0) === -1 && puntoCocer(1) === -1);
+// Una posición corrupta no puede REGALAR un +1: si algo va mal, que cueste.
+check("una posición que no es un número cuesta -1",
+  puntoPipeta(NaN) === -1 && puntoCocer(Infinity) === -1);
+
+/* ---------------------------- El desastre ----------------------------- */
+// Perder los materiales no era bastante: un desastre salpica 1d4. El tipo de
+// daño sale de la categoría que los ingredientes YA tienen, no de un campo nuevo
+// ni de lore inventado.
+
+check("la pifia es un desastre, gane lo que gane la manipulación",
+  esDesastre(1, 3) === true && esDesastre(1, 0) === true);
+check("fallar las tres fases es un desastre", esDesastre(11, -TOPE) === true);
+check("una tirada normal no lo es", esDesastre(2, 0) === false && esDesastre(20, 3) === false);
+// La pifia va por la CARA, no por el total: un total de 1 con un +5 detrás no es
+// una pifia, y confundirlos castigaría justo al que peor tira.
+check("un total bajo con modificador no es pifia", esDesastre(6, 0) === false);
+
+const sinDominante = RECETAS.filter((r) => r.oficio === "alquimia" && categoriaDominante(r) === null);
+check(`toda receta de alquimia tiene categoría dominante (${sinDominante.length} sin ella)`,
+  sinDominante.length === 0);
+const sinDano = RECETAS.filter((r) => r.oficio === "alquimia" && danoDeReceta(r) === null);
+check(`toda receta de alquimia sabe de qué daña (${sinDano.length} sin tipo)`, sinDano.length === 0);
+
+// El mapa tiene que cubrir las categorías que EXISTEN en el catálogo. Estrenar
+// una quinta mañana tiene que romper aquí, no salir sin daño en silencio.
+const categoriasDelCatalogo = new Set(
+  materialesDe("alquimia").map((m) => m.category).filter((c): c is string => !!c)
+);
+const noMapeadas = [...categoriasDelCatalogo].filter((c) => !(c in DANO_POR_CATEGORIA));
+check(`el mapa de daño cubre las ${categoriasDelCatalogo.size} categorías de alquimia (faltan ${noMapeadas.length})`,
+  noMapeadas.length === 0);
+
+// Determinista: la misma receta da siempre el mismo tipo de daño, aquí y en el
+// navegador de otro. El empate se rompe por el primer material, no por el orden
+// en que un Map decida iterar.
+check("la categoría dominante es estable entre llamadas",
+  RECETAS.every((r) => categoriaDominante(r) === categoriaDominante(r)));
+
+// Sin materiales no habría fase 1 que jugar.
+check("toda receta lleva al menos un material", RECETAS.every((r) => r.materiales.length > 0));
 
 console.log(failures === 0 ? `\nTodo OK` : `\n${failures} FALLOS`);
 process.exit(failures === 0 ? 0 : 1);
