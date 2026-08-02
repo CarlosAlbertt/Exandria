@@ -1,0 +1,273 @@
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Manrope:wght@400;600;700;800&display=swap");
+
+.kx{
+  --ink:#090c11;--night:#0d121a;--panel:#131b25;--raised:#1b2532;--line:#2a3848;
+  --bronze:#c9a35c;--bronze-bright:#f0d79a;--arcane:#45c7bd;--arcane-bright:#7df0e6;
+  --ember:#ef6a3d;--verdant:#5fbf7a;--violet:#9d8cf0;
+  --warm:#d8cdb4;--muted:#94a0ad;--dim:#6b7785;
+  background:radial-gradient(120% 90% at 50% 0%,#241f16 0%,var(--ink) 68%);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  font-family:"Manrope",system-ui,sans-serif;color:var(--warm)
+}
+.kx-tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--line);background:rgba(9,12,17,.6)}
+.kx-tab{padding:8px 16px;font-size:12px;font-weight:700;color:var(--dim);border-radius:8px 8px 0 0}
+.kx-tab.on{color:var(--bronze-bright);background:var(--panel);border:1px solid var(--line);border-bottom:none;box-shadow:inset 0 2px 0 var(--bronze)}
+.kx-body{padding:16px}
+.kx-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(180deg,var(--raised),var(--panel));border:1px solid var(--line);
+  border-radius:10px;padding:9px 14px;margin-bottom:6px}
+.kx-strip .name{font-family:"Cinzel",serif;font-weight:700;font-size:16px;color:var(--bronze-bright)}
+.kx-cd{font-size:11px;font-weight:800;color:var(--arcane-bright);border:1px solid rgba(69,199,189,.35);border-radius:999px;padding:2px 9px}
+.kx-mesa{display:flex;gap:9px;align-items:flex-start;border:1px solid rgba(95,191,122,.4);
+  background:rgba(95,191,122,.08);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:#bfe8cb}
+.kx-eyebrow{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--bronze);margin:14px 0 7px;text-align:center}
+.kx-slots{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.kx-slot{width:56px;height:56px;border-radius:9px;border:1px solid var(--line);position:relative;
+  background:linear-gradient(160deg,var(--raised),#101823);display:flex;align-items:center;justify-content:center;font-size:21px}
+.kx-slot .qty{position:absolute;right:3px;bottom:2px;font-size:9px;font-weight:800;color:var(--bronze)}
+.kx-name{text-align:center;font-size:9px;color:var(--muted);width:56px;margin-top:4px;line-height:1.15}
+.kx-phases{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+.kx-phase{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.kx-phase.on{border-color:var(--ember);box-shadow:0 0 0 1px rgba(239,106,61,.28),0 6px 20px rgba(0,0,0,.5)}
+.kx-phase h4{font-family:"Cinzel",serif;font-size:12px;font-weight:700;color:var(--bronze-bright);margin:0 0 5px}
+.kx-phase p{font-size:10px;color:var(--muted);margin:0;line-height:1.35}
+.kx-cats{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.kx-cat{font-size:9px;font-weight:700;padding:3px 7px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.kx-cat.ok{border-color:var(--verdant);color:var(--verdant);background:rgba(95,191,122,.1)}
+.kx-cat.falta{border-color:var(--ember);color:var(--ember)}
+/* Dos fuegos: uno atendido y otro solo. Lo que desatiendes, se pasa. */
+.kx-fuegos{display:flex;gap:7px;margin-top:8px}
+.kx-fuego{flex:1;border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--night)}
+.kx-fuego.mira{border-color:var(--bronze-bright);box-shadow:0 0 0 1px rgba(240,215,154,.3)}
+.kx-fuego .et{font-size:8.5px;font-weight:800;letter-spacing:.05em;color:var(--dim);text-transform:uppercase}
+.kx-barra{height:9px;border-radius:5px;margin-top:5px;position:relative;overflow:hidden;
+  background:linear-gradient(90deg,#2f6f8f 0%,var(--verdant) 44%,var(--verdant) 60%,#c4402c 100%)}
+.kx-barra .cur{position:absolute;top:-3px;bottom:-3px;width:3px;background:#fff;box-shadow:0 0 8px #fff;transform:translateX(-50%)}
+/* La cata: te dice si va soso o pasado, y tienes tiros contados. */
+.kx-cata{display:flex;gap:5px;margin-top:8px;align-items:center}
+.kx-tiro{width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:var(--night);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--dim)}
+.kx-tiro.soso{border-color:#2f6f8f;color:#7fb7d0}
+.kx-tiro.pasado{border-color:var(--ember);color:var(--ember)}
+.kx-tiro.ahora{border-color:var(--bronze-bright);color:var(--bronze-bright);animation:kx-late .9s ease-in-out infinite}
+.kx-stop{margin-top:14px;display:flex;gap:9px}
+.kx-stop .btn{flex:1;text-align:center;font-weight:800;font-size:13px;padding:12px;border-radius:9px;
+  background:linear-gradient(180deg,#c4402c,#8e2a1c);color:#ffe9e2;border:1px solid #e0745c;
+  box-shadow:0 4px 16px rgba(196,64,44,.35)}
+.kx-stop .alt{padding:12px 14px;border-radius:9px;border:1px solid var(--line);color:var(--muted);
+  font-size:12px;font-weight:700;background:var(--panel)}
+.kx-mod{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.kx-pip{display:inline-flex;min-width:22px;height:21px;padding:0 5px;border-radius:5px;align-items:center;justify-content:center;
+  font-weight:800;font-size:11px;border:1px solid var(--line);background:var(--night);color:var(--dim)}
+.kx-pip.good{color:var(--verdant);border-color:rgba(95,191,122,.5)}
+.kx-pip.bad{color:var(--ember);border-color:rgba(239,106,61,.5)}
+
+@keyframes kx-llama{0%,100%{transform:scaleY(1);opacity:.95}45%{transform:scaleY(1.18) translateY(-3px);opacity:1}}
+@keyframes kx-burbu{0%{transform:translateY(0) scale(.5);opacity:0}25%{opacity:.9}100%{transform:translateY(-20px) scale(1.1);opacity:0}}
+@keyframes kx-vaho{0%{transform:translateY(0);opacity:0}30%{opacity:.45}100%{transform:translateY(-30px);opacity:0}}
+@keyframes kx-chisp{0%{transform:translate(0,0);opacity:.95}100%{transform:translate(var(--cx),-22px);opacity:0}}
+@keyframes kx-late{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.12);opacity:1}}
+.llama{animation:kx-llama 1.3s ease-in-out infinite;transform-origin:50% 100%}
+.burbu{animation:kx-burbu 2.2s ease-in infinite}
+.vaho{animation:kx-vaho 3.2s ease-out infinite}
+.chisp{animation:kx-chisp 1.1s ease-out infinite}
+</style>
+
+<h2>La cocina</h2>
+<p class="subtitle">Es el único taller cuyo producto <strong>se lo come todo el grupo</strong>. Los otros seis hacen una cosa para uno; un guiso se reparte, y eso lo convierte en el oficio del descanso — de la Fase P, que sigue pendiente. Y con 100 ingredientes en cinco categorías, es también el que más despensa tiene.</p>
+
+<div class="kx">
+  <div class="kx-tabs">
+    <div class="kx-tab">📖 Tu libro</div>
+    <div class="kx-tab on">🔥 Los fuegos</div>
+    <div class="kx-tab">Oficios</div>
+  </div>
+
+  <div class="kx-body">
+    <div class="kx-strip">
+      <div>
+        <div class="name">Asado de Oso Lechuza con raíces</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">
+          Pide 3 ingredientes · <strong style="color:var(--verdant)">da de comer a 4</strong> · <span style="color:var(--warm)">Cocina +4</span>
+        </div>
+      </div>
+      <div class="kx-cd">CD 13</div>
+    </div>
+
+    <div class="kx-mesa">
+      <span style="font-size:14px">🍲</span>
+      <span><strong>Esto no se guarda en la bolsa: se sirve.</strong> Un plato bien hecho alimenta a varios y el efecto dura hasta el siguiente descanso largo. Si sale mal, la cena es la cena — y el grupo entero se queda sin ella.</span>
+    </div>
+
+    <svg viewBox="0 0 470 300" style="width:100%;max-width:480px;display:block;margin:0 auto" role="img" aria-label="Fogón con sartén y olla al fuego">
+      <defs>
+        <linearGradient id="khierro" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4a5464"/><stop offset="50%" stop-color="#252d39"/><stop offset="100%" stop-color="#0f141b"/>
+        </linearGradient>
+        <linearGradient id="kcobre" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#e0a060"/><stop offset="45%" stop-color="#b87333"/><stop offset="100%" stop-color="#6b3f1c"/>
+        </linearGradient>
+        <linearGradient id="kfuego" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stop-color="#8e2a1c"/><stop offset="45%" stop-color="#ef6a3d"/><stop offset="100%" stop-color="#ffd76a"/>
+        </linearGradient>
+        <linearGradient id="kmadera" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#5c422a"/><stop offset="100%" stop-color="#2b1e13"/>
+        </linearGradient>
+        <radialGradient id="kbrillo" cx="50%" cy="60%" r="55%">
+          <stop offset="0%" stop-color="#ffb056" stop-opacity=".45"/><stop offset="100%" stop-color="#ef6a3d" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="ksoft"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      <!-- campana y utensilios colgados -->
+      <path d="M40,14 h390 l-24,40 h-342 Z" fill="#1b2029" opacity=".85"/>
+      <path d="M60,54 h350" stroke="#3b2a1a" stroke-width="4"/>
+      <path d="M110,58 v26 M110,84 q-9,6 0,12 q9,-6 0,-12" stroke="#8b96a5" stroke-width="3" fill="none"/>
+      <path d="M140,58 v22 M132,80 h16 v10 h-16 Z" stroke="#8b96a5" stroke-width="2.5" fill="#39424f"/>
+      <path d="M356,58 q-8,20 0,30 q8,-10 0,-30" fill="#5fbf7a" opacity=".7"/>
+      <path d="M378,58 q-7,18 0,26 q7,-9 0,-26" fill="#5fbf7a" opacity=".55"/>
+
+      <ellipse cx="150" cy="196" rx="96" ry="52" fill="url(#kbrillo)"/>
+      <ellipse cx="330" cy="200" rx="80" ry="44" fill="url(#kbrillo)" opacity=".55"/>
+
+      <!-- el fogón de piedra -->
+      <path d="M30,206 h410 v42 h-410 Z" fill="#2f3846"/>
+      <path d="M30,206 h410 v5 h-410 Z" fill="#5c6675" opacity=".45"/>
+      <path d="M36,248 h398 v10 h-398 Z" fill="#1b2029"/>
+
+      <!-- FUEGO VIVO (izquierda): la sartén -->
+      <g class="llama" fill="url(#kfuego)">
+        <path d="M150,206 c-15,-15 -6,-28 2,-36 -2,13 10,15 10,25 0,7 -5,11 -12,11 Z"/>
+        <path d="M124,208 c-11,-11 -4,-21 1,-27 -1,10 7,11 7,18 0,5 -3,9 -8,9 Z" opacity=".85"/>
+        <path d="M176,208 c-11,-11 -4,-21 1,-27 -1,10 7,11 7,18 0,5 -3,9 -8,9 Z" opacity=".85"/>
+      </g>
+      <ellipse cx="150" cy="164" rx="56" ry="15" fill="url(#khierro)"/>
+      <path d="M94,164 q56,26 112,0 l-6,10 q-50,22 -100,0 Z" fill="#1b2029"/>
+      <path d="M206,160 l52,-12 4,9 -52,12 Z" fill="url(#kmadera)"/>
+      <!-- lo que se dora -->
+      <ellipse cx="138" cy="163" rx="17" ry="7" fill="#8a4a22"/>
+      <ellipse cx="164" cy="166" rx="13" ry="5.5" fill="#a15a26"/>
+      <g fill="#ffd76a">
+        <circle class="chisp" style="--cx:-8px" cx="140" cy="158" r="1.8"/>
+        <circle class="chisp" style="--cx:6px;animation-delay:.4s" cx="156" cy="160" r="1.5"/>
+        <circle class="chisp" style="--cx:-2px;animation-delay:.8s" cx="148" cy="157" r="1.3"/>
+      </g>
+
+      <!-- FUEGO LENTO (derecha): la olla -->
+      <g fill="url(#kfuego)" opacity=".6">
+        <path d="M330,206 c-9,-9 -4,-18 1,-23 -1,9 6,10 6,17 0,4 -3,6 -7,6 Z"/>
+      </g>
+      <ellipse cx="330" cy="150" rx="46" ry="13" fill="#141a22"/>
+      <path d="M284,150 q46,20 92,0 l-8,52 q-38,14 -76,0 Z" fill="url(#kcobre)"/>
+      <ellipse cx="330" cy="150" rx="38" ry="10" fill="#6b4a2a"/>
+      <ellipse cx="330" cy="150" rx="34" ry="8.5" fill="#7a5a2a"/>
+      <g fill="#e8d6a8" opacity=".8">
+        <circle class="burbu" cx="316" cy="152" r="3"/>
+        <circle class="burbu" style="animation-delay:.7s" cx="336" cy="154" r="4"/>
+        <circle class="burbu" style="animation-delay:1.4s" cx="346" cy="150" r="2.4"/>
+      </g>
+      <g stroke="#cfe6d8" fill="none" stroke-linecap="round" opacity=".5">
+        <path class="vaho" d="M318,140 c-7,-12 7,-18 0,-28" stroke-width="4"/>
+        <path class="vaho" style="animation-delay:1.6s" d="M344,140 c-7,-12 7,-18 0,-26" stroke-width="3.5"/>
+      </g>
+      <path d="M376,168 l26,-6 3,8 -26,6 Z" fill="url(#kmadera)"/>
+
+      <!-- tabla de cortar delante -->
+      <path d="M170,262 h150 l-6,22 h-138 Z" fill="url(#kmadera)"/>
+      <ellipse cx="206" cy="270" rx="12" ry="5" fill="#8a4a22"/>
+      <ellipse cx="238" cy="272" rx="10" ry="4.5" fill="#5fbf7a"/>
+      <ellipse cx="268" cy="270" rx="11" ry="4.8" fill="#c9a35c"/>
+      <path d="M292,258 l30,-8 4,7 -30,8 Z" fill="#8b96a5"/>
+    </svg>
+
+    <div class="kx-eyebrow">Lo que pide la receta</div>
+    <div class="kx-slots">
+      <div><div class="kx-slot" style="border-color:rgba(239,106,61,.5)">🥩<span class="qty">2</span></div><div class="kx-name">Lomo de Oso Lechuza</div></div>
+      <div><div class="kx-slot" style="border-color:rgba(95,191,122,.5)">🥕<span class="qty">3</span></div><div class="kx-name">Raíces de Savalirwood</div></div>
+      <div><div class="kx-slot" style="border-color:rgba(201,163,92,.5)">🧂</div><div class="kx-name">Sal de Roca</div></div>
+    </div>
+
+    <div class="kx-phases">
+      <div class="kx-phase">
+        <h4>1 · La despensa</h4>
+        <p>Un plato pide <strong>equilibrio</strong>, no una lista. Falta verdura y sobra grasa: eso se ve antes de encender.</p>
+        <div class="kx-cats">
+          <span class="kx-cat ok">carne ✓</span>
+          <span class="kx-cat ok">vegetal ✓</span>
+          <span class="kx-cat">lácteo</span>
+          <span class="kx-cat falta">despensa ✗</span>
+          <span class="kx-cat">pescado</span>
+        </div>
+      </div>
+
+      <div class="kx-phase on">
+        <h4>2 · Dos fuegos</h4>
+        <p><strong>La sartén y la olla van a la vez.</strong> Solo puedes mirar una: lo que dejas solo se sigue haciendo.</p>
+        <div class="kx-fuegos">
+          <div class="kx-fuego mira">
+            <div class="et">🔥 sartén</div>
+            <div class="kx-barra"><span class="cur" style="left:52%"></span></div>
+          </div>
+          <div class="kx-fuego">
+            <div class="et">🍲 olla</div>
+            <div class="kx-barra"><span class="cur" style="left:74%"></span></div>
+          </div>
+        </div>
+        <p style="font-size:9.5px;color:var(--dim);margin-top:5px">Cambia de fuego con el botón. La olla se está pasando.</p>
+      </div>
+
+      <div class="kx-phase">
+        <h4>3 · La cata</h4>
+        <p>Prueba y corrige. <strong>Te dice si va soso o pasado</strong>, pero tienes tres cucharadas contadas.</p>
+        <div class="kx-cata">
+          <span class="kx-tiro soso">↓</span>
+          <span class="kx-tiro pasado">↑</span>
+          <span class="kx-tiro ahora">?</span>
+          <span style="font-size:9.5px;color:var(--dim);margin-left:4px">te pasaste de sal; baja</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="kx-stop">
+      <div class="btn">■ &nbsp;CAMBIAR DE FUEGO &nbsp;<span style="opacity:.8;font-weight:600">(o espacio)</span></div>
+      <div class="alt">Guisar sin manipular</div>
+    </div>
+
+    <div class="kx-mod">
+      Manipulación:
+      <span class="kx-pip good">+1</span><span class="kx-pip bad">−1</span><span class="kx-pip">0</span>
+      → tirada <strong style="color:var(--bronze-bright)">1d20 +4 +0</strong> contra CD 13
+      &nbsp;·&nbsp; <span style="color:#bfe8cb">daría de comer a 4</span>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:22px">Por qué estas tres</h3>
+<p class="subtitle" style="max-width:680px">Los seis anteriores se juegan de uno en uno: haces una cosa, la paras, pasas a la siguiente. La cocina trae lo único que ninguno tiene —y que es lo que se siente al cocinar de verdad:</p>
+<ul style="font-size:13px;line-height:1.6;color:var(--muted);max-width:680px">
+  <li><strong>Dos cosas a la vez.</strong> La sartén no espera a que termines con la olla. Es la única fase de los siete oficios donde <em>desatender</em> es una forma de fallar: no fallas por hacerlo mal, fallas por no estar.</li>
+  <li><strong>El juego te contesta.</strong> La cata te dice «soso» o «pasado» y tú corriges. En los otros seis aciertas o fallas a ciegas; aquí hay información, y saber usarla en tres cucharadas es la habilidad.</li>
+  <li><strong>Y lo que sale se reparte.</strong> Es el único producto que no va a una bolsa: se sirve, alimenta a varios y dura hasta el descanso largo.</li>
+</ul>
+
+<h3>Lo que hay que decidir</h3>
+<div class="options">
+  <div class="option" data-choice="raciones" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>El plato da raciones, y la tirada decide cuántas</h3>
+      <p>Una receta declara para cuántos es; la manipulación y el dado suben o bajan ese número. Un guiso regular da de comer a dos en vez de a cuatro. <strong>Nadie se queda sin cenar por un mal dado</strong>, solo comen menos.</p></div>
+  </div>
+  <div class="option" data-choice="todoonada" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>Todo o nada, como los demás talleres</h3>
+      <p>Sale el plato o se pierde la comida. Es coherente con los otros seis y más simple de construir, pero castiga al grupo entero por una tirada.</p></div>
+  </div>
+  <div class="option" data-choice="calidad" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Siempre sale algo, pero con calidad</h3>
+      <p>Nunca se pierde la cena: sale <em>rancho</em>, <em>plato</em> o <em>banquete</em>, y solo el bueno da beneficio. Exige tres versiones por receta.</p></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px"><strong>Y el tope de siempre</strong>: cocina tampoco tiene catálogo de qué produce. Los 100 son ingredientes, no platos. Aunque aquí hay un atajo que los otros no tienen — <strong>los platos se pueden nombrar a partir de lo que llevan</strong>, si prefieres no escribir cien recetas a mano.</p>
