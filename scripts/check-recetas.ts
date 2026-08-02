@@ -19,6 +19,7 @@ import { modDmValido, MOD_DM_MIN, MOD_DM_MAX } from "../lib/tallerDm";
 import {
   TOPE, totalManipulacion, puntoEchar, puntoPipeta, puntoCocer, ordenDeReceta,
   categoriaDominante, danoDeReceta, esDesastre, DANO_POR_CATEGORIA, PIPETA, COCER,
+  COLOR_CATEGORIA, colorDeCategoria,
   type Punto,
 } from "../lib/manipulacion";
 import { MINUTES_PER_DAY } from "../lib/gameClock";
@@ -402,6 +403,18 @@ check(`el mapa de daño cubre las ${categoriasDelCatalogo.size} categorías de a
 // en que un Map decida iterar.
 check("la categoría dominante es estable entre llamadas",
   RECETAS.every((r) => categoriaDominante(r) === categoriaDominante(r)));
+
+// El color de cada categoría. Es lo único que distingue un hueco de otro
+// mientras los 369 PNG no existan, así que una categoría sin color saldría gris
+// y todos los huecos se verían iguales.
+const sinColor = [...categoriasDelCatalogo].filter((c) => !(c in COLOR_CATEGORIA));
+check(`toda categoría de alquimia tiene color (${sinColor.length} sin él)`, sinColor.length === 0);
+check("las herramientas también tienen color propio", "herramienta" in COLOR_CATEGORIA);
+// Dos categorías del mismo color serían dos categorías que no se distinguen.
+const colores = [...categoriasDelCatalogo].map((c) => COLOR_CATEGORIA[c]);
+check("ninguna categoría comparte color con otra", new Set(colores).size === colores.length);
+check("una categoría desconocida no se cuela con color de verdad",
+  colorDeCategoria("inventada") === colorDeCategoria(undefined));
 
 // Sin materiales no habría fase 1 que jugar.
 check("toda receta lleva al menos un material", RECETAS.every((r) => r.materiales.length > 0));

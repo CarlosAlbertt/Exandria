@@ -116,6 +116,33 @@ export const DANO_LABEL: Record<TipoDano, string> = {
 };
 
 /**
+ * El color de cada categoría de material.
+ *
+ * Es lo que hace legible un hueco **de un vistazo y sin leer el nombre**: la
+ * flora va en verde, la fauna en ámbar, los minerales en azul y las esencias en
+ * violeta. Con 369 materiales y un icono genérico por categoría, el color es lo
+ * único que distingue una fila de huecos a tamaño de pulgar.
+ *
+ * Sale entero de la paleta de la app (`app/globals.css`), sin colores nuevos:
+ * verdante, marcial, arcano, violeta y bronce.
+ *
+ * ⚠️ El gate exige que cubra **todas** las categorías del catálogo. Una quinta
+ * categoría mañana tiene que romper aquí, no salir gris en silencio.
+ */
+export const COLOR_CATEGORIA: Record<string, string> = {
+  flora: "#5fbf7a", // verdante
+  fauna: "#e0843c", // marcial
+  mineral: "#6aa9f0", // arcano
+  esencia: "#9d8cf0", // violeta
+  herramienta: "#c9a35c", // bronce: no se gasta, y se ve que no es un ingrediente
+};
+
+/** El color de un material, o el bronce apagado si no tiene categoría. */
+export function colorDeCategoria(categoria: string | undefined): string {
+  return COLOR_CATEGORIA[categoria ?? ""] ?? "#94a0ad";
+}
+
+/**
  * La categoría de la que más lleva la receta, **contando cantidades**: dos
  * raíces pesan más que un mineral suelto.
  *

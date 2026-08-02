@@ -10,7 +10,10 @@ import { recetaPorSlug, produceNombre, produceRareza, type Receta } from "@/data
 import { RAREZA_LABEL } from "@/data/pociones";
 import { recetasSabidas, recetasDeArena, bolsaDeArena, sabeOficio, requisitos, puedePreparar, consumir, anadirProducto, cupoLibre, cupoHasta, diasDeCupo } from "@/lib/recetario";
 import { OFICIO_PERICIA, materialPorN } from "@/lib/materiales";
-import { colorBrebaje, danoDeReceta, esDesastre, ordenDeReceta, DANO_LABEL, type Punto } from "@/lib/manipulacion";
+import {
+  colorBrebaje, colorDeCategoria, danoDeReceta, esDesastre, ordenDeReceta,
+  puntoEchar, totalManipulacion, DANO_LABEL, type Punto,
+} from "@/lib/manipulacion";
 import { aplicarDaño } from "@/lib/estado";
 import type { ModoDm } from "@/lib/tallerDm";
 import type { PlayState } from "@/lib/recursos";
@@ -20,16 +23,12 @@ import HuecoMaterial from "@/components/taller/HuecoMaterial";
 import Manipulacion from "@/components/taller/Manipulacion";
 
 /**
- * El taller de Alquimia: el **libro** de recetas descubiertas y el **banco de
- * trabajo**, donde está el caldero.
+ * El taller de Alquimia: el **libro** de recetas a la izquierda y el **caldero**
+ * a la derecha, que es donde se juega.
  *
  * El libro enseña **solo lo que el personaje ha descubierto**, no el catálogo:
  * la gracia del oficio es ir aprendiendo. Lo que no sabe no aparece — ni en gris
  * ni con candado, porque un hueco numerado ya cuenta que existe algo ahí.
- *
- * El banco ocupa el ancho entero en vez de media pantalla: es lo que deja sitio
- * a las tres fases de manipulación (echar, pipeta, cocer) sin apretarlas, y es
- * la cáscara que heredarán los otros cinco oficios.
  *
  * Se apoya en `useInventarioVivo`, el mismo hook que la pantalla de inventario:
  * escribe las columnas `items`/`equipment` con el mismo debounce y por el mismo
@@ -41,6 +40,17 @@ import Manipulacion from "@/components/taller/Manipulacion";
  * aparte —se le pasa `bolsaDeArena` a las mismas funciones que usa el jugador—
  * porque una pantalla que solo mira el DM no sería la que juega la mesa.
  */
+/** En qué posición de la olla cayó la ocurrencia número `saltar+1` de `n`. */
+function posicionDeLaEnesima(echado: number[], n: number, saltar: number): number {
+  let vistas = 0;
+  for (let i = 0; i < echado.length; i++) {
+    if (echado[i] !== n) continue;
+    if (vistas === saltar) return i;
+    vistas++;
+  }
+  return -1;
+}
+
 export default function Caldero({ userId, dm }: { userId: string | null; dm: ModoDm | null }) {
   const inv = useInventarioVivo(userId, "self");
   // El cupo se mide en días de JUEGO, así que se compara con el reloj de
@@ -48,16 +58,21 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
   // que liberarlo, que es como la mesa entiende «vuelve dentro de tres días».
   const { nowGameMin } = useGameClock();
   const [sel, setSel] = useState<string | null>(null);
-  const [vista, setVista] = useState<"libro" | "banco">("libro");
   const [busy, setBusy] = useState(false);
-  const [manipulando, setManipulando] = useState(false);
   const [msg, setMsg] = useState<{ texto: string; exito: boolean } | null>(null);
   const [query, setQuery] = useState("");
   const [reducido, setReducido] = useState(false);
 
-  // Si el usuario pide que nada se mueva, las fases no animan y «preparar sin
-  // manipular» pasa a ser el camino principal. La preferencia se lee en efecto
-  // y no en render: en el servidor no hay `matchMedia`.
+  /* La fase 1 (echar) vive AQUÍ y no en `Manipulacion` porque se juega
+     arrastrando los huecos **al dibujo del caldero**: el blanco del arrastre es
+     la olla, y la olla es de este componente. */
+  const [fase, setFase] = useState<"quieto" | "echar" | "resto">("quieto");
+  const [echado, setEchado] = useState<number[]>([]);
+  const [puntoDeEchar, setPuntoDeEchar] = useState<Punto | null>(null);
+  const [sobreOlla, setSobreOlla] = useState(false);
+
+  // Si el usuario pide que nada se mueva, las fases no animan. La preferencia se
+  // lee en efecto y no en render: en el servidor no hay `matchMedia`.
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     setReducido(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -150,6 +165,30 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
     await saveCharacter(characterId, { play_state: aplicarDaño(previo, dano, inv.derived.maxHp) });
   }
 
+  /** Deja el banco como estaba: ni fase a medias ni materiales en la olla. */
+  function reposar() {
+    setFase("quieto");
+    setEchado([]);
+    setPuntoDeEchar(null);
+    setSobreOlla(false);
+  }
+
+  /**
+   * Echa un material a la olla. Lo llaman **el arrastre y el clic**: el arrastre
+   * es lo natural con ratón, pero en táctil no existe, y sin el clic el taller
+   * no se podría jugar desde el móvil.
+   */
+  function echarMaterial(n: number, orden: number[]) {
+    if (fase !== "echar") return;
+    const next = [...echado, n];
+    setEchado(next);
+    setSobreOlla(false);
+    if (next.length < orden.length) return;
+    // Ya está todo dentro: se cierra la fase 1 y arrancan pipeta y aguja.
+    setPuntoDeEchar(puntoEchar(next, orden));
+    setFase("resto");
+  }
+
   /**
    * Prepara la receta. `bono` es lo que han sacado las manos (±3); 0 cuando se
    * prepara sin manipular, que **siempre** es una salida disponible.
@@ -164,7 +203,6 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
       return;
     }
     setBusy(true);
-    setManipulando(false);
     setMsg(null);
 
     const nombre = produceNombre(r);
@@ -181,6 +219,8 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
     const desastre = !exito && esDesastre(cara, bono);
     const tipo = danoDeReceta(r);
     const dano = desastre && tipo ? (rollFallback("1d4")?.total ?? 1) : 0;
+
+    reposar();
 
     // La caja de arena termina aquí: **no toca la bolsa, ni el cupo, ni los PG**.
     // No hay ficha donde escribirlos, y lo que sale del caldero se tira. Lo que
@@ -269,42 +309,20 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
   }
 
   const rareza = receta ? produceRareza(receta) : undefined;
-  const nombresDeReceta: Record<number, string> = {};
-  if (receta) {
-    for (const m of receta.materiales) {
-      const mat = materialPorN(receta.oficio, m.n);
-      if (mat) nombresDeReceta[m.n] = mat.name;
-    }
-  }
+  const orden = receta ? ordenDeReceta(receta) : [];
+  // El siguiente hueco que la receta espera, para poder decirlo sin desvelar el
+  // resto: si se cantara la lista entera no habría orden que acertar.
+  const echando = fase === "echar";
 
   return (
-    <div>
-      {/* Libro y banco son hermanos, no dos columnas: el banco necesita el ancho
-          entero para las tres fases, y así los otros cinco oficios heredan la
-          misma cáscara. */}
-      <div className="flex gap-1 mb-4 border-b" style={{ borderColor: "var(--color-line)" }}>
-        <button type="button" onClick={() => setVista("libro")}
-          className="px-4 py-2 font-ui text-[12px] font-bold rounded-t-lg transition-colors"
-          style={{
-            color: vista === "libro" ? "var(--color-bronze-bright)" : "var(--color-dim)",
-            background: vista === "libro" ? "var(--color-panel)" : "transparent",
-            boxShadow: vista === "libro" ? "inset 0 2px 0 var(--color-bronze)" : undefined,
-          }}>
-          <i className="fas fa-book mr-2" />{dm ? "El recetario entero" : "Tu libro"}
-        </button>
-        <button type="button" onClick={() => setVista("banco")}
-          className="px-4 py-2 font-ui text-[12px] font-bold rounded-t-lg transition-colors"
-          style={{
-            color: vista === "banco" ? "var(--color-bronze-bright)" : "var(--color-dim)",
-            background: vista === "banco" ? "var(--color-panel)" : "transparent",
-            boxShadow: vista === "banco" ? "inset 0 2px 0 var(--color-bronze)" : undefined,
-          }}>
-          <i className="fas fa-fire mr-2" />El banco
-        </button>
-      </div>
-
+    <div className="grid md:grid-cols-2 gap-6">
       {/* ------------------------------ EL LIBRO ------------------------------ */}
-      {vista === "libro" && (
+      <section>
+        <p className="eyebrow mb-3">
+          <i className="fas fa-book mr-2" style={{ color: "var(--color-bronze)" }} />
+          {dm ? "El recetario entero" : "Tu libro de recetas"}
+        </p>
+
         <div className="panel-raised p-4">
           <div className="flex items-baseline justify-between gap-2 mb-3">
             <p className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>
@@ -330,14 +348,14 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
                 : "Ninguna receta se llama así."}
             </p>
           ) : (
-            <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <ul className="space-y-2">
               {filtrado.map((r) => {
                 const rar = produceRareza(r);
                 const puede = puedePreparar(r, dm ? bolsaDeArena(r) : inv.items);
                 return (
                   <li key={r.slug}>
                     <button
-                      onClick={() => { setSel(r.slug); setMsg(null); setManipulando(false); setVista("banco"); }}
+                      onClick={() => { setSel(r.slug); setMsg(null); reposar(); }}
                       className="w-full panel p-3 text-left transition-colors hover:border-[var(--color-bronze)]"
                       style={{ borderColor: sel === r.slug ? "var(--color-bronze)" : undefined }}
                     >
@@ -355,6 +373,14 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
                         {r.inicial && " · la sabes de siempre"}
                         {r.cupo && " · una cada 1d6 días"}
                       </p>
+                      {/* Los colores de lo que pide, aquí ya: se ve de un vistazo
+                          si una receta es de plantas o de minerales. */}
+                      <span className="flex gap-1 mt-2">
+                        {r.materiales.map((m, i) => (
+                          <span key={i} className="mat-punto"
+                            style={{ background: colorDeCategoria(materialPorN(r.oficio, m.n)?.category) }} />
+                        ))}
+                      </span>
                       {!puede && (
                         <p className="font-ui text-[11px] mt-1" style={{ color: "var(--color-dim)" }}>
                           <i className="fas fa-circle-exclamation mr-1" />te faltan ingredientes
@@ -367,63 +393,118 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
             </ul>
           )}
         </div>
-      )}
+      </section>
 
-      {/* ------------------------------ EL BANCO ------------------------------ */}
-      {vista === "banco" && (
+      {/* ----------------------------- EL CALDERO ----------------------------- */}
+      <section>
+        <p className="eyebrow mb-3">
+          <i className="fas fa-flask mr-2" style={{ color: "var(--color-verdant)" }} />
+          El caldero
+        </p>
+
         <div className="panel-raised p-4">
           {!receta ? (
             <>
               <CalderoSvg color={colorBrebaje(undefined)} vacio />
               <p className="font-ui text-[13px] italic text-center mt-3" style={{ color: "var(--color-dim)" }}>
-                El caldero está frío. Elige una receta en el libro.
+                El caldero borbotea vacío. Elige una receta del libro.
               </p>
             </>
           ) : (
             <>
-              {/* La tira: qué pide, qué sale, con qué se tira y contra cuánto.
-                  Va arriba porque es lo que se consulta a mitad de manipulación. */}
-              <div className="flex items-center justify-between gap-3 panel p-3 mb-4">
-                <div>
-                  <p className="font-display font-bold text-[17px]" style={{ color: "var(--color-bronze-bright)" }}>
-                    {produceNombre(receta)}
+              <h3 className="font-display text-xl font-bold mb-1" style={{ color: "var(--color-bronze-bright)" }}>
+                {produceNombre(receta)}
+              </h3>
+              <p className="font-ui text-[12px] mb-3" style={{ color: "var(--color-muted)" }}>
+                Se tira <strong>Alquimia {fmtMod(mod)}</strong> contra <strong>CD {receta.cd}</strong>.
+              </p>
+
+              {/* La olla es el BLANCO del arrastre. Se marca al pasar por encima
+                  para que no haya que adivinar dónde se suelta. */}
+              <div
+                className={`olla-zona${echando ? " is-activa" : ""}${sobreOlla ? " is-sobre" : ""}`}
+                onDragOver={(e) => { if (echando) { e.preventDefault(); setSobreOlla(true); } }}
+                onDragLeave={() => setSobreOlla(false)}
+                onDrop={(e) => {
+                  if (!echando) return;
+                  e.preventDefault();
+                  const n = Number(e.dataTransfer.getData("text/plain"));
+                  if (Number.isFinite(n)) echarMaterial(n, orden);
+                }}
+              >
+                <CalderoSvg
+                  color={colorBrebaje(rareza)}
+                  fuego={fase !== "quieto" || busy}
+                  burbujas={fase !== "quieto" || busy}
+                />
+                {echando && (
+                  <p className="olla-pista">
+                    <i className="fas fa-hand-pointer mr-2" />
+                    Arrastra aquí el material {echado.length + 1} de {orden.length}
+                    <span className="block text-[10px] opacity-70 mt-0.5">o pulsa el hueco, si vas en táctil</span>
                   </p>
-                  <p className="font-ui text-[11px] mt-0.5" style={{ color: "var(--color-muted)" }}>
-                    Pide {receta.materiales.length} material{receta.materiales.length === 1 ? "" : "es"} ·
-                    sale 1 · <span style={{ color: "var(--color-warm)" }}>Alquimia {fmtMod(mod)}</span>
-                  </p>
-                </div>
-                <span className="font-ui text-[11px] font-bold whitespace-nowrap px-2.5 py-1 rounded-full"
-                  style={{ color: "var(--color-arcane-bright)", border: "1px solid var(--color-arcane)55" }}>
-                  CD {receta.cd}
-                </span>
+                )}
               </div>
 
-              <CalderoSvg
-                color={colorBrebaje(rareza)}
-                fuego={manipulando || busy}
-                burbujas={manipulando || busy}
-              />
-
-              <p className="eyebrow text-center mt-3 mb-2">Lo que pide la receta</p>
-              <div className="flex flex-wrap justify-center gap-2.5">
+              <ul className="space-y-1.5 mb-3 mt-3">
                 {lineas.map((f) => {
+                  const ok = f.tiene >= f.necesita;
                   const mat = materialPorN(receta.oficio, f.n);
+                  const cat = f.esHerramienta ? "herramienta" : mat?.category;
+                  return (
+                    <li key={`${f.esHerramienta ? "h" : "m"}-${f.n}`} className="flex items-center justify-between gap-3 font-ui text-[13px]">
+                      <span style={{ color: ok ? "var(--color-warm)" : "var(--color-dim)" }}>
+                        <span className="mat-punto mr-2" style={{ background: colorDeCategoria(cat) }} />
+                        {f.nombre}
+                        {/* Una herramienta se exige a mano pero NO se gasta. Se
+                            dice en la propia línea para que nadie tema perderla. */}
+                        {f.esHerramienta && (
+                          <span className="ml-2 text-[10px] italic" style={{ color: "var(--color-dim)" }}>
+                            (no se gasta)
+                          </span>
+                        )}
+                      </span>
+                      <span className="whitespace-nowrap text-[12px]" style={{ color: ok ? "var(--color-muted)" : "var(--color-ember)" }}>
+                        {f.tiene} / {f.necesita}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* Los huecos, del mismo tamaño que los de la bolsa. En la fase de
+                  echar son lo que se arrastra; el resto del tiempo dicen qué
+                  pide la receta y de qué categoría es cada cosa. */}
+              <div className="flex flex-wrap justify-center gap-2.5 mb-3">
+                {receta.materiales.map((m, i) => {
+                  const mat = materialPorN(receta.oficio, m.n);
+                  const linea = lineas.find((l) => !l.esHerramienta && l.n === m.n);
+                  // Una receta puede pedir dos veces el mismo `n`, así que un
+                  // hueco está dentro cuando ya se han echado MÁS unidades de
+                  // ese material que huecos suyos hay antes en la fila.
+                  const previas = receta.materiales.slice(0, i).filter((x) => x.n === m.n).length;
+                  const puestas = echado.filter((x) => x === m.n).length;
+                  const yaEsta = echando && puestas > previas;
+                  const dentro = yaEsta ? posicionDeLaEnesima(echado, m.n, previas) : -1;
                   return (
                     <HuecoMaterial
-                      key={`${f.esHerramienta ? "h" : "m"}-${f.n}`}
+                      key={`${m.n}-${i}`}
                       oficio={receta.oficio}
-                      n={f.n}
-                      nombre={f.nombre}
-                      categoria={f.esHerramienta ? "herramienta" : mat?.category}
-                      cantidad={f.necesita}
-                      estado={f.tiene >= f.necesita ? "listo" : "falta"}
+                      n={m.n}
+                      nombre={mat?.name ?? `Material ${m.n}`}
+                      categoria={mat?.category}
+                      cantidad={m.qty}
+                      estado={yaEsta ? "echado" : (linea && linea.tiene >= linea.necesita) ? "listo" : "falta"}
+                      orden={yaEsta ? dentro + 1 : undefined}
+                      arrastrable={echando && !yaEsta}
+                      onClick={echando && !yaEsta ? () => echarMaterial(m.n, orden) : undefined}
+                      onDragStart={(e) => e.dataTransfer.setData("text/plain", String(m.n))}
                     />
                   );
                 })}
               </div>
 
-              <p className="font-ui text-[11px] mt-3 text-center" style={{ color: "var(--color-dim)" }}>
+              <p className="font-ui text-[11px] mb-3 text-center" style={{ color: "var(--color-dim)" }}>
                 {dm
                   ? "Caja de arena: la tirada es de verdad, pero no se gasta ni se guarda nada."
                   : "Al fallar, los ingredientes se pierden igual. Un desastre además salpica."}
@@ -432,7 +513,7 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
               {/* El cupo se explica ANTES de tocar el botón: un botón apagado sin
                   motivo se lee como «te faltan cosas», que es justo lo que no es. */}
               {receta.cupo && (
-                <p className="font-ui text-[11px] mt-2 text-center" style={{ color: cupoPillado ? "var(--color-ember)" : "var(--color-arcane-bright)" }}>
+                <p className="font-ui text-[11px] mb-3 text-center" style={{ color: cupoPillado ? "var(--color-ember)" : "var(--color-arcane-bright)" }}>
                   <i className="fas fa-hourglass-half mr-1.5" />
                   {cupoPillado
                     ? `El alambique se está asentando: faltan ${diasQueFaltan} día(s) para volver a intentar una de las dos grandes.`
@@ -440,23 +521,29 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
                 </p>
               )}
 
-              {manipulando ? (
+              {fase === "resto" && puntoDeEchar !== null ? (
                 <Manipulacion
-                  ordenReceta={ordenDeReceta(receta)}
-                  nombres={nombresDeReceta}
+                  yaSacado={[puntoDeEchar]}
                   reducido={reducido}
-                  onCancelar={() => setManipulando(false)}
-                  onListo={(bono: number, _puntos: Punto[]) => { void preparar(receta, bono); }}
+                  onCancelar={reposar}
+                  onListo={(puntos) => {
+                    void preparar(receta, totalManipulacion([puntoDeEchar, ...puntos]));
+                  }}
                 />
+              ) : fase === "echar" ? (
+                <button type="button" onClick={reposar}
+                  className="w-full font-ui text-[11px] underline py-2" style={{ color: "var(--color-dim)" }}>
+                  dejarlo
+                </button>
               ) : (
-                <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <div className="flex flex-col gap-2">
                   {/* Manipular es lo que da el ±3; «sin manipular» tira a pelo y
                       **siempre está**: es accesibilidad, y es el atajo para la
                       décima poción de la tarde. */}
                   <button
-                    onClick={() => { setMsg(null); setManipulando(true); }}
+                    onClick={() => { setMsg(null); setEchado([]); setPuntoDeEchar(null); setFase("echar"); }}
                     disabled={busy || !listo}
-                    className="btn-gold flex-1 !py-2.5 text-[13px] disabled:opacity-40"
+                    className="btn-gold w-full !py-2.5 text-[13px] disabled:opacity-40"
                   >
                     <i className="fas fa-mortar-pestle mr-2" />
                     {busy
@@ -470,7 +557,7 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
                   <button
                     onClick={() => { void preparar(receta, 0); }}
                     disabled={busy || !listo}
-                    className="panel px-4 py-2.5 font-ui text-[12px] font-bold disabled:opacity-40 hover:border-[var(--color-bronze)] transition-colors"
+                    className="panel px-4 py-2 font-ui text-[12px] font-bold disabled:opacity-40 hover:border-[var(--color-bronze)] transition-colors"
                     style={{ color: "var(--color-muted)" }}
                   >
                     Preparar sin manipular
@@ -479,20 +566,20 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
               )}
 
               {msg && (
-                <p className="font-ui text-[13px] mt-4 text-center" style={{ color: msg.exito ? "var(--color-verdant)" : "var(--color-ember)" }}>
+                <p className="font-ui text-[13px] mt-4" style={{ color: msg.exito ? "var(--color-verdant)" : "var(--color-ember)" }}>
                   {msg.texto}
                 </p>
               )}
             </>
           )}
         </div>
-      )}
 
-      {inv.error && (
-        <p className="font-ui text-[12px] mt-3" style={{ color: "var(--color-ember)" }}>
-          {inv.error}
-        </p>
-      )}
+        {inv.error && (
+          <p className="font-ui text-[12px] mt-3" style={{ color: "var(--color-ember)" }}>
+            {inv.error}
+          </p>
+        )}
+      </section>
     </div>
   );
 }
