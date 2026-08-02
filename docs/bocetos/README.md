@@ -22,6 +22,7 @@ Las maquetas se dibujan en `.superpowers/brainstorm/`, que está en el
 | `forja-fragua.html` | Yunque, martillo y temple | **Construido** sin piezas que forjar, ver `components/taller/Fragua.tsx` |
 | `destilacion-alambique.html` | Alambique, serpentín y el corte | Aprobado, **sin construir** |
 | `cristalografia-banco.html` | La veta, el cincel y el punto de rotura | Aprobado, **sin construir** |
+| `tatuaje-camilla.html` | La plantilla, el trazo y el portador | Aprobado, **sin construir** |
 
 ## Lo que NO son
 
