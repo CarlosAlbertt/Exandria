@@ -824,3 +824,97 @@ canvas.dice-box-canvas {
   .cls-stage .scene-detail { grid-area: 2 / 1 / 3 / 4; }
   .cls-subs { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   EL BANCO DE TRABAJO — caldero, huecos de material y manipulación
+   El caldero es SVG (components/taller/CalderoSvg.tsx): lo que se anima
+   aquí es el brebaje y el fuego, no una imagen.
+   ===================================================================== */
+.caldero-svg { width: 100%; max-width: 420px; display: block; margin: 0 auto; }
+
+@keyframes caldero-burbuja {
+  0%   { transform: translateY(0) scale(0.55); opacity: 0; }
+  18%  { opacity: 0.85; }
+  80%  { opacity: 0.5; }
+  100% { transform: translateY(-26px) scale(1.15); opacity: 0; }
+}
+@keyframes caldero-llama {
+  0%, 100% { transform: scaleY(1) translateY(0); opacity: 0.95; }
+  35%      { transform: scaleY(1.12) translateY(-3px); opacity: 1; }
+  70%      { transform: scaleY(0.92) translateY(1px); opacity: 0.85; }
+}
+@keyframes caldero-vapor {
+  0%   { transform: translateY(0) scaleX(1); opacity: 0; }
+  25%  { opacity: 0.4; }
+  100% { transform: translateY(-40px) scaleX(1.5); opacity: 0; }
+}
+.caldero-burbuja { animation: caldero-burbuja 2.6s ease-in infinite; }
+.caldero-llama { animation: caldero-llama 1.5s ease-in-out infinite; transform-origin: 50% 100%; }
+.caldero-vapor { animation: caldero-vapor 5s ease-out infinite; }
+
+/* El hueco de material: mismo cuadrado que el de la bolsa.
+   La imagen del material es un FONDO sobre el icono de categoría, así que un
+   PNG que todavía no existe no deja un hueco roto — se ve el icono debajo. */
+.mat-hueco {
+  position: relative;
+  width: 56px; height: 56px;
+  border-radius: 9px;
+  border: 1px solid var(--color-line);
+  background: linear-gradient(160deg, var(--color-raised), #101823);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.mat-hueco.is-listo { border-color: var(--color-bronze-deep); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 12px rgba(201,163,92,0.16); }
+.mat-hueco.is-falta { border-color: rgba(239, 106, 61, 0.45); }
+.mat-hueco.is-echado { border-color: var(--color-verdant); box-shadow: 0 0 14px rgba(95,191,122,0.28); opacity: 0.55; }
+.mat-hueco.is-clickable:hover { transform: translateY(-2px); border-color: var(--color-bronze); }
+.mat-hueco .mat-img {
+  position: absolute; inset: 4px;
+  background-size: contain; background-position: center; background-repeat: no-repeat;
+}
+.mat-hueco .mat-icono { font-size: 21px; color: var(--color-bronze); opacity: 0.85; }
+.mat-hueco .mat-qty {
+  position: absolute; right: 3px; bottom: 2px;
+  font-family: var(--font-ui); font-size: 9px; font-weight: 800; color: var(--color-bronze);
+  text-shadow: 0 1px 3px #000;
+}
+.mat-hueco .mat-orden {
+  position: absolute; left: -5px; top: -5px;
+  width: 17px; height: 17px; border-radius: 999px;
+  background: var(--color-bronze); color: var(--color-night);
+  font-family: var(--font-ui); font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.mat-nombre { width: 56px; margin-top: 4px; text-align: center; font-family: var(--font-ui); font-size: 9px; line-height: 1.15; color: var(--color-muted); }
+
+/* La banda de la pipeta y el arco de cocer */
+.manip-banda {
+  position: relative; height: 14px; border-radius: 7px; margin: 8px 0 4px;
+  background: linear-gradient(90deg,
+    #3a2a22 0%, #6b4a2a 32%, var(--color-verdant) 45%, var(--color-verdant) 55%, #6b4a2a 68%, #3a2a22 100%);
+}
+.manip-cursor {
+  position: absolute; top: -3px; width: 3px; height: 20px; border-radius: 2px;
+  background: var(--color-bronze-bright); box-shadow: 0 0 8px var(--color-bronze-bright);
+  transform: translateX(-50%);
+}
+.manip-parar {
+  flex: 1; padding: 12px; border-radius: 9px; font-family: var(--font-ui);
+  font-size: 13px; font-weight: 800; letter-spacing: 0.01em;
+  background: linear-gradient(180deg, #c4402c, #8e2a1c); color: #ffe9e2;
+  border: 1px solid #e0745c; box-shadow: 0 4px 16px rgba(196, 64, 44, 0.35);
+}
+.manip-parar:disabled { opacity: 0.35; box-shadow: none; }
+.manip-punto {
+  display: inline-flex; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 6px;
+  align-items: center; justify-content: center;
+  font-family: var(--font-ui); font-size: 11px; font-weight: 800;
+  border: 1px solid var(--color-line); background: var(--color-night); color: var(--color-dim);
+}
+.manip-punto.is-bien { color: var(--color-verdant); border-color: rgba(95, 191, 122, 0.5); }
+.manip-punto.is-mal { color: var(--color-ember); border-color: rgba(239, 106, 61, 0.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  .caldero-burbuja, .caldero-llama, .caldero-vapor { animation: none; }
+}
