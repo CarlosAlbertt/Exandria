@@ -1,0 +1,157 @@
+// Bestiario D&D 2024 — LOTE 04. Monster Manual 2024, páginas 26-28 del libro
+// (29-31 del PDF), leídas de la página renderizada.
+//
+// Convención de troceo y criterio: ver la cabecera de `lote-01.ts`.
+// El Bandido raso sale en estas páginas y NO está aquí: ya lo teníamos.
+import type { Monster } from "./types";
+
+export const BALOR: Monster = {
+  slug: "balor",
+  name: "Balor",
+  nameEn: "Balor",
+  size: "Enorme",
+  type: "Infernal (demonio)",
+  alignment: "Caótico Malvado",
+  ac: 19,
+  initiative: 14,
+  hp: 300,
+  hpFormula: "24d12 + 144",
+  speeds: "12 m, vuelo 24 m",
+  abilities: { fue: 26, des: 15, con: 22, int: 20, sab: 16, car: 22 },
+  saves: "Fue +8, Con +12, Sab +9",
+  skills: "Percepción +9",
+  resistances: "Frío, relámpago",
+  immunities: "Fuego, veneno; Encantado, Asustado, Envenenado",
+  senses: "Visión verdadera 36 m; Percepción pasiva 19",
+  languages: "Abisal; telepatía 36 m",
+  cr: "19",
+  xp: 22000,
+  pb: 6,
+  traits: [
+    { name: "Estertores Mortales", text: "Al morir explota. Salvación de Destreza CD 20 para cada criatura en una emanación de 9 m. Fallo: 31 (9d6) de fuego más 31 (9d6) de fuerza. Éxito: la mitad. Falle o no: si muere fuera del Abismo, gana un cuerpo nuevo al instante y revive allí con todos sus puntos de golpe." },
+    { name: "Aura de Fuego", text: "Al final de cada uno de sus turnos, cada criatura en una emanación de 1,5 m sufre 13 (3d8) de fuego." },
+    { name: "Resistencia Legendaria (3/día)", text: "Si falla una salvación, puede optar por superarla." },
+    { name: "Resistencia a la Magia", text: "Ventaja en las salvaciones contra conjuros y efectos mágicos." },
+  ],
+  actions: [
+    { name: "Multiataque", text: "Un ataque de Látigo Llameante y uno de Hoja de Relámpago." },
+    { name: "Látigo Llameante", text: "Ataque cuerpo a cuerpo: +14, alcance 9 m, 18 (3d6+8) de fuerza más 17 (5d6) de fuego. Si el objetivo es Enorme o menor, el balor lo arrastra hasta 7,5 m en línea recta hacia sí y lo deja Derribado." },
+    { name: "Hoja de Relámpago", text: "Ataque cuerpo a cuerpo: +14, alcance 3 m, 21 (3d8+8) de fuerza más 22 (4d10) de relámpago, y el objetivo no puede usar reacciones hasta el inicio del siguiente turno del balor." },
+  ],
+  bonusActions: [
+    { name: "Teletransporte", text: "Se teletransporta a sí mismo, o a un demonio voluntario a 3 m o menos, hasta 18 m a un espacio libre que vea." },
+  ],
+  blurb: "Señor de la guerra demoníaco, alado y descomunal, que pelea con un látigo de llamas y una espada de relámpago. Al morir, estalla.",
+  habitat: "Planar (Abismo)",
+  treasure: "Armamento",
+};
+
+export const CAPITAN_BANDIDO: Monster = {
+  slug: "capitan-bandido",
+  name: "Capitán Bandido",
+  nameEn: "Bandit Captain",
+  size: "Mediano o Pequeño",
+  type: "Humanoide",
+  alignment: "Neutral",
+  ac: 15,
+  initiative: 3,
+  hp: 52,
+  hpFormula: "8d8 + 16",
+  speeds: "9 m",
+  abilities: { fue: 15, des: 16, con: 14, int: 14, sab: 11, car: 14 },
+  saves: "Fue +4, Des +5, Sab +2, Car +2",
+  skills: "Atletismo +4, Engaño +4",
+  gear: "Pistola, cimitarra, armadura de cuero tachonado",
+  senses: "Percepción pasiva 10",
+  languages: "Común, jerga de ladrones",
+  cr: "2",
+  xp: 450,
+  pb: 2,
+  actions: [
+    { name: "Multiataque", text: "Dos ataques con cimitarra o pistola en cualquier combinación." },
+    { name: "Cimitarra", text: "Ataque cuerpo a cuerpo: +5, alcance 1,5 m, 6 (1d6+3) cortante." },
+    { name: "Pistola", text: "Ataque a distancia: +5, alcance 9/27 m, 8 (1d10+3) perforante." },
+  ],
+  reactions: [
+    { name: "Parada", text: "Disparador: le acierta un ataque cuerpo a cuerpo mientras empuña un arma. Respuesta: suma 2 a su CA contra ese ataque, con lo que puede llegar a fallar." },
+  ],
+  blurb: "Manda cuadrillas de rufianes y organiza golpes sencillos. Otros hacen de músculo para criminales de más peso.",
+  habitat: "Cualquiera",
+  treasure: "Cualquiera",
+};
+
+export const BANDIDO_EMBAUCADOR: Monster = {
+  slug: "bandido-embaucador",
+  name: "Bandido Embaucador",
+  nameEn: "Bandit Deceiver",
+  size: "Mediano o Pequeño",
+  type: "Humanoide",
+  alignment: "Neutral",
+  ac: 16,
+  initiative: 6,
+  hp: 130,
+  hpFormula: "20d8 + 40",
+  speeds: "9 m",
+  abilities: { fue: 8, des: 16, con: 14, int: 17, sab: 12, car: 16 },
+  saves: "Des +6, Int +6",
+  skills: "Acrobacias +6, Percepción +4, Sigilo +9",
+  gear: "Dagas (6), varita",
+  senses: "Percepción pasiva 14",
+  languages: "Común, jerga de ladrones",
+  cr: "7",
+  xp: 2900,
+  pb: 3,
+  actions: [
+    { name: "Multiataque", text: "Tres ataques de daga." },
+    { name: "Daga", text: "Ataque cuerpo a cuerpo o a distancia: +6, alcance 1,5 m o 6/18 m, 8 (2d4+3) perforante más 10 (3d6) de veneno." },
+    { name: "Fogonazo Cegador (Recarga 4-6)", text: "Salvación de Constitución CD 14 para cada criatura en una esfera de 3 m de radio centrada en un punto que vea a 36 m. Fallo: 13 (3d6+3) radiante y queda Cegada hasta el inicio del siguiente turno del bandido. Éxito: solo la mitad del daño." },
+    { name: "Lanzamiento de Conjuros", text: "Lanza con Inteligencia (CD 14). A voluntad: Disfrazarse, Mano de Mago, Ilusión Menor. 1/día cada uno: Inmovilizar Persona (versión de nivel 4), Armadura de Mago (ya incluida en la CA), Imagen Mayor." },
+  ],
+  blurb: "Usa magia para tapar lo que hace la banda o para montar distracciones aparatosas mientras los demás trabajan.",
+  habitat: "Cualquiera",
+  treasure: "Cualquiera",
+};
+
+export const SENOR_DEL_CRIMEN: Monster = {
+  slug: "senor-del-crimen",
+  name: "Señor del Crimen",
+  nameEn: "Bandit Crime Lord",
+  size: "Mediano o Pequeño",
+  type: "Humanoide",
+  alignment: "Neutral",
+  ac: 17,
+  initiative: 9,
+  hp: 169,
+  hpFormula: "26d8 + 52",
+  speeds: "9 m",
+  abilities: { fue: 10, des: 20, con: 14, int: 18, sab: 14, car: 15 },
+  saves: "Des +9, Con +6, Int +4, Sab +2, Car +2",
+  skills: "Acrobacias +9, Percepción +10, Sigilo +13",
+  gear: "Pistolas (2), cimitarra, armadura de cuero tachonado",
+  senses: "Percepción pasiva 20",
+  languages: "Común, jerga de ladrones",
+  cr: "11",
+  xp: 7200,
+  pb: 4,
+  traits: [
+    { name: "Evasión", text: "Ante un efecto que permita una salvación de Destreza para sufrir la mitad del daño, no sufre ninguno si la supera y solo la mitad si la falla. No puede usarlo estando Incapacitado." },
+  ],
+  actions: [
+    { name: "Multiataque", text: "Tres ataques con cimitarra o pistola en cualquier combinación." },
+    { name: "Cimitarra", text: "Ataque cuerpo a cuerpo: +9, alcance 1,5 m, 12 (2d6+5) cortante más 14 (4d6) de veneno." },
+    { name: "Pistola", text: "Ataque a distancia: +9, alcance 9/27 m, 10 (1d10+5) perforante más 14 (4d6) de veneno." },
+  ],
+  bonusActions: [
+    { name: "Puntería Mortal", text: "Se da ventaja en su siguiente tirada de ataque de este turno. Si acierta, el objetivo sufre 28 (8d6) de veneno adicionales." },
+  ],
+  blurb: "Mueve los hilos de organizaciones en la sombra y antepone su propia supervivencia a cualquier secuaz o plan.",
+  habitat: "Cualquiera",
+  treasure: "Cualquiera",
+};
+
+export const LOTE_04_MONSTERS: Monster[] = [
+  BALOR,
+  CAPITAN_BANDIDO,
+  BANDIDO_EMBAUCADOR,
+  SENOR_DEL_CRIMEN,
+];
