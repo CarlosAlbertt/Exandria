@@ -9,6 +9,8 @@ import {
   type JournalEntry, type Quest, type NpcMet,
 } from "@/lib/useChronicle";
 import { REGIONS } from "@/data/taldorei";
+import { POIS } from "@/data/pois";
+import { useAllNpcs, type LocationNpc } from "@/lib/useNpcs";
 import { useAtlas } from "@/lib/useAtlas";
 import { generarEncargo } from "@/lib/generar";
 import { useClues } from "@/lib/useClues";
@@ -341,11 +343,34 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
 /* -------------------------------- PNJ -------------------------------- */
 const EMPTY_NPC = { name: "", role: "", notes: "", region: "", visible: true };
 
+/** Slug de la región a la que pertenece un POI, si se puede saber. */
+function regionDePoi(poiName: string): string {
+  for (const [slug, lista] of Object.entries(POIS)) {
+    if (lista.some((p) => p.name === poiName)) return slug;
+  }
+  return "";
+}
+
 function PnjSection({ npcs }: { npcs: NpcMet[] }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_NPC);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Los PNJ conversables que el DM ya creó en Panel DM › PNJs. Son OTRA tabla
+  // (`location_npcs`, con prompt y retrato) y hasta ahora no se hablaban con
+  // esta: había que reescribir a mano a alguien que ya existía.
+  const { npcs: deLugar } = useAllNpcs();
+  const yaEnCronica = new Set(npcs.map((n) => n.name.trim().toLowerCase()));
+  const sugeridos = deLugar.filter((n) => !yaEnCronica.has(n.name.trim().toLowerCase()));
+
+  // Rellena el formulario, NO guarda: `notes` es prosa del DM y `visible`
+  // decide si el grupo lo ve, así que las dos son decisión suya.
+  function traer(n: LocationNpc) {
+    setEditing(null);
+    setForm({ name: n.name, role: n.role, notes: "", region: regionDePoi(n.poi_name), visible: true });
+    setErr(null);
+  }
 
   function edit(n: NpcMet) {
     setEditing(n.id);
@@ -399,6 +424,29 @@ function PnjSection({ npcs }: { npcs: NpcMet[] }) {
         })}
         {npcs.length === 0 && <p className="text-[13px] italic" style={{ color: "var(--color-dim)" }}>Sin PNJ todavía.</p>}
       </div>
+
+      {/* Puente con Panel DM › PNJs: los que ya existen ahí se traen de un clic
+          en vez de reescribirlos. Solo salen los que NO están ya en la crónica,
+          comparando por nombre. */}
+      {sugeridos.length > 0 && (
+        <div className="panel-raised p-3 mb-4">
+          <p className="eyebrow !text-[9px] mb-2">
+            Traer de Panel DM › PNJs ({sugeridos.length})
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {sugeridos.map((n) => (
+              <button key={n.id} onClick={() => traer(n)} className="chip" title={`${n.role || "Sin oficio"} · ${n.poi_name}`}>
+                {n.portrait && <img src={n.portrait} alt="" className="w-4 h-4 rounded-full object-cover inline-block mr-1.5 align-text-bottom" />}
+                {n.name}
+                <span className="opacity-60"> · {n.poi_name}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] mt-2 italic" style={{ color: "var(--color-dim)" }}>
+            Rellena el formulario con su nombre, oficio y región; las notas y si el grupo lo ve los decides tú.
+          </p>
+        </div>
+      )}
 
       <div className="panel-raised p-4">
         <div className="grid sm:grid-cols-2 gap-2 mb-2">
