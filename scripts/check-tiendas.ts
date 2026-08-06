@@ -79,6 +79,30 @@ check('normalizaKind("  herreria  ") = "herreria" (espacios)',
 check('normalizaKind("Bazar general") = "general" (etiqueta de dos palabras)',
   normalizaKind("Bazar general") === "general");
 
+// ⚠️ Los de arriba NO vigilan el borrado de tildes, y costó descubrirlo: al
+// escribir «Herrería» con su tilde, el texto y la etiqueta pasan los dos por el
+// mismo `plano()`, así que se mueven juntos y la igualdad aguanta aunque se
+// quite la normalización. Verde por construcción, la trampa del gate 33.
+// Y «HERRERIA» tampoco basta: la CLAVE `herreria` ya va sin tilde y salva la
+// comparación por el otro lado.
+//
+// Lo que de verdad hay que vigilar es el caso del teclado: el DM escribe la
+// etiqueta SIN tildes de un tipo cuya clave no se le parece. Si esto se rompe,
+// la tienda se guarda con un tipo libre en vez de con su clave y sale sin
+// plantilla ni icono — un fallo que en la app se ve como «le falta el icono» y
+// que nadie relaciona con una tilde.
+check('normalizaKind("Sastreria y merceria") = "sastre" (etiqueta sin tildes)',
+  normalizaKind("Sastreria y merceria") === "sastre");
+check('normalizaKind("Escribania") = "libreria" (etiqueta sin tildes)',
+  normalizaKind("Escribania") === "libreria");
+check('normalizaKind("HERRERIA") sigue cayendo aunque la etiqueta lleve tilde',
+  normalizaKind("HERRERIA") === "herreria");
+
+// La versión general del caso de arriba, sobre los doce: la etiqueta sin tildes
+// tiene que seguir cayendo en su clave.
+check("sin tildes: normalizaKind(sinTildes(kindLabel(k))) === k para los doce",
+  SHOP_KINDS.every((k) => normalizaKind(kindLabel(k).normalize("NFD").replace(/\p{Diacritic}/gu, "")) === k));
+
 // Y lo contrario: un tipo inventado tiene que pasar INTACTO, o el tipo libre no
 // sería libre.
 check('normalizaKind("Pescadería") pasa intacto',
