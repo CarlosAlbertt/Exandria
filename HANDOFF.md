@@ -2,7 +2,58 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-01)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-02)
+
+> **Lo último (2026-08-02): EL CALDERO SE JUEGA, LA FRAGUA EXISTE Y LOS SIETE
+> OFICIOS ESTÁN BOCETADOS.** Todo en `master` y desplegado. **Sin migración.**
+>
+> **1 · Los dados, arreglados tres veces.** El desglose del total solo salía con
+> descarte, así que un chequeo con bonificador enseñaba un d20 parado en 12 y un
+> **17** encima sin explicar nada — se leía como que el dado daba otro número.
+> Ahora salen las caras y el modificador aparte, y con ventaja se marca cuál de
+> los dos d20 se cae. Además: el tablero escondía el resultado a los 2000 ms
+> fijos, así que subir el `hold` del llamador **no alargaba nada** (los dos
+> números son ya la misma constante, `RESULTADO_MS`); se añadió `POSADO_MS`, una
+> pausa en la que los dados se quedan **quietos y solos** antes de que salte el
+> total; y se barre la mesa **antes** de abrir el tablero, porque se veían unos
+> segundos los dados de la tirada anterior. El init de dice-box arranca ahora en
+> paralelo con la espera del lanzamiento.
+>
+> **2 · El caldero es jugable.** Dibujado en SVG (brebaje coloreado por rareza,
+> fuego por fase, burbujas), huecos de material **con color por categoría**
+> —flora verde, fauna ámbar, mineral azul, esencia violeta— y **materiales que se
+> arrastran a la olla** (el clic también vale: en táctil no hay arrastre HTML5).
+> Tres fases que **modifican la tirada sin sustituirla**, con tope **±3**. Un
+> desastre —pifia o −3— cuesta además **1d4** del tipo que dicta la categoría
+> dominante de la receta.
+>
+> **3 · La fragua existe** (`components/taller/Fragua.tsx`): caldear, martillar a
+> compás y templar, con la misma aritmética compartida. **No hay nada que
+> forjar** y la pantalla lo dice: el catálogo de piezas lo dicta el DM.
+>
+> **4 · «Crear» se retira con ficha.** Desaparece de la barra, de la portada y de
+> la propia página. `puedeVer` es la PUERTA y `puedeVerAhora` el ESCAPARATE:
+> esconder `/crear` **no es seguridad** y el proxy no la trata como tal.
+> ⚠️ **Consecuencia**: `/crear` servía también para reeditar la ficha; el jugador
+> ya no puede, eso queda en el DM.
+>
+> **5 · La historia se escribe después.** Panel nuevo bajo la ficha en
+> `/personaje`: escribe la misma columna `lore` que el asistente. La hoja del
+> jugador sigue siendo de solo lectura; su pasado no.
+>
+> **Gate: 34 checks en verde** (`check-forjado.ts` es el nuevo; ojo, `check-forja.ts`
+> es otro y vigila el catálogo de los 75 materiales), con `tsc` y `next build`
+> limpios. **Doce mutaciones probadas** entre las tres tandas.
+>
+> **Y los siete oficios están bocetados y decididos.** Siete HTML en
+> `docs/bocetos/` (se abren con doble clic) y siete specs en
+> `docs/superpowers/specs/`. Cada oficio se juega **distinto con el mando en la
+> mano**: alquimia ordena y para cursores · forja aguanta un compás ·
+> destilación captura una ventana · cristalografía gira, carga y arriesga ·
+> tatuaje traza sobre alguien que se mueve · cocina parte la atención en dos y te
+> contesta · extracción se juega **entre intentos**, con un saldo que se gasta.
+
+## 🚦 Antes de eso (2026-08-01): EL DM YA PUEDE ENTRAR EN EL TALLER
 
 > **Lo último (2026-08-01): EL DM YA PUEDE ENTRAR EN EL TALLER.**
 > Rama `taller-modo-dm`. **Sin migración.**
