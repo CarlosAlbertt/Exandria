@@ -2,7 +2,62 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-06)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-06, tarde)
+
+> **LOS OFICIOS: LOS SIETE ABIERTOS, Y EMPIEZA EL DESPIECE.** En `master`.
+> **Sin migración.**
+>
+> **1 · La clase ya no decide qué oficio aprendes.** `CharClass.oficios` —el
+> array de 2–4 por clase— se **borra** de las 13 clases y del tipo; la fuente
+> única pasa a ser `rules.OFICIOS`. El cupo no cambia: uno a nivel 1 y otro a
+> nivel 7. **Panel DM › Grupo** gana un selector de oficios por jugador que
+> **se salta el cupo pero lo canta en ámbar** — premiar con un oficio extra es
+> decisión de mesa. Sin tocar `/api/dm/character` (es passthrough y `skills` ya
+> pasaba) y sin update optimista, porque `characters` **sí** está en realtime.
+>
+> ⚠️ Ese selector escribe sobre `c.skills` **crudo**, no sobre el array que la
+> tarjeta pinta: ese lleva mezcladas las del **trasfondo**, que son derivadas, y
+> guardarlo las grabaría en la columna para siempre.
+>
+> **2 · Extracción de Componentes estaba bloqueada, y no por lo que decía el
+> plan.** Los materiales citan Mantícora, Basilisco, Vampiro, Roc, Grifo,
+> Wyvern, Behir, Kraken, Banshee… y **el bestiario solo llega a CR 1/2**. Peor:
+> esos bichos **no están en CR 1–2**, así que el lote L2 del plan del 2026-07-13
+> no habría desbloqueado nada (Mantícora y Basilisco son CR 3, Wyvern 6, Roc 11,
+> Kraken 23). **El orden de extracción pasa a ser «lo que citan los
+> materiales», no por CR.**
+>
+> **3 · `data/despiece.ts`: qué suelta cada monstruo.** `piezasDe(cr, size)` da
+> de cuántas cosas **distintas** puede salir —base por CR, +1 si es Grande o
+> mayor, acotado a 1–5—. ⚠️ **No confundir con las piezas de un cadáver
+> concreto**, que son **1d4** y se tiran al abrirlo (spec del 2026-08-02).
+> **22 materiales nuevos** para los 23 bichos de CR 0. **Los Humanoides quedan
+> fuera a propósito** y el gate lo vigila: el Plebeyo entraría solo por la regla
+> y metería «Hígado de Plebeyo» en el catálogo de cocina.
+> Los catálogos pasan de **369 a 391**.
+>
+> ⚠️ **Hubo que aflojar una invariante, y va dicho**: los catálogos exigían que
+> las categorías fueran en **bloques seguidos** (flora → fauna → mineral →
+> esencia). Añadir una pieza de `fauna` —cuyo bloque acaba a mitad del
+> catálogo— obliga a **renumerar** todo lo de detrás, y el `n` **no se renumera
+> nunca** porque es la referencia de mesa («el 46, el residuum»). Chocaban de
+> frente. **Gana la numeración**; la regla de bloques pasa a cubrir solo el
+> catálogo original y lo nuevo se apila al final.
+>
+> **Gate 36 `scripts/check-despiece.ts`** — ojo, `check-materiales` es otro y
+> `check-bestiary` otro más; este vigila el **puente** entre los dos. Cuatro
+> mutaciones, y la que más importa es la del **nombre mal escrito**: sin ella,
+> un monstruo al que se le despieza **no suelta nada y no salta ningún error**.
+>
+> **Pipeline del Monster Manual verificado end-to-end**: 390 páginas volcadas a
+> texto (el OCR **entrelaza las dos columnas**, así que solo sirve para
+> LOCALIZAR por `XP N`), y el render a PNG con `pypdfium2` scale 2.5 sale
+> legible. **Página de libro = página PDF − 3.**
+>
+> **Los 36 gates en verde**, con `tsc` y `next build` limpios.
+> **Sin probar en la app viva.**
+
+## 🚦 Antes de eso (2026-08-06)
 
 > **Lo último (2026-08-06): EL JUGADOR ENTRA EN CUATRO SECCIONES MÁS, Y EL TIPO
 > DE TIENDA DEJA DE SER UNA REJA.** Rama `feat/abrir-secciones-y-tiendas`,

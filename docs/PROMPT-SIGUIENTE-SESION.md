@@ -143,7 +143,41 @@ corte manda sobre el `riesgo`** · cristalografía **el desastre rompe la gema**
 tatuaje **la runa torcida se queda puesta y el DM decide qué hace** · cocina
 **raciones variables** · extracción **se puede cortar a ciegas**.
 
-## La tarea de esta sesión: EXTRACCIÓN DE COMPONENTES
+## La tarea: SEGUIR EL DESPIECE (tanda CR 1/8 en adelante)
+
+**El 2026-08-06 se arrancó y quedó a medias, a propósito.** `data/despiece.ts`
+existe con la regla y los **23 bichos de CR 0**; faltan los otros **101 del
+bestiario** y todo lo que se extraiga del manual.
+
+**Cómo se añade una tanda**, que ya está rodado:
+1. Sacar los bichos del CR que toque (`ALL_MONSTERS.filter(m => m.cr === "…")`).
+2. Escribir **1–5 materiales nuevos** por bicho según `piezasDe(cr, size)`,
+   repartidos por catálogo: carne y vísceras → cocina · glándulas, sangre, ojos
+   y esencias → alquimia · piel, hueso, escama y tendón → forja · venenos e
+   icores → destilación · partes cristalinas y lentes → cristalografía · tintas
+   y plumas de trazo → tatuaje.
+3. **Apilar al final de cada catálogo con `n` correlativo.** Nunca renumerar.
+4. **Reutilizar** si el bicho ya tiene material propio (pasó con el Escarabajo
+   de Fuego Gigante). Ojo con los falsos amigos: «Ciervo Feérico» y «Piraña de
+   Jungla» **no** son el Ciervo ni la Piraña de CR 0.
+5. **Los Humanoides no se despiezan**, y el gate lo exige.
+6. Subir a mano los totales de los **cinco gates de catálogo** — están escritos
+   a mano justo para que te obliguen a reconocer el añadido.
+
+> **Y el orden de extracción del manual NO es por CR.** Los bichos que los
+> materiales citan están repartidos entre CR 2 y 23, así que ir por lotes de CR
+> retrasaría Extracción hasta casi acabar el manual. Se extrae **lo que citan
+> los materiales**: Grifo y Sirena (CR 2), Mantícora y Basilisco (3), Banshee
+> (4), Wyvern (6), Roc (11), Kraken (23)… Un hueco de CR en el bestiario es
+> cosmético: un monstruo sin ficha simplemente no sale.
+>
+> **Pipeline, verificado**: volcar las 390 páginas a texto con `pypdfium2`, y el
+> texto **solo vale para LOCALIZAR** (`grep "XP 700"`) porque el OCR entrelaza
+> las dos columnas y empalma statblocks vecinos. La verdad es la página
+> **renderizada** a PNG (scale 2.5) y leída visualmente. **Página de libro =
+> página PDF − 3.**
+
+## Lo de antes: EXTRACCIÓN DE COMPONENTES (el oficio, ya con datos detrás)
 
 **Es el que más devuelve por lo que cuesta, y hay tres razones.**
 
@@ -214,7 +248,7 @@ se despieza **en el sitio con el cadáver fresco**, da **1d4 piezas por cadáver
 - **Rama feature por tarea**, **un commit por pieza**, y **púshala en cuanto
   exista**.
 - Gate: **`npx tsc --noEmit` + `npx next build` + los `scripts/check-*.ts`**
-  (35 ahora mismo; cuéntalos, no te fíes del número escrito aquí).
+  (36 ahora mismo; cuéntalos, no te fíes del número escrito aquí).
 - **Si la tanda toca datos o reglas, el gate tiene que verlo**, y **con prueba de
   mutación**: rómpelo a propósito, comprueba que falla, restaura.
   > **Ya ha encontrado cuatro fallos reales**, y el último fue mío: en
