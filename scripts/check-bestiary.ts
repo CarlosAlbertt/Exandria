@@ -2,6 +2,7 @@
 // Uso: npx tsx scripts/check-bestiary.ts
 import { ALL_MONSTERS, searchMonsters, type Monster } from "../data/bestiary";
 import { CR_XP } from "../data/encounters";
+import { CENSO_TODOS } from "../data/bestiary/censo-manual";
 import { pbForCr, CR_OPTIONS, mergeMonsters, conMonstruo, sinMonstruo, conDescubierto } from "../lib/useBestiary";
 
 let failures = 0;
@@ -173,6 +174,30 @@ check("mergeMonsters ordena por nombre en español", (() => {
   const n = mergeMonsters([]).map((m) => m.name);
   return n.every((x, i) => i === 0 || n[i - 1].localeCompare(x, "es") <= 0);
 })());
+
+// --- El censo del manual ----------------------------------------------------
+// `data/bestiary/censo-manual.ts` es la lista de trabajo: qué statblocks trae el
+// libro, transcrita del apéndice B leyendo la página RENDERIZADA (la capa OCR
+// entrelaza las columnas y escribe «Ciant» por «Giant», así que no vale).
+//
+// Lo que se comprueba NO es que estén todos —faltan cientos y eso es el plan—,
+// sino que **todo lo extraído figure en el censo**. Un `nameEn` mal escrito
+// dejaría un monstruo imposible de cruzar con el libro, y ese es justo el error
+// que no se ve: la ficha se pinta perfecta y solo falla el día que alguien
+// intenta saber si ya está extraído.
+{
+  const plano = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const censo = new Set(CENSO_TODOS.map(plano));
+  for (const m of ALL_MONSTERS) {
+    check(`«${m.nameEn}» figura en el censo del manual`, censo.has(plano(m.nameEn)));
+  }
+  check("el censo no tiene nombres repetidos",
+    new Set(CENSO_TODOS.map(plano)).size === CENSO_TODOS.length);
+  check("el censo no está vacío ni se ha quedado a medias", CENSO_TODOS.length > 400);
+
+  const faltan = CENSO_TODOS.filter((n) => !ALL_MONSTERS.some((m) => plano(m.nameEn) === plano(n)));
+  console.log(`\n(cobertura: ${ALL_MONSTERS.length} de ${CENSO_TODOS.length} del manual; faltan ${faltan.length})`);
+}
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} comprobación(es) fallaron.`);
 process.exit(failures === 0 ? 0 : 1);
