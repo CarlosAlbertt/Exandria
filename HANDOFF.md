@@ -2,7 +2,91 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-02)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-06)
+
+> **Lo último (2026-08-06): EL JUGADOR ENTRA EN CUATRO SECCIONES MÁS, Y EL TIPO
+> DE TIENDA DEJA DE SER UNA REJA.** Rama `feat/abrir-secciones-y-tiendas`,
+> mergeada a `master`. **Sin migración.**
+>
+> **1 · Se abren `/mapa`, `/panteon`, `/cronica` y `/bestiario`.** Cuatro líneas
+> en `RUTAS_JUGADOR` y ya: el nav las filtra con `puedeVer` y el proxy deja de
+> reescribirlas a `/cerrado`. **No hubo que tocar ninguna página**, y eso fue la
+> sorpresa de la tanda: **tres ya distinguían el rol** de cuando el DM y el
+> jugador compartían app. `/mapa` tiene niebla opaca sobre los continentes sin
+> `revealed` y solo enseña las regiones con `known`; `/bestiario` limita al
+> jugador a los descubiertos y le esconde la edición; `/panteon` es catálogo sin
+> secretos a propósito. La cuarta, `/cronica`, no mira el rol pero **la RLS de
+> `schema_v12` sí**: el diario y los PNJ piden `visible`, y las misiones
+> `status <> 'oculta'`.
+> La barra del jugador queda: `Inicio · Ficha · Reino · Panteón · Crónica ·
+> Bestiario · Crear · Inventario · Taller · Mapa`. **El orden no se tocó** —es la
+> misma lista del DM y reagruparla le movería la barra a él—. La portada gana dos
+> puertas, **Mapa** y **Bestiario**, que son las que se miran en mesa.
+>
+> ⚠️ **Deuda que esta tanda deja escrita, no escondida**: con `/cronica` entra una
+> **fuga preexistente**. Las **pistas** viven en `app_config`, cuya política de
+> lectura es `using (true)` para cualquier autenticado (`schema_v5.sql:19`), y la
+> página **se las descarga todas —incluidas las no descubiertas— para filtrarlas
+> en JavaScript**. Abrir la ruta **no amplía el acceso a la base de datos** (un
+> jugador ya podía pedirlas por consola: es la misma familia que `/api/*` sin
+> control de rol), pero sí hace que ese código corra a diario. **El arreglo de
+> raíz es tabla propia con RLS `discovered or is_dm()`**, migración `v24`, y toca
+> `useClues`, el panel del DM y el sembrado de rumores en los PNJ IA.
+>
+> **2 · El tipo de tienda se escribe.** Era un `<select>` sobre `SHOP_KINDS` con
+> tres opciones, así que **para que existiera una pescadería había que
+> desplegar**. Ahora es un **combobox** (`<input list>` + un `<datalist>` que
+> comparten el campo de crear y el de editar): las sugerencias siguen ahí, pero
+> no son una reja. **Sin migración** — `shops.kind` ya era `text` y nadie
+> validaba su contenido; el desplegable era la única restricción y vivía solo en
+> la interfaz.
+>
+> ⚠️ **`normalizaKind` es lo que hace que la lista siga sirviendo**, y no es
+> adorno: al elegir «Herrería» del `<datalist>` el navegador escribe **la
+> etiqueta, no la clave**. Guardada tal cual sería un tipo distinto de las
+> tiendas que ya existen —mismo negocio, dos claves— y **se quedaría sin
+> plantilla ni icono**. La función compara contra etiqueta y clave ignorando
+> mayúsculas y tildes; devuelve la clave si acierta y **el texto intacto si no**,
+> que es el caso del tipo inventado. Se llama **al guardar**, no en cada tecla.
+>
+> **3 · Doce tipos, con etiqueta e icono.** Nueve nuevos: taberna, templo,
+> avituallamiento, establo, sastre, arcano, curandero, mercado negro y
+> escribanía. El jugador ya no lee la clave cruda («herreria») ni la lee la IA en
+> el prompt del tendero. El botón **«Semilla» se deshabilita diciendo por qué**
+> cuando el tipo no trae plantilla: antes `seedCatalog` habría salido sin hacer
+> nada y el DM no sabría si el fallo era suyo.
+>
+> ⚠️ **Los precios son enteros en piezas de oro** (`shop_items.price` es `int`) y
+> **no hay plata ni cobre**. Una jarra de cerveza son 4 pc: o vale 0 —y 0 es
+> **gratis** en `shopTx.comprar`, que compara `char.gold < item.price`— o vale 1
+> po, veinticinco veces el manual. Por eso **los catálogos baratos se venden por
+> lote**: la ronda de diez, el barril de treinta, diez días de pienso y cuadra.
+> **Ningún objeto de plantilla baja de 1 po, y el gate lo exige.** El arreglo de
+> raíz (migrar a cobre y mostrar po/pp/pc) es una tanda propia.
+>
+> ⚠️ **No hay tipo «hostal» a propósito**: dormir es la **posada del POI**
+> (`Poi.services.posada`), que avanza el reloj de campaña por `/api/descanso` y
+> aplica el anti-abuso de 20 h. Con el tipo libre **nada impide que el DM
+> escriba «hostal»**, y el código no debe intentarlo — queda como convención: si
+> aparece una tienda así vendiendo noches, esas noches no mueven el reloj.
+>
+> **Gate 35 `scripts/check-tiendas.ts`** (102 comprobaciones), con **prueba de
+> mutación de seis roturas**. Ojo: `check-forja.ts` es **otro** (el catálogo de
+> 75 materiales) y casi le piso el nombre.
+>
+> > **La lección, y van cinco**: la mutación destapó que **mis comprobaciones de
+> > tildes eran verdes por construcción**. Comparaban `normalizaKind("Herrería")`
+> > contra la etiqueta, y **las dos partes pasan por el mismo `plano()`**: quitar
+> > el `normalize("NFD")` las movía juntas y la igualdad aguantaba. El caso en
+> > mayúsculas tampoco valía, porque la clave `herreria` ya va sin tilde y salvaba
+> > la comparación por el otro lado. Lo que sí muerde es el caso del teclado:
+> > **«Sastreria y merceria» tiene que dar `sastre`**. Es la tercera vez que lo
+> > que encuentra la mutación es *una regla que no podía fallar*.
+>
+> **Los 35 gates en verde**, con `tsc --noEmit` y `next build` limpios.
+> **Sin probar en la app viva.**
+
+## 🚦 Antes de eso (2026-08-02): EL CALDERO SE JUEGA Y LOS SIETE OFICIOS BOCETADOS
 
 > **Lo último (2026-08-02): EL CALDERO SE JUEGA, LA FRAGUA EXISTE Y LOS SIETE
 > OFICIOS ESTÁN BOCETADOS.** Todo en `master` y desplegado. **Sin migración.**

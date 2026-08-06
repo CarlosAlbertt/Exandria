@@ -32,10 +32,37 @@ tests**: el gate es `tsc` + `next build` + los `scripts/check-*.ts`.
 
 ## Lo primero, y no es código: PROBAR EN LA APP
 
-Se acumulan **seis tandas con el gate en verde y sin ver en partida**. Si algo de
-esto falla, arreglarlo va antes que empezar nada nuevo.
+Se acumulan **siete tandas con el gate en verde y sin ver en partida**. Si algo
+de esto falla, arreglarlo va antes que empezar nada nuevo.
 
-### 1. El caldero jugable (2026-08-02, lo más reciente y lo menos visto)
+### 0. Las cuatro secciones abiertas y las tiendas (2026-08-06, lo más reciente)
+
+**Como jugador**, que salgan en la barra y carguen `/mapa`, `/panteon`,
+`/cronica` y `/bestiario`, y que la portada tenga las dos tarjetas nuevas. Lo que
+de verdad hay que mirar es que **no se filtre nada**:
+
+1. `/mapa`: los continentes sin revelar siguen bajo niebla **opaca** (la del DM
+   es translúcida y con «oculto» escrito), y **no** aparece «Gestionar y editar
+   pines».
+2. `/bestiario`: solo los descubiertos, y **ningún** botón de crear, editar,
+   borrar ni marcar.
+3. `/cronica`: ningún borrador del diario (`visible=false`), ningún PNJ oculto,
+   ninguna misión `oculta`.
+4. `/panteon`: los 32 enteros, que es lo esperado.
+
+**Como DM**, en Panel DM › Tiendas:
+
+5. Crear una tienda **eligiendo un tipo de la lista**, darle a **Semilla** y que
+   entre el catálogo.
+6. Crear otra **escribiendo un tipo que no existe** («Pescadería»): el botón
+   Semilla tiene que salir **deshabilitado y explicándose**, y los objetos se
+   añaden a mano.
+7. En `/lugar`, que el jugador vea **etiqueta e icono** en las dos, y que
+   **comprar siga descontando oro**.
+8. Que una tienda **creada antes de esta tanda** se siga viendo bien: es la
+   comprobación de que el fallback no rompe nada guardado.
+
+### 1. El caldero jugable (2026-08-02)
 
 En `/taller` › Alquimia, con un personaje que sepa **Alquimia**:
 
@@ -161,6 +188,13 @@ se despieza **en el sitio con el cadáver fresco**, da **1d4 piezas por cadáver
   `CharacterSheet`: dos consultas donde cabría una.
 - Si se quiere devolver al jugador la vía de reeditar su ficha, lo natural es un
   botón «Rehacer personaje» que lleve a `/crear?editar=1`.
+- **Las pistas de `/cronica` sin RLS** (arriba). La más gorda de las tres nuevas.
+- **Los precios de tienda sin plata ni cobre.** Migrar `shop_items.price` a pc
+  (×100 en las filas existentes) y mostrar po/pp/pc. Toca `lib/shopTx.ts`,
+  `characters.gold` y todas las pantallas de compraventa: **tanda propia**.
+- **`/cronica` no usa `useRole`.** Hoy le basta la RLS, pero es la única de las
+  cuatro abiertas que no puede enseñarle nada distinto al DM aunque quisiera —
+  por ejemplo, marcar qué entradas del diario siguen sin publicar.
 
 ## Cómo trabajamos (esto ya está rodado, respétalo)
 
@@ -172,7 +206,7 @@ se despieza **en el sitio con el cadáver fresco**, da **1d4 piezas por cadáver
 - **Rama feature por tarea**, **un commit por pieza**, y **púshala en cuanto
   exista**.
 - Gate: **`npx tsc --noEmit` + `npx next build` + los `scripts/check-*.ts`**
-  (34 ahora mismo; cuéntalos, no te fíes del número escrito aquí).
+  (35 ahora mismo; cuéntalos, no te fíes del número escrito aquí).
 - **Si la tanda toca datos o reglas, el gate tiene que verlo**, y **con prueba de
   mutación**: rómpelo a propósito, comprueba que falla, restaura.
   > **Ya ha encontrado cuatro fallos reales**, y el último fue mío: en
@@ -182,6 +216,13 @@ se despieza **en el sitio con el cadáver fresco**, da **1d4 piezas por cadáver
   >
   > Al escribir un check pregúntate **qué tendría que romperse para que fallara**.
   > Si la respuesta es «las dos mitades a la vez», no vigila nada.
+  >
+  > **Y volvió a pasar el 2026-08-06**, ya son cinco: en `check-tiendas` las
+  > comprobaciones de tildes comparaban `normalizaKind("Herrería")` contra la
+  > etiqueta, y **las dos partes pasan por el mismo `plano()`** — quitar el
+  > `normalize("NFD")` las movía juntas y seguía verde. Lo que muerde es el caso
+  > del teclado: escribir la etiqueta **sin tildes** de un tipo cuya clave no se
+  > le parece («Sastreria y merceria» → `sastre`).
 - **Commitea ANTES de mutar**: `git checkout --` no restaura lo que git no
   conoce, y sí borra lo que tengas sin commitear.
 - **Cuidado con los pipes**: `npx tsx x.ts | tail` devuelve el código de `tail`.
@@ -197,11 +238,29 @@ se despieza **en el sitio con el cadáver fresco**, da **1d4 piezas por cadáver
   `node_modules/next/dist/docs/`, no tires de memoria.
 
 > [!danger] **Toda ruta nueva pasa por `lib/acceso.ts`**
-> El jugador solo ve `/`, `/crear`, `/personaje`, `/inventario`, `/taller`,
-> `/reino` y `/lugar`. `scripts/check-acceso.ts` **te hará fallar** si añades una
-> página sin clasificarla. Y ahora hay dos funciones: **`puedeVer` es la puerta**
-> (la que usa el proxy) y **`puedeVerAhora` el escaparate** (lo que tiene sentido
-> enseñar). Esconder algo **no es cerrarlo**.
+> Desde el 2026-08-06 el jugador ve `/`, `/crear`, `/personaje`, `/inventario`,
+> `/taller`, `/reino`, `/lugar`, `/panteon`, `/cronica`, `/bestiario` y `/mapa`.
+> Siguen cerradas `/oficios`, `/combate`, `/taberna`, `/narrador` y `/dm`.
+> `scripts/check-acceso.ts` **te hará fallar** si añades una página sin
+> clasificarla, **y en cinco sitios** (las dos listas de `puedeVer`, las dos de
+> rutas esperadas y la aserción literal del orden del nav). Y hay dos funciones:
+> **`puedeVer` es la puerta** (la que usa el proxy) y **`puedeVerAhora` el
+> escaparate** (lo que tiene sentido enseñar). Esconder algo **no es cerrarlo**.
+
+> [!warning] **Las pistas de `/cronica` viajan enteras al navegador del jugador**
+> `useClues` guarda en `app_config`, legible por cualquier autenticado, y la
+> página **se descarga todas las pistas —incluidas las no descubiertas— y las
+> filtra en JavaScript**. Es preexistente y de la misma familia que `/api/*` sin
+> control de rol, pero desde que `/cronica` está abierta ese código corre a
+> diario. Arreglo de raíz: tabla propia con RLS `discovered or is_dm()`.
+
+> [!warning] **En las tiendas no hay plata ni cobre**
+> `shop_items.price` es `int` en piezas de oro, y **0 es gratis** en
+> `shopTx.comprar`. Por eso las plantillas venden por lote lo que costaría menos
+> de 1 po, y el gate 35 exige que **ningún objeto de plantilla baje de 1**.
+> Y el **tipo de tienda es texto libre**: las doce plantillas son sugerencias.
+> Al tocar ese campo, pasa siempre por **`normalizaKind` al guardar** — el
+> `<datalist>` escribe la etiqueta, no la clave.
 
 > [!warning] **`app_config` NO está en la publicación realtime**
 > Lección pagada **cuatro veces**. Todo lo que se guarde ahí necesita **update
@@ -228,7 +287,8 @@ las 5 clases que faltan, el **bestiario a medias** (124 monstruos, solo CR 0–1
 
 **El orden de arranque, sin saltarse pasos:** `git fetch` y `git status -sb`
 —no leer archivos—, luego `HANDOFF.md`. Después dime qué falla de lo que está
-sin ver, empezando por **el caldero jugable**, que es lo más reciente.
+sin ver, empezando por **las cuatro secciones abiertas y las tiendas** (2026-08-06)
+y siguiendo por **el caldero jugable**, que sigue siendo el que más pesa.
 
 **Y luego, si la mesa de monstruos → materiales está lista, ataca EXTRACCIÓN.**
 Es el único oficio que no espera a que nadie dicte un catálogo, y es el que hace
