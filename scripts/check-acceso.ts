@@ -2,6 +2,8 @@
 // Uso: npx tsx scripts/check-acceso.ts
 import { puedeVer, puedeVerAhora, RUTAS_JUGADOR, RUTAS_SOLO_SIN_PERSONAJE, RUTA_CERRADA, NAV_LINKS, PUERTAS_JUGADOR } from "../lib/acceso";
 import { tienePersonaje } from "../lib/character";
+import { hayNiebla, continenteDescubierto, continenteVisible, conocerRegionDescubreContinente } from "../lib/niebla";
+import { CONTINENT_VIEW, WORLD_POIS } from "../data/world";
 import { readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -151,6 +153,55 @@ check("con solo especie ya cuenta", tienePersonaje({ species: "elfo", cls: null 
 check("con solo clase ya cuenta", tienePersonaje({ species: null, cls: "mago" }) === true);
 check("sin fila no hay personaje",
   tienePersonaje(null) === false && tienePersonaje(undefined) === false);
+
+// --- La niebla del mapa (lib/niebla.ts) ------------------------------------
+// Vive aquí y no en un script propio porque es la misma pregunta que el resto
+// del archivo —quién ve qué— solo que dentro de una página en vez de por ruta.
+// La regla se sacó del JSX de /mapa justo para que este gate pueda mirarla: el
+// fallo que tenía (un continente sin pin quedaba DESPEJADO) sobrevivió porque
+// estaba escrita dentro de un `.map` y nadie podía comprobarla.
+
+check("un continente revelado no lleva niebla",
+  hayNiebla({ revealed: true }) === false);
+check("un continente sin revelar lleva niebla",
+  hayNiebla({ revealed: false }) === true);
+// La de verdad: FALLA CERRADO.
+check("un continente SIN PIN lleva niebla (falla cerrado)",
+  hayNiebla(undefined) === true && hayNiebla(null) === true);
+check("sin pin tampoco cuenta como descubierto",
+  continenteDescubierto(undefined) === false && continenteDescubierto(null) === false);
+
+// Al DM se le pinta niebla igual (translúcida, con «oculto»): es como ve de un
+// vistazo lo que al grupo le falta. Por eso `hayNiebla` no recibe el rol — si
+// lo recibiera, alguien acabaría usándola como permiso.
+check("la niebla no depende del rol: es solo la ausencia de revealed",
+  hayNiebla({ revealed: false }) === true && hayNiebla({ revealed: true }) === false);
+
+check("el jugador solo ve los continentes descubiertos",
+  continenteVisible({ revealed: true }, false) === true &&
+  continenteVisible({ revealed: false }, false) === false &&
+  continenteVisible(undefined, false) === false);
+check("el DM ve los continentes aunque no estén descubiertos",
+  continenteVisible({ revealed: false }, true) === true &&
+  continenteVisible(undefined, true) === true);
+
+// La cascada: conocer una región descubre su continente. Sin esto, una región
+// marcada como conocida bajo niebla es INALCANZABLE —no se puede entrar en el
+// continente para verla— y el estado se lee como un fallo de la app.
+check("conocer una región descubre su continente",
+  conocerRegionDescubreContinente(true) === true);
+check("dejar de conocerla NO vuelve a poner la niebla",
+  conocerRegionDescubreContinente(false) === false);
+
+// --- Todo continente del mapa tiene su pin ---------------------------------
+// `CONTINENT_VIEW` es lo que el mapa dibuja; `WORLD_POIS` es de donde sale el
+// pin con `revealed`. Un continente en el primero y no en el segundo no se
+// podría descubrir nunca — con la niebla fallando cerrado, quedaría tapado para
+// siempre y sin interruptor en el panel del DM.
+for (const cont of Object.keys(CONTINENT_VIEW)) {
+  check(`el continente ${cont} tiene pin en WORLD_POIS`,
+    WORLD_POIS.some((p) => p.type === "continente" && p.continent === cont));
+}
 
 console.log(failures === 0 ? `\nTodo OK` : `\n${failures} FALLOS`);
 process.exit(failures === 0 ? 0 : 1);
