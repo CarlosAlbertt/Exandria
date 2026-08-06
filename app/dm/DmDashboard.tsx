@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useAtlas, regionsOf } from "@/lib/useAtlas";
 import { CONTINENTS } from "@/data/world";
 import { useRegions, setRegion } from "@/lib/useRegions";
+import { useWorldPois } from "@/lib/useWorldPois";
+import { continenteDescubierto, conocerRegionDescubreContinente } from "@/lib/niebla";
 import { useLiveSession, updateLiveSession } from "@/lib/useLiveSession";
 import { useGroupAction, resetGroup } from "@/lib/useGroupAction";
 import { narrar } from "@/lib/narrador";
@@ -160,19 +162,66 @@ const LAND_CONTINENTS = CONTINENTS.filter((c) => c !== "Mares");
 function RegionesPanel() {
   const { atlas, ready: atlasReady } = useAtlas();
   const { states, ready: regionsReady } = useRegions();
-  const ready = atlasReady && regionsReady;
+  // Los pines de continente viven en `world_pois` (app_config), y su `revealed`
+  // es lo que levanta la niebla de /mapa y lo que deja ver la tierra en /reino.
+  // El interruptor vive aquí y no en Panel DM › Mapa porque este panel ya es el
+  // sitio donde se decide qué ve el grupo del mundo: continente y luego región,
+  // en la misma pantalla.
+  const { pois, ready: poisReady, save: savePois } = useWorldPois();
+  const ready = atlasReady && regionsReady && poisReady;
+
+  const pinDe = (cont: string) => pois.find((p) => p.type === "continente" && p.continent === cont);
+  const revelarContinente = (cont: string, on: boolean) => {
+    const pin = pinDe(cont);
+    if (!pin) return;
+    savePois(pois.map((p) => (p.id === pin.id ? { ...p, revealed: on } : p)));
+  };
+  // Una región conocida bajo un continente con niebla es inalcanzable: el
+  // jugador no puede entrar en el continente para verla. Así que conocerla lo
+  // descubre. Es el mismo escalón que ya hace «Explorada» al poner «Conocida».
+  const conocerRegion = (cont: string, slug: string, known: boolean, explored?: boolean) => {
+    void setRegion(slug, explored === undefined ? { known } : { explored, known });
+    if (conocerRegionDescubreContinente(known)) revelarContinente(cont, true);
+  };
 
   return (
     <div className="panel p-6">
       <h2 className="font-display text-lg font-bold mb-1" style={{ color: "var(--color-parch)" }}>Exploración del mapa</h2>
-      <p className="text-sm mb-5" style={{ color: "var(--color-muted)" }}>Marca qué regiones conocen y han explorado los jugadores, en todos los continentes. Se actualiza en vivo para todos.</p>
+      <p className="text-sm mb-5" style={{ color: "var(--color-muted)" }}>
+        Marca qué continentes han descubierto los jugadores y qué regiones conocen y han explorado.
+        <strong style={{ color: "var(--color-warm)" }}> Un continente sin descubrir sale bajo niebla</strong>, y sus regiones no se
+        alcanzan aunque estén marcadas — por eso conocer una región descubre su continente.
+      </p>
       <div className="space-y-6">
         {LAND_CONTINENTS.map((cont) => {
           const regions = regionsOf(atlas, cont);
           if (regions.length === 0) return null;
+          const pin = pinDe(cont);
+          const descubierto = continenteDescubierto(pin);
+          // Sin pin no hay nada que revelar, y además la niebla de /mapa falla
+          // ABIERTA en ese caso: se dice aquí en vez de dejar un hueco mudo.
+          const ocultasBajoNiebla = descubierto ? 0 : regions.filter((r) => states[r.slug]?.known).length;
           return (
             <div key={cont}>
-              <p className="eyebrow mb-2">{cont}</p>
+              <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                <p className="eyebrow !mb-0">{cont}</p>
+                {pin ? (
+                  <div className="flex items-center gap-2">
+                    {ocultasBajoNiebla > 0 && (
+                      <span className="font-ui text-[11px]" style={{ color: "var(--color-ember)" }}>
+                        <i className="fas fa-triangle-exclamation mr-1" />
+                        {ocultasBajoNiebla} {ocultasBajoNiebla === 1 ? "región conocida" : "regiones conocidas"} bajo niebla
+                      </span>
+                    )}
+                    <Toggle label="Descubierto" on={descubierto} disabled={!ready}
+                      onClick={() => revelarContinente(cont, !descubierto)} accent />
+                  </div>
+                ) : (
+                  <span className="font-ui text-[11px]" style={{ color: "var(--color-ember)" }}>
+                    <i className="fas fa-triangle-exclamation mr-1" />sin pin en el mapa: se ve siempre
+                  </span>
+                )}
+              </div>
               <div className="space-y-2">
                 {regions.map((r) => {
                   const st = states[r.slug];
@@ -186,8 +235,8 @@ function RegionesPanel() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Toggle label="Conocida" on={!!st?.known} disabled={!ready} onClick={() => setRegion(r.slug, { known: !st?.known })} />
-                        <Toggle label="Explorada" on={!!st?.explored} disabled={!ready} onClick={() => setRegion(r.slug, { explored: !st?.explored, known: st?.explored ? st?.known : true })} accent />
+                        <Toggle label="Conocida" on={!!st?.known} disabled={!ready} onClick={() => conocerRegion(cont, r.slug, !st?.known)} />
+                        <Toggle label="Explorada" on={!!st?.explored} disabled={!ready} onClick={() => conocerRegion(cont, r.slug, st?.explored ? !!st?.known : true, !st?.explored)} accent />
                       </div>
                     </div>
                   );

@@ -12,6 +12,7 @@ import type { AtlasDefs } from "@/data/atlas";
 import { useRegions } from "@/lib/useRegions";
 import { useRole } from "@/components/SessionProvider";
 import RegionExplore from "@/components/RegionExplore";
+import { hayNiebla, continenteVisible } from "@/lib/niebla";
 
 // Aspecto del mapa de Exandria (2560x1707) para que los pines cuadren.
 const MAP_RATIO = "2560 / 1707";
@@ -45,7 +46,10 @@ export default function MapaPage() {
   // --- helpers de descubrimiento ---
   const continentPins = pois.filter((p) => p.type === "continente");
   const pinForField = (field: string) => continentPins.find((p) => p.continent === field);
-  const continentDiscovered = (field: string) => { const cp = pinForField(field); return cp ? (isDM || cp.revealed) : true; };
+  // (Aquí vivía `continentDiscovered`, que no la llamaba nadie desde que el
+  //  mapa pasó a regiones. La regla se mudó entera a `lib/niebla.ts` para que
+  //  el gate pueda mirarla: suelta dentro del JSX nadie vio que fallaba
+  //  ABIERTA.)
 
   // --- zoom por continente ---
   const view = focus ? CONTINENT_VIEW[focus] : null;
@@ -61,7 +65,7 @@ export default function MapaPage() {
 
   // --- pines por nivel ---
   const worldPins = [
-    ...continentPins.filter((cp) => isDM || cp.revealed),
+    ...continentPins.filter((cp) => continenteVisible(cp, isDM)),
     ...pois.filter((p) => p.continent === "Mares"),
   ];
   // Regiones del continente enfocado (cualquiera, ya no solo Tal'Dorei) desde
@@ -142,7 +146,11 @@ export default function MapaPage() {
             {/* NIEBLA sobre continentes no revelados. Jugador: opaca. DM: translúcida y clic-a-través. */}
             {!focus && Object.entries(CONTINENT_VIEW).map(([field, v]) => {
               const cp = pinForField(field);
-              if (!cp || cp.revealed) return null;
+              // FALLA CERRADO: antes era `if (!cp || cp.revealed) return null`,
+              // así que a un continente al que le faltara su pin no se le
+              // pintaba niebla — quedaba despejado sin que nadie lo hubiera
+              // descubierto. Un pin que falta cuenta ahora como no revelado.
+              if (!hayNiebla(cp)) return null;
               return (
                 <div key={`fog-${field}`} className={`absolute flex items-center justify-center ${isDM ? "pointer-events-none" : ""}`}
                   style={{ left: `${v.box.x}%`, top: `${v.box.y}%`, width: `${v.box.w}%`, height: `${v.box.h}%`,
@@ -247,10 +255,10 @@ export default function MapaPage() {
               <p className="prose-lore !text-[15px] mb-4">Cinco masas de tierra bajo dos lunas. Clic en un continente para adentrarte en sus regiones y ciudades.</p>
               <p className="eyebrow mb-3">Continentes {isDM ? "" : "descubiertos"}</p>
               <div className="flex flex-wrap gap-2">
-                {continentPins.filter((cp) => isDM || cp.revealed).map((cp) => (
+                {continentPins.filter((cp) => continenteVisible(cp, isDM)).map((cp) => (
                   <button key={cp.id} onClick={() => openContinent(cp.continent)} className="chip">{cp.name}</button>
                 ))}
-                {continentPins.filter((cp) => isDM || cp.revealed).length === 0 && <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Ninguno todavía.</span>}
+                {continentPins.filter((cp) => continenteVisible(cp, isDM)).length === 0 && <span className="text-sm italic" style={{ color: "var(--color-dim)" }}>Ninguno todavía.</span>}
               </div>
             </>
           )}

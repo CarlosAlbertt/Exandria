@@ -5,6 +5,7 @@ import { useWorldPois } from "@/lib/useWorldPois";
 import { useRole } from "@/components/SessionProvider";
 import { continentBySlug } from "@/data/saber";
 import { slugify } from "@/lib/slug";
+import { continenteVisible } from "@/lib/niebla";
 
 // Lista de continentes de Exandria, filtrada por lo que el grupo ha descubierto.
 export default function ReinoRegions() {
@@ -13,7 +14,7 @@ export default function ReinoRegions() {
   const isDM = role === "dm";
 
   const continents = pois.filter((p) => p.type === "continente");
-  const visible = continents.filter((c) => isDM || c.revealed);
+  const visible = continents.filter((c) => continenteVisible(c, isDM));
 
   return (
     <section className="mb-20">
@@ -34,10 +35,13 @@ export default function ReinoRegions() {
             Aún no habéis descubierto ningún continente. Tu DM los irá revelando conforme avance la campaña.
           </p>
           {/* Al DM esta rama no le sale nunca (ve todos los continentes), pero
-              si algún día cambia el filtro, que sepa dónde se revelan. */}
+              si algún día cambia el filtro, que sepa dónde se revelan.
+              Decía «Panel DM › Mapa» y ahí no estaba: el interruptor se borró
+              el 2026-07-12 al reescribir ese panel, y hasta el 2026-08-06 no
+              hubo ninguno. Ahora vive en Regiones, con las regiones. */}
           {isDM && (
             <p className="font-ui text-[12px] mt-3" style={{ color: "var(--color-dim)" }}>
-              Se revelan desde Panel DM › Mapa.
+              Se descubren desde Panel DM › Regiones.
             </p>
           )}
         </div>
