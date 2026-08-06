@@ -83,6 +83,52 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > > **«Sastreria y merceria» tiene que dar `sastre`**. Es la tercera vez que lo
 > > que encuentra la mutación es *una regla que no podía fallar*.
 >
+> **4 · Y el mismo día, lo que abrir `/mapa` destapó: EL DM NO PODÍA DESCUBRIR
+> UN CONTINENTE.** Rama `fix/revelar-continentes`.
+>
+> **No es que nunca existiera: se borró.** El interruptor vivía en `MapaPanel`
+> como `toggleReveal` y se lo llevó por delante el commit **`5bf5c90` del
+> 2026-07-12**, que reescribió ese panel alrededor del atlas. Desde entonces
+> `revealed` de los pines de continente **no se podía cambiar desde ninguna
+> pantalla**, y `useWorldPois` exportaba `save`, `saveWorldPois` y `newWorldPoi`
+> **sin que los llamara nadie**.
+>
+> ⚠️ **Y no era solo cosa de `/mapa`, que se abrió ese mismo día**: `/reino` lleva
+> abierta desde el principio y `ReinoRegions` filtra por el mismo `revealed`, así
+> que **los jugadores llevaban tres semanas leyendo «Aún no habéis descubierto
+> ningún continente»**. El propio componente le decía al DM «Se revelan desde
+> Panel DM › Mapa», **apuntando al botón borrado**.
+>
+> **Vuelve en Panel DM › Regiones**, no en Mapa: ese panel ya es donde se decide
+> qué ve el grupo del mundo, así que continente y región caen en la misma
+> pantalla y en ese orden.
+>
+> **La cascada, decidida con el usuario**: marcar una región **«Conocida»
+> descubre su continente**. Una región conocida bajo niebla es **inalcanzable**
+> —el jugador no puede entrar en el continente para verla— y el estado se lee
+> como un fallo de la app. Es el mismo escalón que ya hacía «Explorada» al poner
+> «Conocida». **Solo sube**: dejar de conocerla no vuelve a poner la niebla, que
+> taparía las demás de rebote. Para los continentes que ya estén así, la cabecera
+> avisa con «N regiones conocidas bajo niebla».
+>
+> ⚠️ **Y la niebla FALLABA ABIERTA**: `if (!cp || cp.revealed) return null` no
+> pintaba nada cuando faltaba el pin, así que **un continente sin pin quedaba
+> despejado** sin que nadie lo hubiera descubierto. La regla se muda entera a
+> **`lib/niebla.ts`** (módulo neutral, como `lib/slug.ts`) y de paso deja de estar
+> **copiada en cuatro sitios** entre `/mapa` y `ReinoRegions`.
+>
+> > **La lección**: se saca del JSX por la misma razón que `facesFrom` en
+> > `lib/diceBox.ts` — **dentro de un `.map` no había forma de comprobarla**, y por
+> > eso el fallo abierto sobrevivió. Si una regla de «quién ve qué» vive en el
+> > render, no la vigila nadie.
+>
+> Lo vigila el **gate 25 (`check-acceso`)**, que es la misma pregunta que ya
+> responde —quién ve qué— pero dentro de una página en vez de por ruta. Incluye
+> que **todo continente de `CONTINENT_VIEW` tenga pin en `WORLD_POIS`**: sin pin,
+> y con la niebla ya fallando cerrado, quedaría tapado para siempre y sin
+> interruptor. **Cuatro mutaciones probadas**, incluida la de devolver el fallo
+> original.
+>
 > **Los 35 gates en verde**, con `tsc --noEmit` y `next build` limpios.
 > **Sin probar en la app viva.**
 

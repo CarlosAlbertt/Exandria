@@ -50,6 +50,14 @@ de verdad hay que mirar es que **no se filtre nada**:
    ninguna misión `oculta`.
 4. `/panteon`: los 32 enteros, que es lo esperado.
 
+**Y lo primero de todo, porque es lo que lo desbloquea**: en **Panel DM ›
+Regiones**, cada continente tiene ahora un interruptor **«Descubierto»**.
+Enciende al menos uno o el jugador seguirá viendo `/mapa` entero bajo niebla y
+`/reino` diciendo «Aún no habéis descubierto ningún continente» — que es como
+llevaba **desde el 2026-07-12**, cuando el interruptor se borró sin querer.
+Comprueba también que marcar una región **«Conocida»** descubre su continente
+sola, y que si tenías regiones conocidas bajo niebla la cabecera te lo avisa.
+
 **Como DM**, en Panel DM › Tiendas:
 
 5. Crear una tienda **eligiendo un tipo de la lista**, darle a **Semilla** y que
