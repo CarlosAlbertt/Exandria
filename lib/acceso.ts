@@ -111,6 +111,11 @@ export const PUERTAS_JUGADOR: {
   { href: "/inventario", icon: "fa-sack-xmark", label: "Tu inventario", text: "Lo que llevas encima, lo que pesa y lo que llevas puesto.", accent: "var(--color-bronze)" },
   { href: "/reino", icon: "fa-book-open", label: "El reino", text: "La historia de Exandria y las tierras que vais conociendo.", accent: "var(--color-primitivo)" },
   { href: "/crear", icon: "fa-hat-wizard", label: "Crear personaje", text: "Especie, clase, trasfondo y aptitudes del reglamento 2024.", accent: "var(--color-violet)" },
+  // Las dos que se sumaron al abrir las cuatro secciones (2026-08-06). Solo
+  // estas dos y no las cuatro: son las que se miran en mesa. Panteón y Crónica
+  // se alcanzan desde la barra y no necesitan tarjeta.
+  { href: "/mapa", icon: "fa-map-location-dot", label: "El mapa", text: "Los cinco continentes, y la niebla sobre lo que aún no habéis hallado.", accent: "var(--color-arcano)" },
+  { href: "/bestiario", icon: "fa-dragon", label: "El bestiario", text: "Las criaturas que habéis llegado a ver, con sus rasgos y sus ataques.", accent: "var(--color-ember)" },
 ];
 
 /**
