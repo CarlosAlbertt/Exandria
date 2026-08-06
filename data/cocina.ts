@@ -144,6 +144,15 @@ export const INGREDIENTES_COCINA: IngredienteCocina[] = [
   { n: 98, name: "Raciones Secas de Aventurero", category: "despensa", blurb: "El ingrediente base cuando todo lo demás falla." },
   { n: 99, name: "Pasta Tradicional de la Costa", category: "despensa", blurb: "Tiras de masa seca listas para hervir en caldos pesados." },
   { n: 100, name: "Baya Buena deshidratada", category: "despensa", blurb: "Ingrediente mágico: una sola baya integrada en un pastel puede quitarle el hambre de un día a quien lo coma." },
+
+  // --- Piezas de despiece, tanda CR 0 (2026-08-06) --------------------------
+  // De `data/despiece.ts`. Correlativas al final: el `n` es la referencia de
+  // mesa y renumerar lo viejo la rompería.
+  { n: 101, name: "Carne Magra de Babuino", category: "carne", blurb: "Dura y con sabor fuerte. Come quien no tiene otra cosa, y se agradece guisada mucho rato." },
+  { n: 102, name: "Cuajo de Cabra", category: "lacteo", blurb: "Del cuarto estómago del cabrito. Sin él no hay queso: es lo que separa la cuajada del suero." },
+  { n: 103, name: "Pinza de Cangrejo", category: "pescado", blurb: "Se parte con el mango del cuchillo. Poca carne y muy dulce, y el caldo que suelta vale más que ella." },
+  { n: 104, name: "Ventosa de Pulpo", category: "pescado", blurb: "La parte que queda tierna si se cuece despacio y correosa si se tiene prisa." },
+  { n: 105, name: "Grasa de Tejón", category: "carne", blurb: "Se derrite limpia y aguanta meses en tarro. Es la manteca de quien cocina lejos de una despensa." },
 ];
 
 /** Los ingredientes de cocina de una categoría, en orden de catálogo. */

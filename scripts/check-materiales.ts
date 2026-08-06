@@ -33,9 +33,9 @@ function comprobarCatalogo(
     ns.every((n, idx) => idx === 0 || n > ns[idx - 1]));
 }
 
-comprobarCatalogo("destilación", INGREDIENTES_DESTILACION, 49);
+comprobarCatalogo("destilación", INGREDIENTES_DESTILACION, 50); // 49 + 1 de despiece
 comprobarCatalogo("cristalografía", MATERIALES_CRISTAL, 50);
-comprobarCatalogo("tatuaje", MATERIALES_TATUAJE, 25);
+comprobarCatalogo("tatuaje", MATERIALES_TATUAJE, 28); // 25 + 3 de despiece
 
 // --- Destilación: el riesgo -------------------------------------------------
 // Es el catálogo peligroso: varios ingredientes traen contrapartida explícita.
@@ -100,8 +100,8 @@ const repetidos = [...vistos.entries()]
 check(`ningún nombre exacto en dos catálogos${repetidos.length ? ` — hay: ${repetidos.join("; ")}` : ""}`,
   JSON.stringify(repetidos.map((r) => r.split(" (")[0])) === JSON.stringify(SOLAPES_ESPERADOS));
 
-check("los seis catálogos suman 369 entradas (70+100+75+49+50+25)",
-  CATALOGOS.reduce((s, c) => s + c.nombres.length, 0) === 369);
+check("los seis catálogos suman 391 entradas (77+105+81+50+50+28)",
+  CATALOGOS.reduce((s, c) => s + c.nombres.length, 0) === 391);
 check("los seis catálogos están declarados", CATALOGOS.length === 6);
 
 // --- Los helpers ------------------------------------------------------------

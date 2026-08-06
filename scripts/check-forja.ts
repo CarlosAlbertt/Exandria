@@ -12,7 +12,7 @@ function check(label: string, condition: boolean) {
 }
 
 // --- El catálogo entero -----------------------------------------------------
-check("hay 75 materiales de forja", MATERIALES_FORJA.length === 75);
+check("hay 81 materiales de forja (75 originales + 6 de despiece)", MATERIALES_FORJA.length === 81);
 check("ningún nombre repetido",
   new Set(MATERIALES_FORJA.map((m) => m.name)).size === MATERIALES_FORJA.length);
 check("ningún nombre vacío", MATERIALES_FORJA.every((m) => m.name.trim().length > 0));
@@ -20,14 +20,14 @@ check("ninguna descripción vacía", MATERIALES_FORJA.every((m) => m.blurb.trim(
 
 const ns = MATERIALES_FORJA.map((m) => m.n);
 check("los números de catálogo son únicos", new Set(ns).size === ns.length);
-check("van de 1 a 75 sin huecos",
+check(`van de 1 a ${MATERIALES_FORJA.length} sin huecos`,
   ns.slice().sort((a, b) => a - b).every((n, idx) => n === idx + 1));
 check("el catálogo está en orden de número",
   ns.every((n, idx) => idx === 0 || n > ns[idx - 1]));
 
 // --- Reparto por categoría --------------------------------------------------
 const ESPERADO: Record<ForjaCategoria, number> = {
-  metal: 15, cristal: 15, monstruo: 15, madera: 15, temple: 15,
+  metal: 15, cristal: 15, monstruo: 21, madera: 15, temple: 15, // monstruo: 15 + 6 de despiece
 };
 let suma = 0;
 for (const cat of Object.keys(ESPERADO) as ForjaCategoria[]) {
@@ -40,16 +40,18 @@ check("las categorías suman el catálogo entero", suma === MATERIALES_FORJA.len
 check("no hay ninguna categoría fuera de las cinco",
   MATERIALES_FORJA.every((m) => m.category in ESPERADO));
 
+// ⚠️ Solo los 75 originales: ver la nota de check-alquimia. El `n` manda.
+const BLOQUE_ORIGINAL = 75;
 const orden: ForjaCategoria[] = ["metal", "cristal", "monstruo", "madera", "temple"];
 let cursor = 0;
 let seguidas = true;
-for (const m of MATERIALES_FORJA) {
+for (const m of MATERIALES_FORJA.slice(0, BLOQUE_ORIGINAL)) {
   if (m.category === orden[cursor]) continue;
   if (m.category === orden[cursor + 1]) { cursor++; continue; }
   seguidas = false;
   break;
 }
-check("las categorías van en bloques seguidos (metal → cristal → monstruo → madera → temple)", seguidas);
+check(`los ${BLOQUE_ORIGINAL} originales van en bloques seguidos (metal → cristal → monstruo → madera → temple)`, seguidas);
 
 // --- La mecánica ------------------------------------------------------------
 // Este catálogo es el único de los tres que trae REGLA, no solo sabor. Si el

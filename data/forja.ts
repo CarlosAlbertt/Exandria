@@ -125,6 +125,16 @@ export const MATERIALES_FORJA: MaterialForja[] = [
   { n: 73, name: "Barro del Underdark", category: "temple", blurb: "Arcilla que aguanta miles de grados; para los moldes de fundición de espadas complejas." },
   { n: 74, name: "Resina de Árbol Carnívoro", category: "temple", blurb: "Se unta en el mango acabado.", mecanica: "Se adhiere a la mano: no te pueden desarmar." },
   { n: 75, name: "Polvo de Estrella Fugaz", category: "temple", blurb: "Se tira al carbón en el último segundo. El arma brillará con luz estelar para siempre." },
+
+  // --- Piezas de despiece, tanda CR 0 (2026-08-06) --------------------------
+  // De `data/despiece.ts`. Van en `monstruo`, que es la categoría que ya existía
+  // para las piezas de bicho. Sin `mecanica`: son materia prima, no regla.
+  { n: 76, name: "Asta de Ciervo", category: "monstruo", blurb: "Se cae sola cada invierno, así que no hace falta matar para tenerla. Mangos, botones y empuñaduras." },
+  { n: 77, name: "Colmillo de Chacal", category: "monstruo", blurb: "Pequeño y muy duro. Se engarza de a docenas en mazas y guanteletes de las tribus del yermo." },
+  { n: 78, name: "Mandíbula de Hiena", category: "monstruo", blurb: "Muerde hueso sin astillarse. Rota en piezas, da las mejores púas cortas que un herrero puede montar." },
+  { n: 79, name: "Piel de Comadreja", category: "monstruo", blurb: "Fina y silenciosa. No para armadura: para forrar vainas y que el acero salga sin ruido." },
+  { n: 80, name: "Diente de Piraña", category: "monstruo", blurb: "Triangular y con filo de sierra de fábrica. Montados en fila hacen una hoja dentada que nadie afila." },
+  { n: 81, name: "Hilo de Araña Común", category: "monstruo", blurb: "El de la araña corriente, no el de las de fase. Resistente para su grosor y barato de recoger a puñados." },
 ];
 
 /** Los materiales de una categoría, en orden de catálogo. */

@@ -12,7 +12,7 @@ function check(label: string, condition: boolean) {
 }
 
 // --- La despensa entera -----------------------------------------------------
-check("hay 100 ingredientes de cocina", INGREDIENTES_COCINA.length === 100);
+check("hay 105 ingredientes de cocina (100 originales + 5 de despiece)", INGREDIENTES_COCINA.length === 105);
 check("ningún nombre repetido",
   new Set(INGREDIENTES_COCINA.map((i) => i.name)).size === INGREDIENTES_COCINA.length);
 check("ningún nombre vacío", INGREDIENTES_COCINA.every((i) => i.name.trim().length > 0));
@@ -22,14 +22,14 @@ check("ninguna descripción vacía", INGREDIENTES_COCINA.every((i) => i.blurb.tr
 // que no puede haber huecos ni repetidos o una receta apuntaría a la nada.
 const ns = INGREDIENTES_COCINA.map((i) => i.n);
 check("los números de catálogo son únicos", new Set(ns).size === ns.length);
-check("van de 1 a 100 sin huecos",
+check(`van de 1 a ${INGREDIENTES_COCINA.length} sin huecos`,
   ns.slice().sort((a, b) => a - b).every((n, idx) => n === idx + 1));
 check("la despensa está en orden de número",
   ns.every((n, idx) => idx === 0 || n > ns[idx - 1]));
 
 // --- Reparto por categoría --------------------------------------------------
 const ESPERADO: Record<CocinaCategoria, number> = {
-  carne: 25, pescado: 20, vegetal: 25, lacteo: 15, despensa: 15,
+  carne: 27, pescado: 22, vegetal: 25, lacteo: 16, despensa: 15, // +5 de despiece
 };
 let suma = 0;
 for (const cat of Object.keys(ESPERADO) as CocinaCategoria[]) {
@@ -42,16 +42,19 @@ check("las categorías suman la despensa entera", suma === INGREDIENTES_COCINA.l
 check("no hay ninguna categoría fuera de las cinco",
   INGREDIENTES_COCINA.every((i) => i.category in ESPERADO));
 
+// ⚠️ Solo los 100 originales: apilar al final es la única forma de añadir sin
+// renumerar, y el `n` no se renumera nunca (es la referencia de mesa).
+const BLOQUE_ORIGINAL = 100;
 const orden: CocinaCategoria[] = ["carne", "pescado", "vegetal", "lacteo", "despensa"];
 let cursor = 0;
 let seguidas = true;
-for (const i of INGREDIENTES_COCINA) {
+for (const i of INGREDIENTES_COCINA.slice(0, BLOQUE_ORIGINAL)) {
   if (i.category === orden[cursor]) continue;
   if (i.category === orden[cursor + 1]) { cursor++; continue; }
   seguidas = false;
   break;
 }
-check("las categorías van en bloques seguidos (carne → pescado → vegetal → lácteo → despensa)", seguidas);
+check(`los ${BLOQUE_ORIGINAL} originales van en bloques seguidos (carne → pescado → vegetal → lácteo → despensa)`, seguidas);
 
 // El cruce entre catálogos vive en `scripts/check-materiales.ts`, que los
 // conoce los seis: tenerlo aquí también sería una segunda fuente de verdad.

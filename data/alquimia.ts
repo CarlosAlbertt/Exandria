@@ -107,6 +107,19 @@ export const INGREDIENTES: Ingrediente[] = [
   { n: 68, name: "Aliento de Elemental de Aire", category: "esencia", blurb: "Una brisa huracanada atrapada a presión en una botella de cristal." },
   { n: 69, name: "Zumo de Baya Buena", category: "esencia", blurb: "Zumo rojo extremadamente nutritivo extraído por druidas." },
   { n: 70, name: "Extracto de Luz de Catha", category: "esencia", blurb: "Rocío recogido de hojas iluminadas únicamente por la luna blanca de Exandria." },
+
+  // --- Piezas de despiece, tanda CR 0 (2026-08-06) --------------------------
+  // Salen de `data/despiece.ts`: lo que suelta cada monstruo al despiezarlo con
+  // Extracción de Componentes. Se añaden AL FINAL y con número correlativo
+  // porque el `n` es como se referencian en mesa («el 46, el residuum») y
+  // renumerar lo viejo rompería esa referencia.
+  { n: 71, name: "Buche de Buitre", category: "fauna", blurb: "Bolsa correosa llena de jugos que digieren carroña sin envenenar al ave. Disuelve lo que ningún ácido de frasco toca." },
+  { n: 72, name: "Guano de Murciélago", category: "fauna", blurb: "Se recoge en cuevas, seco y apelmazado. Mezclado con azufre es el componente clásico de todo lo que estalla." },
+  { n: 73, name: "Zarpa de Halcón", category: "fauna", blurb: "Garra curva de cazador diurno. Molida, entra en las preparaciones que agudizan la vista." },
+  { n: 74, name: "Cola de Lagarto Cercenada", category: "fauna", blurb: "Sigue moviéndose un rato después de soltarse. Base de todo lo que busca reconstruir carne." },
+  { n: 75, name: "Piel Húmeda de Rana", category: "fauna", blurb: "Se conserva en agua o se agrieta y pierde el humor que la hace útil para respirar bajo el agua." },
+  { n: 76, name: "Pelo de Gato Negro", category: "fauna", blurb: "Vale cualquier gato; el color es superstición de gremio, pero ningún alquimista se atreve a saltársela." },
+  { n: 77, name: "Cola de Rata", category: "fauna", blurb: "Barata y en todas partes. Es el relleno con el que se estiran las preparaciones sin arruinarlas." },
 ];
 
 /** Los ingredientes de una categoría, en orden de catálogo. */
