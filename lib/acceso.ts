@@ -18,6 +18,26 @@ export const RUTAS_JUGADOR = [
   "/taller",
   "/reino",
   "/lugar",
+  // Las cuatro que se abrieron el 2026-08-06. Ninguna necesitó tocar su página:
+  // tres ya distinguían el rol de antes, de cuando el DM y el jugador
+  // compartían app, y la cuarta la filtra la RLS.
+  //   /panteon   — catálogo de consulta sin secretos (decidido en la spec del
+  //                2026-07-21: que los dioses existen no se oculta en Exandria).
+  //   /mapa      — niebla sobre los continentes sin `revealed`, regiones solo
+  //                con `known` y su mapa solo con `explored`.
+  //   /bestiario — `restrictToDiscovered = !isDM`; sin botones de edición.
+  //   /cronica   — schema_v12: el diario y los PNJ piden `visible`, y las
+  //                misiones `status <> 'oculta'`. La vista no pinta las de
+  //                estado `oferta`, que la RLS sí deja pasar.
+  // ⚠️ Con /cronica entra una fuga PREEXISTENTE, y va dicha: las pistas viven
+  // en `app_config`, que cualquier autenticado puede leer (schema_v5), y la
+  // página se las descarga todas para filtrarlas en JS. Abrir la ruta no amplía
+  // el acceso a la BD (un jugador ya podía pedirlas por consola), pero sí hace
+  // que ese código corra a diario. El arreglo de raíz es tabla propia con RLS.
+  "/panteon",
+  "/cronica",
+  "/bestiario",
+  "/mapa",
   "/cerrado",
   "/login",
 ] as const;

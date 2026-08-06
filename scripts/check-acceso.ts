@@ -20,12 +20,12 @@ check("dm: el early-return abre cualquier ruta",
   ["/", "/mapa", "/dm", "/reino/wildemount", "/lo-que-sea"].every((p) => puedeVer("dm", p)));
 
 // --- El jugador ve exactamente su lista ------------------------------------
-const ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/taller", "/reino", "/lugar", "/cerrado", "/login"];
+const ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/taller", "/reino", "/lugar", "/panteon", "/cronica", "/bestiario", "/mapa", "/cerrado", "/login"];
 for (const p of ABIERTAS) {
   check(`jugador ve ${p}`, puedeVer("player", p) === true);
 }
 
-const CERRADAS = ["/panteon", "/cronica", "/bestiario", "/oficios", "/mapa", "/combate", "/taberna", "/narrador", "/dm"];
+const CERRADAS = ["/oficios", "/combate", "/taberna", "/narrador", "/dm"];
 for (const p of CERRADAS) {
   check(`jugador NO ve ${p}`, puedeVer("player", p) === false);
 }
@@ -35,7 +35,12 @@ check("jugador ve /reino/wildemount (subruta)", puedeVer("player", "/reino/wilde
 check("jugador ve /reino/tal-dorei (subruta)", puedeVer("player", "/reino/tal-dorei") === true);
 check("jugador NO ve /reinos (prefijo falso)", puedeVer("player", "/reinos") === false);
 check("jugador NO ve /personajes (prefijo falso)", puedeVer("player", "/personajes") === false);
-check("jugador NO ve /mapa/algo (subruta cerrada)", puedeVer("player", "/mapa/algo") === false);
+// Una subruta bajo una carpeta CERRADA sigue cerrada. Antes esto se probaba con
+// `/mapa/algo`; desde que /mapa se abrió (2026-08-06) esa ruta es visible por la
+// regla de prefijo, así que la comprobación se mudó a una que sigue cerrada —
+// perderla habría dejado de vigilar la herencia de permiso hacia abajo.
+check("jugador NO ve /dm/algo (subruta cerrada)", puedeVer("player", "/dm/algo") === false);
+check("jugador SÍ ve /mapa/algo (subruta de una abierta)", puedeVer("player", "/mapa/algo") === true);
 check('"/" no abre todo por prefijo', puedeVer("player", "/dm") === false);
 
 // --- Coherencia de la lista ------------------------------------------------
@@ -60,8 +65,8 @@ const APP = join(process.cwd(), "app");
 // TODAS las rutas de páginas esperadas, no solo las de primer nivel: una ruta
 // anidada bajo una carpeta abierta (p. ej. app/reino/loquesea/) heredaría el
 // permiso de su padre por la regla de prefijo y se colaría sin decidirlo.
-const ESPERADAS_ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/taller", "/reino", "/reino/[continente]", "/lugar", "/cerrado", "/login"];
-const ESPERADAS_CERRADAS = ["/panteon", "/cronica", "/bestiario", "/oficios", "/mapa", "/combate", "/taberna", "/narrador", "/dm"];
+const ESPERADAS_ABIERTAS = ["/", "/crear", "/personaje", "/inventario", "/taller", "/reino", "/reino/[continente]", "/lugar", "/panteon", "/cronica", "/bestiario", "/mapa", "/cerrado", "/login"];
+const ESPERADAS_CERRADAS = ["/oficios", "/combate", "/taberna", "/narrador", "/dm"];
 
 // Todas las rutas con página bajo este directorio, con su ruta completa (los
 // segmentos dinámicos se conservan tal cual: `/reino/[continente]`).
@@ -90,8 +95,10 @@ for (const r of clasificadas) {
 
 // --- Los enlaces del nav no llevan a puerta cerrada ------------------------
 const navJugador = NAV_LINKS.filter((l) => puedeVer("player", l.href)).map((l) => l.href);
-check("nav del jugador = Inicio, Ficha, Reino, Crear, Inventario, Taller",
-  JSON.stringify(navJugador) === JSON.stringify(["/", "/personaje", "/reino", "/crear", "/inventario", "/taller"]));
+// El orden es el de NAV_LINKS y NO se reordenó al abrir las cuatro (2026-08-06):
+// es la misma lista que ve el DM, y reagruparla le movería la barra a él también.
+check("nav del jugador = Inicio, Ficha, Reino, Panteón, Crónica, Bestiario, Crear, Inventario, Taller, Mapa",
+  JSON.stringify(navJugador) === JSON.stringify(["/", "/personaje", "/reino", "/panteon", "/cronica", "/bestiario", "/crear", "/inventario", "/taller", "/mapa"]));
 check("nav: sin hrefs duplicados",
   new Set(NAV_LINKS.map((l) => l.href)).size === NAV_LINKS.length);
 check("nav: ninguna etiqueta vacía", NAV_LINKS.every((l) => l.label.trim().length > 0));
