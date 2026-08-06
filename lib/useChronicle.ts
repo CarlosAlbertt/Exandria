@@ -25,6 +25,14 @@ export type Quest = {
   reward: string;
   // Ids de saber que la misión reparte al grupo al completarse (schema_v19).
   unlock_lore: string[];
+  // Misiones individuales (schema_v24). `assigned_character_id` es la FICHA a
+  // la que se asigna, no el jugador: de ficha se llega siempre a su dueño
+  // (characters.user_id) y así la misión no la hereda el personaje siguiente.
+  // null en las dos = misión del grupo sin PNJ detrás, que es como se comporta
+  // todo lo anterior a la v24. La RLS ya filtra las asignadas a otros: esto
+  // llega para poder PINTARLAS distinto, no para decidir quién las ve.
+  assigned_character_id: string | null;
+  npc_id: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -40,7 +48,7 @@ export type NpcMet = {
 };
 
 const ENTRY_FIELDS = "id, session_no, title, body, game_date, visible, created_at, updated_at";
-const QUEST_FIELDS = "id, title, body, status, poi_name, reward, unlock_lore, created_at, updated_at";
+const QUEST_FIELDS = "id, title, body, status, poi_name, reward, unlock_lore, assigned_character_id, npc_id, created_at, updated_at";
 const NPC_FIELDS = "id, name, role, notes, region, visible, created_at";
 
 // Crónica de campaña: diario de sesión, misiones y PNJ conocidos. Tres
