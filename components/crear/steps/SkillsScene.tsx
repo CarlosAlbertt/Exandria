@@ -78,9 +78,12 @@ export default function SkillsScene({
         </div>
 
         <div className="panel p-5">
-          <p className="eyebrow mb-1">Oficio ({cls.name})</p>
+          {/* Ya no dice «Oficio (Bárbaro)»: desde el 2026-08-06 los siete están
+              abiertos a cualquier clase y lo único que limita es el cupo. */}
+          <p className="eyebrow mb-1">Oficio (los siete)</p>
           <p className="text-[12px] mb-3" style={{ color: "var(--color-dim)" }}>
-            Cupo aparte. Aprenderás otro al llegar a nivel 7.
+            Cupo aparte, y tu clase no te limita: elige el que quieras.
+            Aprenderás otro al llegar a nivel 7.
           </p>
           {oficioPool.length > 0 ? (
             <div className="flex flex-wrap gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { ABILITIES, AbilityKey, abilityMod, fmtMod, esOficio } from "@/data/rules";
+import { ABILITIES, AbilityKey, abilityMod, fmtMod, esOficio, OFICIOS } from "@/data/rules";
 import { reachedAsiLevels, proficiencyBonus, rollHitDie, maxHpFromRolls, xpForNext, oficioPicks, OFICIO_LEVELS } from "@/data/leveling";
 import type { Asi } from "@/lib/character";
 
@@ -21,8 +21,6 @@ type Props = {
   /** todas las pericias del personaje (las 2024 y las de oficio, en un array) */
   skills?: string[];
   onSkills?: (next: string[]) => void;
-  /** oficios que ofrece su clase (`CharClass.oficios`) */
-  oficios?: string[];
 };
 
 /** Suma del reparto ASI de un hito. */
@@ -40,7 +38,7 @@ export function asiTotals(asi: Asi): Record<AbilityKey, number> {
   return out;
 }
 
-export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, asi, onAsi, hpRolls, onRollHp, readOnly = false, canRollHp = false, xp = 0, skills = [], onSkills = () => {}, oficios = [] }: Props) {
+export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, asi, onAsi, hpRolls, onRollHp, readOnly = false, canRollHp = false, xp = 0, skills = [], onSkills = () => {} }: Props) {
   const hitos = reachedAsiLevels(clsSlug, level);
   const totals = asiTotals(asi);
   const conTotal = preAsi.con + totals.con;
@@ -139,8 +137,11 @@ export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, as
       )}
 
       {/* OFICIOS — cupo aparte del de la clase. Uno a nivel 1 (se elige en el
-          creador) y otro a nivel 7, que se elige aquí. */}
-      {oficios.length > 0 && (
+          creador) y otro a nivel 7, que se elige aquí.
+          Los SIETE están abiertos a cualquier clase desde el 2026-08-06: lo
+          único que limita es el cupo, así que la lista sale de `rules.OFICIOS`
+          y ya no llega por prop desde `CharClass.oficios`, que se retiró. */}
+      {OFICIOS.length > 0 && (
         <div className="panel-raised p-3 mt-3">
           <p className="eyebrow mb-2">
             Oficios · <span style={{ color: elegidos.length === cupo ? "var(--color-primitivo)" : "var(--color-ember)" }}>{elegidos.length}/{cupo}</span>
@@ -151,7 +152,7 @@ export default function LevelPanel({ level, onLevel, clsSlug, hitDie, preAsi, as
             </p>
           )}
           <div className="flex flex-wrap gap-2">
-            {oficios.map((n) => {
+            {OFICIOS.map(({ name: n }) => {
               const on = skills.includes(n);
               const lleno = !on && elegidos.length >= cupo;
               return (
