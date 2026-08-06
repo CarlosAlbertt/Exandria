@@ -219,11 +219,18 @@ function DiarioSection({ entries }: { entries: JournalEntry[] }) {
 }
 
 /* ------------------------------ MISIONES ------------------------------ */
-const EMPTY_QUEST = { title: "", body: "", status: "activa" as Quest["status"], poi_name: "", reward: "", unlock_lore: [] as string[] };
+const EMPTY_QUEST = {
+  title: "", body: "", status: "activa" as Quest["status"], poi_name: "", reward: "",
+  unlock_lore: [] as string[],
+  // Misiones individuales (schema_v24). "" = sin asignar / sin PNJ, que es la
+  // misión de grupo de toda la vida.
+  assigned_character_id: "", npc_id: "",
+};
 
 function MisionesSection({ quests }: { quests: Quest[] }) {
   const { atlas } = useAtlas();
   const { party } = useParty();
+  const { npcs: todosLosNpcs } = useAllNpcs();
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_QUEST);
   const [busy, setBusy] = useState(false);
@@ -236,7 +243,11 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
 
   function edit(q: Quest) {
     setEditing(q.id);
-    setForm({ title: q.title, body: q.body, status: q.status, poi_name: q.poi_name ?? "", reward: q.reward, unlock_lore: q.unlock_lore ?? [] });
+    setForm({
+      title: q.title, body: q.body, status: q.status, poi_name: q.poi_name ?? "", reward: q.reward,
+      unlock_lore: q.unlock_lore ?? [],
+      assigned_character_id: q.assigned_character_id ?? "", npc_id: q.npc_id != null ? String(q.npc_id) : "",
+    });
     setErr(null);
   }
   function reset() { setEditing(null); setForm(EMPTY_QUEST); }
@@ -249,12 +260,20 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
       title: form.title.trim(), body: form.body, status: form.status,
       poi_name: form.poi_name.trim() || null, reward: form.reward.trim(),
       unlock_lore: form.unlock_lore,
+      assigned_character_id: form.assigned_character_id || null,
+      npc_id: form.npc_id ? Number(form.npc_id) : null,
     };
     const { error } = await saveQuest(patch);
     if (!error && form.status === "completada" && form.unlock_lore.length > 0) {
-      // Al completarse, la misión enseña lo suyo a TODO el grupo (la escritura
-      // en fichas ajenas va por /api/dm/character, service_role).
-      await Promise.all(party.map((m) => fetch("/api/dm/character", {
+      // Al completarse, la misión enseña lo suyo. Una INDIVIDUAL solo a su
+      // dueño: repartirla al grupo delataría la misión que la RLS de la v24
+      // esconde, y es lo mismo que hace /api/entregar-mision cuando la cierra
+      // el propio jugador hablando con el PNJ. Sin asignar, a todo el grupo,
+      // como siempre. (La escritura en fichas ajenas va por /api/dm/character.)
+      const destino = form.assigned_character_id
+        ? party.filter((m) => m.id === form.assigned_character_id)
+        : party;
+      await Promise.all(destino.map((m) => fetch("/api/dm/character", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: m.user_id, patch: { unlockLore: form.unlock_lore } }),
       })));
@@ -294,6 +313,18 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
               </span>
               {q.poi_name && <span className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}><i className="fas fa-location-dot mr-1" />{q.poi_name}</span>}
               {q.reward && <span className="font-ui text-[11px]" style={{ color: "var(--color-bronze)" }}><i className="fas fa-coins mr-1" />{q.reward}</span>}
+              {/* De quién y de quién viene: sin esto, el DM no distingue una
+                  misión individual de una del grupo en la lista. */}
+              {q.assigned_character_id && (
+                <span className="font-ui text-[11px]" style={{ color: "var(--color-bronze-bright)" }}>
+                  <i className="fas fa-user mr-1" />{party.find((m) => m.id === q.assigned_character_id)?.name || "otra ficha"}
+                </span>
+              )}
+              {q.npc_id != null && (
+                <span className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>
+                  <i className="fas fa-comments mr-1" />{todosLosNpcs.find((n) => n.id === q.npc_id)?.name ?? `PNJ ${q.npc_id}`}
+                </span>
+              )}
             </div>
             <div className="flex gap-1.5 shrink-0">
               <button className="btn-ghost !py-1 !px-2.5 text-[11px]" onClick={() => edit(q)}><i className="fas fa-pen mr-1" />Editar</button>
@@ -320,6 +351,34 @@ function MisionesSection({ quests }: { quests: Quest[] }) {
           <input value={form.reward} onChange={(ev) => setForm((f) => ({ ...f, reward: ev.target.value }))}
             placeholder="Recompensa (ej.: 50 po)" className={inputCls} style={{ color: "var(--color-warm)" }} />
         </div>
+        {/* MISIÓN INDIVIDUAL (schema_v24). Dejar los dos vacíos = misión de
+            grupo, que es como se comporta todo lo anterior. */}
+        <div className="grid sm:grid-cols-2 gap-2 mb-2">
+          <select value={form.npc_id} onChange={(ev) => setForm((f) => ({ ...f, npc_id: ev.target.value }))}
+            className={inputCls} style={{ color: "var(--color-warm)" }} title="El PNJ que la encarga y ante quien se entrega">
+            <option value="">Sin PNJ (misión de tablón)</option>
+            {todosLosNpcs.map((n) => (
+              <option key={n.id} value={n.id}>{n.name}{n.role ? ` · ${n.role}` : ""} — {n.poi_name}</option>
+            ))}
+          </select>
+          <select value={form.assigned_character_id} onChange={(ev) => setForm((f) => ({ ...f, assigned_character_id: ev.target.value }))}
+            className={inputCls} style={{ color: "var(--color-warm)" }} title="Solo esa ficha y tú la veréis">
+            <option value="">Del grupo (la ven todos)</option>
+            {party.map((m) => (
+              <option key={m.id} value={m.id}>{m.name || m.username}</option>
+            ))}
+          </select>
+        </div>
+        {form.npc_id && !form.assigned_character_id && form.status === "oferta" && (
+          <p className="font-ui text-[11px] mb-2" style={{ color: "var(--color-dim)" }}>
+            <i className="fas fa-circle-info mr-1.5" />Se asignará sola a quien la acepte hablando con el PNJ.
+          </p>
+        )}
+        {form.assigned_character_id && !form.npc_id && (
+          <p className="font-ui text-[11px] mb-2" style={{ color: "var(--color-bronze)" }}>
+            <i className="fas fa-triangle-exclamation mr-1.5" />Sin PNJ, solo tú puedes cerrarla: no hay con quién entregarla.
+          </p>
+        )}
         <textarea value={form.body} onChange={(ev) => setForm((f) => ({ ...f, body: ev.target.value }))} rows={3}
           placeholder="Detalles de la misión…" className={`${inputCls} mb-3 resize-none`} style={{ color: "var(--color-warm)" }} />
         <div className="mb-3">

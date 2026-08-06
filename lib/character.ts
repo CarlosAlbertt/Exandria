@@ -279,7 +279,10 @@ function humanDbError(error: { message: string; code: string }): string {
 }
 
 // --- Vista del DM: todas las fichas del grupo con su username ---
-export type PartyMember = CharacterData & { user_id: string; username: string };
+// `id` es el de la FICHA, no el del jugador. Hace falta desde schema_v24 para
+// asignarle una misión individual a un personaje concreto: `user_id` no vale
+// porque un jugador tiene hasta 3 fichas.
+export type PartyMember = CharacterData & { id: string; user_id: string; username: string };
 
 export function useParty() {
   const [party, setParty] = useState<PartyMember[]>([]);
@@ -297,7 +300,7 @@ export function useParty() {
       // medias, la columna que falta tumbaba la consulta entera y el DM veía el
       // grupo VACÍO, sin pista de por qué.
       const cargarChars = (fields: string) =>
-        supabase.from("characters").select(`user_id, ${fields}`).is("archived_at", null) as unknown as
+        supabase.from("characters").select(`id, user_id, ${fields}`).is("archived_at", null) as unknown as
           Promise<{ data: unknown[]; error: { code?: string; message: string } | null }>;
 
       const [chars, profs] = await Promise.all([
@@ -311,7 +314,7 @@ export function useParty() {
       for (const p of (profs.data ?? []) as { id: string; username: string; role: string }[]) { names[p.id] = p.username; roles[p.id] = p.role; }
       // `as unknown` primero: con la lista de columnas dinámica, el cliente
       // tipado infiere un ParserError y no deja convertir directamente.
-      const rows = ((chars.data ?? []) as unknown as (CharacterData & { user_id: string })[])
+      const rows = ((chars.data ?? []) as unknown as (CharacterData & { id: string; user_id: string })[])
         .filter((c) => roles[c.user_id] !== "dm")
         .map((c) => ({ ...c, username: names[c.user_id] ?? "jugador" }));
       setParty(rows);
