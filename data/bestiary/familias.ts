@@ -3,9 +3,14 @@
 // La regla, decidida con el DM el 2026-08-06, y no es «agrupar para ahorrar»:
 // **separa lo que da material distinto, junta lo que da el mismo.**
 //
-//   - Una escama de dragón ROJO no es una de dragón BLANCO → el color separa.
-//   - Una escama de cría y una de anciano son la MISMA cosa con más o menos
-//     calidad → la edad no separa. Las 40 fichas de dragón son 10 familias.
+//   - Una escama de dragón ROJO no es una de dragón BLANCO → el color separa,
+//     y por eso las 40 fichas de dragón son 10 familias y no una.
+//   - La EDAD **no parte la familia, pero tampoco da igual**: la escama sigue
+//     siendo de dragón rojo, pero un anciano es otra liga. Se resuelve por
+//     GRADO dentro de la familia (`data/despiece.ts`): lo normal sale de
+//     cualquiera, y lo superior **solo de adulto y anciano**. Es el patrón que
+//     el catálogo ya usaba con «Diente de Vampiro Anciano».
+//     Y la dificultad y el número de piezas ya salen del CR y del tamaño.
 //   - Un mefito de hielo no da lo mismo que uno de magma → el elemento separa.
 //   - Del monodrón al pentadrón sale el mismo metal → una familia.
 //
