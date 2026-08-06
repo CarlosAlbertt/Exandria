@@ -143,7 +143,108 @@ corte manda sobre el `riesgo`** · cristalografía **el desastre rompe la gema**
 tatuaje **la runa torcida se queda puesta y el DM decide qué hace** · cocina
 **raciones variables** · extracción **se puede cortar a ciegas**.
 
-## LA TAREA: SEGUIR EXTRAYENDO EL BESTIARIO
+## LAS TRES TAREAS DE ESTA SESIÓN
+
+Decididas por el usuario el 2026-08-06. **Van por delante de seguir extrayendo el
+manual a ciegas**, que pasa a ser el relleno de cuando no haya nada mejor.
+
+---
+
+### 1 · MISIONES ONLINE PARA LOS JUGADORES
+
+> ⚠️ **Lee esto antes de construir nada: HAY MUCHO HECHO.** Este repo ya perdió
+> una sesión entera reconstruyendo alquimia desde cero porque nadie miró primero.
+
+**Lo que YA existe y no hay que rehacer:**
+- **Tabla `quests`** (`schema_v12` + `schema_v17`): `title`, `body`, `status`,
+  `poi_name`, `reward`, `unlock_lore`. Estados: `activa`, `completada`,
+  `fallida`, `oculta`, `oferta`. **Sin migración pendiente.**
+- **El DM las crea y edita** en **Panel DM › Crónica** (`app/dm/CronicaPanel.tsx`),
+  con **generador IA** incluido (`generarEncargo` en `lib/generar.ts`).
+- **El jugador ya puede ACEPTAR encargos**: `components/lugar/TablonSection.tsx`
+  pinta las de estado `oferta` cuyo `poi_name` coincide con el sitio, y
+  `aceptarEncargo` (`lib/encargo.ts`) las pasa a `activa`.
+- **`/cronica`** lista las activas y las cerradas, y **está abierta al jugador
+  desde el 2026-08-06**.
+- **Al completarlas, `unlock_lore` reparte saber a todo el grupo** por
+  `/api/dm/character`.
+- **La RLS ya protege**: `status <> 'oculta' or is_dm()`.
+
+**Lo que NO existe, y es por donde va la tarea:**
+- **El jugador no puede ENTREGAR una misión.** Solo el DM la cierra a mano.
+- **Las misiones son del GRUPO, no de nadie**: no hay columna de asignado, así
+  que no se puede dar una misión a un jugador concreto. Eso **sí** sería
+  migración.
+- **No hay objetivos ni progreso**: una misión es título + cuerpo, no una lista
+  de pasos que se van marcando.
+- **El tablón solo sale si el POI tiene `services.tablon`** (`data/pois.ts`), y
+  hoy lo tienen muy pocos. Igual el cuello de botella es ese y no el código.
+
+❓ **Pregunta al usuario qué de esto quiere**, porque «crear misiones online» ya
+se puede: lo que falta es entregarlas, asignarlas o darles pasos.
+
+---
+
+### 2 · LOS MONSTRUOS DE LA EXPANSIÓN VERDANTE, POR PROFUNDIDAD
+
+**La idea**: cuanto más adentro del bosque, más peligroso. Una tabla de
+encuentros por franja de profundidad.
+
+**Lo que hay**: la región existe (`data/taldorei.ts`, slug `expansion-verdante`,
+capital Syngorn, con submapa propio en `/maps/regions/`). **Lo que NO hay es
+ninguna tabla de encuentros por sitio**: `data/encounters.ts` solo trae
+`XP_BUDGET` (presupuesto por dificultad) y `CR_XP`. Nada geográfico.
+
+**Los que el usuario pidió, cruzados con el bestiario:**
+
+| Ya están | Faltan por extraer |
+|---|---|
+| Plaga de Enredaderas · Plaga de Agujas · Ciervo · Búho Gigante · Araña · Araña Lobo Gigante | **Montículo Reptante · Ser del Agua · Unicornio · Lobo Huargo · Jabalí Gigante · Centauro Guardián · Centauro Soldado · Oso Pardo · Araña Gigante · Osgo Acechador · Cría de Dragón Verde** |
+
+**Y faltan más para poblar un bosque feérico** — esto sale de cruzar el censo con
+el hábitat «Forest» del apéndice B, y conviene proponérselo al usuario antes de
+extraer: **Dríade, Sátiro y Sátiro Juerguista, Duende y Duende Prodigioso,
+Sprite, Perro Parpadeante, Ent, Arbusto y Árbol Despiertos** (estos dos ya
+están), **Oso Lechuza y Oso Lechuza Primigenio, Ettercap, Bruja Verde, Worg,
+Lobo, Trasgos y Hobgoblins, Grick, Arpía, Peryton, Twig Blight y Tree Blight,
+Micónidos, Hongo Chillón**. Casi todos son de la familia `fey`, `bestia` o
+`planta` de `data/bestiary/familias.ts`.
+
+⚠️ **Sobre la profundidad**: `SaberEntry` ya usa un campo `depth` con
+`"basico" | "profundo"`, pero **es otra cosa** —lo que sabe cualquiera frente a
+lo que sabe quien tiene el vínculo—. No lo reutilices sin decidirlo: son dos ejes
+distintos que se llamarían igual.
+
+---
+
+### 3 · MÁS LORE QUE DESCUBRIR
+
+**Lo que hay**: `data/saber.ts` con **209 entradas**, tipo
+`SaberEntry { id, scope, depth: "basico"|"profundo", topic, title, text, poi?, place, category }`.
+Se entrega con `lore_unlocked` en la ficha + `LorePicker` + `unlockLore` en
+`/api/dm/character`; se lee en `/reino` agrupado por lugar → categoría; y
+`components/lugar/SaberRoll.tsx` permite tirar por saber **in situ** en un POI.
+
+**Lo que falta**: profundidad en general, y en concreto la historia de **Thordak**
+(el Rey Cinéreo), el **Zigurat** y **el Susurrado** (Vecna). El usuario pasó
+estos enlaces como fuente:
+
+- https://criticalrole.fandom.com/wiki/Thordak
+- https://criticalrole.fandom.com/wiki/Ziggurat
+- https://criticalrole.fandom.com/wiki/The_Whispered_One
+
+⚠️ **Es material con copyright de una wiki**: se lee para documentarse, pero el
+`text` de cada entrada va **redactado de cero**, como ya se hace con los blurbs
+del Monster Manual. No se copia ni se traduce prosa.
+
+**Encaja sin tocar nada**: añadir entradas a `SABER` es solo datos, y `place` y
+`category` ya existen para colocarlas. Thordak y el Zigurat son de Tal'Dorei; el
+Susurrado es de Exandria entera. Ojo con `depth`: lo gordo de estas tres
+historias debería ser `profundo`, o deja de tener gracia descubrirlo.
+
+---
+
+## Lo de antes: SEGUIR EXTRAYENDO EL BESTIARIO
 
 **Vas por la página 38 del libro (41 del PDF). Cobertura: 149 de 501.**
 
