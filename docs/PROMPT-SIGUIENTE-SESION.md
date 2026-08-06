@@ -150,38 +150,61 @@ manual a ciegas**, que pasa a ser el relleno de cuando no haya nada mejor.
 
 ---
 
-### 1 · MISIONES ONLINE PARA LOS JUGADORES
+### 1 · MISIONES INDIVIDUALES, EN PLAN NOVELA VISUAL
 
-> ⚠️ **Lee esto antes de construir nada: HAY MUCHO HECHO.** Este repo ya perdió
-> una sesión entera reconstruyendo alquimia desde cero porque nadie miró primero.
+**Lo que quiere el usuario** (dicho el 2026-08-06): misiones **secundarias e
+individuales** —de un jugador, no del grupo— presentadas como una **novela
+visual**: tarjetas de PNJ con los que hablar, y **opciones de diálogo** sobre un
+prompt propio de cada PNJ.
 
-**Lo que YA existe y no hay que rehacer:**
-- **Tabla `quests`** (`schema_v12` + `schema_v17`): `title`, `body`, `status`,
-  `poi_name`, `reward`, `unlock_lore`. Estados: `activa`, `completada`,
-  `fallida`, `oculta`, `oferta`. **Sin migración pendiente.**
-- **El DM las crea y edita** en **Panel DM › Crónica** (`app/dm/CronicaPanel.tsx`),
-  con **generador IA** incluido (`generarEncargo` en `lib/generar.ts`).
-- **El jugador ya puede ACEPTAR encargos**: `components/lugar/TablonSection.tsx`
-  pinta las de estado `oferta` cuyo `poi_name` coincide con el sitio, y
-  `aceptarEncargo` (`lib/encargo.ts`) las pasa a `activa`.
-- **`/cronica`** lista las activas y las cerradas, y **está abierta al jugador
-  desde el 2026-08-06**.
-- **Al completarlas, `unlock_lore` reparte saber a todo el grupo** por
-  `/api/dm/character`.
-- **La RLS ya protege**: `status <> 'oculta' or is_dm()`.
+> ⚠️ **ANTES DE CONSTRUIR NADA, LEE ESTO: LA NOVELA VISUAL YA ESTÁ CASI ENTERA.**
+> Este repo perdió una sesión completa reconstruyendo alquimia desde cero por no
+> mirar primero. Aquí pasaría lo mismo.
 
-**Lo que NO existe, y es por donde va la tarea:**
-- **El jugador no puede ENTREGAR una misión.** Solo el DM la cierra a mano.
-- **Las misiones son del GRUPO, no de nadie**: no hay columna de asignado, así
-  que no se puede dar una misión a un jugador concreto. Eso **sí** sería
-  migración.
-- **No hay objetivos ni progreso**: una misión es título + cuerpo, no una lista
-  de pasos que se van marcando.
-- **El tablón solo sale si el POI tiene `services.tablon`** (`data/pois.ts`), y
-  hoy lo tienen muy pocos. Igual el cuello de botella es ese y no el código.
+**Lo que YA existe y funciona:**
+- **`location_npcs`** (`schema_v16`): PNJ **por POI**, con `name`, `role`,
+  **`prompt`** (personalidad y secretos, **solo lo ve el DM**), `public` (si los
+  jugadores lo ven) y **`portrait`** (URL de retrato).
+- **`npc_memories`** (`schema_v18`): **memoria por (PNJ, jugador)**. Cada jugador
+  tiene su propio hilo recordado con cada PNJ. Ya está hecho.
+- **`components/lugar/NpcSection.tsx`**: **las tarjetas ya existen** — retrato
+  redondo, nombre y oficio; clic y se abre la conversación.
+- **`personaFor()`** compone la persona desde el `prompt` del PNJ más el
+  **ambiente del lugar**, y obliga a responder en personaje.
+- **Panel DM › PNJs** (`app/dm/NpcsPanel.tsx`) los crea, edita y **los genera con
+  IA** (`generarNpc`), retrato incluido.
+- Y el **tendero de las tiendas** es el mismo patrón con otra persona
+  (`ShopSection`), así que hay dos ejemplos vivos.
 
-❓ **Pregunta al usuario qué de esto quiere**, porque «crear misiones online» ya
-se puede: lo que falta es entregarlas, asignarlas o darles pasos.
+**Lo que FALTA de verdad, y es justo lo que pidió:**
+1. **OPCIONES DE DIÁLOGO.** Hoy la conversación es una **caja de texto libre**:
+   escribes lo que quieras. No hay respuestas a elegir, que es lo que hace que
+   parezca una novela visual y no un chat. Hay que decidir si las opciones las
+   **escribe el DM** por PNJ (control, previsible) o **las propone la IA** a
+   partir de la conversación (vivo, pero puede irse por las ramas) — o las dos.
+2. **Ningún vínculo PNJ → misión.** `location_npcs` y `quests` no se conocen. Un
+   PNJ no puede encargarte nada.
+3. **Las misiones son del GRUPO.** `quests` no tiene columna de **asignado**, así
+   que no hay forma de dar una a un jugador concreto. **Esto sí es migración**
+   (`schema_v24`), y es la pieza que sostiene todo lo demás de esta tarea.
+4. **El jugador no puede ENTREGAR una misión**: solo el DM la cierra a mano.
+
+**Lo que ya está y sirve de andamio para las misiones:** la tabla `quests`
+(`schema_v12` + `v17`) con `title`, `body`, `status`
+(activa/completada/fallida/oculta/oferta), `poi_name`, `reward` y `unlock_lore`;
+el DM las crea en **Panel DM › Crónica** con generador IA (`generarEncargo`); el
+jugador **ya acepta** las de estado `oferta` desde el tablón del POI
+(`TablonSection` + `aceptarEncargo`), y `/cronica` las lista. Al completarlas,
+`unlock_lore` reparte saber a todo el grupo.
+
+⚠️ **El tablón solo aparece si el POI tiene `services.tablon`** (`data/pois.ts`),
+y hoy lo tienen muy pocos. Si «no salen misiones» en la app, mira eso antes que
+el código.
+
+❓ **Lo que hay que decidir con el usuario antes de tocar nada**: de dónde salen
+las opciones de diálogo (DM o IA), si una misión individual se asigna a un
+`user_id` o a un `character_id` (cada jugador tiene hasta tres fichas), y si el
+PNJ entrega la misión al elegir cierta opción o hay un botón aparte.
 
 ---
 
