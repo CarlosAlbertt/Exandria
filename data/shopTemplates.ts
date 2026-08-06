@@ -90,3 +90,29 @@ export function kindLabel(kind: string): string {
 export function kindIcon(kind: string): string {
   return SHOP_TEMPLATES[kind]?.icon ?? SHOP_ICON_FALLBACK;
 }
+
+/** Sin tildes, sin mayúsculas y sin espacios de sobra, para comparar. */
+function plano(s: string): string {
+  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
+}
+
+/**
+ * Convierte lo que el DM escribió en la clave que se guarda.
+ *
+ * Hace falta porque el desplegable de sugerencias es un `<datalist>`, y al
+ * elegir «Herrería» el navegador escribe en el input **la etiqueta**, no la
+ * clave. Guardado tal cual, esa tienda sería un tipo distinto de las que ya
+ * existen —mismo negocio, dos claves— y se quedaría sin plantilla ni icono.
+ *
+ * Compara contra la etiqueta y contra la clave **ignorando mayúsculas y
+ * tildes**: si acierta devuelve la clave, y si no, el texto recortado, que es
+ * el caso del tipo que el DM se inventa y que debe pasar intacto.
+ */
+export function normalizaKind(texto: string): string {
+  const t = plano(texto);
+  if (!t) return "general"; // nunca una tienda sin tipo
+  for (const [clave, def] of Object.entries(SHOP_TEMPLATES)) {
+    if (plano(def.label) === t || plano(clave) === t) return clave;
+  }
+  return texto.trim();
+}

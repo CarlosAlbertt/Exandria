@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useAtlas } from "@/lib/useAtlas";
-import { SHOP_KINDS } from "@/data/shopTemplates";
+import { SHOP_KINDS, SHOP_TEMPLATES, kindLabel, normalizaKind } from "@/data/shopTemplates";
 import {
   useShops, createShop, updateShop, deleteShop,
   addItem, updateItem, deleteItem, seedCatalog, type Shop, type ShopItem,
@@ -9,6 +9,37 @@ import {
 import { generarTienda } from "@/lib/generar";
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
+
+// El tipo de tienda es TEXTO LIBRE: `shops.kind` es `text` y nadie lo valida.
+// Las doce plantillas son sugerencias, no una reja — si el DM quiere una
+// pescadería, la escribe. Un solo `<datalist>` sirve a los dos inputs (el de
+// crear y el de editar), que lo referencian por id.
+const KINDS_LIST_ID = "shop-kinds";
+
+function KindsDatalist() {
+  return (
+    <datalist id={KINDS_LIST_ID}>
+      {SHOP_KINDS.map((k) => <option key={k} value={kindLabel(k)} />)}
+    </datalist>
+  );
+}
+
+// El input del tipo. `value` es lo que el DM está tecleando tal cual: la
+// normalización a clave se hace AL GUARDAR, no en cada tecla, o pelearía con
+// lo que está escribiendo.
+function KindInput({ value, onChange, width }: { value: string; onChange: (v: string) => void; width?: number }) {
+  return (
+    <input
+      list={KINDS_LIST_ID}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="Tipo (p. ej. Pescadería)"
+      title="Elige una sugerencia o escribe el tipo que quieras"
+      className={inputCls}
+      style={{ color: "var(--color-warm)", ...(width ? { width, flex: "0 0 auto" } : { flex: "0 1 180px" }) }}
+    />
+  );
+}
 
 export default function TiendasPanel() {
   const { atlas } = useAtlas();
@@ -21,14 +52,14 @@ export default function TiendasPanel() {
   const [poi, setPoi] = useState("");
   const { shops, ready, reload } = useShops(poi || null);
   const [newName, setNewName] = useState("");
-  const [newKind, setNewKind] = useState(SHOP_KINDS[0]);
+  const [newKind, setNewKind] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
 
   async function onCreate() {
     if (!poi || !newName.trim()) return;
-    await createShop(poi, newName.trim(), newKind);
+    await createShop(poi, newName.trim(), normalizaKind(newKind));
     setNewName("");
     await reload();
   }
@@ -36,9 +67,10 @@ export default function TiendasPanel() {
   async function onGenerate() {
     if (!poi || busy) return;
     setBusy(true); setMsg(null);
-    const r = await generarTienda(newName, newKind, poi);
+    const kind = normalizaKind(newKind);
+    const r = await generarTienda(newName, kind, poi);
     if (r.ok) {
-      const id = await createShop(poi, r.data.name, newKind);
+      const id = await createShop(poi, r.data.name, kind);
       if (id != null) await updateShop(id, { greeting: r.data.greeting, npc_prompt: r.data.npc_prompt });
       setNewName("");
       await reload();
@@ -67,9 +99,7 @@ export default function TiendasPanel() {
               <p className="eyebrow !text-[9px] mb-1">Nueva tienda en {poi}</p>
               <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nombre (p. ej. La Yunque Ardiente)" className={inputCls} style={{ color: "var(--color-warm)" }} />
             </div>
-            <select value={newKind} onChange={(e) => setNewKind(e.target.value)} className="bg-[var(--color-night)] rounded-lg px-2 py-1.5 font-ui text-[13px] border border-[var(--color-line)]" style={{ color: "var(--color-warm)" }}>
-              {SHOP_KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
-            </select>
+            <KindInput value={newKind} onChange={setNewKind} />
             <button onClick={onGenerate} disabled={busy || offline} title="Genera una tienda con tendero IA (usa el nombre como pista, opcional)" className="btn-ghost !py-1.5 !px-3 text-[13px] disabled:opacity-40"><i className={`fas ${busy ? "fa-spinner fa-spin" : "fa-wand-magic-sparkles"} mr-1.5`} />IA</button>
             <button onClick={onCreate} disabled={!newName.trim() || busy} className="btn-gold !py-1.5 !px-3 text-[13px] disabled:opacity-40"><i className="fas fa-plus mr-1.5" />Crear</button>
           </div>
@@ -80,6 +110,10 @@ export default function TiendasPanel() {
             : shops.map((s) => <ShopEditor key={s.id} shop={s} onChange={reload} />)}
         </>
       )}
+      {/* Va el último a propósito: `space-y-5` da margen a todo hijo menos al
+          primero, y un `<datalist>` es `display:none` — de primero empujaría al
+          siguiente bloque. Los dos inputs lo alcanzan igual, por id. */}
+      <KindsDatalist />
     </div>
   );
 }
@@ -91,7 +125,12 @@ function ShopEditor({ shop, onChange }: { shop: Shop; onChange: () => void }) {
   const [greeting, setGreeting] = useState(shop.greeting);
   const [it, setIt] = useState({ name: "", price: "0", stock: "" });
 
-  async function saveMeta() { await updateShop(shop.id, { name: name.trim() || "Tienda", kind, npc_prompt: prompt, greeting }); await onChange(); }
+  // La clave se calcula aquí y no en cada tecla: normalizar mientras el DM
+  // escribe le cambiaría el texto debajo de los dedos.
+  const kindKey = normalizaKind(kind);
+  const tienePlantilla = !!SHOP_TEMPLATES[kindKey];
+
+  async function saveMeta() { await updateShop(shop.id, { name: name.trim() || "Tienda", kind: kindKey, npc_prompt: prompt, greeting }); await onChange(); }
   async function onAddItem() {
     if (!it.name.trim()) return;
     await addItem(shop.id, { name: it.name.trim(), price: Number(it.price) || 0, stock: it.stock.trim() === "" ? null : Number(it.stock) });
@@ -103,10 +142,18 @@ function ShopEditor({ shop, onChange }: { shop: Shop; onChange: () => void }) {
     <div className="panel-raised p-4 space-y-3">
       <div className="flex flex-wrap gap-2">
         <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} style={{ color: "var(--color-warm)", flex: "1 1 160px" }} />
-        <select value={kind} onChange={(e) => setKind(e.target.value)} className="bg-[var(--color-night)] rounded-lg px-2 py-1.5 font-ui text-[13px] border border-[var(--color-line)]" style={{ color: "var(--color-warm)" }}>
-          {SHOP_KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
-        </select>
-        <button onClick={() => seedCatalog(shop.id, kind).then(onChange)} className="btn-ghost !py-1.5 !px-3 text-[12px]" title="Rellenar catálogo con la plantilla"><i className="fas fa-seedling mr-1.5" />Semilla</button>
+        <KindInput value={kind} onChange={setKind} width={180} />
+        {/* Un tipo escrito a mano no trae plantilla. El botón se deshabilita
+            DICIENDO por qué: si no, `seedCatalog` saldría sin hacer nada y el
+            DM no sabría si el fallo es suyo o de la app. */}
+        <button
+          onClick={() => seedCatalog(shop.id, kindKey).then(onChange)}
+          disabled={!tienePlantilla}
+          className="btn-ghost !py-1.5 !px-3 text-[12px] disabled:opacity-40"
+          title={tienePlantilla
+            ? `Rellenar catálogo con la plantilla de «${kindLabel(kindKey)}»`
+            : "Este tipo no trae plantilla: añade los objetos a mano"}
+        ><i className="fas fa-seedling mr-1.5" />Semilla</button>
         <button onClick={() => { if (confirm(`¿Borrar la tienda "${shop.name}"?`)) deleteShop(shop.id).then(onChange); }} className="btn-ghost !py-1.5 !px-3 text-[12px]" style={{ color: "var(--color-ember)" }}><i className="fas fa-trash" /></button>
       </div>
       <input value={greeting} onChange={(e) => setGreeting(e.target.value)} placeholder="Saludo del tendero" className={inputCls} style={{ color: "var(--color-warm)" }} />
