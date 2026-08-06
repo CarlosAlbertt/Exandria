@@ -68,7 +68,10 @@ export async function deleteItem(id: number) {
 }
 export async function seedCatalog(shopId: number, kind: string) {
   if (!supabaseConfigured) return;
-  const tpl = SHOP_TEMPLATES[kind];
+  // Un tipo escrito a mano por el DM no tiene plantilla, y eso es normal desde
+  // que el tipo es texto libre: aquí se sale sin hacer nada y es el panel quien
+  // lo dice (el botón «Semilla» sale deshabilitado explicándose).
+  const tpl = SHOP_TEMPLATES[kind]?.items;
   if (!tpl || tpl.length === 0) return;
   await createClient().from("shop_items").insert(tpl.map((t) => ({ shop_id: shopId, name: t.name, price: t.price, stock: null, notes: "" })));
 }

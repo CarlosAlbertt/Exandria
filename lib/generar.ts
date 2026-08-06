@@ -5,6 +5,7 @@
 // guarda como siempre; con el túnel caído el resultado es `offline` y el botón
 // que llama a esto se desactiva.
 import { narrar } from "@/lib/narrador";
+import { kindLabel } from "@/data/shopTemplates";
 
 export type GenResult<T> = { ok: true; data: T } | { ok: false; error: string; offline?: boolean };
 
@@ -63,7 +64,9 @@ export function generarTienda(pista: string, kind: string, poi: string): Promise
     'Devuelve JSON con las claves: "name" (nombre del negocio, evocador), "greeting" (una ' +
     'frase de bienvenida del tendero), "npc_prompt" (2-3 frases con la personalidad y el tono ' +
     "del tendero, como instrucción para interpretarlo por IA).";
-  const prompt = `Crea una tienda de tipo "${kind}" en el lugar "${poi}". ${pistaLine(pista, "Invéntala de cero.")}`;
+  // La etiqueta y no la clave: la IA lee mejor "Botica del curandero" que
+  // "curandero", y un tipo que el DM se haya inventado ya viene escrito bien.
+  const prompt = `Crea una tienda de tipo "${kindLabel(kind)}" en el lugar "${poi}". ${pistaLine(pista, "Invéntala de cero.")}`;
   return generarJSON<TiendaGen>(persona, prompt);
 }
 
