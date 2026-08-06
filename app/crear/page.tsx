@@ -19,7 +19,7 @@ import AbilitiesStep from "@/components/crear/steps/AbilitiesStep";
 import SkillsScene from "@/components/crear/steps/SkillsScene";
 import SummaryScene from "@/components/crear/steps/SummaryScene";
 import {
-  ABILITIES, AbilityKey, abilityMod, fmtMod, esOficio,
+  ABILITIES, AbilityKey, abilityMod, fmtMod, esOficio, OFICIOS,
   POINT_BUY_COST, POINT_BUY_BUDGET,
 } from "@/data/rules";
 import { oficioPicks } from "@/data/leveling";
@@ -218,7 +218,8 @@ export default function CrearPage() {
   // conjunto de oficios (no hay columna nueva en la base de datos).
   const classSkills = b.skills.filter((s) => !esOficio(s));
   const oficioSkills = b.skills.filter((s) => esOficio(s));
-  const oficioPool = cls?.oficios ?? [];
+  // Los SIETE, sin filtro por clase (2026-08-06). Lo que limita es el cupo.
+  const oficioPool = OFICIOS.map((o) => o.name);
   const oficioNeed = oficioPicks(1); // el creador siempre monta un nivel 1
   const allSkills = useMemo(() => Array.from(new Set([...bgSkills, ...b.skills])), [bgSkills, b.skills]);
 

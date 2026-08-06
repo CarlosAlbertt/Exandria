@@ -1,7 +1,8 @@
 // Comprobación manual de las pericias: las 18 del reglamento 2024 más las 7 de
-// oficio (homebrew), su reparto por clase y el cupo por nivel.
+// oficio (homebrew) y el cupo por nivel. Los oficios YA NO se reparten por
+// clase: los siete están abiertos y lo único que limita es el cupo (1+7).
 // Uso: npx tsx scripts/check-pericias.ts
-import { SKILLS, SKILLS_2024, OFICIOS, ABILITIES, type AbilityKey } from "../data/rules";
+import { SKILLS, SKILLS_2024, OFICIOS, ABILITIES, esOficio, type AbilityKey } from "../data/rules";
 import { CLASSES } from "../data/classes";
 import { OFICIO_LEVELS, oficioPicks } from "../data/leveling";
 import { derive } from "../lib/derive";
@@ -79,24 +80,47 @@ for (const c of CLASSES) {
   check(`${c.slug}: skillCount (${c.skillCount}) no supera su lista (${c.skillList.length})`,
     c.skillCount <= c.skillList.length);
 
-  for (const n of c.oficios) {
-    check(`${c.slug}: el oficio «${n}» existe`, NOMBRES_OFICIO.has(n));
-  }
-  check(`${c.slug}: oficios sin repetidos`,
-    new Set(c.oficios).size === c.oficios.length);
-  // Sin esto, la elección del nivel 7 se queda sin nada que elegir.
-  check(`${c.slug}: tiene al menos ${OFICIO_LEVELS.length} oficios (tiene ${c.oficios.length})`,
-    c.oficios.length >= OFICIO_LEVELS.length);
   check(`${c.slug}: ningún oficio se cuela en skillList`,
     c.skillList.every((n) => !NOMBRES_OFICIO.has(n)));
 }
 
-check("las 13 clases declaran oficios", CLASSES.every((c) => Array.isArray(c.oficios)));
-// Un oficio que no ofrece ninguna clase es un oficio que nadie puede aprender.
-for (const o of OFICIOS) {
-  check(`el oficio «${o.name}» lo ofrece alguna clase`,
-    CLASSES.some((c) => c.oficios.includes(o.name)));
-}
+// --- Los oficios ya NO se reparten por clase (2026-08-06) -------------------
+// Antes cada clase declaraba un `oficios: string[]` con 2–4, y aquí se
+// comprobaba que existieran, que no se repitieran, que cada clase tuviera al
+// menos dos (o el cupo del nivel 7 se quedaba sin nada que elegir) y que ningún
+// oficio se quedara sin clase que lo ofreciera. Ese campo se retiró: los SIETE
+// están abiertos a todo el mundo y lo único que limita es el CUPO.
+//
+// Lo que queda por vigilar es que `rules.OFICIOS` siga siendo una fuente única
+// sana, porque ahora es la ÚNICA: si se rompe, no hay una segunda lista por
+// clase que disimule el fallo.
+check(`hay ${OFICIOS.length} oficios y ninguno se llama igual que otro`,
+  new Set(OFICIOS.map((o) => o.name)).size === OFICIOS.length && OFICIOS.length > 0);
+check("ningún oficio se cuela entre las 18 del reglamento",
+  SKILLS_2024.every((s) => !NOMBRES_OFICIO.has(s.name)));
+check("todo oficio lleva aptitud primaria",
+  OFICIOS.every((o) => !!o.ability));
+// Con el reparto por clase fuera, el cupo es lo único que frena. Si `cupo`
+// pudiera superar el número de oficios, el jugador se quedaría con un hueco
+// imposible de rellenar y la ficha diría «tienes un oficio por aprender» para
+// siempre.
+check(`el cupo máximo (${OFICIO_LEVELS.length}) no supera los oficios que existen (${OFICIOS.length})`,
+  OFICIO_LEVELS.length <= OFICIOS.length);
+check("a nivel 1 se tiene derecho a exactamente un oficio",
+  oficioPicks(1) === 1);
+check("a nivel 6 se sigue teniendo uno, y a nivel 7 dos",
+  oficioPicks(6) === 1 && oficioPicks(7) === 2);
+check("a nivel 20 no aparece un tercero de la nada",
+  oficioPicks(20) === OFICIO_LEVELS.length);
+// El creador y LevelPanel ofrecen ahora `OFICIOS` enteros. Que la lista que se
+// enseña sea la misma que `esOficio()` reconoce es lo que mantiene los dos
+// cupos separados: un nombre que se ofreciera pero que `esOficio` no
+// reconociera se contaría contra las pericias de CLASE, y el jugador perdería
+// una sin entender por qué.
+check("todo lo que se ofrece como oficio lo reconoce esOficio()",
+  OFICIOS.every((o) => esOficio(o.name)));
+check("ninguna de las 18 del reglamento la reconoce esOficio()",
+  SKILLS_2024.every((s) => !esOficio(s.name)));
 
 // --- Cupo de oficio por nivel ----------------------------------------------
 check("OFICIO_LEVELS son [1, 7]", JSON.stringify(OFICIO_LEVELS) === "[1,7]");

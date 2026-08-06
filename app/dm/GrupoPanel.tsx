@@ -6,8 +6,8 @@ import { useParty } from "@/lib/character";
 import { getSpecies } from "@/data/species";
 import { getClass } from "@/data/classes";
 import { getBackground } from "@/data/backgrounds";
-import { ABILITIES, fmtMod } from "@/data/rules";
-import { xpForNext } from "@/data/leveling";
+import { ABILITIES, fmtMod, OFICIOS, esOficio } from "@/data/rules";
+import { xpForNext, oficioPicks, OFICIO_LEVELS } from "@/data/leveling";
 import { derive } from "@/lib/derive";
 import { createClient } from "@/lib/supabase/client";
 import LorePicker from "@/components/LorePicker";
@@ -216,6 +216,14 @@ export default function GrupoPanel() {
             </div>
 
             <ConcederFe userId={c.user_id} nombre={c.username} actual={c.deity ?? null} />
+            {/* ⚠️ `propias` es `c.skills` CRUDO, no el `skills` de arriba: ese
+                lleva mezcladas las del trasfondo solo para pintarlas, y
+                guardarlo las grabaría en la columna para siempre. */}
+            <AsignarOficios
+              userId={c.user_id}
+              propias={Array.isArray(c.skills) ? c.skills : []}
+              level={c.level ?? 1}
+            />
             <EnsenarSaber userId={c.user_id} nombre={c.username} />
             <EnsenarRecetas
               userId={c.user_id}
@@ -434,6 +442,73 @@ export default function GrupoPanel() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Los oficios de un personaje, a mano.
+ *
+ * Desde el 2026-08-06 los SIETE están abiertos a cualquier clase (el campo
+ * `CharClass.oficios` se retiró), así que aquí se ofrecen todos.
+ *
+ * **El cupo no ata al DM, pero se dice.** El jugador está limitado a
+ * `oficioPicks(nivel)` —uno a nivel 1 y otro a nivel 7— en el creador y en su
+ * hoja; aquí se puede pasar, porque premiar a alguien con un oficio extra es
+ * una decisión de mesa y la alternativa sería subirle el nivel para poder
+ * hacerlo. Cuando se pasa, el contador lo canta en ámbar.
+ *
+ * ⚠️ **Escribe sobre `propias`, que es `characters.skills` crudo.** El array
+ * que la tarjeta pinta arriba lleva mezcladas las pericias del TRASFONDO, que
+ * son derivadas: guardar esa mezcla las grabaría en la columna y el personaje
+ * se quedaría con ellas aunque cambiara de trasfondo.
+ */
+function AsignarOficios({ userId, propias, level }: { userId: string; propias: string[]; level: number }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const elegidos = propias.filter(esOficio);
+  const cupo = oficioPicks(level);
+  const porEncima = elegidos.length > cupo;
+
+  async function toggle(name: string) {
+    if (busy) return;
+    setBusy(name);
+    const next = propias.includes(name) ? propias.filter((x) => x !== name) : [...propias, name];
+    // Sin recarga a mano: `characters` está en la publicación realtime y
+    // `useParty` se resuscribe, al revés que todo lo de `app_config`.
+    await dmPatch(userId, { skills: next });
+    setBusy(null);
+  }
+
+  return (
+    <div className="mt-3 panel-raised p-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+        <p className="eyebrow !mb-0">Oficios</p>
+        <span className="font-ui text-[11px] font-bold" style={{ color: porEncima ? "var(--color-ember)" : elegidos.length === cupo ? "var(--color-primitivo)" : "var(--color-dim)" }}>
+          {porEncima && <i className="fas fa-triangle-exclamation mr-1" />}
+          {elegidos.length}/{cupo}{porEncima ? " · por encima del cupo" : ""}
+        </span>
+      </div>
+      <p className="text-[12px] mb-3" style={{ color: "var(--color-dim)" }}>
+        Los siete están abiertos a cualquier clase. Al jugador le tocan {OFICIO_LEVELS.length}
+        {" "}—uno a nivel 1 y otro a nivel {OFICIO_LEVELS[1]}—, pero aquí puedes darle los que quieras.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {OFICIOS.map((o) => {
+          const on = propias.includes(o.name);
+          const abbr = [o.ability, o.ability2]
+            .filter(Boolean)
+            .map((k) => ABILITIES.find((a) => a.key === k)?.abbr)
+            .join("–");
+          return (
+            <button key={o.name} className="chip" data-on={on} disabled={busy !== null}
+              style={{ opacity: busy !== null && busy !== o.name ? 0.5 : 1 }}
+              onClick={() => toggle(o.name)}>
+              {busy === o.name && <i className="fas fa-spinner fa-spin mr-1" />}
+              {o.name} <span className="opacity-60">{abbr}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
