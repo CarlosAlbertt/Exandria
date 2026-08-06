@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
 import { useShops, type Shop, type ShopItem } from "@/lib/useShops";
+import { kindLabel, kindIcon } from "@/data/shopTemplates";
 import { buy, sell, type ShopChar } from "@/lib/shopTx";
 import { loadActiveCharacter, type Item } from "@/lib/character";
 import { narrar, type Msg } from "@/lib/narrador";
@@ -48,7 +49,9 @@ export default function ShopSection({ poiName, ambient }: { poiName: string; amb
           {shops.map((s) => (
             <button key={s.id} onClick={() => setOpenId(s.id)} className="panel-raised p-3 text-left hover:border-[var(--color-bronze)] transition-colors">
               <p className="font-display font-extrabold text-[15px]" style={{ color: "var(--color-parch)" }}>{s.name}</p>
-              <p className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>{s.kind} · {s.items.length} objetos</p>
+              <p className="font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>
+                <i className={`fas ${kindIcon(s.kind)} mr-1.5`} />{kindLabel(s.kind)} · {s.items.length} objetos
+              </p>
             </button>
           ))}
         </div>
@@ -113,7 +116,7 @@ function Shopkeeper({ shop, ambient }: { shop: Shop; ambient?: string }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
-  const persona = `${shop.npc_prompt || `Eres el tendero de "${shop.name}", una tienda de tipo ${shop.kind}.`}\nCatálogo (nombre — precio po): ${shop.items.map((i) => `${i.name} — ${i.price}`).join("; ") || "vacío"}. Atiende con brevedad y en personaje; no inventes precios fuera del catálogo.${ambient ? `\n${ambient}` : ""}`;
+  const persona = `${shop.npc_prompt || `Eres el tendero de "${shop.name}", una tienda de tipo ${kindLabel(shop.kind)}.`}\nCatálogo (nombre — precio po): ${shop.items.map((i) => `${i.name} — ${i.price}`).join("; ") || "vacío"}. Atiende con brevedad y en personaje; no inventes precios fuera del catálogo.${ambient ? `\n${ambient}` : ""}`;
 
   async function send() {
     const text = input.trim();

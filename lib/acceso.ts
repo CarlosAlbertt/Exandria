@@ -18,6 +18,26 @@ export const RUTAS_JUGADOR = [
   "/taller",
   "/reino",
   "/lugar",
+  // Las cuatro que se abrieron el 2026-08-06. Ninguna necesitó tocar su página:
+  // tres ya distinguían el rol de antes, de cuando el DM y el jugador
+  // compartían app, y la cuarta la filtra la RLS.
+  //   /panteon   — catálogo de consulta sin secretos (decidido en la spec del
+  //                2026-07-21: que los dioses existen no se oculta en Exandria).
+  //   /mapa      — niebla sobre los continentes sin `revealed`, regiones solo
+  //                con `known` y su mapa solo con `explored`.
+  //   /bestiario — `restrictToDiscovered = !isDM`; sin botones de edición.
+  //   /cronica   — schema_v12: el diario y los PNJ piden `visible`, y las
+  //                misiones `status <> 'oculta'`. La vista no pinta las de
+  //                estado `oferta`, que la RLS sí deja pasar.
+  // ⚠️ Con /cronica entra una fuga PREEXISTENTE, y va dicha: las pistas viven
+  // en `app_config`, que cualquier autenticado puede leer (schema_v5), y la
+  // página se las descarga todas para filtrarlas en JS. Abrir la ruta no amplía
+  // el acceso a la BD (un jugador ya podía pedirlas por consola), pero sí hace
+  // que ese código corra a diario. El arreglo de raíz es tabla propia con RLS.
+  "/panteon",
+  "/cronica",
+  "/bestiario",
+  "/mapa",
   "/cerrado",
   "/login",
 ] as const;
@@ -91,6 +111,11 @@ export const PUERTAS_JUGADOR: {
   { href: "/inventario", icon: "fa-sack-xmark", label: "Tu inventario", text: "Lo que llevas encima, lo que pesa y lo que llevas puesto.", accent: "var(--color-bronze)" },
   { href: "/reino", icon: "fa-book-open", label: "El reino", text: "La historia de Exandria y las tierras que vais conociendo.", accent: "var(--color-primitivo)" },
   { href: "/crear", icon: "fa-hat-wizard", label: "Crear personaje", text: "Especie, clase, trasfondo y aptitudes del reglamento 2024.", accent: "var(--color-violet)" },
+  // Las dos que se sumaron al abrir las cuatro secciones (2026-08-06). Solo
+  // estas dos y no las cuatro: son las que se miran en mesa. Panteón y Crónica
+  // se alcanzan desde la barra y no necesitan tarjeta.
+  { href: "/mapa", icon: "fa-map-location-dot", label: "El mapa", text: "Los cinco continentes, y la niebla sobre lo que aún no habéis hallado.", accent: "var(--color-arcano)" },
+  { href: "/bestiario", icon: "fa-dragon", label: "El bestiario", text: "Las criaturas que habéis llegado a ver, con sus rasgos y sus ataques.", accent: "var(--color-ember)" },
 ];
 
 /**
