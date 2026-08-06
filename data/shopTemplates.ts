@@ -70,6 +70,164 @@ export const SHOP_TEMPLATES: Record<string, ShopKind> = {
       { name: "Mochila", price: 2 },
     ],
   },
+
+  // --- Los nueve que se sumaron el 2026-08-06 -------------------------------
+
+  // La taberna es el caso que obligó a vender por lotes: una jarra son 4 pc y
+  // aquí no hay cobre. Se vende la ronda, el barril y la semana.
+  // ⚠️ NO vende noches: dormir es la posada del POI (`Poi.services.posada`),
+  // que avanza el reloj de campaña por /api/descanso y aplica el anti-abuso de
+  // 20 h. Una cama vendida desde aquí no haría nada de eso.
+  taberna: {
+    label: "Taberna",
+    icon: "fa-beer-mug-empty",
+    items: [
+      { name: "Ronda para la mesa (10 jarras)", price: 1 },
+      { name: "Jarra de vino común (5 raciones)", price: 1 },
+      { name: "Comida caliente para el grupo (5 platos)", price: 2 },
+      { name: "Estofado y pan para una semana", price: 2 },
+      { name: "Barril de cerveza (30 raciones)", price: 6 },
+      { name: "Aguardiente enano (frasco)", price: 5 },
+      { name: "Botella de vino fino", price: 10 },
+      { name: "Banquete (por comensal)", price: 10 },
+      { name: "Los rumores del local (una charla con el tabernero)", price: 5 },
+    ],
+  },
+
+  templo: {
+    label: "Templo",
+    icon: "fa-place-of-worship",
+    items: [
+      { name: "Hábito de acólito", price: 1 },
+      { name: "Velas bendecidas (docena)", price: 1 },
+      { name: "Incienso (bloque)", price: 1 },
+      { name: "Símbolo sagrado: amuleto", price: 5 },
+      { name: "Símbolo sagrado: relicario", price: 5 },
+      { name: "Aceite de unción (vial)", price: 5 },
+      { name: "Ofrenda al altar", price: 10 },
+      { name: "Agua bendita (frasco)", price: 25 },
+      { name: "Libro de preceptos", price: 25 },
+    ],
+  },
+
+  // Provisiones de viaje. Se llama así y no «campamento» porque `campamento` ya
+  // es un `PoiType` (data/pois.ts) y el POI puede ser un campamento con una
+  // tienda dentro: dos cosas distintas con el mismo nombre confunden.
+  avituallamiento: {
+    label: "Puesto de avituallamiento",
+    icon: "fa-campground",
+    items: [
+      { name: "Odre", price: 1 },
+      { name: "Manta", price: 1 },
+      { name: "Saco de dormir", price: 1 },
+      { name: "Antorchas (docena)", price: 1 },
+      { name: "Yesca y pedernal", price: 1 },
+      { name: "Cuerda de cáñamo (15 m)", price: 1 },
+      { name: "Tienda de campaña (dos personas)", price: 2 },
+      { name: "Alforjas", price: 4 },
+      { name: "Raciones (10 días)", price: 5 },
+      { name: "Mula", price: 8 },
+    ],
+  },
+
+  establo: {
+    label: "Establo",
+    icon: "fa-horse",
+    items: [
+      { name: "Bocado y brida", price: 2 },
+      { name: "Pienso y cuadra (10 días)", price: 6 },
+      { name: "Mula", price: 8 },
+      { name: "Silla de montar", price: 10 },
+      { name: "Carro", price: 15 },
+      { name: "Silla militar", price: 20 },
+      { name: "Poni", price: 30 },
+      { name: "Carreta", price: 35 },
+      { name: "Caballo de tiro", price: 50 },
+      { name: "Caballo de monta", price: 75 },
+    ],
+  },
+
+  sastre: {
+    label: "Sastrería y mercería",
+    icon: "fa-shirt",
+    items: [
+      { name: "Túnica", price: 1 },
+      { name: "Capa con capucha", price: 1 },
+      { name: "Botas de cuero", price: 1 },
+      { name: "Guantes de piel", price: 1 },
+      { name: "Aguja e hilo (surtido)", price: 1 },
+      { name: "Ropa de viaje", price: 2 },
+      { name: "Disfraz", price: 5 },
+      { name: "Rollo de tela fina", price: 10 },
+      { name: "Ropa fina", price: 15 },
+      { name: "Kit de disfraz", price: 25 },
+    ],
+  },
+
+  arcano: {
+    label: "Emporio arcano",
+    icon: "fa-wand-sparkles",
+    items: [
+      { name: "Pluma de escribir", price: 1 },
+      { name: "Pergamino en blanco (10 hojas)", price: 1 },
+      { name: "Foco arcano: bastón", price: 5 },
+      { name: "Foco arcano: varita", price: 10 },
+      { name: "Foco arcano: cristal", price: 10 },
+      { name: "Tinta (frasco)", price: 10 },
+      { name: "Foco arcano: orbe", price: 20 },
+      { name: "Bolsa de componentes", price: 25 },
+      { name: "Libro de conjuros", price: 50 },
+      { name: "Polvo de diamante (componente de 100 po)", price: 100 },
+    ],
+  },
+
+  curandero: {
+    label: "Botica del curandero",
+    icon: "fa-mortar-pestle",
+    items: [
+      { name: "Vendas y ungüento (surtido)", price: 1 },
+      { name: "Muletas y tablillas", price: 1 },
+      { name: "Atención de un curandero (por día)", price: 2 },
+      { name: "Kit de sanador (10 usos)", price: 5 },
+      { name: "Kit de herboristería", price: 5 },
+      { name: "Hierbas medicinales (manojo)", price: 5 },
+      { name: "Cataplasma para quemaduras", price: 5 },
+      { name: "Poción de curación", price: 50 },
+      { name: "Antitoxina (frasco)", price: 50 },
+    ],
+  },
+
+  mercado_negro: {
+    label: "Trapicheo",
+    icon: "fa-mask",
+    items: [
+      { name: "Abrojos (bolsa)", price: 1 },
+      { name: "Capa negra sin marcas", price: 5 },
+      { name: "Cuerda de seda (15 m)", price: 10 },
+      { name: "Kit de falsificación", price: 15 },
+      { name: "Ganzúas", price: 25 },
+      { name: "El nombre de alguien que sabe", price: 25 },
+      { name: "Documentos falsos (por encargo)", price: 50 },
+      { name: "Veneno básico (vial)", price: 100 },
+      { name: "Mercancía sin preguntas (lote)", price: 100 },
+    ],
+  },
+
+  libreria: {
+    label: "Escribanía",
+    icon: "fa-book",
+    items: [
+      { name: "Pluma de escribir", price: 1 },
+      { name: "Pergamino en blanco (10 hojas)", price: 1 },
+      { name: "Estuche para pergaminos", price: 1 },
+      { name: "Papel (10 hojas)", price: 2 },
+      { name: "Tinta (frasco)", price: 10 },
+      { name: "Copia de un texto (encargo al escriba)", price: 15 },
+      { name: "Libro", price: 25 },
+      { name: "Mapa de la región", price: 25 },
+      { name: "Diccionario de una lengua muerta", price: 50 },
+    ],
+  },
 };
 
 /** Las claves con plantilla, para el desplegable de sugerencias. */
