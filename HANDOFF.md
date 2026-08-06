@@ -2,7 +2,48 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-06, tarde)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-06, noche)
+
+> **EL BESTIARIO EMPIEZA A LLENARSE, Y AHORA SE SABE CUÁNTO FALTA.** En
+> `master`. **Sin migración.**
+>
+> **1 · El censo.** `data/bestiary/censo-manual.ts` transcribe el apéndice B del
+> manual: **501 statblocks**. Antes no había forma de saber qué faltaba, y las
+> dos estimaciones que se hicieron sobre la capa OCR se quedaron cortísimas
+> (contar «CR n (XP» daba 286). El cruce **valida las dos listas a la vez**:
+> cero de los monstruos ya extraídos se sale del censo.
+>
+> **2 · Las familias de despiece.** `data/bestiary/familias.ts`: **150 familias
+> cubren 456 statblocks**, más **45 Humanoides excluidos** —son personas— = 501.
+> La regla la dio el DM: **separa lo que da material distinto, junta lo que da el
+> mismo.** Dragones por color y no por edad; mefitos por elemento; modrones
+> juntos. Baja el trabajo de materiales de ~1.250 a ~400.
+>
+> ⚠️ **La edad del dragón no parte la familia pero tampoco da igual**: se
+> resuelve por **grado** —lo superior solo de adulto y anciano—, como el
+> catálogo ya hacía con «Diente de Vampiro Anciano».
+>
+> **3 · Ocho lotes extraídos**, por orden de página del manual. **Cobertura: 149
+> de 501.** Van hasta la **página 38 del libro**. Estrenan en el bestiario los
+> campos `bonusActions`, `reactions`, `legendary` y `gear`, que el tipo traía sin
+> usar: el Contemplador con sus diez rayos y la Archibruja con sus acciones
+> legendarias son la primera prueba de que la ficha los aguanta.
+>
+> ⚠️ **Lo que hay que saber para seguir**, y está detallado en el prompt:
+> **la capa OCR solo vale para LOCALIZAR** —entrelaza las dos columnas y escribe
+> «Basrrrsr» por «Basilisk»—, la verdad es la **página renderizada leída a
+> ojo**, y **página de libro = página PDF − 3**. Y **hay que cruzar cada bicho
+> con `ALL_MONSTERS` antes de escribirlo**: en el lote 01 escribí cuatro y dos ya
+> estaban, lo cazó el gate de slugs únicos.
+>
+> **Gates 36 y 37 nuevos** (`check-despiece`, `check-familias`), y
+> `check-bestiary` gana la comprobación del censo, con mutación pasada: un
+> `nameEn` mal escrito deja un monstruo **imposible de cruzar con el libro y no
+> se ve en pantalla**.
+>
+> **Los 37 gates en verde**, con `tsc` y `next build` limpios.
+
+## 🚦 Antes de eso (2026-08-06, tarde)
 
 > **LOS OFICIOS: LOS SIETE ABIERTOS, Y EMPIEZA EL DESPIECE.** En `master`.
 > **Sin migración.**

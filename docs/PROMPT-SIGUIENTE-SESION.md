@@ -143,7 +143,41 @@ corte manda sobre el `riesgo`** · cristalografía **el desastre rompe la gema**
 tatuaje **la runa torcida se queda puesta y el DM decide qué hace** · cocina
 **raciones variables** · extracción **se puede cortar a ciegas**.
 
-## La tarea: SEGUIR EL DESPIECE (tanda CR 1/8 en adelante)
+## LA TAREA: SEGUIR EXTRAYENDO EL BESTIARIO
+
+**Vas por la página 38 del libro (41 del PDF). Cobertura: 149 de 501.**
+
+`data/bestiary/censo-manual.ts` dice qué trae el manual (501 statblocks,
+transcritos del apéndice B) y `check-bestiary` canta la cobertura en cada
+pasada. **El orden es el del libro, que es alfabético**, así que basta con mirar
+hasta qué página llegó el último lote y seguir.
+
+**El procedimiento, ya rodado:**
+1. Volcar el PDF a texto si el scratchpad se perdió (2 min, `pypdfium2`).
+   ⚠️ **El texto SOLO vale para localizar.** Entrelaza las dos columnas y
+   destroza las cabeceras en versalitas: «Basrrrsr» por «Basilisk», «Ciant» por
+   «Giant», «Coblin» por «Goblin».
+2. Renderizar la página a PNG (`scale=2.5`) y **leerla visualmente**. Es la
+   única fuente fiable. **Página de libro = página PDF − 3.**
+3. **Cruzar cada bicho con `ALL_MONSTERS` ANTES de escribirlo.** El censo dice
+   qué trae el libro, no qué tienes ya. En el lote 01 escribí cuatro y dos ya
+   estaban; lo cazó el gate de slugs únicos.
+4. Escribir `data/bestiary/lote-NN.ts` y registrarlo en `index.ts` (import +
+   `ALL_CHUNKS`).
+5. `tsc` + los 37 checks + `next build`, commit, merge. **Un lote por rama.**
+
+**Convención**: los trozos van por **lote de extracción en orden de página**, no
+por CR. El manual es alfabético, así que trocear por CR obligaría a recorrer las
+mismas 366 páginas una vez por rango. Los `cr-0`, `cr-12`, `cr-14` y `cr-18`
+viejos se quedan como están.
+
+**Distancias en metros** (5 ft = 1,5 m). **Blurbs y texto de rasgos y acciones
+son redacción PROPIA**: del manual no se copia ni se traduce prosa.
+
+**Una página sin statblock no es un fallo del render**: el manual mete páginas
+de solo texto (la 20 es lore de la Archibruja, su ficha está en la 21).
+
+## Lo de antes: EL DESPIECE (tanda CR 1/8 en adelante)
 
 **El 2026-08-06 se arrancó y quedó a medias, a propósito.** `data/despiece.ts`
 existe con la regla y los **23 bichos de CR 0**; faltan los otros **101 del
@@ -248,7 +282,7 @@ se despieza **en el sitio con el cadáver fresco**, da **1d4 piezas por cadáver
 - **Rama feature por tarea**, **un commit por pieza**, y **púshala en cuanto
   exista**.
 - Gate: **`npx tsc --noEmit` + `npx next build` + los `scripts/check-*.ts`**
-  (36 ahora mismo; cuéntalos, no te fíes del número escrito aquí).
+  (37 ahora mismo; cuéntalos, no te fíes del número escrito aquí).
 - **Si la tanda toca datos o reglas, el gate tiene que verlo**, y **con prueba de
   mutación**: rómpelo a propósito, comprueba que falla, restaura.
   > **Ya ha encontrado cuatro fallos reales**, y el último fue mío: en
