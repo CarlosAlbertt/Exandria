@@ -81,6 +81,10 @@ export const INGREDIENTES_DESTILACION: IngredienteDestilacion[] = [
   { n: 47, name: "Néctar de Súcubo", riesgo: true, blurb: "Destilado del Abismo. Vuelve a quien lo bebe increíblemente persuasivo, y también increíblemente sugestionable." },
   { n: 48, name: "Vino de Sangre de Syngorn", blurb: "Vino ceremonial élfico que alimenta más que una comida completa y embriaga sin resaca." },
   { n: 49, name: "Filtro de Éter", blurb: "No se bebe: es un paño tejido con seda de araña de fase, imprescindible para colar pociones y darles propiedades etéreas, como la de forma gaseosa." },
+
+  // --- Piezas de despiece, tanda CR 0 (2026-08-06) --------------------------
+  // De `data/despiece.ts`. Correlativa al final, como en los demás catálogos.
+  { n: 50, name: "Aguijón de Escorpión", riesgo: true, blurb: "Se corta con el saco entero o no vale nada. El veneno pierde fuerza al destilarlo, pero gana la constancia que no tiene en crudo. Reventar el saco al cortarlo envenena a quien lo hace." },
 ];
 
 /** Los que declaran una contrapartida, no solo un beneficio. */

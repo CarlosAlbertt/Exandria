@@ -15,7 +15,7 @@ function check(label: string, condition: boolean) {
 }
 
 // --- El catálogo entero -----------------------------------------------------
-check("hay 70 ingredientes", INGREDIENTES.length === 70);
+check("hay 77 ingredientes (70 originales + 7 de despiece)", INGREDIENTES.length === 77);
 check("ningún nombre repetido",
   new Set(INGREDIENTES.map((i) => i.name)).size === INGREDIENTES.length);
 check("ningún nombre vacío", INGREDIENTES.every((i) => i.name.trim().length > 0));
@@ -26,14 +26,14 @@ check("ninguna descripción vacía", INGREDIENTES.every((i) => i.blurb.trim().le
 // futura apuntaría a un hueco.
 const ns = INGREDIENTES.map((i) => i.n);
 check("los números de catálogo son únicos", new Set(ns).size === ns.length);
-check("van de 1 a 70 sin huecos",
+check(`van de 1 a ${INGREDIENTES.length} sin huecos`,
   ns.slice().sort((a, b) => a - b).every((n, idx) => n === idx + 1));
 check("el catálogo está en orden de número",
   ns.every((n, idx) => idx === 0 || n > ns[idx - 1]));
 
 // --- Reparto por categoría --------------------------------------------------
 const ESPERADO: Record<IngredienteCategoria, number> = {
-  flora: 20, fauna: 25, mineral: 15, esencia: 10,
+  flora: 20, fauna: 32, mineral: 15, esencia: 10, // fauna: 25 + 7 piezas de despiece
 };
 let suma = 0;
 for (const cat of Object.keys(ESPERADO) as IngredienteCategoria[]) {
@@ -48,16 +48,27 @@ check("no hay ninguna categoría fuera de las cuatro",
 
 // Los bloques van seguidos: si alguien inserta un mineral entre la flora, el
 // catálogo deja de leerse por secciones.
+//
+// ⚠️ La regla SOLO cubre el catálogo original (los 70 primeros), y no es
+// dejadez. Chocaba de frente con la otra invariante, que pesa más: el `n` va de
+// 1 a N **en orden y no se renumera nunca**, porque es como se referencia un
+// material en la mesa («el 46, el residuum»). Añadir una pieza de `fauna` —cuyo
+// bloque acaba a mitad del catálogo— obligaría a renumerar todo lo que viene
+// detrás. Así que lo que se añade se APILA al final, y el bloqueo por
+// categorías se comprueba hasta donde tiene sentido comprobarlo.
+const BLOQUE_ORIGINAL = 70;
 const orden: IngredienteCategoria[] = ["flora", "fauna", "mineral", "esencia"];
 let cursor = 0;
 let seguidas = true;
-for (const i of INGREDIENTES) {
+for (const i of INGREDIENTES.slice(0, BLOQUE_ORIGINAL)) {
   if (i.category === orden[cursor]) continue;
   if (i.category === orden[cursor + 1]) { cursor++; continue; }
   seguidas = false;
   break;
 }
-check("las categorías van en bloques seguidos (flora → fauna → mineral → esencia)", seguidas);
+check(`los ${BLOQUE_ORIGINAL} originales van en bloques seguidos (flora → fauna → mineral → esencia)`, seguidas);
+// Lo apilado después no tiene orden, pero sigue necesitando categoría válida —
+// eso ya lo comprueba «no hay ninguna categoría fuera de las cuatro», arriba.
 
 // --- Los helpers ------------------------------------------------------------
 check("ingredientePorN(46) es el Residuum",

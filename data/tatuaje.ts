@@ -47,6 +47,13 @@ export const MATERIALES_TATUAJE: MaterialTatuaje[] = [
   { n: 23, name: "Fragmentos de Espejo Maldito", blurb: "Molidos como purpurina letal: el tatuaje devuelve el daño radiante o psíquico a quien ataque al portador." },
   { n: 24, name: "Esencia de Elemental de Tierra", blurb: "Tinta marrón y densa. Tatuajes que suben el aguante: PG máximos temporales." },
   { n: 25, name: "Agujas de Plata de Whitestone", herramienta: true, blurb: "Necesarias para tatuar runas de exorcismo o de protección contra no-muertos en guerreros de primera línea." },
+
+  // --- Piezas de despiece, tanda CR 0 (2026-08-06) --------------------------
+  // De `data/despiece.ts`. Las tres son plumas de cálamo: útiles de trazo, así
+  // que van marcadas como `herramienta` — se exigen disponibles y NO se gastan.
+  { n: 26, name: "Pluma Timonera de Águila", herramienta: true, blurb: "Cálamo grueso y rígido. Traza la línea larga sin temblar, que es lo que piden las runas de vuelo." },
+  { n: 27, name: "Pluma Silenciosa de Búho", herramienta: true, blurb: "El borde deshilachado que la hace muda en el aire deja un trazo suave, sin bordes duros." },
+  { n: 28, name: "Pluma Negra de Cuervo", herramienta: true, blurb: "Fina y de punta cerrada. La de los detalles pequeños y las runas que se tatúan a escondidas." },
 ];
 
 /** Las que son utillaje o consumible de taller, no pigmento. */

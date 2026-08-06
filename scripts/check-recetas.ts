@@ -41,9 +41,9 @@ const item = (name: string, qty: number): Item => ({ id: `t-${name}-${qty}`, nam
 // ningún nombre repetido entre catálogos. Se vuelve a comprobar aquí, desde el
 // lado que ahora depende de él, para que el acoplamiento no quede tácito: si
 // alguien admite un solapamiento, falla aquí y no en silencio.
-check("el índice reúne los 369 materiales", MATERIALES.length === 369);
+check("el índice reúne los 391 materiales", MATERIALES.length === 391);
 const REPARTO: Record<Oficio, number> = {
-  alquimia: 70, cocina: 100, forja: 75, destilacion: 49, cristalografia: 50, tatuaje: 25,
+  alquimia: 77, cocina: 105, forja: 81, destilacion: 50, cristalografia: 50, tatuaje: 28, // +22 piezas de despiece (tanda CR 0)
 };
 for (const o of OFICIOS_ORDEN) {
   check(`el índice trae los ${REPARTO[o]} de ${o} (trae ${materialesDe(o).length})`, materialesDe(o).length === REPARTO[o]);
