@@ -4,8 +4,9 @@ import { CR_18_MONSTERS } from "./cr-18";
 import { CR_14_MONSTERS } from "./cr-14";
 import { CR_12_MONSTERS } from "./cr-12";
 import { LOTE_01_MONSTERS } from "./lote-01";
+import { LOTE_02_MONSTERS } from "./lote-02";
 
-const ALL_CHUNKS: Monster[][] = [CR_0_MONSTERS, CR_18_MONSTERS, CR_14_MONSTERS, CR_12_MONSTERS, LOTE_01_MONSTERS];
+const ALL_CHUNKS: Monster[][] = [CR_0_MONSTERS, CR_18_MONSTERS, CR_14_MONSTERS, CR_12_MONSTERS, LOTE_01_MONSTERS, LOTE_02_MONSTERS];
 
 export const MONSTERS: Partial<Record<string, Monster>> = Object.fromEntries(
   ALL_CHUNKS.flat().map((m) => [m.slug, m])
