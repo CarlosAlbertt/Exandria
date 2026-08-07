@@ -159,7 +159,7 @@ check("sitioVigente: sin ancla, caduca", !sitioVigente(enTab, null));
 // salidasDe filtra las rotas en vez de pintar tarjetas muertas.
 check("salidasDe resuelve las cinco de Byroden", salidasDe(byroden!, IX).length === 5);
 check("salidasDe de null es vacío", salidasDe(null, IX).length === 0);
-const roto = { id: "poi:Roto", nombre: "Roto", icono: "fa-x", blurb: "un nodo con una salida rota aqui", salidas: ["poi:Byroden", "sub:Byroden/no-existe"] };
+const roto = { id: "poi:Roto", nombre: "Roto", icono: "fa-x", blurb: "un nodo con una salida rota aqui", tema: "valle" as const, salidas: ["poi:Byroden", "sub:Byroden/no-existe"] };
 check("salidasDe descarta la salida rota", salidasDe(roto, IX).length === 1);
 
 // puedeIr no deja saltar de un sitio a otro sin pasar por en medio.
