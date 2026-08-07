@@ -6,9 +6,12 @@
 // efecto.
 //
 // La pregunta de siempre: ¿qué rompo para que falle?
+import fs from "node:fs";
+import path from "node:path";
 import {
   construirNodos, SUB_LUGARES, ENTRADAS_AL_BOSQUE,
   idPoi, idSub, idFranja, poiDeNodo, alAireLibre, etiquetaDeSalida,
+  TEMAS, TEMA_POR_POI, TEMA_DEFECTO, esTema, temaDePoi, type TemaLugar,
 } from "../data/lugares";
 import { indexar, nodoDelJugador, salidasDe, puedeIr, npcsDeNodo, sitioVigente, puedeSembrar } from "../lib/nodos";
 import { FRANJAS } from "../data/bosque";
@@ -125,6 +128,96 @@ check("una salida normal no tiene etiqueta propia", etiquetaDeSalida("poi:Byrode
 check("las entradas al bosque apuntan a franjas reales",
   ENTRADAS_AL_BOSQUE.every((e) => FRANJAS.some((f) => f.key === e.franja)));
 
+/* -------------------------------- EL TEMA ------------------------------ */
+// ⚠️ LO QUE MUERDE AQUÍ: **un tema que no existe no da ningún error.** La clase
+// `tema-loquesea` del `<main>` no casa con ninguna regla, así que la hoja se
+// queda SIN LOS QUINCE TOKENS: `var(--hoja)` no resuelve, el fondo se vuelve
+// transparente y asoma la app oscura por debajo, con la tinta parda encima. Se
+// lee fatal y no salta nada. Por eso se declara y se vigila.
+
+// 1. Todo nodo tiene un tema, y es uno de los dibujados.
+for (const n of NODOS) {
+  check(`"${n.id}" declara un tema que existe (${n.tema})`, esTema(n.tema));
+}
+
+// 2. Cada sitio con la piel que le toca. Escrito a mano: si saliera de
+//    TEMA_POR_POI, cambiarle el tema a Emon movería las dos mitades a la vez y
+//    no rompería nada. Es la lección de `check-origen`, y van siete.
+check("Byroden es del valle", IX.get(idPoi("Byroden"))?.tema === "valle");
+check("Emon es una ciudadela", IX.get(idPoi("Emon"))?.tema === "ciudadela");
+for (const f of FRANJAS) {
+  check(`la franja "${f.key}" es bosque`, IX.get(idFranja(f.key))?.tema === "bosque");
+}
+// Un sub-lugar HEREDA la del pueblo: la taberna de Byroden es del valle porque
+// Byroden lo es, y no hay que repetirlo en las cuatro semillas.
+check("la taberna de Byroden hereda el valle", IX.get(idSub("Byroden", "taberna"))?.tema === "valle");
+// Y si la semilla declara la suya, gana. Sin este caso la herencia sería la
+// única rama viva y `SubSemilla.tema` no serviría para nada sin que se notara.
+const conSubTema = construirNodos(POIS, {});
+check("hay algún sub-lugar y todos con tema", conSubTema.filter((n) => n.id.startsWith("sub:")).every((n) => esTema(n.tema)));
+const soloEmon = construirNodos([{ name: "Emon", blurb: "La capital.", icono: "fa-city" }]);
+check("un pueblo sin sub-lugares también lleva su tema", soloEmon[0]?.tema === "ciudadela");
+
+// 3. Los mapas ESCRITOS A MANO. Aquí TypeScript ya obliga al tipo, pero un
+//    `TEMAS` al que se le quite una entrada dejaría a `TEMA_POR_POI` apuntando
+//    a un tema que ya no se dibuja, y eso sí compila.
+for (const [poi, t] of Object.entries(TEMA_POR_POI)) {
+  check(`el tema de ${poi} ("${t}") es uno de los dibujados`, esTema(t));
+}
+for (const [poi, subs] of Object.entries(SUB_LUGARES)) {
+  for (const s of subs) {
+    if (s.tema === undefined) continue; // sin declarar hereda, y eso ya se probó
+    check(`el tema propio de "${s.slug}" (${poi}) existe`, esTema(s.tema));
+  }
+}
+check("el tema de defecto existe", esTema(TEMA_DEFECTO));
+check("un pueblo sin tema escrito cae en el de defecto", temaDePoi("Pueblo Inventado") === TEMA_DEFECTO);
+
+// 4. `esTema` es el seto, así que se prueba por donde se cuela la gente. Los
+//    tres primeros son los que de verdad pasan: el DM escribe en un JSON.
+check("esTema rechaza un tema con un espacio detrás", !esTema("valle "));
+check("esTema rechaza el tema en mayúsculas", !esTema("VALLE"));
+check("esTema rechaza un tema mal escrito", !esTema("ciudadella"));
+check("esTema rechaza la cadena vacía", !esTema(""));
+check("esTema rechaza lo que no es cadena", !esTema(null) && !esTema(undefined) && !esTema(7));
+// Y no se cuela por la cadena de prototipos: `"toString" in TEMAS` es TRUE con
+// el operador `in`, y con él este seto habría dejado pasar `tema: "toString"`.
+check("esTema no acepta un método heredado de Object", !esTema("toString") && !esTema("constructor"));
+for (const t of Object.keys(TEMAS)) {
+  check(`esTema acepta "${t}"`, esTema(t));
+}
+
+// 5. Todo tema dibujado está DIBUJADO DE VERDAD: su regla en el CSS y sus
+//    quince tokens. Sin esto, añadir un tema al registro y olvidarse del CSS
+//    deja un sitio que se pinta sin colores y el gate en verde.
+const CSS = fs.readFileSync(path.join(process.cwd(), "app", "globals.css"), "utf8");
+const TOKENS = [
+  "hoja", "hoja-2", "hoja-3",
+  "tinta", "tinta-2", "tinta-3",
+  "acento", "acento-2",
+  "metal", "metal-claro", "metal-hondo",
+  "natura",
+  "cielo-1", "cielo-2", "cielo-3",
+];
+for (const t of Object.keys(TEMAS) as TemaLugar[]) {
+  // `[^}]*` basta porque un bloque de tema no anida llaves, y así da igual que
+  // el working copy vaya en CRLF: no hay regex multilínea de por medio.
+  const bloque = new RegExp(`\\.tema-${t}\\s*\\{([^}]*)\\}`).exec(CSS)?.[1];
+  check(`el tema "${t}" tiene su regla .tema-${t} en globals.css`, !!bloque);
+  for (const tok of TOKENS) {
+    check(`.tema-${t} define --${tok}`, !!bloque?.includes(`--${tok}:`));
+  }
+}
+
+// 6. La silueta del horizonte. Es lo único del tema que no es un color, y se
+//    pinta cuando el sitio NO tiene ilustración: un `d` vacío deja la cabecera
+//    como una franja de degradado, que es justo lo que el usuario llamó «soso».
+for (const [t, def] of Object.entries(TEMAS)) {
+  check(`el tema "${t}" tiene nombre para el panel del DM`, def.label.trim().length > 2);
+  check(`la silueta de "${t}" es un trazado cerrado`, /^M/.test(def.silueta) && /[zZ]$/.test(def.silueta));
+  check(`la silueta de "${t}" tiene forma de verdad`, def.silueta.length > 60);
+}
+
 /* ------------------------------ IDS Y AYUDAS --------------------------- */
 check("poiDeNodo lee el POI de un nodo de pueblo", poiDeNodo("poi:Byroden") === "Byroden");
 check("poiDeNodo lee el POI de un sub-lugar", poiDeNodo("sub:Byroden/taberna") === "Byroden");
@@ -219,6 +312,27 @@ check("el override NO puede cambiar el id", tab?.id === idSub("Byroden", "tabern
 check("y el nodo renombrado no aparece con el id inventado", !ixOv.has("sub:Byroden/otra-cosa"));
 check("las salidas de Byroden siguen resolviendo con override",
   salidasDe(ixOv.get(idPoi("Byroden"))!, ixOv).length === BYRODEN_ESPERADO.length);
+
+// ⚠️ EL TEMA DEL DM, que es el segundo campo que este JSON no puede pisar a
+// ciegas. Cambiar la piel de un sitio desde el panel tiene que funcionar…
+const ixTema = indexar(construirNodos(POIS, {
+  "sub:Byroden/cementerio": { tema: "yermo" },
+}));
+check("el DM puede cambiarle el tema a un sitio", ixTema.get(idSub("Byroden", "cementerio"))?.tema === "yermo");
+
+// …y un tema inventado tiene que IGNORARSE, no colarse. Este es el que muerde:
+// `tema: "ceniza"` no casa con ninguna regla de `globals.css`, así que la hoja
+// se queda sin los quince tokens —fondo transparente con la app oscura debajo y
+// la tinta parda encima— y **no da ningún error**. Se queda el de la semilla,
+// que es no hacer caso al DM pero sigue siendo legible.
+const ixMalTema = indexar(construirNodos(POIS, {
+  "sub:Byroden/taberna": { tema: "ceniza" } as unknown as Partial<Omit<(typeof NODOS)[number], "id">>,
+  "poi:Emon": { tema: "" } as unknown as Partial<Omit<(typeof NODOS)[number], "id">>,
+}));
+check("un tema inventado del DM se ignora", ixMalTema.get(idSub("Byroden", "taberna"))?.tema === "valle");
+check("un tema vacío del DM se ignora", ixMalTema.get(idPoi("Emon"))?.tema === "ciudadela");
+check("y después del override sigue habiendo tema en todos",
+  Array.from(ixMalTema.values()).every((n) => esTema(n.tema)));
 
 /* ---------------------- LA GENTE QUE SE SIEMBRA ------------------------ */
 // ⚠️ La plantilla se busca por SLUG de sitio (`taberna`) y no por id entero,
