@@ -2,7 +2,54 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-07, noche)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-07, madrugada)
+
+> **YA HAY GENTE EN CADA SITIO.** Rama `feat/pnjs-por-sitio`, mergeada a
+> `master`. **Sin migración** (usa el `venue` de la v25).
+>
+> Los sitios estaban pero **vacíos**: `location_npcs` nace sin nada y había que
+> crear cada PNJ a mano. `data/npcTemplates.ts` trae **11 escritos** —dos por
+> sitio de Byroden y uno por franja del bosque—, con nombre, oficio y un
+> **`prompt` de personalidad de verdad**, que es lo único que la IA lee de un PNJ.
+>
+> **Escritos y no generados con IA a propósito**: sembrar tiene que funcionar
+> **con el túnel de Ollama caído**, y una vez sembrados hablan por IA igual. El
+> botón de generar con IA sigue en Panel DM › PNJs para añadir más.
+>
+> Mismo trato que las tiendas: plantilla en código + botón **«Sembrar gente»** en
+> **Panel DM › Lugares**. Un sitio sin plantilla **deshabilita el botón
+> explicándose**, en vez de no hacer nada al pulsarlo.
+>
+> ⚠️ **`seedNpcs` NO PISA LO QUE YA HAYA, y no es un detalle**: el DM tiene PNJ
+> creados a mano, y un botón que los duplicara le metería once desconocidos en su
+> pueblo sin forma cómoda de deshacerlo.
+>
+> ⚠️ **Lo primero que hay que mirar en la app**: los PNJ creados ANTES de esto
+> tienen **`venue` nulo**, o sea «el pueblo entero». Salen en la plaza de Byroden
+> y **en ninguna taberna**. No es que falten: hay que asignarles el sitio en el
+> desplegable de **Panel DM › PNJs**.
+>
+> Los PNJ de las franjas llevan `poi_name` del pueblo desde el que se siembran
+> aunque el bosque no sea de nadie: es **para que el DM los encuentre** en el
+> panel, que lista por POI. En pantalla los coloca el `venue`.
+>
+> **Gate 40 ampliado**, con **siete mutaciones más**. Dos avisos de proceso:
+>
+> > **La mutación encontró otro fallo real, y van ocho.** El guardia
+> > anti-duplicado vivía **dentro de `seedNpcs`, pegado a la consulta de
+> > Supabase, donde ningún gate llega**: romperlo dejaba el gate verde. Sale a
+> > **`puedeSembrar`** en `lib/nodos.ts`, por la misma razón por la que
+> > `facesFrom` se exporta.
+> >
+> > **Y caí en la trampa que este documento ya avisa**: `git checkout --` durante
+> > una mutación **borró `puedeSembrar` porque aún no estaba commiteada**. El
+> > gate empezó a petar con `puedeSembrar is not a function`. **Commitea ANTES de
+> > mutar** — está escrito arriba y aun así pasó.
+>
+> **Los 40 gates en verde sobre el `master` mergeado**, `tsc` y `next build`
+> limpios. **Sin probar en la app viva.**
+
+## 🚦 Antes de eso (2026-08-07, noche)
 
 > **EL JUGADOR SE MUEVE SOLO, POR TARJETAS.** Rama `feat/navegacion-lugares`,
 > mergeada a `master`. **CON MIGRACIÓN: `schema_v25` — sin ejecutar.**
