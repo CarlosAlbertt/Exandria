@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useNpcs, type LocationNpc } from "@/lib/useNpcs";
+import { useAllNpcs, type LocationNpc } from "@/lib/useNpcs";
+import { npcsDeNodo } from "@/lib/nodos";
+import type { Nodo } from "@/data/lugares";
 import NpcChat from "@/components/lugar/NpcChat";
 import { useChronicle } from "@/lib/useChronicle";
 import { useSession } from "@/components/SessionProvider";
@@ -8,8 +10,15 @@ import { loadActiveCharacter } from "@/lib/character";
 import { aceptarEncargo, entregarMision } from "@/lib/encargo";
 import { opcionesDeMision, type OpcionDialogo } from "@/lib/misiones";
 
-export default function NpcSection({ poiName, ambient }: { poiName: string; ambient?: string }) {
-  const { npcs, ready } = useNpcs(poiName);
+// Los PNJ del sitio donde estás, no los del pueblo entero (schema_v25).
+//
+// Pide TODOS los PNJ y filtra con `npcsDeNodo` en vez de consultar por POI: en
+// una franja del bosque **no hay POI del que colgar la consulta**, y son unas
+// decenas de filas. La regla de quién sale dónde vive en `lib/nodos.ts`, donde
+// el gate puede mirarla.
+export default function NpcSection({ nodo, ambient }: { nodo: Nodo; ambient?: string }) {
+  const { npcs: todos, ready } = useAllNpcs();
+  const npcs = npcsDeNodo(todos, nodo);
   const { quests } = useChronicle();
   const session = useSession();
   const [openId, setOpenId] = useState<number | null>(null);

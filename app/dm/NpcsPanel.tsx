@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useLugares } from "@/lib/useLugares";
 import { useAtlas } from "@/lib/useAtlas";
 import { useNpcs, createNpc, updateNpc, deleteNpc, type LocationNpc } from "@/lib/useNpcs";
 import { generarNpc } from "@/lib/generar";
@@ -79,8 +80,26 @@ function NpcEditor({ npc, onChange }: { npc: LocationNpc; onChange: () => void }
   const [prompt, setPrompt] = useState(npc.prompt);
   const [pub, setPub] = useState(npc.public);
   const [portrait, setPortrait] = useState(npc.portrait ?? "");
+  const [venue, setVenue] = useState(npc.venue ?? "");
+  const { nodos } = useLugares();
 
-  async function save() { await updateNpc(npc.id, { name: name.trim() || "PNJ", role: role.trim(), prompt, public: pub, portrait: portrait.trim() || null }); await onChange(); }
+  // Los sitios de SU pueblo, más las franjas del bosque (que no son de nadie).
+  // No se ofrecen los sub-lugares de otros pueblos: poner al tabernero de
+  // Byroden en la iglesia de Emon no es una opción, es un error de dedo.
+  const destinos = nodos.filter(
+    (n) => n.id.startsWith(`sub:${npc.poi_name}/`) || n.id.startsWith("franja:"),
+  );
+
+  async function save() {
+    await updateNpc(npc.id, {
+      name: name.trim() || "PNJ", role: role.trim(), prompt, public: pub,
+      portrait: portrait.trim() || null,
+      // "" → null, que es «en el pueblo entero» y el valor con el que nacieron
+      // todos los PNJ anteriores a la v25.
+      venue: venue || null,
+    });
+    await onChange();
+  }
 
   return (
     <div className="panel-raised p-4 space-y-2">
@@ -91,6 +110,11 @@ function NpcEditor({ npc, onChange }: { npc: LocationNpc; onChange: () => void }
       </div>
       <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} placeholder="Personalidad, secretos, tono (para la IA)" className={`${inputCls} resize-none`} style={{ color: "var(--color-warm)" }} />
       <input value={portrait} onChange={(e) => setPortrait(e.target.value)} placeholder="URL de retrato (opcional)" className={inputCls} style={{ color: "var(--color-warm)" }} />
+      <select value={venue} onChange={(e) => setVenue(e.target.value)} className={inputCls} style={{ color: "var(--color-warm)" }}
+        title="Dónde está exactamente. En blanco = en el pueblo, como hasta ahora.">
+        <option value="">En {npc.poi_name} (el pueblo entero)</option>
+        {destinos.map((n) => <option key={n.id} value={n.id}>{n.nombre}</option>)}
+      </select>
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 font-ui text-[12px]" style={{ color: "var(--color-warm)" }}><input type="checkbox" checked={pub} onChange={(e) => setPub(e.target.checked)} /> Visible para los jugadores</label>
         <button onClick={save} className="btn-gold !py-1.5 !px-3 text-[12px]"><i className="fas fa-check mr-1.5" />Guardar</button>
