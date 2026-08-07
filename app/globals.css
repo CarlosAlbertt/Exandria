@@ -1290,8 +1290,13 @@ canvas.dice-box-canvas {
 /* ===================== LA VENTANA DE DIÁLOGO ========================= */
 /* Ventana emergente, no una sección más de la página: hablar con alguien
    es lo que estás haciendo, y el resto del sitio se aparta. */
+/* ⚠️ **z-60, no el 250 del boceto.** El boceto vivía solo en un archivo; aquí
+   hay una pila que ya está repartida: nav 50, modales 60, peticiones de tirada
+   70, **tablero de dados 80**, EpicOverlay 100. A 250 la ventana taparía el
+   tablero, y como la tirada se lanza PULSANDO el dado, la conversación se
+   quedaría colgada esperando un clic que nadie podría dar. */
 .pnj-scrim {
-  position: fixed; inset: 0; z-index: 250; padding: 20px;
+  position: fixed; inset: 0; z-index: 60; padding: 20px;
   display: flex; align-items: center; justify-content: center;
   background: rgba(12, 10, 8, 0.78); backdrop-filter: blur(5px);
   animation: pnj-fade 0.2s ease-out;
@@ -1376,7 +1381,14 @@ canvas.dice-box-canvas {
   background: color-mix(in srgb, var(--natura) 10%, transparent);
 }
 
-.pnj-foot { display: flex; gap: 10px; margin-top: 14px; padding: 16px 26px 24px; border-top: 1px solid var(--hoja-3); }
+/* El pie: «o dile lo que quieras». En el boceto era un campo y un botón; aquí
+   dentro va el chat con la IA, que trae su propia historia y su propio campo,
+   así que apila en columna en vez de en fila. */
+.pnj-foot { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 16px 26px 24px; border-top: 1px solid var(--hoja-3); }
+.pnj-foot .rot {
+  font-family: var(--font-display); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.26em; text-transform: uppercase; color: var(--tinta-3);
+}
 
 /* La tirada NO se teclea: la lanza el tablero 3D y aquí gira un d20
    mientras rueda. El campo manual solo aparece si no hay WebGL. */
