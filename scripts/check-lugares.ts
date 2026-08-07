@@ -10,7 +10,7 @@ import {
   construirNodos, SUB_LUGARES, ENTRADAS_AL_BOSQUE,
   idPoi, idSub, idFranja, poiDeNodo, alAireLibre, etiquetaDeSalida,
 } from "../data/lugares";
-import { indexar, nodoDelJugador, salidasDe, puedeIr, npcsDeNodo } from "../lib/nodos";
+import { indexar, nodoDelJugador, salidasDe, puedeIr, npcsDeNodo, sitioVigente } from "../lib/nodos";
 import { FRANJAS } from "../data/bosque";
 
 let failures = 0;
@@ -133,16 +133,27 @@ check("el bosque está al aire libre", alAireLibre("franja:espesura"));
 check("la taberna NO está al aire libre", !alAireLibre("sub:Byroden/taberna"));
 
 /* --------------------- DÓNDE ESTÁ CADA JUGADOR ------------------------- */
+const enTab = { nodo: idSub("Byroden", "taberna"), desde: idPoi("Byroden") };
 // Sin `sitio` se está donde el grupo: lo que hace que la migración no rompa a
 // quien nunca se haya movido.
 check("sin sitio propio, se está donde el grupo", nodoDelJugador(null, "poi:Byroden", IX)?.id === "poi:Byroden");
 // Y con `sitio` se está ahí: si esto falla, moverse deja de tener efecto y no
 // salta nada en pantalla.
-check("con sitio propio, manda el sitio", nodoDelJugador("sub:Byroden/taberna", "poi:Byroden", IX)?.id === "sub:Byroden/taberna");
+check("con sitio propio, manda el sitio", nodoDelJugador(enTab, "poi:Byroden", IX)?.id === enTab.nodo);
 // Un sitio que el DM borró cae al ancla, no deja al jugador en la nada.
-check("un sitio que ya no existe cae al ancla", nodoDelJugador("sub:Byroden/pescaderia", "poi:Byroden", IX)?.id === "poi:Byroden");
+check("un sitio que ya no existe cae al ancla",
+  nodoDelJugador({ nodo: "sub:Byroden/pescaderia", desde: idPoi("Byroden") }, "poi:Byroden", IX)?.id === "poi:Byroden");
 check("sin sitio y sin ancla, en ningún sitio", nodoDelJugador(null, null, IX) === null);
 check("un ancla que no existe tampoco inventa", nodoDelJugador(null, "poi:Inventado", IX) === null);
+
+// ⚠️ LA QUE EVITA QUEDARSE SOLO EN UN PUEBLO VACÍO. El DM planta al grupo en
+// Emon; quien se había metido en la taberna de Byroden tiene que salir con
+// todos, no quedarse allí. Caduca por el `desde`, sin que el DM limpie nada.
+check("si el grupo se muda, el sitio propio CADUCA",
+  nodoDelJugador(enTab, "poi:Emon", IX)?.id === "poi:Emon");
+check("sitioVigente: mismo ancla, sigue valiendo", sitioVigente(enTab, idPoi("Byroden")));
+check("sitioVigente: otro ancla, caduca", !sitioVigente(enTab, idPoi("Emon")));
+check("sitioVigente: sin ancla, caduca", !sitioVigente(enTab, null));
 
 // salidasDe filtra las rotas en vez de pintar tarjetas muertas.
 check("salidasDe resuelve las cinco de Byroden", salidasDe(byroden!, IX).length === 5);

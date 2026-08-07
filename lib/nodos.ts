@@ -27,13 +27,33 @@ export function indexar(nodos: readonly Nodo[]): Map<string, Nodo> {
  * igual que la niebla falla cerrado.
  */
 export function nodoDelJugador(
-  sitio: string | null | undefined,
+  sitio: Sitio | null | undefined,
   ancla: string | null,
   index: Map<string, Nodo>,
 ): Nodo | null {
-  if (sitio && index.has(sitio)) return index.get(sitio)!;
+  if (sitio && sitioVigente(sitio, ancla) && index.has(sitio.nodo)) return index.get(sitio.nodo)!;
   if (ancla && index.has(ancla)) return index.get(ancla)!;
   return null;
+}
+
+/**
+ * Dónde se ha ido el jugador, **y desde qué ancla**.
+ *
+ * El `desde` no es contabilidad: es lo que evita el agujero de que el DM mueva
+ * al grupo a Emon y alguien que se había metido en la taberna de Byroden **se
+ * quede allí solo**, en un pueblo que el grupo ya abandonó.
+ */
+export type Sitio = { nodo: string; desde: string };
+
+/**
+ * ¿Sigue valiendo lo que este jugador se movió?
+ *
+ * Solo si el grupo no se ha ido a otra parte desde entonces. En cuanto el ancla
+ * cambia, todo lo andado por libre **caduca solo**: no hace falta que el DM
+ * limpie nada ni que se escriba en la ficha de cinco personas.
+ */
+export function sitioVigente(sitio: Sitio, ancla: string | null): boolean {
+  return !!ancla && sitio.desde === ancla;
 }
 
 /**
