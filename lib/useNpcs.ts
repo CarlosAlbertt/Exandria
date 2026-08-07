@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
+import { puedeSembrar } from "@/lib/nodos";
 
 // `venue` (schema_v25): id del nodo donde está, o null = el pueblo entero.
 // NULL es lo que hace que la migración no esconda a nadie: los PNJ que ya
@@ -77,6 +78,42 @@ export async function updateNpc(id: number, patch: Partial<Pick<LocationNpc, "na
   if (!supabaseConfigured) return;
   await createClient().from("location_npcs").update(patch).eq("id", id);
 }
+/**
+ * Siembra la plantilla de un sitio, **sin pisar lo que ya haya**.
+ *
+ * ⚠️ El guardia no es un detalle: el DM ya tiene PNJ creados a mano, y un botón
+ * que los duplicara le metería once desconocidos en su pueblo sin forma cómoda
+ * de deshacerlo. Si en ese sitio hay alguien, **no se siembra y se dice**.
+ *
+ * `poiName` es el pueblo desde el que se siembra, y va también en los PNJ de
+ * las franjas del bosque —que no son de ningún pueblo— **para que el DM los
+ * encuentre en Panel DM › PNJs**, que lista por POI. `npcsDeNodo` los coloca
+ * por `venue`, así que en pantalla salen en el bosque igual.
+ */
+export async function seedNpcs(
+  poiName: string, nodoId: string, plantilla: { name: string; role: string; prompt: string; publico?: boolean }[],
+): Promise<{ ok: true; creados: number } | { ok: false; error: string }> {
+  if (!supabaseConfigured) return { ok: false, error: "Supabase no configurado." };
+  const supabase = createClient();
+
+  const { data: yaHay, error: errLeer } = await supabase
+    .from("location_npcs").select("id").eq("venue", nodoId).limit(1);
+  if (errLeer) return { ok: false, error: errLeer.message };
+  // La decisión vive en `lib/nodos.ts`, no aquí: pegada a esta consulta ningún
+  // gate podía mirarla, y es la que evita duplicar el elenco del DM.
+  const veredicto = puedeSembrar(yaHay?.length ?? 0, plantilla.length);
+  if (!veredicto.ok) return veredicto;
+
+  const { error } = await supabase.from("location_npcs").insert(
+    plantilla.map((t) => ({
+      poi_name: poiName, name: t.name, role: t.role, prompt: t.prompt,
+      public: t.publico ?? true, venue: nodoId,
+    })),
+  );
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, creados: plantilla.length };
+}
+
 export async function deleteNpc(id: number) {
   if (!supabaseConfigured) return;
   await createClient().from("location_npcs").delete().eq("id", id);

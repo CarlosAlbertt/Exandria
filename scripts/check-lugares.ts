@@ -10,8 +10,9 @@ import {
   construirNodos, SUB_LUGARES, ENTRADAS_AL_BOSQUE,
   idPoi, idSub, idFranja, poiDeNodo, alAireLibre, etiquetaDeSalida,
 } from "../data/lugares";
-import { indexar, nodoDelJugador, salidasDe, puedeIr, npcsDeNodo, sitioVigente } from "../lib/nodos";
+import { indexar, nodoDelJugador, salidasDe, puedeIr, npcsDeNodo, sitioVigente, puedeSembrar } from "../lib/nodos";
 import { FRANJAS } from "../data/bosque";
+import { NPC_TEMPLATES, plantillaDe, claveDePlantilla } from "../data/npcTemplates";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -219,6 +220,60 @@ check("y el nodo renombrado no aparece con el id inventado", !ixOv.has("sub:Byro
 check("las salidas de Byroden siguen resolviendo con override",
   salidasDe(ixOv.get(idPoi("Byroden"))!, ixOv).length === BYRODEN_ESPERADO.length);
 
+/* ---------------------- LA GENTE QUE SE SIEMBRA ------------------------ */
+// ⚠️ La plantilla se busca por SLUG de sitio (`taberna`) y no por id entero,
+// para que sirva en cualquier pueblo; una franja se busca por su id, porque no
+// hay más que una de cada. Si `claveDePlantilla` y `NPC_TEMPLATES` dejan de
+// hablar el mismo idioma, **el botón «Sembrar» sale deshabilitado en un sitio
+// que sí tiene gente escrita** y nadie se entera de por qué.
+check("la clave de un sub-lugar es su slug", claveDePlantilla(idSub("Byroden", "taberna")) === "taberna");
+check("la clave de una franja es su id entero", claveDePlantilla(idFranja("linde")) === "franja:linde");
+check("un pueblo no tiene plantilla propia", claveDePlantilla(idPoi("Byroden")) === null);
+
+// Los cinco sitios de Byroden y las tres franjas traen gente. Escrito a mano:
+// si saliera de NPC_TEMPLATES, quedarse sin sepulturero no rompería nada.
+for (const clave of ["taberna", "iglesia", "cementerio", "ayuntamiento"]) {
+  check(`"${clave}" trae gente escrita`, plantillaDe(clave).length > 0);
+  check(`"${clave}" trae DOS`, plantillaDe(clave).length === 2);
+}
+for (const f of ["franja:linde", "franja:espesura", "franja:corazon"]) {
+  check(`"${f}" trae a alguien`, plantillaDe(f).length === 1);
+}
+
+// Toda plantilla apunta a un sitio que EXISTE. Una escrita para un sitio que
+// nadie tiene deja gente que no se puede sembrar desde ninguna pantalla.
+const clavesDeNodos = new Set(NODOS.map((n) => claveDePlantilla(n.id)).filter(Boolean) as string[]);
+for (const clave of Object.keys(NPC_TEMPLATES)) {
+  check(`la plantilla "${clave}" corresponde a un sitio real`, clavesDeNodos.has(clave));
+}
+
+// El `prompt` es lo ÚNICO que la IA lee de un PNJ (`personaFor` lo compone con
+// el ambiente). Uno de una línea da un PNJ que contesta cualquier cosa, así que
+// se exige cuerpo — es el mismo criterio que el texto de las entradas de saber.
+for (const [clave, gente] of Object.entries(NPC_TEMPLATES)) {
+  for (const t of gente) {
+    check(`"${t.name}" (${clave}) tiene nombre y oficio`, t.name.trim().length > 2 && t.role.trim().length > 2);
+    check(`"${t.name}" tiene personalidad de verdad para la IA`, t.prompt.trim().length >= 250);
+    check(`"${t.name}" habla en segunda persona, como el resto de personas`, /^Eres /.test(t.prompt.trim()));
+  }
+}
+
+// ⚠️ EL GUARDIA ANTI-DUPLICADO. Vivía dentro de `seedNpcs`, pegado a la
+// consulta de Supabase, **donde ningún gate llegaba** — y es lo único que
+// impide que un botón le meta al DM once desconocidos encima de los PNJ que ya
+// creó a mano. Se sacó a `lib/nodos.ts` justo para poder mirarlo aquí.
+check("con el sitio vacío, se siembra", puedeSembrar(0, 2).ok);
+check("con alguien ya dentro, NO se siembra", !puedeSembrar(1, 2).ok);
+check("y lo dice en vez de callarse", puedeSembrar(1, 2).ok === false && !!(puedeSembrar(1, 2) as { error: string }).error);
+check("sin plantilla no se siembra", !puedeSembrar(0, 0).ok);
+check("sin plantilla Y con gente, tampoco", !puedeSembrar(3, 0).ok);
+
+// Nombres únicos en todo el pueblo: dos «Mirna» en Byroden y el DM no sabe a
+// cuál está editando en el panel.
+const nombres = Object.values(NPC_TEMPLATES).flat().map((t) => t.name);
+check(`ningún nombre repetido entre plantillas`, new Set(nombres).size === nombres.length);
+
 console.log(`\nGrafo: ${NODOS.length} nodos y ${NODOS.reduce((n, x) => n + x.salidas.length, 0)} salidas.`);
+console.log(`Gente escrita: ${nombres.length} PNJ en ${Object.keys(NPC_TEMPLATES).length} sitios.`);
 console.log(failures === 0 ? "Todas las comprobaciones pasaron." : `${failures} fallaron.`);
 process.exit(failures === 0 ? 0 : 1);

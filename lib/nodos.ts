@@ -94,6 +94,26 @@ export function puedeIr(desde: string | null, hacia: string, index: Map<string, 
  * salían todos antes de la v25: por eso la migración no esconde a nadie. Dentro
  * de un sub-lugar solo se ve a quien está puesto ahí a mano.
  */
+/**
+ * ¿Se puede sembrar la plantilla de un sitio?
+ *
+ * Sale de dentro de `seedNpcs` a propósito. Allí vivía pegada a la consulta de
+ * Supabase, **donde ningún gate puede mirarla**, y es la regla que impide que un
+ * botón le meta al DM once desconocidos encima de los PNJ que ya creó a mano.
+ * Es la misma razón por la que `facesFrom` se exporta: una regla que no se puede
+ * comprobar no la vigila nadie.
+ *
+ * Se niega también con la plantilla vacía: sembrar cero no es sembrar, y el
+ * botón debe decirlo en vez de parecer que no hizo nada.
+ */
+export function puedeSembrar(
+  yaEnElSitio: number, tamanoPlantilla: number,
+): { ok: true } | { ok: false; error: string } {
+  if (tamanoPlantilla === 0) return { ok: false, error: "Este sitio no tiene plantilla." };
+  if (yaEnElSitio > 0) return { ok: false, error: "Ya hay alguien en este sitio; no se siembra encima." };
+  return { ok: true };
+}
+
 export function npcsDeNodo<T extends { poi_name: string; venue?: string | null }>(
   npcs: readonly T[],
   nodo: Nodo | null,
