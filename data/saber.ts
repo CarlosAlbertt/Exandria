@@ -18,6 +18,7 @@ import { WILDEMOUNT_LORE_REGIONS, WILDEMOUNT_FACTIONS, LANGUAGES, DAILY_LIFE } f
 import { LORE_TIERS, type LoreSkill } from "@/data/loreTiers";
 import { CONTINENT_LORE, type ContinentLoreEntry } from "@/data/continentes";
 import { CALAMIDAD_LORE } from "@/data/calamidad";
+import { SUSURRADO_LORE } from "@/data/susurrado";
 import { slugify } from "@/lib/slug";
 
 export type SaberScope =
@@ -248,6 +249,24 @@ function calamidadEntries(): Omit<SaberEntry, "place" | "category">[] {
   }));
 }
 
+// Thordak, el Zigurat y el Susurrado. Prefijo propio y no `cl:` porque no son
+// lore de continente: son tres hilos que se cruzan y que caen en Tal'Dorei o en
+// Exandria según de quién sea la historia, no según dónde se cuente.
+//
+// Todas van `profundo` a propósito, como la Calamidad: si lo gordo de estas
+// tres se supiera de salida, dejaría de tener gracia descubrirlo.
+function susurradoEntries(): Omit<SaberEntry, "place" | "category">[] {
+  return SUSURRADO_LORE.map((e) => ({
+    id: `sus:${slugKey(e.continent)}:${e.id}`,
+    scope: scopeOfContinentLore(e),
+    depth: "profundo" as const,
+    topic: e.topic,
+    title: e.title,
+    text: e.text,
+    poi: e.poi,
+  }));
+}
+
 // --- HISTORIA DETALLADA: la breve la sabe todo el mundo; el detalle, no -----
 function historyEntries(): Omit<SaberEntry, "place" | "category">[] {
   const out: Omit<SaberEntry, "place" | "category">[] = [];
@@ -323,6 +342,12 @@ function placeOf(e: Omit<SaberEntry, "place" | "category">): SaberPlace {
     const found = PLACES.find((p) => e.id.startsWith(`cl:${slugKey(p)}:`));
     if (found) return found;
   }
+  // Thordak y el Zigurat son de Tal'Dorei; el Susurrado, de Exandria entera.
+  // El continente va en el id igual que en `cl:`, así que se lee igual.
+  if (e.id.startsWith("sus:")) {
+    const found = PLACES.find((p) => e.id.startsWith(`sus:${slugKey(p)}:`));
+    if (found) return found;
+  }
   return "Exandria";
 }
 
@@ -357,6 +382,7 @@ export const SABER: SaberEntry[] = tag([
   ...wildemountEntries(),
   ...continentLoreEntries(),
   ...calamidadEntries(),
+  ...susurradoEntries(),
   ...historyEntries(),
   ...moonEntries(),
   ...planeEntries(),
