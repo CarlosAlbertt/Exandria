@@ -1,0 +1,87 @@
+// Dónde está cada jugador y adónde puede ir, como reglas puras.
+//
+// Módulo neutral (sin "use client" y sin Supabase) igual que `lib/niebla.ts` y
+// `lib/misiones.ts`: la niebla falló ABIERTA durante semanas porque su regla
+// vivía dentro de un `.map` y no había forma de comprobarla. Aquí lo que está
+// en juego es que una tarjeta no lleve a ninguna parte, o que moverse no tenga
+// efecto — dos fallos que no gritan.
+
+import type { Nodo } from "@/data/lugares";
+
+/** Índice por id, que es como se consulta el grafo en todas partes. */
+export function indexar(nodos: readonly Nodo[]): Map<string, Nodo> {
+  return new Map(nodos.map((n) => [n.id, n]));
+}
+
+/**
+ * Dónde está este jugador.
+ *
+ * `sitio` es lo que el jugador se ha movido por su cuenta (vive en
+ * `characters.play_state`). `ancla` es dónde ha plantado el DM al grupo
+ * (`party_location`).
+ *
+ * **Sin `sitio`, se está donde el grupo**, y eso es lo que hace que la
+ * migración no rompa nada: quien no se haya movido nunca ve exactamente lo de
+ * antes. Y un `sitio` que ya no existe —el DM borró ese sub-lugar— **cae al
+ * ancla en vez de dejar al jugador en la nada**: falla hacia el sitio conocido,
+ * igual que la niebla falla cerrado.
+ */
+export function nodoDelJugador(
+  sitio: string | null | undefined,
+  ancla: string | null,
+  index: Map<string, Nodo>,
+): Nodo | null {
+  if (sitio && index.has(sitio)) return index.get(sitio)!;
+  if (ancla && index.has(ancla)) return index.get(ancla)!;
+  return null;
+}
+
+/**
+ * Las salidas de un nodo que **existen de verdad**.
+ *
+ * Una salida a un id que no está en el grafo es una tarjeta que el jugador
+ * pulsa y no le lleva a ningún sitio. Se filtran aquí para que la pantalla no
+ * pueda pintarlas, y el gate exige aparte que no haya ninguna: esto es la red,
+ * no el permiso para dejarlas sueltas.
+ */
+export function salidasDe(nodo: Nodo | null, index: Map<string, Nodo>): Nodo[] {
+  if (!nodo) return [];
+  return nodo.salidas.flatMap((id) => {
+    const n = index.get(id);
+    return n ? [n] : [];
+  });
+}
+
+/**
+ * ¿Puede este jugador ir de `desde` a `hacia`?
+ *
+ * Es la PUERTA de la interfaz, no del servidor: se evalúa en el navegador. Vale
+ * así **porque no hay nada que proteger** — moverse no escribe en nadie más que
+ * en la propia ficha, y el grafo entero viaja ya en el bundle. El día que
+ * entrar en un sitio cueste algo o revele algo, esto se comprueba en servidor.
+ */
+export function puedeIr(desde: string | null, hacia: string, index: Map<string, Nodo>): boolean {
+  if (!index.has(hacia)) return false;
+  if (!desde) return false;
+  const n = index.get(desde);
+  return !!n && n.salidas.includes(hacia);
+}
+
+/**
+ * Los PNJ que se ven en un nodo.
+ *
+ * ⚠️ **Un PNJ con `venue` nulo sale en el nodo del PUEBLO**, que es donde
+ * salían todos antes de la v25: por eso la migración no esconde a nadie. Dentro
+ * de un sub-lugar solo se ve a quien está puesto ahí a mano.
+ */
+export function npcsDeNodo<T extends { poi_name: string; venue?: string | null }>(
+  npcs: readonly T[],
+  nodo: Nodo | null,
+): T[] {
+  if (!nodo) return [];
+  if (nodo.id.startsWith("poi:")) {
+    const poi = nodo.id.slice(4);
+    return npcs.filter((n) => n.poi_name === poi && !n.venue);
+  }
+  return npcs.filter((n) => n.venue === nodo.id);
+}
