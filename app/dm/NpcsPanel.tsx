@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useLugares } from "@/lib/useLugares";
+import { CLAVES_DIALOGO } from "@/data/dialogos";
 import { useAtlas } from "@/lib/useAtlas";
 import { useNpcs, createNpc, updateNpc, deleteNpc, type LocationNpc } from "@/lib/useNpcs";
 import { generarNpc } from "@/lib/generar";
@@ -81,6 +82,7 @@ function NpcEditor({ npc, onChange }: { npc: LocationNpc; onChange: () => void }
   const [pub, setPub] = useState(npc.public);
   const [portrait, setPortrait] = useState(npc.portrait ?? "");
   const [venue, setVenue] = useState(npc.venue ?? "");
+  const [dialogo, setDialogo] = useState(npc.dialogo ?? "");
   const { nodos } = useLugares();
 
   // Los sitios de SU pueblo, más las franjas del bosque (que no son de nadie).
@@ -97,6 +99,8 @@ function NpcEditor({ npc, onChange }: { npc: LocationNpc; onChange: () => void }
       // "" → null, que es «en el pueblo entero» y el valor con el que nacieron
       // todos los PNJ anteriores a la v25.
       venue: venue || null,
+      // "" → null: sin árbol escrito, el PNJ vuelve al chat libre con IA.
+      dialogo: dialogo || null,
     });
     await onChange();
   }
@@ -114,6 +118,12 @@ function NpcEditor({ npc, onChange }: { npc: LocationNpc; onChange: () => void }
         title="Dónde está exactamente. En blanco = en el pueblo, como hasta ahora.">
         <option value="">En {npc.poi_name} (el pueblo entero)</option>
         {destinos.map((n) => <option key={n.id} value={n.id}>{n.nombre}</option>)}
+      </select>
+      {/* El árbol escrito. En blanco = solo chat con IA, como hasta ahora. */}
+      <select value={dialogo} onChange={(e) => setDialogo(e.target.value)} className={inputCls} style={{ color: "var(--color-warm)" }}
+        title="Conversación escrita con tiradas y consecuencias. En blanco = solo chat libre con IA.">
+        <option value="">Sin conversación escrita (solo IA)</option>
+        {CLAVES_DIALOGO.map((c) => <option key={c} value={c}>Árbol: {c}</option>)}
       </select>
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 font-ui text-[12px]" style={{ color: "var(--color-warm)" }}><input type="checkbox" checked={pub} onChange={(e) => setPub(e.target.checked)} /> Visible para los jugadores</label>

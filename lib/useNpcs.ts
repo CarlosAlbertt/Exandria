@@ -6,7 +6,9 @@ import { puedeSembrar } from "@/lib/nodos";
 // `venue` (schema_v25): id del nodo donde está, o null = el pueblo entero.
 // NULL es lo que hace que la migración no esconda a nadie: los PNJ que ya
 // existían siguen saliendo donde salían.
-export type LocationNpc = { id: number; poi_name: string; name: string; role: string; prompt: string; public: boolean; portrait: string | null; venue: string | null };
+// `dialogo` (schema_v26): clave del árbol escrito en `data/dialogos.ts`, o
+// null = solo chat libre con IA, que es como están todos los que ya existen.
+export type LocationNpc = { id: number; poi_name: string; name: string; role: string; prompt: string; public: boolean; portrait: string | null; venue: string | null; dialogo: string | null };
 
 export function useNpcs(poiName: string | null) {
   const [npcs, setNpcs] = useState<LocationNpc[]>([]);
@@ -74,7 +76,7 @@ export async function createNpc(poiName: string, name: string, role: string): Pr
   const { data } = await createClient().from("location_npcs").insert({ poi_name: poiName, name, role }).select("id").single();
   return data ? (data as { id: number }).id : null;
 }
-export async function updateNpc(id: number, patch: Partial<Pick<LocationNpc, "name" | "role" | "prompt" | "public" | "portrait" | "venue">>) {
+export async function updateNpc(id: number, patch: Partial<Pick<LocationNpc, "name" | "role" | "prompt" | "public" | "portrait" | "venue" | "dialogo">>) {
   if (!supabaseConfigured) return;
   await createClient().from("location_npcs").update(patch).eq("id", id);
 }
