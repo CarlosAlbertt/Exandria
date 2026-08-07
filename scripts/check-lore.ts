@@ -4,6 +4,7 @@ import { SABER, PLACES, PLACE_ACCENT, CATEGORIES, continentBySlug, HABITADOS } f
 import { knows, type SaberCtx } from "../lib/saber";
 import { CONTINENT_LORE } from "../data/continentes";
 import { CALAMIDAD_RELATO, CALAMIDAD_LORE } from "../data/calamidad";
+import { SUSURRADO_LORE } from "../data/susurrado";
 import { REGIONS_BY_CONTINENT, WORLD_POIS, CONTINENTS } from "../data/world";
 import { seedAtlas, mergeAtlas, type AtlasDefs } from "../data/atlas";
 import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS } from "../data/pantheon";
@@ -152,6 +153,51 @@ check("toda deidad tiene tres preceptos", DIOSES.every((d) => d.commandments.len
 // brujo — es una divinidad sin voluntad ni consciencia con la que pactar.
 check("todo ídolo declara su patrón, salvo el Luxon", LESSER_IDOLS.every((d) => d.slug === "luxon" || !!d.patron));
 check("cada dios lleva su bando", PRIME_DEITIES.every((d) => d.side === "prime") && BETRAYER_GODS.every((d) => d.side === "betrayer") && LESSER_IDOLS.every((d) => d.side === "idol"));
+
+// --- THORDAK, EL ZIGURAT Y EL SUSURRADO ------------------------------------
+// Van aquí y no en un `check-susurrado.ts` propio porque es la misma pregunta
+// que este script ya responde —la integridad de SABER— y dos scripts para una
+// regla son dos fuentes de verdad. (La lección de `check-forja` / `check-forjado`.)
+const SUS = SABER.filter((e) => e.id.startsWith("sus:"));
+
+check("las tres historias nuevas están en SABER", SUS.length === SUSURRADO_LORE.length);
+check("SUSURRADO_LORE no está vacío", SUSURRADO_LORE.length > 0);
+check("ningún id repetido dentro de SUSURRADO_LORE",
+  new Set(SUSURRADO_LORE.map((e) => e.id)).size === SUSURRADO_LORE.length);
+
+// Los tres temas, escritos a mano: si salieran de SUSURRADO_LORE se moverían
+// con él y borrar un tema entero no rompería nada.
+for (const t of ["Thordak", "El Zigurat", "El Susurrado"]) {
+  check(`hay entradas del tema "${t}"`, SUS.some((e) => e.topic === t));
+}
+
+// LO QUE PIDIÓ EL USUARIO: esto se DESCUBRE. Si alguna cayera en "basico"
+// dejaría de tener gracia, y si un personaje recién hecho supiera una, peor.
+check("todas las entradas nuevas son de profundidad 'profundo'", SUS.every((e) => e.depth === "profundo"));
+check("un personaje recién hecho no sabe ninguna de las tres historias",
+  SUS.every((e) => !knows(e, base)));
+
+// El archivado. Sin la rama `sus:` de `placeOf`, las de Tal'Dorei caerían todas
+// en "Exandria" y se leerían en la página del continente equivocado — que es
+// exactamente el fallo que ya tuvo `placeOf` con los ids `reg:`.
+for (const e of SUSURRADO_LORE) {
+  const en = SABER.find((s) => s.id.endsWith(`:${e.id}`) && s.id.startsWith("sus:"));
+  check(`"${e.id}" existe en SABER`, !!en);
+  if (en) check(`"${e.id}" se archiva en ${e.continent}`, en.place === e.continent);
+}
+
+// Un `poi` que no existe deja la tirada de saber in situ de /lugar sin sitio
+// donde dispararse, y en silencio.
+const POI_NAMES = new Set(Object.values(seedAtlas()).flatMap((c) => Object.values(c.pois).flat().map((p) => p.name)));
+for (const e of SUSURRADO_LORE) {
+  if (e.poi) check(`el POI "${e.poi}" de "${e.id}" existe en el atlas`, POI_NAMES.has(e.poi));
+}
+
+// Texto de verdad, no un hueco: una entrada de saber de dos líneas no es un
+// descubrimiento, es una nota.
+for (const e of SUSURRADO_LORE) {
+  check(`"${e.id}" tiene título y texto con cuerpo`, e.title.trim().length > 0 && e.text.trim().length >= 200);
+}
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);
