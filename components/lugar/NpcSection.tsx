@@ -9,6 +9,8 @@ import { useSession } from "@/components/SessionProvider";
 import { loadActiveCharacter } from "@/lib/character";
 import { aceptarEncargo, entregarMision } from "@/lib/encargo";
 import { opcionesDeMision, type OpcionDialogo } from "@/lib/misiones";
+import DialogoArbol from "@/components/lugar/DialogoArbol";
+import { DIALOGOS } from "@/data/dialogos";
 
 // Los PNJ del sitio donde estás, no los del pueblo entero (schema_v25).
 //
@@ -78,8 +80,29 @@ export default function NpcSection({ nodo, ambient }: { nodo: Nodo; ambient?: st
             <button onClick={() => { setOpenId(null); setAviso(null); }} className="btn-ghost !py-1 !px-2 text-[12px]"><i className="fas fa-arrow-left mr-1" />Volver</button>
           </div>
           {aviso && <p className="font-ui text-[12px]" style={{ color: "var(--color-bronze-bright)" }}>{aviso}</p>}
+
+          {/* La conversación ESCRITA manda cuando la hay: es la que lleva
+              tiradas y consecuencias. La IA se queda debajo para lo que no
+              esté previsto, con el mismo `prompt` del PNJ — es lo único que un
+              árbol no puede hacer. Un PNJ sin `dialogo` sigue como siempre. */}
+          {open.dialogo && DIALOGOS[open.dialogo] && (
+            <>
+              <DialogoArbol
+                npcId={open.id}
+                clave={open.dialogo}
+                onCerrar={() => { setOpenId(null); setAviso(null); }}
+                onPremio={(p) => setAviso(
+                  p.tipo === "objeto" ? `Te dan: ${p.name}.`
+                  : p.tipo === "oro" ? `Recibes ${p.cantidad} po.`
+                  : "Aprendes algo nuevo.",
+                )}
+              />
+              <p className="eyebrow !text-[9px] pt-1">O dile lo que quieras</p>
+            </>
+          )}
+
           <NpcChat persona={personaFor(open, ambient)} placeholder={`Habla con ${open.name}…`} empty={`Salúdale o pregúntale por el lugar.`} memoryRef={`npc:${open.id}`}
-            conOpciones misionOpts={misionOpts} onMision={accion} />
+            conOpciones={!open.dialogo} misionOpts={misionOpts} onMision={accion} />
         </div>
       )}
     </section>
