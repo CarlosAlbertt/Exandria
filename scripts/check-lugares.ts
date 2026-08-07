@@ -10,7 +10,7 @@ import {
   construirNodos, SUB_LUGARES, ENTRADAS_AL_BOSQUE,
   idPoi, idSub, idFranja, poiDeNodo, alAireLibre, etiquetaDeSalida,
 } from "../data/lugares";
-import { indexar, nodoDelJugador, salidasDe, puedeIr, npcsDeNodo, sitioVigente } from "../lib/nodos";
+import { indexar, nodoDelJugador, salidasDe, puedeIr, npcsDeNodo, sitioVigente, puedeSembrar } from "../lib/nodos";
 import { FRANJAS } from "../data/bosque";
 import { NPC_TEMPLATES, plantillaDe, claveDePlantilla } from "../data/npcTemplates";
 
@@ -257,6 +257,16 @@ for (const [clave, gente] of Object.entries(NPC_TEMPLATES)) {
     check(`"${t.name}" habla en segunda persona, como el resto de personas`, /^Eres /.test(t.prompt.trim()));
   }
 }
+
+// ⚠️ EL GUARDIA ANTI-DUPLICADO. Vivía dentro de `seedNpcs`, pegado a la
+// consulta de Supabase, **donde ningún gate llegaba** — y es lo único que
+// impide que un botón le meta al DM once desconocidos encima de los PNJ que ya
+// creó a mano. Se sacó a `lib/nodos.ts` justo para poder mirarlo aquí.
+check("con el sitio vacío, se siembra", puedeSembrar(0, 2).ok);
+check("con alguien ya dentro, NO se siembra", !puedeSembrar(1, 2).ok);
+check("y lo dice en vez de callarse", puedeSembrar(1, 2).ok === false && !!(puedeSembrar(1, 2) as { error: string }).error);
+check("sin plantilla no se siembra", !puedeSembrar(0, 0).ok);
+check("sin plantilla Y con gente, tampoco", !puedeSembrar(3, 0).ok);
 
 // Nombres únicos en todo el pueblo: dos «Mirna» en Byroden y el DM no sabe a
 // cuál está editando en el panel.

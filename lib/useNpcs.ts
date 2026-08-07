@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
+import { puedeSembrar } from "@/lib/nodos";
 
 // `venue` (schema_v25): id del nodo donde está, o null = el pueblo entero.
 // NULL es lo que hace que la migración no esconda a nadie: los PNJ que ya
@@ -93,13 +94,15 @@ export async function seedNpcs(
   poiName: string, nodoId: string, plantilla: { name: string; role: string; prompt: string; publico?: boolean }[],
 ): Promise<{ ok: true; creados: number } | { ok: false; error: string }> {
   if (!supabaseConfigured) return { ok: false, error: "Supabase no configurado." };
-  if (plantilla.length === 0) return { ok: false, error: "Este sitio no tiene plantilla." };
   const supabase = createClient();
 
   const { data: yaHay, error: errLeer } = await supabase
     .from("location_npcs").select("id").eq("venue", nodoId).limit(1);
   if (errLeer) return { ok: false, error: errLeer.message };
-  if (yaHay && yaHay.length > 0) return { ok: false, error: "Ya hay alguien en este sitio; no se siembra encima." };
+  // La decisión vive en `lib/nodos.ts`, no aquí: pegada a esta consulta ningún
+  // gate podía mirarla, y es la que evita duplicar el elenco del DM.
+  const veredicto = puedeSembrar(yaHay?.length ?? 0, plantilla.length);
+  if (!veredicto.ok) return veredicto;
 
   const { error } = await supabase.from("location_npcs").insert(
     plantilla.map((t) => ({
