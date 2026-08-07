@@ -176,6 +176,13 @@ for (const t of ["Thordak", "El Zigurat", "El Susurrado"]) {
 check("todas las entradas nuevas son de profundidad 'profundo'", SUS.every((e) => e.depth === "profundo"));
 check("un personaje recién hecho no sabe ninguna de las tres historias",
   SUS.every((e) => !knows(e, base)));
+// ⚠️ Y esta es la que de verdad muerde, porque la de arriba NO basta: un
+// personaje "recién hecho" no tiene continente de origen, así que un ámbito de
+// tipo `continente` se le escapa. Pero en cuanto alguien fuera de Tal'Dorei,
+// TODA la historia de Thordak le saldría sabida de salida. Ninguna de las tres
+// puede saberse por ser de un sitio: se descubren o no se tienen.
+check("ninguna de las tres historias se sabe solo por ser de un continente",
+  SUS.every((e) => e.scope.kind !== "continente"));
 
 // El archivado. Sin la rama `sus:` de `placeOf`, las de Tal'Dorei caerían todas
 // en "Exandria" y se leerían en la página del continente equivocado — que es
