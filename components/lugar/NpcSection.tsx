@@ -2,14 +2,14 @@
 import { useEffect, useState } from "react";
 import { useAllNpcs, type LocationNpc } from "@/lib/useNpcs";
 import { npcsDeNodo } from "@/lib/nodos";
-import type { Nodo } from "@/data/lugares";
+import { poiDeNodo, type Nodo } from "@/data/lugares";
 import NpcChat from "@/components/lugar/NpcChat";
 import { useChronicle } from "@/lib/useChronicle";
 import { useSession } from "@/components/SessionProvider";
 import { loadActiveCharacter } from "@/lib/character";
 import { aceptarEncargo, entregarMision } from "@/lib/encargo";
 import { opcionesDeMision, type OpcionDialogo } from "@/lib/misiones";
-import DialogoArbol from "@/components/lugar/DialogoArbol";
+import DialogoArbol, { type PulsoTrato } from "@/components/lugar/DialogoArbol";
 import { DIALOGOS } from "@/data/dialogos";
 
 // Los PNJ del sitio donde estás, no los del pueblo entero (schema_v25).
@@ -26,6 +26,10 @@ export default function NpcSection({ nodo, ambient }: { nodo: Nodo; ambient?: st
   const [openId, setOpenId] = useState<number | null>(null);
   const [fichaId, setFichaId] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  // La confianza la resuelve `DialogoArbol`, que es quien tiene el trato, y se
+  // pinta aquí porque va junto al retrato: es parte de «quién es», no de lo que
+  // está diciendo ahora.
+  const [pulso, setPulso] = useState<PulsoTrato | null>(null);
 
   // La ficha EN JUEGO, como ya hacen SaberRoll, PosadaSection y ShopSection.
   // Sin ella no hay opciones de misión: el DM no tiene ficha.
@@ -36,6 +40,17 @@ export default function NpcSection({ nodo, ambient }: { nodo: Nodo; ambient?: st
     return () => { on = false; };
   }, [session?.id]);
 
+  // Cerrar con Escape, como cualquier ventana. Se engancha solo mientras hay
+  // una abierta para no dejar un listener global vivo en toda la pantalla.
+  useEffect(() => {
+    if (openId === null) return;
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") cerrar(); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openId]);
+
+  function cerrar() { setOpenId(null); setAviso(null); setPulso(null); }
+
   if (!ready || npcs.length === 0) return null;
   const open = npcs.find((n) => n.id === openId) ?? null;
 
@@ -43,6 +58,7 @@ export default function NpcSection({ nodo, ambient }: { nodo: Nodo; ambient?: st
   // realtime sobre `quests`, así que al aceptar o entregar la opción se
   // recalcula sola y no hay que refrescar nada a mano.
   const misionOpts = open ? opcionesDeMision(quests, open.id, fichaId) : [];
+  const poiName = poiDeNodo(nodo.id);
 
   async function accion(o: Extract<OpcionDialogo, { accion: "aceptar" | "entregar" }>) {
     if (!open) return;
@@ -53,56 +69,104 @@ export default function NpcSection({ nodo, ambient }: { nodo: Nodo; ambient?: st
       : r.error);
   }
 
+  const conArbol = !!open?.dialogo && !!DIALOGOS[open.dialogo];
+
   return (
-    <section className="mt-6">
-      <p className="eyebrow mb-2"><i className="fas fa-comments mr-2" style={{ color: "var(--color-bronze)" }} />Gente del lugar</p>
-      {!open ? (
-        <div className="grid sm:grid-cols-2 gap-2">
-          {npcs.map((n) => (
-            <button key={n.id} onClick={() => { setOpenId(n.id); setAviso(null); }} className="panel-raised p-3 text-left flex items-center gap-3 hover:border-[var(--color-bronze)] transition-colors">
-              {n.portrait && <img src={n.portrait} alt="" className="w-10 h-10 rounded-full object-cover border border-[var(--color-line)]" />}
-              <span>
-                <span className="block font-display font-extrabold text-[15px]" style={{ color: "var(--color-parch)" }}>{n.name}</span>
-                {n.role && <span className="block font-ui text-[12px]" style={{ color: "var(--color-dim)" }}>{n.role}</span>}
-              </span>
-              {/* Que tiene algo que contarte: se ve desde la tarjeta, sin
+    <section>
+      <div className="lug-sect"><span className="lug-cinta">Gente del lugar</span></div>
+
+      {/* Los medallones. La imagen que genera la IA es CUADRADA (1024×1024), así
+          que el marco es cuadrado: se adapta el diseño a la imagen y no al
+          contrario. Sin retrato subido va el icono del sitio dentro del mismo
+          marco — un PNJ sin cara sigue siendo alguien con quien hablar. */}
+      <div className="lug-row">
+        {npcs.map((n) => (
+          <button key={n.id} onClick={() => { setOpenId(n.id); setAviso(null); setPulso(null); }} className="lug-med">
+            <span className="marco-oro">
+              {n.portrait
+                ? <img src={n.portrait} alt="" />
+                : <span className="sincara"><i className={`fas ${nodo.icono}`} /></span>}
+            </span>
+            <span className="n">
+              {n.name}
+              {/* Que tiene algo que contarte: se ve desde el medallón, sin
                   entrar a hablar con los seis PNJ del sitio a ver cuál era. */}
               {opcionesDeMision(quests, n.id, fichaId).length > 0 && (
-                <i className="fas fa-exclamation ml-auto shrink-0" title="Tiene algo para ti" style={{ color: "var(--color-bronze-bright)" }} />
+                <i className="fas fa-circle-exclamation bang" title="Tiene algo para ti" />
               )}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="panel-raised p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="font-display font-extrabold text-[17px] gold-text">{open.name}{open.role ? <span className="font-ui text-[12px] ml-2" style={{ color: "var(--color-dim)" }}>· {open.role}</span> : null}</p>
-            <button onClick={() => { setOpenId(null); setAviso(null); }} className="btn-ghost !py-1 !px-2 text-[12px]"><i className="fas fa-arrow-left mr-1" />Volver</button>
-          </div>
-          {aviso && <p className="font-ui text-[12px]" style={{ color: "var(--color-bronze-bright)" }}>{aviso}</p>}
+            </span>
+            {n.role && <span className="r">{n.role}</span>}
+          </button>
+        ))}
+      </div>
 
-          {/* La conversación ESCRITA manda cuando la hay: es la que lleva
-              tiradas y consecuencias. La IA se queda debajo para lo que no
-              esté previsto, con el mismo `prompt` del PNJ — es lo único que un
-              árbol no puede hacer. Un PNJ sin `dialogo` sigue como siempre. */}
-          {open.dialogo && DIALOGOS[open.dialogo] && (
-            <>
-              <DialogoArbol
-                npcId={open.id}
-                clave={open.dialogo}
-                onCerrar={() => { setOpenId(null); setAviso(null); }}
-                onPremio={(p) => setAviso(
-                  p.tipo === "objeto" ? `Te dan: ${p.name}.`
-                  : p.tipo === "oro" ? `Recibes ${p.cantidad} po.`
-                  : "Aprendes algo nuevo.",
+      {/* -------------------------- LA VENTANA --------------------------- */}
+      {open && (
+        <div className="pnj-scrim" role="dialog" aria-modal="true" aria-labelledby={`pnj-nm-${open.id}`}
+          onClick={(e) => { if (e.target === e.currentTarget) cerrar(); }}>
+          <div className="pnj-win lug-vell">
+            <div className="pnj-izq">
+              <span className="marco-oro">
+                {open.portrait
+                  ? <img src={open.portrait} alt="" />
+                  : <span className="sincara"><i className={`fas ${nodo.icono}`} /></span>}
+              </span>
+              <span className="pnj-quien">
+                <div className="pnj-nm" id={`pnj-nm-${open.id}`}>{open.name}</div>
+                {open.role && <div className="pnj-rl">{open.role}</div>}
+                {/* Solo con conversación escrita: un PNJ que solo habla por IA
+                    no tiene trato guardado, y una barra a cero mentiría. */}
+                {pulso && (
+                  <div className="pnj-tr">
+                    <div className="bar" role="img" aria-label={`Confianza ${pulso.pct} de 100`}>
+                      <i style={{ width: `${pulso.pct}%`, background: pulso.color }} />
+                    </div>
+                    <div className="lb">{pulso.texto}</div>
+                  </div>
                 )}
-              />
-              <p className="eyebrow !text-[9px] pt-1">O dile lo que quieras</p>
-            </>
-          )}
+              </span>
+            </div>
 
-          <NpcChat persona={personaFor(open, ambient)} placeholder={`Habla con ${open.name}…`} empty={`Salúdale o pregúntale por el lugar.`} memoryRef={`npc:${open.id}`}
-            conOpciones={!open.dialogo} misionOpts={misionOpts} onMision={accion} />
+            <div className="pnj-talk">
+              <div className="pnj-top">
+                <span className="pnj-place">
+                  <i className={`fas ${nodo.icono}`} style={{ marginRight: 8 }} />
+                  {nodo.nombre}{poiName && poiName !== nodo.nombre ? ` · ${poiName}` : ""}
+                </span>
+                <button className="pnj-x" aria-label="Cerrar" onClick={cerrar}><i className="fas fa-xmark" /></button>
+              </div>
+
+              {aviso && <p className="lug-note" style={{ margin: "16px 26px 0" }}>{aviso}</p>}
+
+              {/* La conversación ESCRITA manda cuando la hay: es la que lleva
+                  tiradas y consecuencias. La IA se queda debajo para lo que no
+                  esté previsto, con el mismo `prompt` del PNJ — es lo único que
+                  un árbol no puede hacer. Un PNJ sin `dialogo` va solo con IA. */}
+              {conArbol && (
+                <DialogoArbol
+                  npcId={open.id}
+                  clave={open.dialogo!}
+                  onCerrar={cerrar}
+                  onTrato={setPulso}
+                  onPremio={(p) => setAviso(
+                    p.tipo === "objeto" ? `Te dan: ${p.name}.`
+                    : p.tipo === "oro" ? `Recibes ${p.cantidad} po.`
+                    : "Aprendes algo nuevo.",
+                  )}
+                />
+              )}
+
+              {/* Sin árbol, la conversación con la IA es lo que se lee, así que
+                  ocupa el cuerpo. Con árbol, el árbol ya llenó el cuerpo y esto
+                  es el pie: «o dile lo que quieras». */}
+              <div className={conArbol ? "pnj-foot" : "pnj-body"}>
+                {conArbol && <span className="rot">O dile lo que quieras</span>}
+                <NpcChat pergamino persona={personaFor(open, ambient)} placeholder={`Habla con ${open.name}…`}
+                  empty="Salúdale o pregúntale por el lugar." memoryRef={`npc:${open.id}`}
+                  conOpciones={!conArbol} misionOpts={misionOpts} onMision={accion} />
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </section>

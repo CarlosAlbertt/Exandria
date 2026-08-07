@@ -20,14 +20,24 @@ import { parseOpciones, INSTRUCCION_OPCIONES, type OpcionDialogo } from "@/lib/m
 //   partir del estado de `quests`. ⚠️ No salen del modelo a propósito: si la
 //   opción de entregar dependiera de que la IA se acordara, la misión no se
 //   podría cerrar unas veces y se cerraría sin hacerla otras.
+/**
+ * ⚠️ **`pergamino` NO es un tema alternativo: es el mismo chat en otra hoja.**
+ * Este componente lo comparten la ventana de PNJ de `/lugar` —hoja clara— y el
+ * tendero de `ShopSection` —panel oscuro—, y sus colores están en tokens
+ * distintos: `--tinta`/`--hoja` en la hoja, `--color-warm`/`--color-night` en la
+ * app. Sin el conmutador, meterlo en la ventana daba texto claro sobre papel
+ * claro: la conversación existía y no se leía. Se hace con una prop y no
+ * repintando el componente porque la tienda no cambia en esta tanda.
+ */
 export default function NpcChat({
   persona, placeholder = "Escribe…", empty = "Salúdale.", memoryRef,
-  conOpciones = false, misionOpts = [], onMision,
+  conOpciones = false, misionOpts = [], onMision, pergamino = false,
 }: {
   persona: string; placeholder?: string; empty?: string; memoryRef?: string;
   conOpciones?: boolean;
   misionOpts?: OpcionDialogo[];
   onMision?: (o: Extract<OpcionDialogo, { accion: "aceptar" | "entregar" }>) => void | Promise<void>;
+  pergamino?: boolean;
 }) {
   const session = useSession();
   const userId = session?.id ?? null;
@@ -109,16 +119,23 @@ export default function NpcChat({
     await onMision?.(o);
   }
 
+  // Los dos juegos de color, uno al lado del otro para que se vea que son las
+  // mismas piezas: fondo de lo que dices tú, fondo de lo que dice él, borde,
+  // texto y el gris de lo secundario.
+  const piel = pergamino
+    ? { mio: "rgba(255,255,255,.55)", suyo: "var(--hoja-2)", linea: "var(--hoja-3)", texto: "var(--tinta)", flojo: "var(--tinta-3)" }
+    : { mio: "var(--color-raised)", suyo: "var(--color-night)", linea: "var(--color-line)", texto: "var(--color-warm)", flojo: "var(--color-dim)" };
+
   return (
     <div className="space-y-2">
       <div className="max-h-[220px] overflow-y-auto flex flex-col gap-2 pr-1">
-        {messages.length === 0 && <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>{empty}{memory ? " Os recuerda." : ""}</p>}
+        {messages.length === 0 && <p className="text-sm italic" style={{ color: piel.flojo }}>{empty}{memory ? " Os recuerda." : ""}</p>}
         {messages.map((m, i) => (
-          <div key={i} className={`max-w-[85%] px-3 py-2 rounded-2xl ${m.role === "user" ? "self-end" : "self-start"}`} style={{ background: m.role === "user" ? "var(--color-raised)" : "var(--color-night)", border: "1px solid var(--color-line)" }}>
-            <p className="font-body text-[14px] whitespace-pre-wrap" style={{ color: "var(--color-warm)" }}>{m.content}</p>
+          <div key={i} className={`max-w-[85%] px-3 py-2 rounded-2xl ${m.role === "user" ? "self-end" : "self-start"}`} style={{ background: m.role === "user" ? piel.mio : piel.suyo, border: `1px solid ${piel.linea}` }}>
+            <p className="font-body text-[14px] whitespace-pre-wrap" style={{ color: piel.texto }}>{m.content}</p>
           </div>
         ))}
-        {loading && <p className="pulse font-ui text-[12px] self-start" style={{ color: "var(--color-muted)" }}>…</p>}
+        {loading && <p className="pulse font-ui text-[12px] self-start" style={{ color: piel.flojo }}>…</p>}
         <div ref={endRef} />
       </div>
 
@@ -130,16 +147,16 @@ export default function NpcChat({
           {misionOpts.map((o) => (
             <button key={`m${o.accion}${"questId" in o ? o.questId : ""}`} onClick={() => pulsar(o)} disabled={loading}
               className="text-left px-3 py-2 rounded-2xl font-body text-[14px] transition-colors disabled:opacity-40"
-              style={{ background: "var(--color-raised)", border: "1px solid var(--color-bronze)", color: "var(--color-parch)" }}>
-              <i className={`fas ${o.accion === "entregar" ? "fa-hand-holding-heart" : "fa-hand-fist"} mr-2`} style={{ color: "var(--color-bronze-bright)" }} />
+              style={{ background: piel.mio, border: `1px solid ${pergamino ? "var(--metal)" : "var(--color-bronze)"}`, color: piel.texto }}>
+              <i className={`fas ${o.accion === "entregar" ? "fa-hand-holding-heart" : "fa-hand-fist"} mr-2`} style={{ color: pergamino ? "var(--acento)" : "var(--color-bronze-bright)" }} />
               {o.texto}
             </button>
           ))}
           {sugeridas.map((t, i) => (
             <button key={`s${i}`} onClick={() => pulsar({ texto: t, accion: null })} disabled={loading}
-              className="text-left px-3 py-2 rounded-2xl font-body text-[14px] transition-colors hover:border-[var(--color-bronze)] disabled:opacity-40"
-              style={{ background: "var(--color-night)", border: "1px solid var(--color-line)", color: "var(--color-warm)" }}>
-              <i className="fas fa-angle-right mr-2" style={{ color: "var(--color-dim)" }} />{t}
+              className="text-left px-3 py-2 rounded-2xl font-body text-[14px] transition-colors disabled:opacity-40"
+              style={{ background: piel.suyo, border: `1px solid ${piel.linea}`, color: piel.texto }}>
+              <i className="fas fa-angle-right mr-2" style={{ color: piel.flojo }} />{t}
             </button>
           ))}
         </div>
@@ -147,10 +164,16 @@ export default function NpcChat({
 
       <div className="flex gap-2">
         <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(); } }} placeholder={placeholder} disabled={loading}
-          className="flex-1 bg-[var(--color-night)] rounded-lg px-3 py-2 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]" style={{ color: "var(--color-warm)" }} />
+          className={pergamino
+            ? "lug-campo flex-1 min-w-0"
+            : "flex-1 bg-[var(--color-night)] rounded-lg px-3 py-2 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]"}
+          style={pergamino ? undefined : { color: "var(--color-warm)" }} />
         {/* `() => send()` y no `send`: ahora acepta un texto y el handler le
             pasaría el MouseEvent, que no tiene `.trim()`. */}
-        <button onClick={() => send()} disabled={loading || !input.trim()} className="btn-gold !px-3"><i className="fas fa-paper-plane" /></button>
+        <button onClick={() => send()} disabled={loading || !input.trim()}
+          className={pergamino ? "lug-enviar" : "btn-gold !px-3"} aria-label="Enviar">
+          <i className="fas fa-paper-plane" />
+        </button>
       </div>
     </div>
   );

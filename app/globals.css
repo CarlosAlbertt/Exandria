@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700;800&family=UnifrakturMaguntia&display=swap");
 @import "tailwindcss";
 
 /* =====================================================================
@@ -44,6 +44,9 @@
   --font-display: "Cinzel", serif;
   --font-body: "EB Garamond", Georgia, serif;
   --font-ui: "Manrope", system-ui, sans-serif;
+  /* La gótica es SOLO para la hoja de `/lugar`: el título del sitio y la
+     capitular iluminada. Fuera de ahí no se usa — en cuerpo pequeño no se lee. */
+  --font-gotica: "UnifrakturMaguntia", serif;
 }
 
 /* Alias legacy cortos para SVG/inline */
@@ -1025,3 +1028,428 @@ canvas.dice-box-canvas {
 .forja-golpe.is-ahora { border-color: var(--color-bronze-bright); color: var(--color-bronze-bright); animation: forja-pulso .9s ease-in-out infinite; }
 @keyframes forja-pulso { 0%, 100% { transform: scale(1); opacity: .85 } 50% { transform: scale(1.12); opacity: 1 } }
 @media (prefers-reduced-motion: reduce) { .forja-golpe.is-ahora { animation: none } }
+
+/* =====================================================================
+   `/lugar` — LA HOJA DE PERGAMINO, Y SU TEMA POR SITIO
+   Referencia literal: docs/bocetos/2026-08-07-lugar-con-arte.html
+   ---------------------------------------------------------------------
+   La app entera es OSCURA —la mesa— y `/lugar` es **una hoja clara encima**.
+   Eso es a propósito y costó seis bocetos: los intentos oscuros salieron
+   «muy oscuros» y los claros sin arte dentro salieron «muy sosos». Lo que
+   hace bonita la pantalla es la ILUSTRACIÓN; esto es solo el marco.
+
+   ⚠️ **La maqueta no cambia por tema: cambia la piel.** Un tema no mueve
+   nada de sitio, solo redefine estos quince tokens. Si alguna vez hace
+   falta que un tema recoloque algo, es señal de que no era un tema.
+
+   ⚠️ **Todo va con prefijo (`lug-`, `pnj-`).** El boceto usa nombres
+   genéricos —`.grid`, `.body`, `.row`, `.caja`— que aquí chocarían con las
+   utilidades de Tailwind. `.grid` es el caso claro: pisarlo rompería media
+   app sin que este archivo diera ningún error.
+   ===================================================================== */
+
+/* ------------------------- LOS CUATRO TEMAS -------------------------- */
+/* ⚠️ Los quince tokens van en LOS CUATRO. `check-lugares` lee este archivo
+   y exige que cada tema de `TEMAS` tenga su regla y sus quince: un token
+   que falte no rompe nada visible —hereda lo que hubiera— y deja una
+   pantalla que casi está bien, que es justo el fallo que no se ve. */
+
+/* Byroden: prados de flor, lago quieto, montañas nevadas. Metal de ORO. */
+.tema-valle {
+  --hoja: #f4ead1; --hoja-2: #ebdfc0; --hoja-3: #d8c9a0;
+  --tinta: #3b2c1b; --tinta-2: #6b573c; --tinta-3: #8d7a5c;
+  --acento: #a3301d; --acento-2: #c4472f;
+  --metal: #a9812c; --metal-claro: #dcb453; --metal-hondo: #6f5215;
+  --natura: #4b6a35;
+  --cielo-1: #93b7d6; --cielo-2: #c9dbc2; --cielo-3: #7d9a55;
+}
+
+/* Emon: agujas blancas sobre la bahía, mármol, luz alta y fría. PLATA. */
+.tema-ciudadela {
+  --hoja: #eef0f4; --hoja-2: #e2e6ee; --hoja-3: #c8d0de;
+  --tinta: #232b3a; --tinta-2: #4a556b; --tinta-3: #78839a;
+  --acento: #7d1f2e; --acento-2: #a83145;
+  --metal: #8a94a8; --metal-claro: #cfd7e4; --metal-hondo: #525b70;
+  --natura: #2d4a8a;
+  --cielo-1: #a8c4de; --cielo-2: #dbe4ee; --cielo-3: #8fa2b8;
+}
+
+/* Las ruinas: ceniza, torre partida, sin pájaros. Luz plana y gris, y el
+   metal es hierro pavonado — en un sitio quemado no queda oro. */
+.tema-yermo {
+  --hoja: #e8e1d2; --hoja-2: #dcd4c2; --hoja-3: #c3b9a4;
+  --tinta: #2e2a26; --tinta-2: #5c5650; --tinta-3: #837c73;
+  --acento: #8e3b1f; --acento-2: #b0512c;
+  --metal: #8b8378; --metal-claro: #c2bab0; --metal-hondo: #565049;
+  --natura: #6b6a4a;
+  --cielo-1: #9c9a95; --cielo-2: #bab5aa; --cielo-3: #7c766c;
+}
+
+/* La Expansión Verdante: dosel cerrado, columnas de luz, verde profundo.
+   El metal es bronce con verdín, que es lo que le pasa al metal ahí. */
+.tema-bosque {
+  --hoja: #f1ead4; --hoja-2: #e5dcbe; --hoja-3: #cfc49f;
+  --tinta: #2f2c1c; --tinta-2: #5b5a38; --tinta-3: #83805c;
+  --acento: #8f2f22; --acento-2: #b4442f;
+  --metal: #8a8b4a; --metal-claro: #c7c684; --metal-hondo: #565a26;
+  --natura: #3f6b2f;
+  --cielo-1: #6f8f5c; --cielo-2: #a8bd85; --cielo-3: #3d5a2a;
+}
+
+/* --------------------------- EL VELLO DEL PAPEL ---------------------- */
+/* Grano de vitela por encima de todo, en multiply. Es lo que evita que la
+   hoja parezca un div beige. SVG en línea: cero peticiones, cero imágenes. */
+.lug-vell { position: relative; }
+.lug-vell::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  opacity: 0.38; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.45'/></svg>");
+}
+
+/* ----------------------- EL MARCO DE METAL --------------------------- */
+/* El MISMO marco enmarca toda imagen: el medallón de la lista y el retrato
+   grande de la ventana. Cambia de metal con el tema —oro en el valle,
+   plata en la ciudadela— sin que haya dos marcos que mantener.
+
+   ⚠️ `display:block` NO es opcional: va en un <span> dentro de un <button>,
+   y en `inline` el ancho y el alto no se aplican — el marco sale como una
+   tira de dos píxeles. Costó encontrarlo en el boceto. */
+.marco-oro {
+  display: block; position: relative; padding: 7px;
+  background: linear-gradient(145deg, var(--metal-claro), var(--metal) 40%, var(--metal-hondo) 75%, var(--metal-claro));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.marco-oro::before {
+  content: ""; position: absolute; inset: 3px; z-index: 2; pointer-events: none;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+.marco-oro > img {
+  position: relative; z-index: 1; display: block;
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+/* --------------------- LA CABECERA A SANGRE -------------------------- */
+/* A sangre y a todo ancho: el arte es el fondo, no una foto dentro de una
+   tarjeta. Sin ilustración subida queda el cielo del tema y la silueta,
+   que es un sitio sin dibujar — no un hueco roto. */
+.lug-arte {
+  position: relative; overflow: hidden; height: min(52dvh, 420px);
+  background: linear-gradient(180deg, var(--cielo-1), var(--cielo-2) 55%, var(--cielo-3));
+}
+.lug-arte > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* La bruma muere EN el color de la hoja: es lo que cose el arte al papel en
+   vez de dejar un corte recto entre la ilustración y el texto. */
+.lug-bruma {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.12) 68%, var(--hoja) 100%);
+}
+.lug-sil { position: absolute; left: 0; right: 0; bottom: 0; height: 60%; color: var(--color-ink); opacity: 0.5; }
+.lug-titulo { position: absolute; left: 0; right: 0; bottom: 24px; padding: 0 20px; text-align: center; }
+.lug-rubrica {
+  margin: 0 0 6px; font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.3em; text-transform: uppercase; color: var(--acento);
+}
+.lug-h1 {
+  margin: 0; font-family: var(--font-gotica); font-size: clamp(46px, 9vw, 86px);
+  line-height: 0.95; color: var(--tinta);
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.4), 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+.lug-h1 .ini { color: var(--acento); }
+.lug-sub {
+  margin: 9px 0 0; font-family: var(--font-display); font-size: 11px;
+  letter-spacing: 0.24em; text-transform: uppercase; color: var(--tinta-2);
+}
+
+/* ------------------------------ LA HOJA ------------------------------ */
+.lug-hoja {
+  padding: 0 0 70px; border-top: 2px solid var(--metal-hondo);
+  background: radial-gradient(100% 60% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 55%), var(--hoja);
+  color: var(--tinta);
+}
+/* El filete trenzado que cierra la cabecera. */
+.lug-cenefa {
+  height: 15px; opacity: 0.55;
+  background: repeating-linear-gradient(90deg, var(--metal) 0 6px, transparent 6px 14px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12), transparent);
+}
+.lug-dentro { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+/* Prosa a dos columnas: el texto del sitio y, al lado, los datos duros. */
+.lug-caja {
+  display: grid; gap: 30px; align-items: start; padding: 32px 0 6px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+}
+@media (max-width: 900px) { .lug-caja { grid-template-columns: 1fr; } }
+
+/* La capitular iluminada. `float` y no grid: tiene que meterse DENTRO del
+   párrafo, con el texto abrazándola, como en un códice. */
+.lug-capital {
+  position: relative; float: left; width: 90px; height: 90px;
+  margin: 5px 18px 6px 0; display: grid; place-items: center;
+  border: 2px solid var(--metal-hondo);
+  background: radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.6), transparent 55%),
+    linear-gradient(150deg, var(--metal-claro), var(--metal) 55%, var(--metal-hondo));
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+.lug-capital .letra {
+  font-family: var(--font-gotica); font-size: 56px; line-height: 1;
+  color: #fff; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+.lug-prosa { margin: 0; font-size: 19.5px; line-height: 1.82; text-align: justify; hyphens: auto; }
+.lug-prosa .rojo { color: var(--acento); font-weight: 600; }
+
+.lug-aparte {
+  padding: 20px 22px; border: 1px solid var(--hoja-3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.27), var(--hoja-2));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
+.lug-aparte h3 {
+  margin: 0 0 12px; font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--acento);
+}
+.lug-dato {
+  display: flex; align-items: center; gap: 11px; padding: 8px 0; font-size: 17px;
+  border-bottom: 1px dashed var(--hoja-3);
+}
+.lug-dato:last-child { border-bottom: 0; }
+.lug-dato > i { width: 26px; font-size: 15px; color: var(--metal-hondo); }
+
+/* Rótulo en cinta, con el filete saliéndole por los dos lados. */
+.lug-sect { display: flex; align-items: center; justify-content: center; margin: 44px 0 22px; }
+.lug-cinta {
+  position: relative; padding: 10px 34px; border: 1px solid var(--metal-hondo);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.33), var(--hoja-2));
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.28em; text-transform: uppercase; color: var(--acento);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.16);
+}
+.lug-cinta::before, .lug-cinta::after {
+  content: ""; position: absolute; top: 50%; width: min(22vw, 150px); height: 2px; opacity: 0.7;
+  background: repeating-linear-gradient(90deg, var(--metal) 0 3px, transparent 3px 8px);
+}
+.lug-cinta::before { right: 100%; margin-right: 18px; }
+.lug-cinta::after { left: 100%; margin-left: 18px; }
+
+/* --------------------------- LAS PUERTAS ----------------------------- */
+/* Adónde se puede ir. Sello de lacre por puerta y el canto trenzado a la
+   izquierda; sin miniatura, como el boceto: la ilustración de un sitio se
+   ve cuando entras en él, no en la lista. */
+.lug-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.lug-puerta {
+  position: relative; overflow: hidden; text-align: left;
+  min-height: 44px; padding: 20px 20px 20px 82px;
+  border: 1px solid var(--hoja-3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.33), var(--hoja-2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 3px 10px rgba(0, 0, 0, 0.16);
+  transition: border-color 0.2s, transform 0.2s ease-out, box-shadow 0.2s;
+}
+.lug-puerta:hover:not(:disabled), .lug-puerta:focus-visible {
+  border-color: var(--metal); transform: translateY(-3px); outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 26px rgba(0, 0, 0, 0.24);
+}
+.lug-puerta:disabled { opacity: 0.45; cursor: progress; }
+.lug-puerta::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 9px; opacity: 0.9;
+  background: repeating-linear-gradient(45deg, var(--metal) 0 3px, var(--metal-hondo) 3px 7px);
+}
+.lug-lacre {
+  position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 999px;
+  display: grid; place-items: center; color: #fff; font-size: 17px;
+  background: radial-gradient(circle at 34% 26%, var(--acento-2), var(--acento) 72%);
+  box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.lug-puerta .t { display: block; font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--tinta); }
+.lug-puerta .s { display: block; margin-top: 5px; font-size: 16.5px; line-height: 1.5; font-style: italic; color: var(--tinta-2); }
+
+/* -------------------------- LOS MEDALLONES --------------------------- */
+/* La imagen del retrato es CUADRADA (1024×1024, lo que genera la IA), así
+   que el medallón es cuadrado. Se adapta el diseño a la imagen y no al
+   contrario: la columna vertical de antes destrozaba un cuadrado. */
+.lug-row { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; padding: 4px 0 8px; }
+.lug-med { flex: 0 0 172px; text-align: center; min-height: 44px; transition: transform 0.2s ease-out; }
+.lug-med:hover, .lug-med:focus-visible { transform: translateY(-5px); outline: none; }
+.lug-med .marco-oro { width: 172px; height: 172px; }
+.lug-med:hover .marco-oro { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.5); }
+/* Sin retrato subido: el icono sobre el metal, dentro del mismo marco. Un
+   PNJ sin cara sigue siendo alguien con quien hablar, no un hueco roto. */
+.lug-med .sincara {
+  display: grid; place-items: center; width: 100%; height: 100%;
+  font-size: 46px; color: var(--hoja-2);
+  background: linear-gradient(160deg, var(--metal-hondo), var(--tinta-2));
+}
+.lug-med .n { display: block; margin-top: 12px; font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--tinta); }
+.lug-med .r { display: block; font-size: 16px; font-style: italic; color: var(--tinta-3); }
+.lug-med .bang { margin-left: 5px; font-size: 11px; color: var(--acento); }
+
+.lug-note {
+  margin: 40px 0 0; padding: 12px 16px; border-left: 3px solid var(--metal);
+  font-family: var(--font-display); font-size: 11px; line-height: 1.8; color: var(--tinta-3);
+}
+
+/* ===================== LA VENTANA DE DIÁLOGO ========================= */
+/* Ventana emergente, no una sección más de la página: hablar con alguien
+   es lo que estás haciendo, y el resto del sitio se aparta. */
+/* ⚠️ **z-60, no el 250 del boceto.** El boceto vivía solo en un archivo; aquí
+   hay una pila que ya está repartida: nav 50, modales 60, peticiones de tirada
+   70, **tablero de dados 80**, EpicOverlay 100. A 250 la ventana taparía el
+   tablero, y como la tirada se lanza PULSANDO el dado, la conversación se
+   quedaría colgada esperando un clic que nadie podría dar. */
+.pnj-scrim {
+  position: fixed; inset: 0; z-index: 60; padding: 20px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(12, 10, 8, 0.78); backdrop-filter: blur(5px);
+  animation: pnj-fade 0.2s ease-out;
+}
+@keyframes pnj-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pnj-rise { from { opacity: 0; transform: translateY(16px) scale(0.985) } to { opacity: 1; transform: none } }
+.pnj-win {
+  position: relative; display: flex; overflow: hidden;
+  width: min(1000px, 100%); max-height: min(90dvh, 760px);
+  border: 1px solid var(--metal-hondo); background: var(--hoja); color: var(--tinta);
+  animation: pnj-rise 0.26s cubic-bezier(0.2, 0.8, 0.3, 1);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.65), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+/* Izquierda: el retrato cuadrado enmarcado y quién es. */
+.pnj-izq {
+  flex: 0 0 356px; padding: 22px; display: flex; flex-direction: column;
+  border-right: 1px solid var(--hoja-3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent);
+}
+.pnj-izq .marco-oro { width: 312px; height: 312px; margin: 0 auto; }
+.pnj-izq .sincara {
+  display: grid; place-items: center; width: 100%; height: 100%;
+  font-size: 96px; color: var(--hoja-2);
+  background: linear-gradient(160deg, var(--metal-hondo), var(--tinta-2));
+}
+.pnj-nm { margin-top: 18px; font-family: var(--font-gotica); font-size: 32px; line-height: 1.08; text-align: center; color: var(--tinta); }
+.pnj-rl { margin-top: 2px; font-size: 16.5px; font-style: italic; text-align: center; color: var(--tinta-2); }
+/* La confianza: cómo te trata, de un vistazo. La decide `DialogoArbol`, que
+   es quien tiene el trato, y se pinta aquí porque es parte de «quién es». */
+.pnj-tr { margin-top: 16px; }
+.pnj-tr .bar { height: 9px; overflow: hidden; border: 1px solid var(--metal-hondo); background: rgba(0, 0, 0, 0.14); }
+.pnj-tr .bar > i { display: block; height: 100%; transition: width 0.45s; }
+.pnj-tr .lb {
+  margin-top: 7px; text-align: center; font-family: var(--font-display); font-size: 10px;
+  font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--tinta-3);
+}
+
+.pnj-talk { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pnj-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 12px 14px 24px; border-bottom: 1px solid var(--hoja-3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+}
+.pnj-place {
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--acento);
+}
+.pnj-x {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  color: var(--tinta-3); border: 1px solid transparent;
+}
+.pnj-x:hover, .pnj-x:focus-visible { color: var(--acento); border-color: var(--hoja-3); background: var(--hoja-2); outline: none; }
+.pnj-body { flex: 1; overflow-y: auto; padding: 26px 26px 8px; }
+
+/* Lo que dice, con su calderón. */
+.lug-say { position: relative; margin: 0; padding-left: 32px; font-size: 20px; line-height: 1.84; text-align: justify; white-space: pre-wrap; }
+.lug-say .cald { position: absolute; left: 0; top: 2px; font-family: var(--font-gotica); font-size: 25px; color: var(--acento); }
+
+/* Las opciones, con su viñeta ❧. */
+.lug-opts { display: flex; flex-direction: column; gap: 12px; padding: 20px 26px 4px; }
+.lug-opt {
+  position: relative; text-align: left; min-height: 44px; padding: 16px 17px 16px 44px;
+  border: 1px solid var(--hoja-3); color: var(--tinta);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.33), var(--hoja-2));
+  font-family: var(--font-body); font-size: 18.5px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: border-color 0.18s, transform 0.18s ease-out, box-shadow 0.18s;
+}
+.lug-opt::before { content: "❧"; position: absolute; left: 16px; top: 15px; font-size: 16px; color: var(--metal); transition: color 0.18s; }
+.lug-opt:hover:not(:disabled), .lug-opt:focus-visible {
+  border-color: var(--metal); transform: translateX(5px); outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+.lug-opt:hover:not(:disabled)::before { color: var(--acento); }
+.lug-opt:disabled { opacity: 0.45; text-decoration: line-through; cursor: not-allowed; }
+/* La chapa de la CD: qué pericia, contra qué, y tu modificador ya sumado. */
+.lug-cd {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; margin-right: 10px; padding: 3px 9px;
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--natura);
+  border: 1px solid color-mix(in srgb, var(--natura) 45%, transparent);
+  background: color-mix(in srgb, var(--natura) 10%, transparent);
+}
+
+/* El pie: «o dile lo que quieras». En el boceto era un campo y un botón; aquí
+   dentro va el chat con la IA, que trae su propia historia y su propio campo,
+   así que apila en columna en vez de en fila. */
+.pnj-foot { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 16px 26px 24px; border-top: 1px solid var(--hoja-3); }
+.pnj-foot .rot {
+  font-family: var(--font-display); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.26em; text-transform: uppercase; color: var(--tinta-3);
+}
+
+/* La tirada NO se teclea: la lanza el tablero 3D y aquí gira un d20
+   mientras rueda. El campo manual solo aparece si no hay WebGL. */
+.lug-tirando {
+  margin: 20px 26px 0; padding: 26px; text-align: center; border: 1px solid var(--metal-hondo);
+  background: radial-gradient(80% 130% at 50% 0%, color-mix(in srgb, var(--metal-claro) 55%, transparent), transparent);
+}
+.lug-tirando .d20 { font-size: 42px; color: var(--acento); animation: lug-girar 1.7s cubic-bezier(0.5, 0.05, 0.5, 0.95) infinite; }
+@keyframes lug-girar {
+  0% { transform: rotate(0) scale(1) } 50% { transform: rotate(180deg) scale(1.14) } 100% { transform: rotate(360deg) scale(1) }
+}
+.lug-tirando .q {
+  margin-top: 15px; font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--tinta);
+}
+.lug-tirando .s { margin-top: 5px; font-size: 17px; font-style: italic; color: var(--tinta-2); }
+
+/* Campos sobre pergamino: los `input` de la app heredan el tema oscuro y
+   sobre la hoja se leerían blancos sobre blanco. */
+.lug-campo {
+  min-height: 44px; padding: 0 16px; border: 1px solid var(--hoja-3);
+  background: rgba(255, 255, 255, 0.67); color: var(--tinta);
+  font-family: var(--font-body); font-size: 18px;
+}
+.lug-campo:focus { outline: none; border-color: var(--metal); }
+.lug-enviar {
+  min-width: 58px; min-height: 44px; color: #fff; font-weight: 700;
+  background: linear-gradient(180deg, var(--acento-2), var(--acento));
+}
+.lug-enviar:disabled { opacity: 0.4; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lug-tirando .d20 { animation: none; }
+  .pnj-scrim, .pnj-win { animation: none; }
+}
+
+@media (max-width: 720px) {
+  .lug-arte { height: min(40dvh, 300px); }
+  .lug-dentro { padding: 0 16px; }
+  .lug-capital { width: 70px; height: 70px; }
+  .lug-capital .letra { font-size: 44px; }
+  .lug-prosa, .lug-say { text-align: left; }
+  .lug-med { flex: 0 0 140px; }
+  .lug-med .marco-oro { width: 140px; height: 140px; }
+  .lug-med .sincara { font-size: 38px; }
+  .pnj-scrim { padding: 0; align-items: flex-end; }
+  .pnj-win { flex-direction: column; max-height: 94dvh; }
+  /* En móvil el retrato cuadrado se hace pequeño y va AL LADO del nombre:
+     a 312px de alto no quedaría ni una línea de conversación en pantalla. */
+  .pnj-izq {
+    flex: 0 0 auto; flex-direction: row; align-items: center; gap: 16px; padding: 16px;
+    border-right: 0; border-bottom: 1px solid var(--hoja-3);
+  }
+  .pnj-izq .marco-oro { width: 96px; height: 96px; margin: 0; flex: none; }
+  .pnj-izq .sincara { font-size: 30px; }
+  .pnj-quien { flex: 1; min-width: 0; }
+  .pnj-nm { margin-top: 0; font-size: 26px; text-align: left; }
+  .pnj-rl { font-size: 15px; text-align: left; }
+  .pnj-tr { margin-top: 9px; }
+  .pnj-tr .lb { text-align: left; }
+  .pnj-body { padding: 20px 18px 4px; }
+  .lug-opts { padding: 16px 18px 4px; }
+  .pnj-foot { padding: 14px 18px calc(16px + env(safe-area-inset-bottom)); }
+}

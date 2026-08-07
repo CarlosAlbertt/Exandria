@@ -2,16 +2,109 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-07, tarde)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08)
 
-> **LA DIRECCIÓN VISUAL DE `/lugar` ESTÁ APROBADA Y SIN CONSTRUIR.** En `master`.
-> **Sin migración nueva** — pero hay **DOS SIN EJECUTAR**, ver abajo.
+> **EL REDISEÑO DE `/lugar` ESTÁ CONSTRUIDO.** Rama `feat/lugar-con-arte`,
+> **pusheada**, cinco commits, uno por pieza. **Sin migración nueva.**
 >
-> ### ⚠️ LO PRIMERO: TRES MIGRACIONES PENDIENTES DE EJECUTAR
-> `supabase/schema_v24.sql`, `v25.sql` y `v26.sql` están escritas y mergeadas
-> **pero el usuario no confirma haberlas ejecutado**. Sin ellas fallan las
-> misiones individuales (v24), los sub-lugares (v25) y los árboles de diálogo
-> (v26). **Pregúntaselo antes de depurar nada raro.**
+> ### ✅ LAS TRES MIGRACIONES YA ESTÁN EJECUTADAS
+> El usuario confirmó el **2026-08-08** haber corrido `schema_v24.sql`,
+> `v25.sql` y `v26.sql`. **Ya no hay nada pendiente en Supabase**, así que si
+> algo falla en misiones individuales, sub-lugares o árboles de diálogo, **no
+> es la migración**: hay que depurarlo de verdad.
+>
+> ### ⚠️ LO PRIMERO: ESTO NO SE HA VISTO EN LA APP VIVA
+> `/lugar` está detrás del proxy de auth y **sin sesión redirige a `/login`**,
+> así que la pantalla real no se ha mirado con datos. Lo que **sí** se comprobó,
+> y no es lo mismo:
+>
+> - El servidor de dev arranca y sirve `/lugar` sin errores de compilación.
+> - **Un banco de pruebas del CSS**: se recortó el bloque de `/lugar` de
+>   `globals.css` tal cual, se le pegó el marcado que producen los componentes
+>   y se midieron los estilos computados en escritorio y en móvil (375). Salió:
+>   los cuatro temas resuelven juegos de tokens distintos, la hoja es
+>   `#f4ead1` con tinta `#3b2c1b`, el medallón mide 172 con la imagen a 158
+>   dentro, la capitular flota a 90 en gótica, la puerta tiene los 82 de
+>   sangrado y su lacre de 40 **sin miniatura**, la ventana es fila con la
+>   izquierda a 356 y el retrato a 312, la viñeta es `❧`, el calderón `¶`, el
+>   d20 gira con `lug-girar`, y **en móvil** el retrato baja a 95 y se pone al
+>   lado del nombre, sin desborde horizontal. Cero errores de consola.
+> - El banco era de usar y tirar: **no está en el repo**.
+>
+> **Lo que queda por ver con ojos**: cómo queda con una ilustración de cabecera
+> de verdad subida (no hay ninguna todavía) y la costura entre la hoja clara y
+> la mesa oscura de abajo.
+>
+> ### Las cinco piezas, y qué hace cada una
+> 1. **`app/globals.css`** — `.tema-valle`, `.tema-ciudadela`, `.tema-yermo`,
+>    `.tema-bosque` con **quince tokens** cada uno (hoja, tinta, acento, metal,
+>    natura, cielo) y todos los estilos de la hoja y la ventana. Con prefijo
+>    `lug-`/`pnj-`: el boceto usa `.grid`, `.body`, `.row`, que pisarían
+>    utilidades de Tailwind sin dar ningún error.
+> 2. **`data/lugares.ts`** — `TemaLugar`, el registro `TEMAS` con la **silueta
+>    de horizonte** de cada tema, `TEMA_POR_POI`, `esTema` y `Nodo.tema`
+>    **obligatorio**, siempre resuelto por `construirNodos`.
+> 3. **`app/lugar/page.tsx`** + `Salidas.tsx` — cabecera a sangre, hoja a todo
+>    ancho, capitular, prosa a dos columnas, rótulos en cinta y puertas con
+>    lacre. `Panel DM › Lugares` gana el desplegable de tema.
+> 4. **`NpcSection.tsx`** + `DialogoArbol.tsx` — la ventana emergente con
+>    retrato cuadrado, y el **d20 girando** mientras el tablero 3D tira.
+> 5. **`scripts/check-lugares.ts`** — de 175 a **281 comprobaciones**.
+>
+> ### SEIS DECISIONES QUE SE TOMARON SIN PREGUNTAR
+> El usuario dijo «ponte ya con todo, no preguntes nada». Van declaradas porque
+> **todas son revocables en un commit pequeño**:
+>
+> | Decisión | Por qué | Cómo se revoca |
+> |---|---|---|
+> | **Hay CUATRO temas, no tres** (se añadió `bosque`) | Las tres franjas de la Verdante son nodos que YA existen y sin él llevarían la piel de otro sitio. `ARTE-IMAGENES.md` ya lo especificaba | Quitar la entrada de `TEMAS`, su bloque CSS y darle otra piel a las franjas |
+> | **`Nodo.imagen` es la CABECERA, no una miniatura** | Es lo que hace el boceto. En una lista de seis, la ilustración competía consigo misma | Devolver el `<img>` a `Salidas.tsx` |
+> | **Tienda, posada, tablón y saber se quedan DEBAJO de la hoja**, en la mesa oscura | No están rediseñados y son paneles oscuros con texto claro: dentro del pergamino quedarían ilegibles. **Esta tanda no los toca** | Rediseñarlos y subirlos dentro de `.lug-dentro` |
+> | **`NpcChat` gana una prop `pergamino`** | Lo comparte con el tendero de `ShopSection`, que sigue oscuro. Sin ella la conversación salía texto claro sobre papel claro | Rediseñar la tienda y quitar la prop |
+> | **El scrim va a `z-60`, no al 250 del boceto** | La pila ya está repartida: nav 50, modales 60, peticiones 70, **tablero de dados 80**, EpicOverlay 100. A 250 la ventana tapaba el tablero y, como la tirada se lanza PULSANDO el dado, la conversación se quedaba colgada | — (esto no se revoca, es un fallo evitado) |
+> | **`Panel DM › Lugares` gana selector de tema** | Es lo único que hace **alcanzable el yermo**: ningún nodo de la semilla lo declara | Quitar el `<select>` |
+>
+> ⚠️ **El `yermo` está dibujado y no lo usa nadie todavía.** No hay nodo de
+> ruinas en la semilla; solo se llega a él poniéndolo a mano desde el panel.
+>
+> ### El gate: 41 en verde, y SIETE mutaciones
+> `tsc` limpio, `next build` limpio (exit 0 comprobado **sin pipe**, que ahí es
+> donde `head` te devuelve su código y no el del compilador), los 41 `check-*`
+> en verde. `check-lugares` pasa de 175 a **281**.
+>
+> **Lo que muerde, y es lo de siempre — el fallo que no grita**: un tema que no
+> existe **no da ningún error**. La clase `tema-loquesea` no casa con ninguna
+> regla, la hoja se queda **sin los quince tokens**, `var(--hoja)` no resuelve,
+> el fondo se vuelve transparente y asoma la app oscura por debajo con la tinta
+> parda encima. Se lee fatal y nadie se enteraría.
+>
+> Las siete mutaciones, todas **verificadas con `git diff` antes de correr el
+> gate** y todas cazadas:
+>
+> | Se rompió | Falló |
+> |---|---|
+> | `TEMA_POR_POI.Emon` → `"ciudadella"` | 6 comprobaciones |
+> | Quitar `--natura` de `.tema-yermo` | `.tema-yermo define --natura` |
+> | Renombrar la regla `.tema-bosque` | 16 (la regla + sus quince tokens) |
+> | Quitar el seto del `tema` en `aplicarOverride` | 3 |
+> | Las franjas a `tema: "valle"` | las tres franjas |
+> | `esTema` con `x in TEMAS` en vez de `hasOwnProperty` | `no acepta un método heredado de Object` |
+> | Vaciar la silueta del valle | 2 |
+>
+> **La sexta es la que enseña algo nuevo**: con el operador `in`, un
+> `tema: "toString"` en el JSON del DM **habría pasado el seto**, porque
+> `"toString" in TEMAS` es `true` por la cadena de prototipos. Por eso el guarda
+> usa `Object.prototype.hasOwnProperty.call`, y por eso hay una comprobación que
+> lo vigila.
+>
+> **Y una nota de proceso que funcionó**: se commiteó **antes** de cada
+> mutación. `git checkout --` durante la tanda anterior borró `puedeSembrar`
+> porque aún no estaba commiteada, y esta vez no pasó.
+
+## 🚦 Antes de eso (2026-08-07, tarde)
+
+> **LA DIRECCIÓN VISUAL DE `/lugar` ESTABA APROBADA Y SIN CONSTRUIR.** Esta es
+> la entrada que describe el diseño; **lo construido está arriba**.
 >
 > ### Lo que se decidió sobre el aspecto, y costó SEIS iteraciones
 > No se rediseña a ciegas: **boceto primero**, en `docs/bocetos/`, y se enseña.
@@ -69,9 +162,9 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > perder calidad. Script de una vez, dentro del proyecto para que vea
 > `node_modules`.
 >
-> ### LO SIGUIENTE, y es construir
+> ### LO SIGUIENTE, y es construir — ✅ HECHO el 2026-08-08, ver arriba
 > El boceto `docs/bocetos/2026-08-07-lugar-con-arte.html` **es la referencia
-> literal**. Falta llevarlo a la app:
+> literal**. Lo que faltaba llevar a la app, y ya está:
 > 1. Los tokens de tema a `app/globals.css` (`.tema-valle`, `.tema-ciudadela`…).
 > 2. `data/lugares.ts`: el `Nodo` gana **`tema`** e **`imagen` de cabecera**.
 > 3. `app/lugar/page.tsx`: cabecera a sangre, hoja a todo ancho, puertas,
