@@ -184,14 +184,29 @@ for (const v of venuesUsados) {
 }
 
 /* ------------------------ LOS OVERRIDES DEL DM ------------------------- */
+// ⚠️ El override lleva `id` A PROPÓSITO, y por eso hay un cast. El tipo lo
+// prohíbe (`Partial<Omit<Nodo,"id">>`), pero **esto no viene del tipo: viene de
+// un JSON de `app_config` que escribe el DM**, y ahí TypeScript no llega. Sin
+// el `id` en el caso de prueba la comprobación de abajo era VERDE POR
+// CONSTRUCCIÓN — no había nada que ignorar. Lo destapó la mutación.
 const conOverride = construirNodos(POIS, {
-  "sub:Byroden/taberna": { nombre: "El Cuerno Torcido", imagen: "https://x/t.jpg" },
+  "sub:Byroden/taberna": {
+    nombre: "El Cuerno Torcido",
+    imagen: "https://x/t.jpg",
+    id: "sub:Byroden/otra-cosa",
+  } as unknown as Partial<Omit<(typeof NODOS)[number], "id">>,
 });
-const tab = indexar(conOverride).get(idSub("Byroden", "taberna"));
+const ixOv = indexar(conOverride);
+const tab = ixOv.get(idSub("Byroden", "taberna"));
 check("el DM puede renombrar un sitio", tab?.nombre === "El Cuerno Torcido");
 check("el DM puede ponerle imagen", tab?.imagen === "https://x/t.jpg");
-check("el override NO puede cambiar el id", tab?.id === idSub("Byroden", "taberna"));
 check("lo que el DM no toca se queda como estaba", !!tab?.blurb && tab.blurb.includes("Vigas bajas"));
+// Si el id se pudiera pisar, la salida de Byroden apuntaría a un nodo que ya no
+// existe con ese nombre: la tarjeta de la taberna dejaría de llevar a la taberna.
+check("el override NO puede cambiar el id", tab?.id === idSub("Byroden", "taberna"));
+check("y el nodo renombrado no aparece con el id inventado", !ixOv.has("sub:Byroden/otra-cosa"));
+check("las salidas de Byroden siguen resolviendo con override",
+  salidasDe(ixOv.get(idPoi("Byroden"))!, ixOv).length === BYRODEN_ESPERADO.length);
 
 console.log(`\nGrafo: ${NODOS.length} nodos y ${NODOS.reduce((n, x) => n + x.salidas.length, 0)} salidas.`);
 console.log(failures === 0 ? "Todas las comprobaciones pasaron." : `${failures} fallaron.`);
