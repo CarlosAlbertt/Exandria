@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exandria · /lugar Códice + ventana de diálogo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{
+  --ink:#090c11; --night:#0d121a; --panel:#131b25; --raised:#1b2532; --line:#2a3848;
+  --bronze:#c9a35c; --bronze-bright:#f0d79a; --bronze-deep:#7a5e2c;
+  --arcane:#45c7bd; --arcane-bright:#7df0e6; --ember:#ef6a3d; --verdant:#5fbf7a;
+  --parch:#ece3cf; --warm:#d8cdb4; --muted:#94a0ad; --dim:#6b7785;
+  --display:"Cinzel",serif; --body:"EB Garamond",Georgia,serif; --ui:"Manrope",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--warm);font-family:var(--body);font-size:16px;line-height:1.6}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.bench{position:sticky;top:0;z-index:200;background:#05070a;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bench b{font-family:var(--ui);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);margin-right:6px}
+.bench button{font-family:var(--ui);font-size:12px;font-weight:700;padding:9px 14px;border:1px solid var(--line);border-radius:8px;color:var(--muted);min-height:44px}
+.bench button.on{color:var(--ink);background:var(--bronze);border-color:var(--bronze)}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 90px}
+.note{font-family:var(--ui);font-size:12px;color:var(--dim);border-left:2px solid var(--bronze-deep);padding:8px 12px;margin:26px 0 0}
+
+.eyebrow{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--bronze)}
+.h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,7vw,42px);line-height:1.1;margin:.2em 0;
+  background:linear-gradient(180deg,var(--bronze-bright),var(--bronze));-webkit-background-clip:text;background-clip:text;color:transparent}
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--ui);font-size:12px;font-weight:700;
+  padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--night);color:var(--warm)}
+.sect{font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze);
+  display:flex;align-items:center;gap:10px;margin:34px 0 14px}
+.sect::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--bronze-deep),transparent)}
+
+/* ---------------- C · CÓDICE (aprobado) ---------------- */
+.c-head{border:1px solid var(--line);border-radius:16px;background:
+  linear-gradient(180deg,rgba(201,163,92,.07),transparent 40%),var(--panel);padding:22px;position:relative;overflow:hidden;margin-top:22px}
+.c-head::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,rgba(201,163,92,.05) 0 2px,transparent 2px 9px)}
+.c-drop{float:left;font-family:var(--display);font-size:54px;line-height:.82;font-weight:800;color:var(--bronze);margin:4px 12px 0 0}
+.c-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.c-door{position:relative;padding:16px 16px 16px 54px;min-height:44px;text-align:left;border-radius:12px;
+  border:1px solid var(--line);background:var(--panel);transition:border-color .2s,transform .2s ease-out}
+.c-door:hover,.c-door:focus-visible{border-color:var(--bronze);transform:translateX(3px);outline:none}
+.c-door:focus-visible{box-shadow:0 0 0 3px rgba(201,163,92,.4)}
+.c-door::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--bronze-deep)}
+.c-door:hover::before{background:var(--bronze)}
+.c-door i{position:absolute;left:20px;top:18px;color:var(--bronze);font-size:16px}
+.c-door .t{font-family:var(--display);font-weight:800;font-size:15px;color:var(--parch)}
+.c-door .s{font-family:var(--ui);font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+
+/* PNJ: medallones que ABREN la ventana */
+.npc-row{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.npc-row::-webkit-scrollbar{display:none}
+.npc{flex:0 0 96px;text-align:center;min-height:44px}
+.npc .ring{width:76px;height:76px;margin:0 auto;border-radius:999px;padding:2px;
+  background:conic-gradient(var(--bronze),var(--bronze-deep),var(--bronze));transition:transform .2s ease-out}
+.npc:hover .ring,.npc:focus-visible .ring{transform:scale(1.06)}
+.npc:focus-visible{outline:none}.npc:focus-visible .ring{box-shadow:0 0 0 3px var(--bronze-bright)}
+.npc .ring .in{width:100%;height:100%;border-radius:999px;background:var(--raised);display:grid;place-items:center;
+  color:var(--bronze);font-size:26px;border:2px solid var(--night);overflow:hidden}
+.npc .n{font-family:var(--display);font-weight:800;font-size:12.5px;color:var(--parch);margin-top:7px;line-height:1.2}
+.npc .r{font-family:var(--ui);font-size:10.5px;color:var(--dim)}
+.npc .bang{color:var(--ember);margin-left:3px}
+
+/* ==================== VENTANA DE DIÁLOGO ==================== */
+.scrim{position:fixed;inset:0;z-index:150;background:rgba(5,7,10,.72);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;padding:16px;animation:fade .2s ease-out}
+.scrim.open{display:flex}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+.win{width:min(920px,100%);max-height:min(88dvh,720px);display:flex;overflow:hidden;
+  border-radius:18px;border:1px solid var(--bronze-deep);background:var(--panel);
+  box-shadow:0 28px 70px rgba(0,0,0,.7),0 0 0 1px rgba(201,163,92,.12) inset;animation:rise .26s cubic-bezier(.2,.8,.3,1)}
+
+/* ---- IZQUIERDA: el retrato ---- */
+.win-art{position:relative;flex:0 0 320px;background:
+  radial-gradient(120% 80% at 50% 20%,#26333f,#0c1118);border-right:1px solid var(--line)}
+.win-art .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--bronze);font-size:88px;opacity:.32}
+.win-art .veil{position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(9,12,17,.9) 88%)}
+.win-art .who{position:absolute;left:20px;right:20px;bottom:18px}
+.win-art .nm{font-family:var(--display);font-weight:800;font-size:24px;line-height:1.1;color:var(--parch)}
+.win-art .rl{font-family:var(--ui);font-size:11.5px;color:var(--bronze);margin-top:3px;font-weight:700}
+.trust{margin-top:11px}
+.trust .bar{height:5px;border-radius:999px;background:rgba(9,12,17,.75);border:1px solid var(--line);overflow:hidden}
+.trust .bar i{display:block;height:100%;width:62%;border-radius:999px;
+  background:linear-gradient(90deg,var(--bronze-deep),var(--bronze-bright));transition:width .45s ease-out}
+.trust .lb{font-family:var(--ui);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-top:5px}
+
+/* ---- DERECHA: la conversación ---- */
+.win-talk{flex:1;min-width:0;display:flex;flex-direction:column}
+.win-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 12px 18px;
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(201,163,92,.07),transparent)}
+.win-bar .place{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze)}
+.win-x{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;color:var(--muted);
+  border:1px solid transparent;transition:color .2s,border-color .2s,background .2s}
+.win-x:hover,.win-x:focus-visible{color:var(--bronze-bright);border-color:var(--line);background:var(--night);outline:none}
+.win-body{flex:1;overflow-y:auto;padding:20px 20px 8px}
+.say{font-size:17px;line-height:1.72;color:var(--parch);font-style:italic;margin:0 0 6px;
+  border-left:2px solid var(--bronze-deep);padding-left:14px}
+.say + .say{margin-top:14px}
+.opts{display:flex;flex-direction:column;gap:9px;padding:14px 20px 4px}
+.opt{position:relative;text-align:left;padding:14px 15px;min-height:44px;border-radius:12px;
+  border:1px solid var(--line);background:var(--night);color:var(--warm);font-size:16px;
+  transition:border-color .18s,background .18s,transform .18s ease-out}
+.opt:hover,.opt:focus-visible{border-color:var(--bronze);background:var(--raised);transform:translateX(4px);outline:none}
+.opt:focus-visible{box-shadow:0 0 0 3px rgba(201,163,92,.35)}
+.cd{display:inline-flex;align-items:center;gap:6px;font-family:var(--ui);font-size:10.5px;font-weight:800;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--arcane-bright);
+  border:1px solid rgba(69,199,189,.42);background:rgba(69,199,189,.1);padding:2px 8px;border-radius:6px;margin-right:9px;white-space:nowrap}
+.opt.dead{opacity:.32;text-decoration:line-through;pointer-events:none}
+.opt.leave{color:var(--dim);font-style:italic}
+.win-foot{padding:12px 20px 18px;display:flex;gap:8px;border-top:1px solid var(--line);margin-top:10px}
+.win-foot input{flex:1;min-height:44px;background:var(--night);border:1px solid var(--line);border-radius:12px;
+  padding:0 14px;color:var(--warm);font-family:var(--body);font-size:15.5px}
+.win-foot input:focus{outline:none;border-color:var(--bronze)}
+.win-foot .send{min-width:52px;min-height:44px;border-radius:12px;background:var(--bronze);color:var(--ink);font-weight:800}
+.win-foot .send:hover{filter:brightness(1.08)}
+
+/* la tirada */
+.roll{margin:6px 20px 0;border:1px solid var(--bronze-deep);border-radius:12px;padding:14px;background:rgba(201,163,92,.06)}
+.roll .t{font-family:var(--ui);font-size:12.5px;font-weight:800;color:var(--bronze-bright)}
+.roll .d{font-family:var(--ui);font-size:11px;color:var(--dim);margin:4px 0 10px}
+.roll .row{display:flex;gap:8px}
+.roll input{width:92px;min-height:44px;text-align:center;background:var(--night);border:1px solid var(--line);
+  border-radius:10px;color:var(--parch);font-family:var(--ui);font-weight:800;font-size:17px}
+.roll .go{flex:1;min-height:44px;border-radius:10px;background:var(--bronze);color:var(--ink);font-weight:800}
+
+/* ---- MÓVIL: se apila, el retrato pasa a banda ---- */
+@media (max-width:720px){
+  .scrim{padding:0;align-items:flex-end}
+  .win{flex-direction:column;max-height:94dvh;border-radius:18px 18px 0 0;border-bottom:0;animation:up .28s cubic-bezier(.2,.8,.3,1)}
+  .win-art{flex:0 0 168px;border-right:0;border-bottom:1px solid var(--line)}
+  .win-art .ph{font-size:62px}
+  .win-art .nm{font-size:21px}
+  .win-body{padding:16px 16px 4px}
+  .opts{padding:12px 16px 4px}
+  .win-foot{padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+}
+@keyframes up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="bench">
+  <b>Boceto</b>
+  <button class="on" onclick="document.getElementById('dlg').classList.add('open')">Abrir la ventana de diálogo</button>
+  <button onclick="document.getElementById('dlg').classList.remove('open')">Cerrarla</button>
+  <button onclick="document.getElementById('roll').style.display = document.getElementById('roll').style.display==='none'?'block':'none'">Ver la tirada</button>
+</div>
+
+<div class="wrap">
+  <div class="c-head">
+    <p class="eyebrow">Península de Pleabruma · Tal'Dorei</p>
+    <h1 class="h1" style="margin-bottom:.35em">Byroden</h1>
+    <p style="margin:0;font-size:17px;color:var(--warm)"><span class="c-drop">L</span>evantado dos veces sobre la misma
+    tierra. Huele a pan y a humo de fragua. Los que quedaron del incendio no hablan de él, pero en el cementerio hay una
+    franja entera de lápidas con la misma fecha grabada.</p>
+    <div style="clear:both;margin-top:14px"><span class="chip"><i class="fa-solid fa-cloud-sun" style="color:var(--bronze)"></i> Despejado · 14° · Primavera</span></div>
+  </div>
+
+  <p class="sect">Adónde ir</p>
+  <div class="c-grid">
+    <button class="c-door"><i class="fa-solid fa-beer-mug-empty"></i><div class="t">La Taberna</div><div class="s">Vigas bajas y el mejor sitio del pueblo para enterarse de algo.</div></button>
+    <button class="c-door"><i class="fa-solid fa-place-of-worship"></i><div class="t">La Iglesia</div><div class="s">Pequeña, encalada y con más velas de las que hacen falta.</div></button>
+    <button class="c-door"><i class="fa-solid fa-monument"></i><div class="t">El Cementerio</div><div class="s">Detrás de la iglesia, cuesta arriba.</div></button>
+    <button class="c-door"><i class="fa-solid fa-landmark"></i><div class="t">El Ayuntamiento</div><div class="s">Dos plantas, un archivo húmedo y un alguacil que hace de todo.</div></button>
+    <button class="c-door"><i class="fa-solid fa-tree"></i><div class="t">El bosque</div><div class="s">Los campos del norte se acaban contra una pared de árboles.</div></button>
+  </div>
+
+  <p class="sect">Gente del lugar</p>
+  <div class="npc-row">
+    <button class="npc" onclick="document.getElementById('dlg').classList.add('open')">
+      <span class="ring"><span class="in"><i class="fa-solid fa-user"></i></span></span>
+      <span class="n">Mirna<i class="fa-solid fa-circle-exclamation bang"></i></span><span class="r">Tabernera</span></button>
+    <button class="npc"><span class="ring"><span class="in"><i class="fa-solid fa-user"></i></span></span>
+      <span class="n">Odo</span><span class="r">Parroquiano</span></button>
+    <button class="npc"><span class="ring"><span class="in"><i class="fa-solid fa-user"></i></span></span>
+      <span class="n">Vell</span><span class="r">Sepulturero</span></button>
+  </div>
+
+  <p class="note">Pulsa un medallón (o el botón de arriba) y se abre la ventana. En móvil sube desde abajo y el retrato
+  pasa a ser una banda; en escritorio es de dos columnas.</p>
+</div>
+
+<!-- ===================== LA VENTANA ===================== -->
+<div class="scrim" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-nm">
+  <div class="win">
+    <div class="win-art">
+      <div class="ph"><i class="fa-solid fa-user"></i></div>
+      <div class="veil"></div>
+      <div class="who">
+        <div class="nm" id="dlg-nm">Mirna Halbrook</div>
+        <div class="rl">Tabernera · te tiene medida</div>
+        <div class="trust">
+          <div class="bar" role="img" aria-label="Confianza 62 de 100"><i style="width:62%"></i></div>
+          <div class="lb">Te tiene medida · 62</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="win-talk">
+      <div class="win-bar">
+        <span class="place"><i class="fa-solid fa-beer-mug-empty" style="margin-right:6px"></i>La Taberna · Byroden</span>
+        <button class="win-x" aria-label="Cerrar la conversación"
+          onclick="document.getElementById('dlg').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="win-body">
+        <p class="say">«Otra vez por aquí.» Te sirve sin preguntar. «Contadme algo de fuera, que aquí las noticias
+        llegan cuando ya no sirven.»</p>
+      </div>
+
+      <div class="roll" id="roll" style="display:none">
+        <div class="t"><i class="fa-solid fa-dice-d20" style="margin-right:7px"></i>Perspicacia · CD 14</div>
+        <div class="d">Se está lanzando en el tablero. Si no te sale, escribe aquí el total.</div>
+        <div class="row">
+          <input type="number" placeholder="0" aria-label="Total de la tirada">
+          <button class="go">Confirmar</button>
+        </div>
+      </div>
+
+      <div class="opts">
+        <button class="opt">¿Qué se cuenta por el pueblo?</button>
+        <button class="opt"><span class="cd"><i class="fa-solid fa-dice-d20"></i> Perspicacia CD 14 · tu +3</span>El pueblo es nuevo. ¿Qué pasó aquí?</button>
+        <button class="opt dead"><span class="cd"><i class="fa-solid fa-dice-d20"></i> Intimidación CD 15</span>Dime quién ha pasado este mes.</button>
+        <button class="opt leave">Nada, gracias.</button>
+      </div>
+
+      <div class="win-foot">
+        <input placeholder="O dile lo que quieras…" aria-label="Escribe lo que le dices">
+        <button class="send" aria-label="Enviar"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('dlg').classList.remove('open'); });
+document.getElementById('dlg').addEventListener('click', e => { if (e.target.id === 'dlg') e.currentTarget.classList.remove('open'); });
+</script>
+</body>
+</html>

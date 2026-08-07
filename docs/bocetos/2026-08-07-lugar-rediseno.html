@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exandria · /lugar — tres direcciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{
+  --ink:#090c11; --night:#0d121a; --panel:#131b25; --raised:#1b2532; --line:#2a3848;
+  --bronze:#c9a35c; --bronze-bright:#f0d79a; --bronze-deep:#7a5e2c;
+  --arcane:#45c7bd; --arcane-bright:#7df0e6; --violet:#9d8cf0; --ember:#ef6a3d; --verdant:#5fbf7a;
+  --parch:#ece3cf; --warm:#d8cdb4; --muted:#94a0ad; --dim:#6b7785;
+  --display:"Cinzel",serif; --body:"EB Garamond",Georgia,serif; --ui:"Manrope",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--warm);font-family:var(--body);font-size:16px;line-height:1.6}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ---------- chrome del boceto (no es parte del diseño) ---------- */
+.bench{position:sticky;top:0;z-index:100;background:#05070a;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bench b{font-family:var(--ui);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);margin-right:8px}
+.bench button{font-family:var(--ui);font-size:12px;font-weight:700;padding:9px 14px;border:1px solid var(--line);border-radius:8px;color:var(--muted);min-height:44px;transition:border-color .2s,color .2s}
+.bench button[aria-pressed="true"]{color:var(--ink);background:var(--bronze);border-color:var(--bronze)}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 96px}
+.note{font-family:var(--ui);font-size:12px;color:var(--dim);border-left:2px solid var(--bronze-deep);padding:8px 12px;margin:28px 0 8px}
+.view{display:none} .view.on{display:block;animation:in .28s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- comunes ---------- */
+.eyebrow{font-family:var(--ui);font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--bronze)}
+.h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,7vw,42px);line-height:1.1;margin:.2em 0;
+  background:linear-gradient(180deg,var(--bronze-bright),var(--bronze));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:17px;color:var(--warm);margin:0 0 18px}
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--ui);font-size:12px;font-weight:700;
+  padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--night);color:var(--warm)}
+.sect{font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze);
+  display:flex;align-items:center;gap:10px;margin:34px 0 14px}
+.sect::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--bronze-deep),transparent)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ============ A · ESTAMPA ============ */
+.a-hero{position:relative;margin:0 -16px;height:min(46vh,320px);overflow:hidden}
+.a-hero .bg{width:100%;height:100%;object-fit:cover;filter:saturate(.85)}
+.a-hero .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,12,17,.15) 0%,rgba(9,12,17,.75) 62%,var(--ink) 100%)}
+.a-hero .txt{position:absolute;left:16px;right:16px;bottom:14px}
+.a-rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 14px;margin:0 -16px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.a-rail::-webkit-scrollbar{display:none}
+.a-card{scroll-snap-align:start;flex:0 0 168px;min-height:44px;border-radius:14px;overflow:hidden;position:relative;
+  border:1px solid var(--line);background:var(--panel);text-align:left;transition:transform .2s ease-out,border-color .2s}
+.a-card:hover,.a-card:focus-visible{transform:translateY(-3px);border-color:var(--bronze);outline:none}
+.a-card:focus-visible{box-shadow:0 0 0 3px rgba(201,163,92,.45)}
+.a-card .ph{height:112px;background:radial-gradient(120% 90% at 50% 10%,#22303f,#0f151d);display:grid;place-items:center}
+.a-card .ph i{font-size:26px;color:var(--bronze);opacity:.55}
+.a-card .cap{padding:10px 12px 12px}
+.a-card .cn{font-family:var(--display);font-weight:800;font-size:14px;color:var(--parch)}
+.a-card .cd{font-family:var(--ui);font-size:11px;color:var(--dim);margin-top:2px}
+.a-card .flag{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:999px;background:var(--bronze);
+  color:var(--ink);display:grid;place-items:center;font-size:11px;font-weight:800}
+
+/* ============ B · GRABADO (pines sobre la ilustración) ============ */
+.b-map{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--panel);margin-top:6px}
+.b-map .art{aspect-ratio:16/10;width:100%;object-fit:cover;
+  background:radial-gradient(90% 70% at 50% 30%,#1d2a38,#0b1017)}
+.b-pin{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;
+  min-width:44px;min-height:44px;justify-content:center;transition:transform .18s ease-out}
+.b-pin:hover,.b-pin:focus-visible{transform:translate(-50%,-50%) scale(1.06);outline:none}
+.b-pin .dot{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;
+  background:rgba(13,18,26,.86);border:1.5px solid var(--bronze);color:var(--bronze-bright);font-size:14px;
+  box-shadow:0 0 0 4px rgba(9,12,17,.5),0 4px 14px rgba(0,0,0,.5)}
+.b-pin:focus-visible .dot{box-shadow:0 0 0 3px var(--bronze-bright)}
+.b-pin .lbl{font-family:var(--ui);font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--parch);
+  background:rgba(9,12,17,.82);padding:3px 8px;border-radius:6px;white-space:nowrap}
+.b-pin.alert .dot{border-color:var(--ember);color:var(--ember);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(9,12,17,.5)}50%{box-shadow:0 0 0 4px rgba(239,106,61,.35)}}
+.b-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+.b-item{display:flex;align-items:center;gap:11px;padding:12px;min-height:44px;border-radius:12px;text-align:left;
+  border:1px solid var(--line);background:var(--panel);transition:border-color .2s,background .2s}
+.b-item:hover,.b-item:focus-visible{border-color:var(--bronze);background:var(--raised);outline:none}
+.b-item i{width:34px;height:34px;flex:none;border-radius:9px;display:grid;place-items:center;
+  background:var(--night);border:1px solid var(--line);color:var(--bronze);font-size:14px}
+.b-item .t{font-family:var(--display);font-weight:800;font-size:14px;color:var(--parch);line-height:1.25}
+.b-item .s{font-family:var(--ui);font-size:11px;color:var(--dim)}
+
+/* ============ C · CÓDICE ============ */
+.c-head{border:1px solid var(--line);border-radius:16px;background:
+  linear-gradient(180deg,rgba(201,163,92,.07),transparent 40%),var(--panel);padding:22px;position:relative;overflow:hidden}
+.c-head::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,rgba(201,163,92,.05) 0 2px,transparent 2px 9px)}
+.c-drop{float:left;font-family:var(--display);font-size:54px;line-height:.82;font-weight:800;color:var(--bronze);
+  margin:4px 12px 0 0}
+.c-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-top:6px}
+.c-door{position:relative;padding:16px 16px 16px 54px;min-height:44px;text-align:left;border-radius:12px;
+  border:1px solid var(--line);background:var(--panel);transition:border-color .2s,transform .2s ease-out}
+.c-door:hover,.c-door:focus-visible{border-color:var(--bronze);transform:translateX(3px);outline:none}
+.c-door::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--bronze-deep)}
+.c-door:hover::before{background:var(--bronze)}
+.c-door i{position:absolute;left:20px;top:18px;color:var(--bronze);font-size:16px}
+.c-door .t{font-family:var(--display);font-weight:800;font-size:15px;color:var(--parch)}
+.c-door .s{font-family:var(--ui);font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+
+/* ---------- PNJ (común a las tres, con variantes) ---------- */
+.npc-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.npc-row::-webkit-scrollbar{display:none}
+.npc{flex:0 0 96px;text-align:center;min-height:44px}
+.npc .ring{width:76px;height:76px;margin:0 auto;border-radius:999px;padding:2px;
+  background:conic-gradient(var(--bronze),var(--bronze-deep),var(--bronze));transition:transform .2s ease-out}
+.npc:hover .ring{transform:scale(1.05)}
+.npc .ring .in{width:100%;height:100%;border-radius:999px;background:var(--raised);display:grid;place-items:center;
+  color:var(--bronze);font-size:24px;border:2px solid var(--night)}
+.npc .n{font-family:var(--display);font-weight:800;font-size:12.5px;color:var(--parch);margin-top:7px;line-height:1.2}
+.npc .r{font-family:var(--ui);font-size:10.5px;color:var(--dim)}
+.npc .bang{display:inline-block;margin-left:4px;color:var(--ember)}
+
+/* ---------- diálogo ---------- */
+.dlg{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;margin-top:12px}
+.dlg-top{display:flex;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(201,163,92,.08),transparent)}
+.dlg-top .av{width:52px;height:52px;border-radius:999px;background:var(--raised);border:2px solid var(--bronze-deep);
+  display:grid;place-items:center;color:var(--bronze);font-size:20px;flex:none}
+.dlg-top .nm{font-family:var(--display);font-weight:800;font-size:17px;color:var(--parch);line-height:1.15}
+.dlg-top .rl{font-family:var(--ui);font-size:11px;color:var(--dim)}
+.trust{margin-top:7px;height:4px;border-radius:999px;background:var(--night);border:1px solid var(--line);overflow:hidden}
+.trust > i{display:block;height:100%;width:62%;background:linear-gradient(90deg,var(--bronze-deep),var(--bronze-bright));transition:width .4s ease-out}
+.say{font-size:16.5px;line-height:1.7;color:var(--parch);padding:18px 18px 6px;font-style:italic}
+.say::first-letter{color:var(--bronze-bright)}
+.opts{padding:8px 14px 16px;display:flex;flex-direction:column;gap:8px}
+.opt{position:relative;text-align:left;padding:13px 14px 13px 16px;min-height:44px;border-radius:11px;
+  border:1px solid var(--line);background:var(--night);color:var(--warm);font-size:15.5px;
+  transition:border-color .18s,background .18s,transform .18s ease-out}
+.opt:hover,.opt:focus-visible{border-color:var(--bronze);background:var(--raised);transform:translateX(3px);outline:none}
+.opt .cd{display:inline-flex;align-items:center;gap:6px;font-family:var(--ui);font-size:10.5px;font-weight:800;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--arcane-bright);
+  border:1px solid rgba(69,199,189,.4);background:rgba(69,199,189,.09);padding:2px 7px;border-radius:6px;margin-right:8px}
+.opt.dead{opacity:.34;text-decoration:line-through;pointer-events:none}
+.opt.leave{color:var(--dim);font-style:italic}
+.free{display:flex;gap:8px;padding:0 14px 16px}
+.free input{flex:1;min-height:44px;background:var(--night);border:1px solid var(--line);border-radius:11px;
+  padding:0 14px;color:var(--warm);font-family:var(--body);font-size:15px}
+.free input:focus{outline:none;border-color:var(--bronze)}
+.free button{min-width:44px;min-height:44px;border-radius:11px;background:var(--bronze);color:var(--ink);font-weight:800;padding:0 16px}
+</style>
+</head>
+<body>
+
+<div class="bench" role="tablist" aria-label="Direcciones de diseño">
+  <b>Boceto /lugar</b>
+  <button role="tab" aria-pressed="true" data-go="a">A · Estampa</button>
+  <button role="tab" aria-pressed="false" data-go="b">B · Grabado</button>
+  <button role="tab" aria-pressed="false" data-go="c">C · Códice</button>
+</div>
+
+<div class="wrap">
+
+<!-- ============================= A ============================= -->
+<section class="view on" id="a">
+  <div class="a-hero">
+    <div class="bg" style="background:radial-gradient(80% 70% at 30% 20%,#2b3a49,#0c1119);height:100%"></div>
+    <div class="grad"></div>
+    <div class="txt">
+      <p class="eyebrow">Península de Pleabruma · Tal'Dorei</p>
+      <h1 class="h1">Byroden</h1>
+      <span class="chip"><i class="fa-solid fa-cloud-sun" style="color:var(--bronze)"></i> Despejado · 14° · Primavera</span>
+    </div>
+  </div>
+
+  <p class="lede" style="margin-top:18px">Levantado dos veces sobre la misma tierra. Huele a pan y a humo de fragua, y en el
+  cementerio hay una franja entera de lápidas con la misma fecha.</p>
+
+  <p class="sect">Adónde ir</p>
+  <div class="a-rail">
+    <button class="a-card"><div class="ph"><i class="fa-solid fa-beer-mug-empty"></i></div><div class="cap"><div class="cn">La Taberna</div><div class="cd">Aquí se sabe quién ha llegado</div></div><span class="flag">!</span></button>
+    <button class="a-card"><div class="ph"><i class="fa-solid fa-place-of-worship"></i></div><div class="cap"><div class="cn">La Iglesia</div><div class="cd">La levantaron antes que las casas</div></div></button>
+    <button class="a-card"><div class="ph"><i class="fa-solid fa-monument"></i></div><div class="cap"><div class="cn">El Cementerio</div><div class="cd">Cuesta arriba, tras la iglesia</div></div></button>
+    <button class="a-card"><div class="ph"><i class="fa-solid fa-landmark"></i></div><div class="cap"><div class="cn">El Ayuntamiento</div><div class="cd">Impuestos, encargos y archivo</div></div></button>
+    <button class="a-card"><div class="ph"><i class="fa-solid fa-tree"></i></div><div class="cap"><div class="cn">El bosque</div><div class="cd">Ahí empieza la Expansión Verdante</div></div></button>
+  </div>
+
+  <p class="sect">Gente del lugar</p>
+  <div class="npc-row">
+    <div class="npc"><div class="ring"><div class="in"><i class="fa-solid fa-user"></i></div></div><div class="n">Mirna<span class="bang"><i class="fa-solid fa-circle-exclamation"></i></span></div><div class="r">Tabernera</div></div>
+    <div class="npc"><div class="ring"><div class="in"><i class="fa-solid fa-user"></i></div></div><div class="n">Odo</div><div class="r">Parroquiano</div></div>
+    <div class="npc"><div class="ring"><div class="in"><i class="fa-solid fa-user"></i></div></div><div class="n">Brannoc</div><div class="r">Alguacil</div></div>
+  </div>
+  <p class="note">A · <b>Estampa.</b> La ilustración manda: se entra por la imagen. Las salidas son un carrusel que se
+  desliza con el pulgar. Es lo más de «novela visual» y lo que mejor luce con arte bueno; sin imágenes se ve más pobre.</p>
+</section>
+
+<!-- ============================= B ============================= -->
+<section class="view" id="b">
+  <p class="eyebrow" style="margin-top:22px">Península de Pleabruma · Tal'Dorei</p>
+  <h1 class="h1">Byroden</h1>
+  <span class="chip"><i class="fa-solid fa-cloud-sun" style="color:var(--bronze)"></i> Despejado · 14° · Primavera</span>
+
+  <div class="b-map">
+    <div class="art"></div>
+    <button class="b-pin alert" style="left:26%;top:62%"><span class="dot"><i class="fa-solid fa-beer-mug-empty"></i></span><span class="lbl">La Taberna</span></button>
+    <button class="b-pin" style="left:52%;top:34%"><span class="dot"><i class="fa-solid fa-place-of-worship"></i></span><span class="lbl">La Iglesia</span></button>
+    <button class="b-pin" style="left:74%;top:22%"><span class="dot"><i class="fa-solid fa-monument"></i></span><span class="lbl">Cementerio</span></button>
+    <button class="b-pin" style="left:46%;top:74%"><span class="dot"><i class="fa-solid fa-landmark"></i></span><span class="lbl">Ayuntamiento</span></button>
+    <button class="b-pin" style="left:86%;top:64%"><span class="dot"><i class="fa-solid fa-tree"></i></span><span class="lbl">El bosque</span></button>
+  </div>
+
+  <div class="b-list">
+    <button class="b-item"><i class="fa-solid fa-beer-mug-empty"></i><span><span class="t">La Taberna</span><br><span class="s">Aquí se sabe quién ha llegado</span></span></button>
+    <button class="b-item"><i class="fa-solid fa-tree"></i><span><span class="t">El bosque</span><br><span class="s">Expansión Verdante</span></span></button>
+  </div>
+
+  <p class="sect">Gente del lugar</p>
+  <div class="npc-row">
+    <div class="npc"><div class="ring"><div class="in"><i class="fa-solid fa-user"></i></div></div><div class="n">Mirna<span class="bang"><i class="fa-solid fa-circle-exclamation"></i></span></div><div class="r">Tabernera</div></div>
+    <div class="npc"><div class="ring"><div class="in"><i class="fa-solid fa-user"></i></div></div><div class="n">Odo</div><div class="r">Parroquiano</div></div>
+  </div>
+  <p class="note">B · <b>Grabado.</b> Los sitios son <b>pines sobre la ilustración del pueblo</b>, como el mapa de Eranol.
+  Lo más diegético: no navegas un menú, señalas un sitio. Debajo quedan siempre en lista, que es la accesibilidad y el
+  plan B cuando aún no hay dibujo. Te obliga a dibujar un plano por pueblo.</p>
+</section>
+
+<!-- ============================= C ============================= -->
+<section class="view" id="c">
+  <div class="c-head" style="margin-top:22px">
+    <p class="eyebrow">Península de Pleabruma · Tal'Dorei</p>
+    <h1 class="h1" style="margin-bottom:.35em">Byroden</h1>
+    <p style="margin:0;font-size:17px;color:var(--warm)"><span class="c-drop">L</span>evantado dos veces sobre la misma
+    tierra. Huele a pan y a humo de fragua. Los que quedaron del incendio no hablan de él, pero en el cementerio hay una
+    franja entera de lápidas con la misma fecha grabada.</p>
+    <div style="clear:both;margin-top:14px"><span class="chip"><i class="fa-solid fa-cloud-sun" style="color:var(--bronze)"></i> Despejado · 14° · Primavera</span></div>
+  </div>
+
+  <p class="sect">Adónde ir</p>
+  <div class="c-grid">
+    <button class="c-door"><i class="fa-solid fa-beer-mug-empty"></i><div class="t">La Taberna</div><div class="s">Vigas bajas y el mejor sitio del pueblo para enterarse de algo.</div></button>
+    <button class="c-door"><i class="fa-solid fa-place-of-worship"></i><div class="t">La Iglesia</div><div class="s">Pequeña, encalada y con más velas de las que hacen falta.</div></button>
+    <button class="c-door"><i class="fa-solid fa-monument"></i><div class="t">El Cementerio</div><div class="s">Detrás de la iglesia, cuesta arriba.</div></button>
+    <button class="c-door"><i class="fa-solid fa-landmark"></i><div class="t">El Ayuntamiento</div><div class="s">Dos plantas, un archivo húmedo y un alguacil que hace de todo.</div></button>
+    <button class="c-door"><i class="fa-solid fa-tree"></i><div class="t">El bosque</div><div class="s">Los campos del norte se acaban contra una pared de árboles.</div></button>
+  </div>
+
+  <p class="sect">Gente del lugar</p>
+  <div class="npc-row">
+    <div class="npc"><div class="ring"><div class="in"><i class="fa-solid fa-user"></i></div></div><div class="n">Mirna<span class="bang"><i class="fa-solid fa-circle-exclamation"></i></span></div><div class="r">Tabernera</div></div>
+    <div class="npc"><div class="ring"><div class="in"><i class="fa-solid fa-user"></i></div></div><div class="n">Odo</div><div class="r">Parroquiano</div></div>
+    <div class="npc"><div class="ring"><div class="in"><i class="fa-solid fa-user"></i></div></div><div class="n">Vell</div><div class="r">Sepulturero</div></div>
+  </div>
+  <p class="note">C · <b>Códice.</b> Sin depender de ninguna imagen: manda la tipografía, con capitular y la descripción
+  como texto de libro. Las salidas son «puertas» con su frase. Es lo que mejor se ve <b>hoy</b>, sin que dibujes nada.</p>
+</section>
+
+<!-- ===================== DIÁLOGO (igual en las tres) ===================== -->
+<p class="sect">El diálogo, para las tres</p>
+<div class="dlg">
+  <div class="dlg-top">
+    <div class="av"><i class="fa-solid fa-user"></i></div>
+    <div style="flex:1;min-width:0">
+      <div class="nm">Mirna Halbrook</div>
+      <div class="rl">Tabernera · te tiene medida</div>
+      <div class="trust" role="img" aria-label="Confianza 62 de 100"><i style="width:62%"></i></div>
+    </div>
+  </div>
+  <p class="say">«Otra vez por aquí.» Te sirve sin preguntar. «Contadme algo de fuera, que aquí las noticias llegan
+  cuando ya no sirven.»</p>
+  <div class="opts">
+    <button class="opt">¿Qué se cuenta por el pueblo?</button>
+    <button class="opt"><span class="cd"><i class="fa-solid fa-dice-d20"></i> Perspicacia CD 14 · tu +3</span>El pueblo es nuevo. ¿Qué pasó aquí?</button>
+    <button class="opt dead"><span class="cd"><i class="fa-solid fa-dice-d20"></i> Intimidación CD 15</span>Dime quién ha pasado este mes.</button>
+    <button class="opt leave">Nada, gracias.</button>
+  </div>
+  <div class="free">
+    <input placeholder="O dile lo que quieras…" aria-label="Escribe lo que le dices">
+    <button aria-label="Enviar"><i class="fa-solid fa-paper-plane"></i></button>
+  </div>
+</div>
+<p class="note">La CD y <b>tu modificador</b> van en la propia opción, como en Eranol. Lo ya fallado sale tachado y
+apagado. La barra bajo el nombre es la confianza. Abajo, la caja de IA para lo que no esté escrito.</p>
+
+</div>
+
+<script>
+const views = document.querySelectorAll('.view');
+document.querySelectorAll('.bench button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.bench button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    views.forEach(v => v.classList.toggle('on', v.id === b.dataset.go));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+</script>
+</body>
+</html>
