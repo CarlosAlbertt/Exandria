@@ -53,10 +53,12 @@ export const SUSURRADO_LORE: ContinentLoreEntry[] = [
     title: "Las Charcas y lo que ardió allí",
     text:
       "Cuando la isla se le quedó pequeña volvió a cruzar el mar y empezó por la campiña de " +
-      "Mornset. Arrasó cuanto rodeaba las Charcas del Claro, y con ello Puerto Udall y Byroden: " +
-      "un pueblo pequeño del que no queda nada y del que todavía hay quien lleva el apellido. " +
-      "Las crónicas de Emon lo apuntan como «el drake mayor del que hay registro», que es la " +
-      "forma que tienen los archiveros de decir que no sabían qué era eso.",
+      "Mornset. Arrasó cuanto rodeaba las Charcas del Claro, y con ello Puerto Udall y Byroden, " +
+      "que quedó reducido a ceniza en una sola noche del 795. Las crónicas de Emon lo apuntan " +
+      "como «el drake mayor del que hay registro», que es la forma que tienen los archiveros de " +
+      "decir que no sabían qué era eso. Byroden se levantó otra vez sobre sus propias ruinas en " +
+      "los años siguientes, y hoy es un pueblo entero — pero quien pasee por el cementerio verá " +
+      "que hay una franja de lápidas todas con la misma fecha.",
   },
   {
     id: "thordak-ancla",
