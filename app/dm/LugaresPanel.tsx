@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useLugares, saveLugares } from "@/lib/useLugares";
-import { poiDeNodo, type NodosOverride } from "@/data/lugares";
+import { poiDeNodo, ENTRADAS_AL_BOSQUE, type NodosOverride } from "@/data/lugares";
+import { claveDePlantilla, plantillaDe } from "@/data/npcTemplates";
+import { seedNpcs } from "@/lib/useNpcs";
 
 const inputCls = "w-full bg-[var(--color-night)] rounded-lg px-3 py-1.5 font-body text-[14px] outline-none border border-[var(--color-line)] focus:border-[var(--color-bronze)]";
 
@@ -82,6 +84,7 @@ export default function LugaresPanel() {
                   <img src={ov[n.id]?.imagen || n.imagen} alt="" className="w-20 h-14 object-cover rounded-lg border border-[var(--color-line)] shrink-0" />
                 )}
               </div>
+              <Sembrar nodoId={n.id} poiSugerido={poi} />
             </div>
           );
         })}
@@ -95,6 +98,54 @@ export default function LugaresPanel() {
       <button onClick={guardar} disabled={!borrador} className="btn-gold !py-2 !px-4 text-[12px] disabled:opacity-40">
         <i className="fas fa-floppy-disk mr-1.5" />Guardar cambios
       </button>
+    </div>
+  );
+}
+
+/**
+ * «Sembrar gente»: mete la plantilla escrita de este sitio en `location_npcs`.
+ *
+ * ⚠️ **No pisa lo que ya haya.** El DM tiene PNJ creados a mano y un botón que
+ * los duplicara le metería desconocidos en su pueblo sin forma cómoda de
+ * deshacerlo. Si hay alguien, `seedNpcs` se niega y lo dice.
+ *
+ * Un sitio sin plantilla **deshabilita el botón explicándose**, igual que el de
+ * «Semilla» de las tiendas con un tipo inventado: si no, no pasaría nada al
+ * pulsarlo y el DM no sabría si el fallo era suyo.
+ */
+function Sembrar({ nodoId, poiSugerido }: { nodoId: string; poiSugerido: string | null }) {
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState<string | null>(null);
+
+  const clave = claveDePlantilla(nodoId);
+  const plantilla = clave ? plantillaDe(clave) : [];
+  // Una franja no es de ningún pueblo, así que se cuelga del primero que la
+  // toca solo para que el DM la encuentre en el panel de PNJs, que lista por
+  // POI. En pantalla los coloca el `venue`, no esto.
+  const poi = poiSugerido ?? ENTRADAS_AL_BOSQUE[0]?.poi ?? null;
+
+  async function sembrar() {
+    if (!poi || busy) return;
+    setBusy(true); setRes(null);
+    const r = await seedNpcs(poi, nodoId, plantilla);
+    setRes(r.ok ? `Sembrados ${r.creados}. Ya se puede hablar con ellos.` : r.error);
+    setBusy(false);
+  }
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap pt-1">
+      <button onClick={sembrar} disabled={busy || plantilla.length === 0 || !poi}
+        title={plantilla.length === 0 ? "Este sitio no trae gente escrita: créala en Panel DM › PNJs" : `Mete ${plantilla.length} PNJ escritos, con su personalidad para la IA`}
+        className="btn-ghost !py-1.5 !px-3 text-[12px] disabled:opacity-40">
+        <i className={`fas ${busy ? "fa-spinner fa-spin" : "fa-user-plus"} mr-1.5`} />
+        {plantilla.length === 0 ? "Sin gente escrita para este sitio" : `Sembrar gente (${plantilla.length})`}
+      </button>
+      {plantilla.length > 0 && (
+        <span className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>
+          {plantilla.map((t) => `${t.name} (${t.role})`).join(" · ")}
+        </span>
+      )}
+      {res && <span className="font-ui text-[11px] w-full" style={{ color: "var(--color-bronze-bright)" }}>{res}</span>}
     </div>
   );
 }
