@@ -86,9 +86,16 @@ const T: ArbolDialogo = {
       opciones: [
         { texto: "charla", exito: "dice algo sin más" },
         {
+          // ⚠️ Lleva premio Y misión Y tienda a la vez a propósito: son tres
+          // consecuencias distintas, y cada una necesita su propia
+          // comprobación de que NO sale al fallar. Con solo el premio, romper
+          // la de la misión dejaba el gate verde — lo destapó la mutación.
           texto: "tirada", chequeo: { pericia: "Persuasión", cd: 12 },
           exito: "acierta y te da la cosa", fallo: "falla y no te da nada",
-          premio: { tipo: "objeto", name: "Cosa" }, siguiente: "b",
+          premio: { tipo: "objeto", name: "Cosa" },
+          mision: { title: "Encargo de prueba", body: "cuerpo", reward: "10 po" },
+          abreTienda: true,
+          siguiente: "b",
         },
         { texto: "adiós", exito: "hasta luego", siguiente: null },
       ],
@@ -105,8 +112,15 @@ check("se empieza en la etapa de inicio", base.etapa === "a");
 const gana = resolver(T, base, 1, 15)!;
 const pierde = resolver(T, base, 1, 8)!;
 check("acertando la tirada, acierta", gana.acierto);
+// Las TRES consecuencias, cada una comprobada por separado en las dos
+// direcciones. Son tres campos distintos del mismo objeto y romper uno solo no
+// mueve a los otros dos.
 check("acertando, entrega el premio", !!gana.premio);
 check("fallando, NO entrega el premio", !pierde.premio);
+check("acertando, concede la misión", !!gana.mision);
+check("fallando, NO concede la misión", !pierde.mision);
+check("acertando, abre la tienda", gana.abreTienda === true);
+check("fallando, NO abre la tienda", !pierde.abreTienda);
 check("fallando, dice el texto de fallo", pierde.texto === "falla y no te da nada");
 check("acertando, dice el de éxito", gana.texto === "acierta y te da la cosa");
 check("justo en la CD se acierta", resolver(T, base, 1, 12)!.acierto);
