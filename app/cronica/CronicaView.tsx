@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useChronicle, type Quest } from "@/lib/useChronicle";
+import { esIndividual } from "@/lib/misiones";
 import { useClues } from "@/lib/useClues";
 import { REGIONS } from "@/data/taldorei";
 import { holidayFor } from "@/lib/gameDate";
@@ -175,8 +176,19 @@ function QuestCard({ q }: { q: Quest }) {
     <div className="panel-raised p-5" style={{ borderColor: `color-mix(in srgb, ${badge.color} 30%, var(--color-line))` }}>
       <div className="flex items-center justify-between gap-3 mb-2">
         <h3 className="font-display font-bold text-[15px]" style={{ color: "var(--color-parch)" }}>{q.title}</h3>
-        <span className="font-ui text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ color: badge.color, border: `1px solid ${badge.color}55` }}>
-          <i className={`fas ${badge.icon} mr-1`} />{badge.label}
+        <span className="flex items-center gap-1.5 shrink-0">
+          {/* Individual (schema_v24). La RLS ya se encarga de que solo llegue a
+              su dueño y al DM; esto es para que se sepa que los demás NO la
+              ven, no para esconder nada. */}
+          {esIndividual(q) && (
+            <span className="font-ui text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" title="Solo tú y el DM veis esta misión"
+              style={{ color: "var(--color-bronze-bright)", border: "1px solid var(--color-bronze)" }}>
+              <i className="fas fa-user-secret mr-1" />Solo tuya
+            </span>
+          )}
+          <span className="font-ui text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ color: badge.color, border: `1px solid ${badge.color}55` }}>
+            <i className={`fas ${badge.icon} mr-1`} />{badge.label}
+          </span>
         </span>
       </div>
       {q.body && <p className="prose-lore !text-[14px] whitespace-pre-wrap">{q.body}</p>}

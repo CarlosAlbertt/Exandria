@@ -19,21 +19,37 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
-  // 1. La oferta tiene que existir y seguir siendo oferta.
-  const { data: quest } = await admin.from("quests").select("id, status, body").eq("id", id).maybeSingle();
+  // 1. La oferta tiene que existir, seguir siendo oferta y no estar ya asignada
+  //    a otra ficha (el DM puede reservarle un encargo a alguien concreto).
+  const { data: quest } = await admin.from("quests").select("id, status, body, npc_id, assigned_character_id").eq("id", id).maybeSingle();
   if (!quest) return Response.json({ error: "Ese encargo ya no existe." }, { status: 404 });
   if (quest.status !== "oferta") return Response.json({ error: "Ese encargo ya no está disponible." }, { status: 409 });
 
-  // 2. Nombre del personaje activo → nota de quién lo aceptó (sin columna nueva).
-  const { data: char } = await admin.from("characters").select("name").eq("user_id", user.id).is("archived_at", null).maybeSingle();
-  const who = (char?.name as string)?.trim() || "El grupo";
-  const note = `\n\n_Aceptado por ${who}._`;
-  const nextBody = `${(quest.body as string) ?? ""}${note}`;
+  // 2. La ficha EN JUEGO de quien acepta.
+  const { data: char } = await admin.from("characters").select("id, name").eq("user_id", user.id).is("archived_at", null).maybeSingle();
+  if (quest.assigned_character_id && quest.assigned_character_id !== char?.id) {
+    return Response.json({ error: "Ese encargo es de otro." }, { status: 403 });
+  }
 
   // 3. Oferta → activa.
-  const { error } = await admin.from("quests")
-    .update({ status: "activa", body: nextBody, updated_at: new Date().toISOString() })
-    .eq("id", id).eq("status", "oferta");
+  //    Un encargo con `npc_id` es INDIVIDUAL (se aceptó hablando con un PNJ):
+  //    se asigna a la ficha, que es lo que la RLS de la v24 usa para esconderlo
+  //    de los demás. Uno del tablón sigue siendo del grupo y no se asigna.
+  //
+  //    ⚠️ Y por eso desaparece el «_Aceptado por X_» que se metía DENTRO del
+  //    `body`: era un parche de texto a falta de columna donde apuntarlo, y
+  //    reescribía la misión del DM cada vez. Ahora hay columna. Los encargos de
+  //    tablón siguen sin ella, así que ahí se conserva la nota.
+  const individual = quest.npc_id != null && char != null;
+  const update: Record<string, unknown> = { status: "activa", updated_at: new Date().toISOString() };
+  if (individual) {
+    update.assigned_character_id = char!.id;
+  } else {
+    const who = (char?.name as string)?.trim() || "El grupo";
+    update.body = `${(quest.body as string) ?? ""}\n\n_Aceptado por ${who}._`;
+  }
+
+  const { error } = await admin.from("quests").update(update).eq("id", id).eq("status", "oferta");
   if (error) return Response.json({ error: "No se pudo aceptar el encargo." }, { status: 500 });
 
   return Response.json({ ok: true });
