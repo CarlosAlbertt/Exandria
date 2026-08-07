@@ -2,7 +2,86 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-07, madrugada)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-07, tarde)
+
+> **LA DIRECCIÓN VISUAL DE `/lugar` ESTÁ APROBADA Y SIN CONSTRUIR.** En `master`.
+> **Sin migración nueva** — pero hay **DOS SIN EJECUTAR**, ver abajo.
+>
+> ### ⚠️ LO PRIMERO: TRES MIGRACIONES PENDIENTES DE EJECUTAR
+> `supabase/schema_v24.sql`, `v25.sql` y `v26.sql` están escritas y mergeadas
+> **pero el usuario no confirma haberlas ejecutado**. Sin ellas fallan las
+> misiones individuales (v24), los sub-lugares (v25) y los árboles de diálogo
+> (v26). **Pregúntaselo antes de depurar nada raro.**
+>
+> ### Lo que se decidió sobre el aspecto, y costó SEIS iteraciones
+> No se rediseña a ciegas: **boceto primero**, en `docs/bocetos/`, y se enseña.
+> El recorrido, para no repetirlo:
+>
+> | Boceto | Qué era | Veredicto |
+> |---|---|---|
+> | `-lugar-rediseno` | A Estampa · B Grabado · **C Códice** | **elige C** |
+> | `-codice-y-dialogo` | C + ventana con retrato a la izquierda | bien, pero «la tirada va con los dados que ya hay» |
+> | `-codice-fantasia` | más pergamino, sin teclear tiradas | «mezcla fantasía con medieval, más decoración» |
+> | `-iluminado` | gótica, rúbrica, orlas, lacre | «**muy oscuro**, más light fantasy» |
+> | `-pergamino` | **hoja clara, tinta parda, rojo de rúbrica** | va bien |
+> | `-temas` | pantalla entera + **tema por sitio** | «**muy soso**» — eran degradados de relleno |
+> | **`-lugar-con-arte`** | lo mismo **con los retratos reales dentro** | **es la buena** |
+>
+> **La lección**: los bocetos parecían sosos porque los fondos eran degradados.
+> **Lo que hace bonita la pantalla es la ilustración, no el marco.** No sigas
+> puliendo marcos sin arte dentro.
+>
+> ### Lo aprobado, en concreto
+> - **Pergamino claro** («light fantasy»): la hoja es el fondo (`#f4ead1`), el
+>   texto es tinta parda y el acento es **rojo de rúbrica**. La app sigue oscura
+>   por fuera —la mesa— y `/lugar` es la hoja encima.
+> - **A pantalla completa**, no una columna estrecha.
+> - **Tema por sitio.** El nodo declara su `tema` y de ahí salen cielo, silueta,
+>   metal (**oro** en el valle, **plata** en la ciudadela) y acento. **La maqueta
+>   no cambia: cambia la piel.** Temas dibujados: `valle` (Byroden),
+>   `ciudadela` (Emon), `yermo` (ruinas).
+> - **Decoración**: capitular iluminada, filete trenzado con roseta, rótulos en
+>   cinta, **sellos de lacre** en las puertas, viñeta ❧ por opción, calderón ¶.
+>   Todo CSS y SVG en línea, **cero imágenes**.
+> - **Diálogo en ventana**: retrato **CUADRADO** enmarcado + conversación. En
+>   móvil el retrato se hace pequeño y va al lado del nombre.
+> - **La tirada NO se teclea**: `rollVisual` lanza en el tablero y la ventana
+>   enseña un d20 girando. El campo manual solo si no hay WebGL.
+>
+> ### El arte: `docs/ARTE-IMAGENES.md`
+> ⚠️ **La primera versión de esa spec estaba MAL en casi todo** y por eso la
+> primera imagen que generó el usuario salió fea. Se corrigió mirando
+> `CarlosAlbertt/Eranol-APP` (`public/img/npcs/`), que es la referencia buena:
+>
+> | Decía | Es |
+> |---|---|
+> | 2:3 vertical | **1:1, 1024×1024** |
+> | gouache de cuento | **pintura digital semirrealista** (D&D/MTG) |
+> | «acuarela» | **óleo digital SIN NINGUNA línea de tinta** ← la palabra «acuarela» traía el entintado |
+> | cintura para arriba | **busto**, la cara llena el cuadro |
+> | fondo neutro | **el sitio donde está**, pintado y desenfocado |
+> | (nada de luz) | **luz dramática de antorcha**, contraste marcado |
+>
+> **Ya hay dos retratos buenos** en `public/npcs/`: `silas_trumble.webp`
+> (escribano) y `elara_teje_raices.webp` (herborista). Los originales están en
+> `C:\Users\carlo\Pictures\NPCs\Byroden`.
+> **Convertir siempre a WebP con `sharp`** (ya instalado): 707 KB → 82 KB sin
+> perder calidad. Script de una vez, dentro del proyecto para que vea
+> `node_modules`.
+>
+> ### LO SIGUIENTE, y es construir
+> El boceto `docs/bocetos/2026-08-07-lugar-con-arte.html` **es la referencia
+> literal**. Falta llevarlo a la app:
+> 1. Los tokens de tema a `app/globals.css` (`.tema-valle`, `.tema-ciudadela`…).
+> 2. `data/lugares.ts`: el `Nodo` gana **`tema`** e **`imagen` de cabecera**.
+> 3. `app/lugar/page.tsx`: cabecera a sangre, hoja a todo ancho, puertas,
+>    medallones cuadrados.
+> 4. `components/lugar/DialogoArbol.tsx` + `NpcSection`: la ventana emergente.
+> 5. Gate: `check-lugares` tiene que exigir que **todo tema declarado exista**.
+>
+> **Los 41 gates en verde**, `tsc` y `next build` limpios. **Sin ver en la app.**
+
+## 🚦 Antes de eso (2026-08-07, madrugada)
 
 > **YA HAY GENTE EN CADA SITIO.** Rama `feat/pnjs-por-sitio`, mergeada a
 > `master`. **Sin migración** (usa el `venue` de la v25).
