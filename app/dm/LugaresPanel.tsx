@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useLugares, saveLugares } from "@/lib/useLugares";
-import { poiDeNodo, ENTRADAS_AL_BOSQUE, type NodosOverride } from "@/data/lugares";
+import { poiDeNodo, ENTRADAS_AL_BOSQUE, TEMAS, esTema, type NodosOverride, type TemaLugar } from "@/data/lugares";
 import { claveDePlantilla, plantillaDe } from "@/data/npcTemplates";
 import { seedNpcs } from "@/lib/useNpcs";
 
@@ -28,6 +28,21 @@ export default function LugaresPanel() {
 
   function set(id: string, campo: "nombre" | "blurb" | "imagen", valor: string) {
     setBorrador({ ...ov, [id]: { ...ov[id], [campo]: valor } });
+    setMsg(null);
+  }
+
+  /**
+   * La PIEL del sitio. Va aparte de `set` porque no es texto libre: un valor
+   * que no sea uno de los temas dibujados dejaría la hoja sin ninguno de sus
+   * tokens. `construirNodos` lo filtra igualmente, pero aquí no hay por qué
+   * dejar escribirlo.
+   *
+   * En blanco = **la que traiga de fábrica**, que para un sub-lugar es la de su
+   * pueblo. Es lo mismo que hacen los otros campos de este panel.
+   */
+  function setTema(id: string, valor: string) {
+    const tema: TemaLugar | "" = esTema(valor) ? valor : "";
+    setBorrador({ ...ov, [id]: { ...ov[id], tema: tema || undefined } });
     setMsg(null);
   }
 
@@ -84,6 +99,19 @@ export default function LugaresPanel() {
                   <img src={ov[n.id]?.imagen || n.imagen} alt="" className="w-20 h-14 object-cover rounded-lg border border-[var(--color-line)] shrink-0" />
                 )}
               </div>
+              {/* La piel del sitio. `n.tema` ya viene resuelto —del pueblo o de
+                  la semilla—, así que el desplegable en blanco enseña cuál se
+                  está usando en vez de dejar al DM adivinando. */}
+              <label className="flex items-center gap-2 flex-wrap">
+                <span className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>Tema</span>
+                <select value={ov[n.id]?.tema ?? ""} onChange={(e) => setTema(n.id, e.target.value)}
+                  className={`${inputCls} !w-auto`} style={{ color: "var(--color-warm)" }}>
+                  <option value="">De fábrica ({TEMAS[n.tema].label})</option>
+                  {Object.entries(TEMAS).map(([clave, t]) => (
+                    <option key={clave} value={clave}>{t.label}</option>
+                  ))}
+                </select>
+              </label>
               <Sembrar nodoId={n.id} poiSugerido={poi} />
             </div>
           );

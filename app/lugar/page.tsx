@@ -10,7 +10,7 @@ import { useClues } from "@/lib/useClues";
 import { useLugares } from "@/lib/useLugares";
 import { useSitio } from "@/lib/useSitio";
 import { indexar, nodoDelJugador, salidasDe, puedeIr } from "@/lib/nodos";
-import { idPoi, poiDeNodo, alAireLibre } from "@/data/lugares";
+import { idPoi, poiDeNodo, alAireLibre, TEMAS } from "@/data/lugares";
 import ClockWidget from "@/components/ClockWidget";
 import ShopSection from "@/components/lugar/ShopSection";
 import PosadaSection from "@/components/lugar/PosadaSection";
@@ -20,6 +20,26 @@ import SaberRoll from "@/components/lugar/SaberRoll";
 import ClimaEfectos from "@/components/lugar/ClimaEfectos";
 import Salidas from "@/components/lugar/Salidas";
 
+/**
+ * `/lugar` — LA HOJA. Referencia literal:
+ * `docs/bocetos/2026-08-07-lugar-con-arte.html`.
+ *
+ * La app entera es oscura —la mesa— y esta pantalla es **una hoja de pergamino
+ * clara puesta encima**, a sangre y a todo ancho. Costó seis bocetos: lo oscuro
+ * salía «muy oscuro» y lo claro sin arte dentro salía «muy soso». La lección
+ * que se pagó: **lo que hace bonita la pantalla es la ilustración, no el
+ * marco.** Esto es solo el marco, y por eso la cabecera es del tamaño que es.
+ *
+ * ⚠️ **La maqueta no cambia por sitio: cambia la piel.** Byroden y Emon pintan
+ * exactamente esto mismo; lo único que cambia es la clase `tema-*` del `<main>`,
+ * de donde salen cielo, silueta, metal y acento. No metas condicionales por
+ * tema aquí: si un sitio necesita otra maqueta, no era un tema.
+ *
+ * ⚠️ **Tienda, posada, tablón y saber se quedan en la mesa oscura**, debajo de
+ * la hoja y con su estilo de siempre. No están rediseñados —esta tanda no los
+ * toca— y meterlos dentro del pergamino los dejaría ilegibles: son paneles
+ * oscuros con texto claro. Debajo, sobre el fondo de la app, se leen bien.
+ */
 export default function LugarPage() {
   const { location, ready } = usePartyLocation();
   const { atlas } = useAtlas();
@@ -78,9 +98,28 @@ export default function LugarPage() {
   // por qué repetir el sitio en el que está puesto.
   const ambient = `${ambientLine(weather, moment.season)}\n[Estáis en: ${nodo.nombre}. ${nodo.blurb}]${rumorLine}`;
 
-  // La imagen del nodo: la del pueblo la sigue poniendo TOWN_MAPS (ya existía);
-  // la de un sitio concreto la pone el DM en el grafo.
+  // La ilustración de cabecera: la del pueblo la sigue poniendo TOWN_MAPS (ya
+  // existía); la de un sitio concreto la pone el DM en el grafo. Sin ninguna
+  // queda el cielo del tema con su silueta, que es un sitio sin dibujar.
   const img = nodo.imagen ?? (enElPueblo && poiName ? townMap(poiName) : undefined);
+
+  // La capitular se come la primera letra de la prosa, así que hay que
+  // repartir el texto. Un blurb de una palabra no la lleva: la capitular
+  // sola, con el párrafo vacío al lado, se lee como un fallo de maquetación.
+  const prosa = nodo.blurb.trim();
+  const conCapital = prosa.length > 20;
+  const capital = conCapital ? prosa.slice(0, 1) : "";
+  const restoProsa = conCapital ? prosa.slice(1) : prosa;
+
+  // Y el título parte la inicial para pintarla en rojo de rúbrica.
+  const nombre = nodo.nombre.trim() || "Aquí";
+  const inicial = nombre.slice(0, 1);
+  const restoNombre = nombre.slice(1);
+
+  // La línea de debajo del título: qué es este sitio. En el pueblo, su tipo
+  // del atlas; en un sub-lugar, de qué pueblo es; en el bosque, la región,
+  // que no es de nadie.
+  const queEs = enElPueblo ? (poi?.type ?? "Lugar") : (poiName ?? "Expansión Verdante");
 
   async function ir(id: string) {
     if (yendo || !nodo) return;
@@ -97,50 +136,83 @@ export default function LugarPage() {
   }
 
   return (
-    <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
-      <p className="eyebrow mb-2">
-        {region ? `${region.name} · ${location?.continent}` : location?.continent}
-        {!enElPueblo && poiName ? ` · ${poiName}` : ""}
-      </p>
-      <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text mb-2">
-        <i className={`fas ${nodo.icono} mr-3`} style={{ color: "var(--color-bronze)" }} />{nodo.nombre}
-      </h1>
-      <p className="font-body text-[15px] leading-relaxed mb-4" style={{ color: "var(--color-warm)" }}>{nodo.blurb}</p>
+    <main className={`tema-${nodo.tema}`}>
+      {/* ---------------------- LA CABECERA A SANGRE ---------------------- */}
+      <div className="lug-arte">
+        {img ? (
+          <img src={img} alt="" />
+        ) : (
+          <svg className="lug-sil" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
+            <path d={TEMAS[nodo.tema].silueta} fill="currentColor" />
+          </svg>
+        )}
+        {/* La bruma muere en el color de la hoja: es lo que cose el arte al
+            papel en vez de dejar un corte recto contra el texto. */}
+        <div className="lug-bruma" />
+        <div className="lug-titulo">
+          <p className="lug-rubrica">
+            {region ? `${region.name} · ${location?.continent}` : location?.continent}
+          </p>
+          <h1 className="lug-h1"><span className="ini">{inicial}</span>{restoNombre}</h1>
+          <p className="lug-sub">{queEs} · {moment.dateStr}</p>
+        </div>
+      </div>
 
-      {/* El clima solo donde se ve el cielo. En la taberna sobra. */}
-      {alAireLibre(nodo.id) && (
-        <>
-          <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5 font-ui text-[12px]"
-            style={{ color: "var(--color-warm)", border: "1px solid var(--color-line)", background: "var(--color-night)" }}>
-            <i className={`fas ${weather.icon}`} style={{ color: "var(--color-bronze)" }} />
-            <span className="font-semibold">{weather.condition}</span>
-            <span style={{ color: "var(--color-dim)" }}>· {weather.temp} · {moment.season}</span>
+      {/* -------------------------- LA HOJA ------------------------------- */}
+      <div className="lug-hoja lug-vell">
+        <div className="lug-cenefa" />
+        <div className="lug-dentro">
+          <div className="lug-caja">
+            <p className="lug-prosa">
+              {conCapital && <span className="lug-capital"><span className="letra">{capital}</span></span>}
+              {restoProsa}
+            </p>
+            <div className="lug-aparte">
+              <h3>De un vistazo</h3>
+              {/* El clima solo donde se ve el cielo. En la taberna sobra. */}
+              {alAireLibre(nodo.id) && (
+                <div className="lug-dato">
+                  <i className={`fas ${weather.icon}`} />
+                  <span>{weather.condition} · {weather.temp} · {moment.season}</span>
+                </div>
+              )}
+              <div className="lug-dato"><i className="fas fa-hourglass-half" /><span>{moment.dateStr}</span></div>
+              <div className="lug-dato">
+                <i className="fas fa-moon" />
+                <span>{moment.moonPhase}{moment.holiday ? ` · ${moment.holiday}` : ""}</span>
+              </div>
+              <div className="lug-dato">
+                <i className={`fas ${nodo.icono}`} />
+                <span>{queEs}{region ? ` · ${region.name}` : ""}</span>
+              </div>
+            </div>
           </div>
-          <ClimaEfectos weather={weather} />
-        </>
-      )}
 
-      {img && <img src={img} alt={nodo.nombre} loading="lazy" className="w-full rounded-xl border border-[var(--color-line)] mb-2" />}
+          {alAireLibre(nodo.id) && <ClimaEfectos weather={weather} />}
 
-      <Salidas desde={nodo.id} salidas={salidasDe(nodo, index)} onIr={ir} yendo={yendo} />
+          <Salidas desde={nodo.id} salidas={salidasDe(nodo, index)} onIr={ir} yendo={yendo} />
 
-      {/* Tienda, posada, tablón y saber siguen colgando del PUEBLO: no se han
-          repartido por sub-lugares en esta tanda, y meterlos en la taberna sin
-          decidirlo dejaría media plaza vacía sin avisar. */}
+          <NpcSection nodo={nodo} ambient={ambient} />
+        </div>
+      </div>
+
+      {/* ------------------- LA MESA, DEBAJO DE LA HOJA -------------------
+          Tienda, posada, tablón y saber siguen colgando del PUEBLO: no se
+          han repartido por sub-lugares, y meterlos en la taberna sin
+          decidirlo dejaría media plaza vacía sin avisar. Y siguen con el
+          estilo oscuro de la app, que es por lo que van AQUÍ y no dentro
+          del pergamino: son paneles oscuros con texto claro. */}
       {enElPueblo && poiName && location && (
-        <>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+          <p className="eyebrow mb-3">
+            <i className="fas fa-store mr-2" style={{ color: "var(--color-bronze)" }} />
+            Asuntos de {poiName}
+          </p>
           <ShopSection poiName={poiName} ambient={ambient} />
           <PosadaSection posada={!!poi?.services?.posada} />
-        </>
-      )}
-
-      <NpcSection nodo={nodo} ambient={ambient} />
-
-      {enElPueblo && poiName && location && (
-        <>
           {poi?.services?.tablon && <TablonSection poiName={poiName} />}
           <SaberRoll poiName={poiName} regionSlug={location.regionSlug} continent={location.continent} />
-        </>
+        </div>
       )}
     </main>
   );
