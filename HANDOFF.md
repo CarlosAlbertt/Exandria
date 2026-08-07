@@ -2,7 +2,139 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-06, noche)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-07)
+
+> **LAS MISIONES SE VUELVEN INDIVIDUALES, EL BOSQUE TIENE PROFUNDIDAD Y EL
+> SUSURRADO TIENE HISTORIA.** Tres ramas mergeadas a `master`.
+> **CON MIGRACIÓN: `schema_v24` — hay que ejecutarla.**
+>
+> **1 · Misiones individuales, en plan novela visual.** No se reconstruyó nada:
+> **estaba en tres cuartas partes** y se comprobó antes de escribir una línea.
+> Ya existían las tarjetas de PNJ (`NpcSection`), el `prompt` por PNJ
+> (`location_npcs`, v16) y la memoria por (PNJ, jugador) (`npc_memories`, v18).
+>
+> **Las cuatro decisiones las tomó el usuario antes de escribir código**: las
+> opciones de diálogo **las propone la IA**, la misión se asigna a
+> **`character_id` y no a `user_id`**, **solo la ven su jugador y el DM**, y se
+> **entrega hablando con el PNJ** que la encargó.
+>
+> ⚠️ **Cruzar la primera con la cuarta obligó a una decisión de diseño**: las
+> opciones de MISIÓN **no salen del modelo**. Si la de entregar dependiera de
+> que la IA se acordara, la misión no se podría cerrar unas veces y se cerraría
+> sin hacerla otras. Así que **la app las inyecta** (`opcionesDeMision`) y la IA
+> solo propone las de conversación. Misma línea que `bolsaDeArena` en el
+> caldero: la IA pone la voz, el estado lo mueve el servidor.
+>
+> **`schema_v24`**: `assigned_character_id` (FK a `characters.id`) y `npc_id`
+> (FK a `location_npcs.id`), las dos con **`on delete set null` y NO `cascade`**
+> como v14/v19 — borrar un PNJ al reordenar un POI no puede llevarse por
+> delante la misión que encargó.
+>
+> ⚠️ **Y la RLS de lectura se recrea.** La de v12 era
+> `status <> 'oculta' or is_dm()`, o sea que **todo el grupo veía toda misión no
+> oculta**: con misiones individuales eso hace que «individual» no signifique
+> nada. Ahora tres ramas — el DM lo ve todo, una **sin asignar** sigue siendo
+> del grupo, y una **asignada** solo la ve quien tiene esa ficha, **incluidas
+> sus fichas archivadas** (si no, archivar un personaje le borraría la misión de
+> la vista). `oculta` sigue sin enseñarse ni a su asignado.
+>
+> **Una sola llamada por turno**, no dos: el PNJ responde en personaje y adjunta
+> un bloque `<opciones>` que `parseOpciones` recorta antes de pintar **y antes
+> de que llegue al resumen de `npc_memories`**. Pedirlas aparte con
+> `generarJSON` doblaría el coste contra el `qwen2.5:14b` del túnel (timeout de
+> `/api/ia`: 180 s) y la conversación sería inusable. **Falla abierto**: sin
+> bloque, texto entero y cero opciones — o sea, la app de antes.
+>
+> **`/api/entregar-mision`** es el espejo de `aceptar-encargo` y comprueba las
+> cuatro condiciones **contra la base de datos**, no contra lo que dijo el
+> navegador: activa, de ESE PNJ, de TU ficha, y `eq("status","activa")` en el
+> propio update como anti-abuso.
+>
+> **El saber de una misión individual va SOLO a su dueño** (en el endpoint y en
+> el panel del DM): repartirlo al grupo delataría la misión que la RLS acaba de
+> esconder.
+>
+> ⚠️ Y **`aceptar-encargo` pierde el parche** de meter «_Aceptado por X_» dentro
+> del `body`: era texto a falta de columna donde apuntarlo, y **reescribía la
+> misión del DM cada vez**. Los encargos de tablón (sin `npc_id`) siguen siendo
+> del grupo y conservan la nota.
+>
+> **`useParty` pasa a traer `id`.** Sin él no se puede asignar por ficha, y
+> `user_id` no vale: un jugador tiene hasta 3 fichas. Comprobado que nadie
+> escribe filas de `party` de vuelta a la base.
+>
+> **Gate 38 `check-misiones`**, con **ocho mutaciones** — la que más importa es
+> la de `visiblePara` dejando pasar una misión asignada a otro, que es **la
+> fuga**. Los ids de ficha van escritos a mano en el script, por la lección de
+> `check-origen` y `check-tiendas`.
+>
+> **2 · La Expansión Verdante, por profundidad.** `data/encounters.ts` solo
+> traía `XP_BUDGET` y `CR_XP`: presupuesto, **nada geográfico**. `data/bosque.ts`
+> es la primera tabla que dice **qué vive dónde**.
+>
+> Tres franjas de fuera adentro: **linde, espesura y corazón**. ⚠️ El campo se
+> llama **`franja` y NO `depth`**: `SaberEntry.depth` habla de **cuánto sabes** y
+> este de **dónde estás**, y llamarlos igual los habría confundido para siempre.
+>
+> **42 entradas, 17 con ficha y 25 esperando extracción.** Se decidió escribir
+> la tabla entera y que el bestiario la alcance (van 151 de 501), que es más
+> barato que extraer 25 statblocks antes de que la tabla exista **y deja la
+> lista de extracción priorizada por lo que el bosque necesita**.
+>
+> ⚠️ **El prompt anterior estaba desfasado en la lista de extras**: Sátiro,
+> Sprite, Perro Parpadeante, Lobo y Micónido Adulto **ya estaban extraídos**. La
+> tabla de los 17 sí era correcta (6 sí, 11 no).
+>
+> **`PENDIENTES` va escrito a mano y esa es la gracia**: sin él, el gate no
+> podría distinguir **un nombre mal escrito** de **uno que aún no se ha
+> extraído**. Con él muerde por los dos lados — un nombre inventado no está en
+> ninguna de las dos listas, y **un lote que extraiga un pendiente falla hasta
+> que se le quite de ahí**.
+>
+> **Gate 39 `check-bosque`**, con **siete mutaciones**.
+>
+> **3 · Thordak, el Zigurat y el Susurrado.** `data/susurrado.ts`: **19 entradas
+> nuevas, `SABER` pasa de 209 a 228** (14 en Tal'Dorei, 5 en Exandria).
+>
+> No son tres temas sueltos: Thordak dejó Tal'Dorei sin ejército ni consejo
+> justo cuando hacía falta mirar debajo de Piedrablanca, el Zigurat es por donde
+> se coló lo que había debajo, y el Susurrado es quien se colaba.
+>
+> Prefijo **`sus:`** propio y no `cl:` (no son lore de continente), con su rama
+> en `placeOf`. **Todas `profundo`**, como la Calamidad. Tres cuelgan de POI
+> (Emon, Piedrablanca) para que `SaberRoll` tenga dónde dispararse.
+>
+> ⚠️ **Redacción PROPIA.** La wiki de Critical Role se leyó para documentarse
+> —los hechos son de la ambientación— pero **de su prosa no se copia ni se
+> traduce una línea**, igual que con los blurbs del Monster Manual.
+>
+> Las comprobaciones van **dentro de `check-lore`**, que es quien ya responde
+> por la integridad de `SABER`; un `check-susurrado.ts` aparte serían dos
+> fuentes de verdad. (La lección de `check-forja` / `check-forjado`.)
+>
+> > **La mutación encontró un fallo real, y van SEIS.** La comprobación de «un
+> > personaje recién hecho no sabe ninguna» **no bastaba**: un recién hecho no
+> > tiene continente de origen, así que un ámbito de tipo `continente` **se le
+> > escapaba entero** — pero en cuanto alguien fuera de Tal'Dorei, toda la
+> > historia de Thordak le habría salido sabida de salida. Se añadió la regla
+> > directa: ninguna de las tres puede tener ámbito `continente`. **Y otra vez
+> > lo que encuentra la mutación es una regla que casi no podía fallar.**
+>
+> **Los 39 gates en verde YA SOBRE EL `master` MERGEADO** (no solo sobre la base
+> de cada rama), con `tsc --noEmit` y `next build` limpios.
+> **Sin probar en la app viva.**
+>
+> ⚠️ **Dos avisos de proceso de esta sesión, dichos y no escondidos:**
+> - **Un pipe se tragó un exit code**: `npx tsc --noEmit | head` devuelve el de
+>   `head`, así que se dio por bueno un typecheck que traía un error de caché de
+>   `.next` de otra rama. Está en el prompt desde hace tandas y volvió a pasar.
+> - **Cuatro mutaciones salieron «verdes» sin haberse aplicado**: los `perl -0pi`
+>   multilínea usaban `\n` y el working copy tiene **CRLF**. Parecía que el gate
+>   no vigilaba nada. **Al mutar, comprueba SIEMPRE con `git diff` que la
+>   mutación entró** antes de sacar conclusiones — de repetirlas bien salió el
+>   hueco real del punto 3.
+
+## 🚦 Antes de eso (2026-08-06, noche)
 
 > **EL BESTIARIO EMPIEZA A LLENARSE, Y AHORA SE SABE CUÁNTO FALTA.** En
 > `master`. **Sin migración.**
