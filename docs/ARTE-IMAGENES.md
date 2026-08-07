@@ -1,164 +1,157 @@
 # Las imágenes: tamaños, calidad y prompts
 
-Qué tiene que cumplir cada imagen para que **encaje sin recortes feos** en los
-sitios donde la app la usa. Los números salen de la maqueta, no de un estándar
-genérico.
+> **Corregido el 2026-08-07 mirando los retratos de `CarlosAlbertt/Eranol-APP`
+> (`public/img/npcs/`), que son los que al usuario le gustan.** La versión
+> anterior de este documento pedía 2:3, gouache de cuento y encuadre de cintura
+> para arriba. **Los tres estaban mal.** Lo que funciona es otra cosa.
 
 ---
 
 ## 1 · Retratos de PNJ
 
-### Dónde se usa la MISMA imagen (y esto es lo que manda todo)
+### Lo que hacen los de Eranol, medido
 
-| Sitio | Tamaño real | Proporción |
-|---|---|---|
-| Medallón de la lista | 106 × 136 px | 0,78 (casi cuadrado) |
-| Ventana de diálogo, **escritorio** | 360 × hasta 780 px | **0,46** (muy alta y estrecha) |
-| Ventana de diálogo, **móvil** | hasta 1020 × 190 px | **5,4** (muy ancha y baja) |
+| | |
+|---|---|
+| **Proporción** | **1:1 cuadrada** |
+| **Tamaño** | **1024 × 1024** |
+| **Estilo** | **Pintura digital semirrealista.** Pincelada empastada, **sin ninguna línea de tinta**, sin cel shading |
+| **Encuadre** | **Busto**: cabeza y pecho. La cara ocupa buena parte del cuadro |
+| **Fondo** | El sitio donde está, **pintado y desenfocado**: antorchas, arcos de piedra, la barra de la taberna, gente al fondo |
+| **Luz** | Dramática y cálida. Antorcha o lumbre a un lado, sombra al otro |
+| **Peso** | 620–890 KB en PNG |
 
-⚠️ **El mismo archivo tiene que sobrevivir a una columna altísima y a una banda
-apaisada.** Es el requisito difícil, y es lo que fija la composición.
+Lo que hace que se vean bien **no es el personaje: es que están DENTRO de un
+sitio**, con profundidad de campo y luz de fuego. La que te generó la IA estaba
+plana, entintada y con margen blanco. De ahí la diferencia.
+
+### Lo que cambio en la app por esto
+
+⚠️ **Adapto el diseño a la imagen, no la imagen al diseño.** La ventana de
+diálogo tenía una columna vertical de 360×780, que **destroza una imagen
+cuadrada**. Pasa a ser un **retrato cuadrado enmarcado**, como en Eranol. Tú
+generas cuadrado y ya.
 
 ### Especificación
 
 | | |
 |---|---|
-| **Proporción** | **2:3 vertical** |
-| **Tamaño** | **1024 × 1536 px** |
-| **Formato** | **WebP** calidad 82 (o JPG 85 si tu herramienta no saca WebP) |
-| **Peso** | **≤ 250 KB**. Se cargan varias a la vez en la lista de PNJ |
-| **Fondo** | Opaco, sin transparencia — encima va un velo oscuro degradado |
-| **Color** | sRGB |
+| **Proporción** | **1:1** |
+| **Tamaño** | **1024 × 1024** |
+| **Formato** | **WebP** calidad 82 (los PNG de 800 KB son mucho para el móvil) |
+| **Peso** | **≤ 300 KB** |
+| **Fondo** | Opaco. **Sin margen blanco, sin marco, sin borde** — el marco lo pone la app |
+| **Composición** | Ojos a un tercio de la altura; cara centrada o ligeramente a un lado |
 
-### La composición, que es lo que de verdad importa
+### Prompt
 
-- **Cara centrada horizontalmente.** En la columna de escritorio se recorta
-  **un 15 % por cada lado**: lo que pongas ahí no se ve.
-- **Ojos al 28 % desde arriba.** En móvil solo se ve **una banda del 12 % de la
-  altura** alrededor de esa línea. Si la cara está en el centro, en móvil sale
-  el pecho.
-- **De cintura para arriba**, no plano entero. Un cuerpo completo se convierte
-  en una cabeza diminuta en el medallón.
-- **Del 45 % hacia abajo se puede perder entero.** Ahí van el nombre y la barra
-  de confianza. No pongas nada que importe.
-- **Mirando a cámara o a tres cuartos.** De perfil se lee mal en el medallón.
+Cambia solo lo de `[corchetes]`.
 
 ```
-┌──────────────┐  0 %
-│   ░ aire ░   │
-│  ◉  ojos  ◉  │  ← 28 %
-│   la cara    │
-├──────────────┤  45 %
-│ se tapa con  │
-│  el nombre   │
-└──────────────┘  100 %
-   ↑15%    15%↑
-   se recorta en escritorio
+Retrato de busto de [Mirna Halbrook, tabernera humana de unos cincuenta años,
+brazos fuertes de cargar barriles, pelo castaño recogido y algo suelto, mirada
+cansada pero firme, delantal de cuero sobre camisa de lino remangada],
+personaje de una campaña de Dungeons & Dragons.
+
+ESTILO: pintura digital semirrealista de personaje, tipo arte de D&D o de
+Magic: The Gathering. Pincelada empastada y visible, textura de óleo digital,
+volumen y piel con detalle. SIN línea de tinta, SIN contorno negro, SIN cel
+shading, SIN estilo cómic, SIN anime, NO fotografía.
+
+ENCUADRE: composición cuadrada 1:1, plano de busto (cabeza y pecho), la cara
+ocupando buena parte del encuadre, ojos aproximadamente a un tercio de la
+altura desde arriba. Mirando a cámara o a tres cuartos.
+
+FONDO: el interior de [una taberna de pueblo, con vigas bajas de madera, la
+lumbre encendida al fondo, botellas en un estante y parroquianos borrosos],
+pintado con profundidad de campo, desenfocado, más oscuro que el personaje.
+
+LUZ: cálida y dramática, de [la lumbre] a un lado de la cara, con la sombra
+cayendo al otro lado. Contraste marcado entre el personaje iluminado y el fondo
+en penumbra.
+
+Sin texto, sin firma, sin marca de agua, sin marco, sin borde blanco,
+sin viñeteado añadido.
 ```
-
-### Prompt para generar el retrato
-
-Cambia solo lo que va en `[corchetes]`. Lo demás mantiene el estilo entre todos
-los PNJ, que es lo que hace que la galería se vea de una pieza.
-
-```
-Retrato de medio cuerpo de [Mirna Halbrook, tabernera de unos cincuenta años,
-brazos fuertes de cargar barriles, pelo recogido, mirada cansada pero firme,
-delantal de cuero sobre camisa de lino],
-en el mundo de una campaña de D&D de fantasía medieval europea.
-
-ESTILO: pintura ilustrada tipo libro de cuentos, gouache y acuarela, pincelada
-visible, luz cálida de tarde, colores saturados pero naturales, aire de
-Estudio Ghibli y de acuarela de viaje. NO fotorrealista, NO 3D, NO anime
-moderno, NO línea de cómic marcada.
-
-ENCUADRE: retrato vertical 2:3, de la cintura para arriba, sujeto centrado
-horizontalmente, ojos situados aproximadamente al 28 % de altura desde el borde
-superior, con aire libre por encima de la cabeza. Mirando a cámara o a tres
-cuartos.
-
-FONDO: sencillo y desenfocado, del sitio donde está ([el interior de una
-taberna de vigas bajas]), sin detalles que compitan con la cara, sin texto,
-sin marco ni borde, sin viñeteado.
-
-Sin firma, sin marca de agua, sin bordes decorativos.
-```
-
-⚠️ **No le pidas marco ni orla al generador.** El marco lo pone la app —dorado
-en el valle, plata en la ciudadela— y si la imagen ya trae uno, se ven dos.
 
 ---
 
 ## 2 · Ilustración del lugar (la cabecera a sangre)
 
-Es **la imagen que hace que la pantalla sea bonita**. El resto es marco.
-
 | | |
 |---|---|
 | **Proporción** | **16:9** |
-| **Tamaño** | **1920 × 1080 px** |
-| **Formato** | WebP calidad 82 |
-| **Peso** | **≤ 400 KB** |
+| **Tamaño** | **1920 × 1080** |
+| **Formato** | WebP calidad 82 · **≤ 400 KB** |
 
 ### Composición
 
-- La banda ocupa **todo el ancho** y como mucho **460 px de alto**, así que del
-  original **solo se ve una franja horizontal del centro-arriba**.
-- **El tercio inferior se pierde**: encima va el degradado que funde con el
-  pergamino, y sobre él el nombre del sitio.
-- **El horizonte, a media altura o algo por debajo.** Si lo pones arriba, en
-  pantalla ancha solo se ve cielo.
-- **Nada importante en el centro-abajo**: ahí cae el título en letra gótica.
+- Se ve **una franja horizontal**: todo el ancho, como mucho 460 px de alto.
+- **El tercio inferior se pierde** bajo el degradado y el título.
+- **Horizonte a media altura o algo por debajo.**
 
-### Prompt para la ilustración del lugar
+### Prompt
 
 ```
-Paisaje ilustrado de [Byroden, un pueblo de montaña reconstruido: casas de
-entramado de madera con tejado de losa, humo de fragua, prados de flores
-silvestres, un lago quieto, montañas nevadas cerrando el valle al fondo,
-ovejas y aldeanos pequeños entre las flores],
-en el mundo de una campaña de D&D de fantasía medieval europea.
+Paisaje de [Byroden, un pueblo de montaña reconstruido: casas de entramado de
+madera con tejado de losa, humo de fragua, prados de flores silvestres, un lago
+quieto, montañas nevadas cerrando el valle al fondo, ovejas y aldeanos pequeños
+entre las flores], en una campaña de Dungeons & Dragons.
 
-ESTILO: pintura ilustrada tipo libro de cuentos, gouache y acuarela, pincelada
-visible, verdes ricos, luz de mediodía de primavera, nubes altas, aire de
-Estudio Ghibli. NO fotorrealista, NO 3D.
+ESTILO: pintura digital semirrealista, pincelada empastada y visible, textura de
+óleo digital, aire de arte de portada de manual de rol. SIN línea de tinta, SIN
+contorno, SIN cel shading, NO fotografía.
 
 ENCUADRE: apaisado 16:9, plano general amplio, horizonte a media altura o un
-poco por debajo. El tercio inferior debe ser tranquilo y sin detalle importante
-(se cubre con un degradado y un título). Sin personajes en primer plano grandes.
+poco por debajo. El tercio inferior tranquilo y sin detalle importante.
 
-Sin texto, sin marco, sin firma, sin marca de agua.
+LUZ: [mediodía de primavera, sol alto, nubes altas, verdes vivos].
+
+Sin texto, sin firma, sin marca de agua, sin marco.
 ```
 
-### Variantes por tema, que es lo que pediste
+### Variantes por tema
 
-El sitio declara su `tema` y de ahí sale la piel entera de la pantalla. Cambia
-la parte descriptiva del prompt, no el estilo:
+Cambia la descripción y la luz, **nunca el bloque de ESTILO**: eso es lo que
+mantiene todo de una pieza.
 
-| Tema | Sitio | Qué pedirle a la imagen |
+| Tema | Sitio | Qué pedirle |
 |---|---|---|
-| **valle** | Byroden | Prados de flor, agua quieta, montañas, sol de primavera, verdes |
-| **ciudadela** | Emon | Agujas blancas sobre la bahía, mármol, banderas de gremio, cielo alto y frío, plata y carmesí |
-| **bosque** | Expansión Verdante | Dosel cerrado, luz en columnas entre los troncos, niebla baja, verdes profundos |
-| **yermo** | Ruinas | Ceniza, sin pájaros, luz plana, ocres y grises |
+| **valle** | Byroden | Prados de flor, lago, montañas nevadas · mediodía de primavera |
+| **ciudadela** | Emon | Agujas blancas sobre la bahía, mármol, banderas de gremio · luz alta y fría |
+| **bosque** | Expansión Verdante | Dosel cerrado, columnas de luz entre troncos, niebla baja · verde profundo |
+| **yermo** | Ruinas | Ceniza, torre partida, sin pájaros · luz plana y gris |
 
 ---
 
-## 3 · Dónde se suben
+## 3 · Una tensión que hay que decidir, y va dicha
 
-`location_npcs.portrait` y la imagen del sitio guardan **una URL**, así que la
-imagen tiene que estar colgada en algún sitio público. El proyecto ya tiene
-Supabase Storage montado (`supabase/storage-assets.sql`), que es el sitio
-natural: la subes y pegas la URL en **Panel DM › PNJs** o en **Panel DM ›
-Lugares**, sin desplegar nada.
+El **paisaje alpino** que pasaste primero es **gouache de cuento**: suave, claro,
+sin dramatismo. Los **retratos de Eranol** son **pintura digital oscura y
+dramática**. Son dos estilos distintos, y **si se mezclan se nota**.
+
+**Recomendación**: manda el de Eranol —pintura digital semirrealista— **también
+en los paisajes**, y la diferencia entre Byroden y una cripta la pone **la luz**,
+no el estilo. Byroden a mediodía sale luminoso igual, pero pintado como los
+retratos. Es lo que hacen los manuales de rol.
+
+Los prompts de arriba ya están escritos así.
 
 ---
 
-## 4 · Comprobación rápida antes de subir
+## 4 · Dónde se suben
 
-- [ ] 2:3 y 1024×1536 (retrato) · 16:9 y 1920×1080 (lugar)
-- [ ] Menos de 250 KB / 400 KB
-- [ ] Ojos al 28 % de altura (retrato) · horizonte a media altura (lugar)
-- [ ] Nada importante en el 15 % de cada lado (retrato)
-- [ ] Nada importante en el tercio inferior (lugar)
-- [ ] Sin marco, sin texto, sin firma
+`location_npcs.portrait` guarda **una URL**. El proyecto ya tiene Supabase
+Storage (`supabase/storage-assets.sql`): subes y pegas la URL en **Panel DM ›
+PNJs**, sin desplegar nada.
+
+---
+
+## 5 · Comprobación antes de subir
+
+- [ ] 1024×1024 (retrato) · 1920×1080 (lugar)
+- [ ] WebP y por debajo de 300 KB / 400 KB
+- [ ] **Sin margen blanco, sin marco, sin firma**
+- [ ] Sin contorno de tinta
+- [ ] Retrato: busto, ojos a un tercio, fondo del sitio desenfocado
+- [ ] Lugar: horizonte a media altura, tercio inferior tranquilo
