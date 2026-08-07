@@ -2,7 +2,80 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-07)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-07, noche)
+
+> **EL JUGADOR SE MUEVE SOLO, POR TARJETAS.** Rama `feat/navegacion-lugares`,
+> mergeada a `master`. **CON MIGRACIÓN: `schema_v25` — sin ejecutar.**
+>
+> Desde Byroden salen **Taberna, Iglesia, Cementerio, Ayuntamiento y El bosque**;
+> el bosque lleva a **la linde**, y de ahí a la espesura y al corazón. En cada
+> sitio están **sus** PNJ, no los del pueblo entero.
+>
+> **1 · El modelo es un GRAFO de nodos**, no «un POI tiene una lista de sitios».
+> Lo segundo no aguanta el bosque: **la Expansión Verdante es una región, no un
+> POI**, y sus franjas no son sub-lugares de Byroden. Un nodo = una tarjeta:
+> `poi:Byroden`, `sub:Byroden/taberna`, `franja:linde`.
+>
+> ⚠️ **Los nodos `poi:` NO se escriben a mano**: se derivan del atlas. Una
+> segunda lista de pueblos se desincronizaría del mapa en cuanto el DM añadiera
+> uno — el fallo que ya tuvo `regionEntries()`.
+>
+> **2 · Cada jugador se mueve por su cuenta**, y la posición vive en
+> **`characters.play_state.sitio`**, no en `app_config`. La razón que decide:
+> **`characters` SÍ está en la publicación realtime y `app_config` NO** (lección
+> pagada cinco veces). **Sin `sitio` se está donde el grupo**, así que quien no
+> se haya movido nunca ve exactamente lo de antes y el DM conserva el ancla.
+>
+> ⚠️ **El agujero que tenía y va arreglado**: si el DM plantaba al grupo en Emon,
+> quien se había metido en la taberna de Byroden **se quedaba allí solo**. El
+> `sitio` guarda ahora **también el ancla desde la que se movió** y caduca en
+> cuanto el grupo se muda — sin que el DM limpie nada ni haya que escribir en la
+> ficha de cinco personas.
+>
+> **3 · `schema_v25`: `location_npcs.venue`.** ⚠️ **NULL = el pueblo entero**, que
+> es donde salían todos antes: **la migración no esconde a ningún PNJ ya creado**.
+> El selector está en **Panel DM › PNJs** y solo ofrece los sitios de SU pueblo
+> más las franjas.
+>
+> **4 · Panel DM › Lugares**, nuevo: nombre, descripción e **imagen por tarjeta**,
+> en `app_config` y **sin desplegar** — las imágenes las hace el usuario. Sin
+> imagen la tarjeta sale con su icono, no con un hueco roto. Al guardar se
+> limpian los campos vacíos: un `imagen: ""` pisaría la semilla con nada.
+>
+> El clima **solo se pinta al aire libre** (en la taberna sobra) y el ambiente
+> que lee la IA lleva ahora **dónde estás**, para que el tabernero y el
+> sepulturero no hablen igual. **Tienda, posada, tablón y saber siguen colgando
+> del pueblo**: no se han repartido por sitios en esta tanda.
+>
+> **Gate 40 `check-lugares`**, con **once mutaciones**. Dos hallazgos reales:
+>
+> > **El gate encontró un fallo de diseño ANTES de escribir la interfaz.** La
+> > primera invariante era «todo nodo tiene salidas», y Emon la tumbaba: un
+> > pueblo sin sub-lugares no tiene adónde llevarte y **no pasa nada**, porque es
+> > el ancla donde el DM te planta. La que muerde de verdad es **«todo nodo al
+> > que se puede ENTRAR tiene por dónde salir»** — sin eso el jugador pulsa una
+> > tarjeta y se queda encerrado sin más botón que recargar.
+> >
+> > **Y la mutación destapó otra regla vacía, van siete.** «El override no puede
+> > cambiar el id» pasaba siempre porque el caso de prueba **ni siquiera lo
+> > intentaba**. El tipo lo prohíbe, pero el override **no viene del tipo: viene
+> > de un JSON de `app_config` que escribe el DM**, y ahí TypeScript no llega.
+>
+> **Los 40 gates en verde sobre el `master` mergeado**, `tsc` y `next build`
+> limpios. **Sin probar en la app viva.**
+>
+> **Lo que esta tanda NO hace, y va dicho**: no se pueden **crear** sitios nuevos
+> desde el panel (solo editar los que trae la semilla: Byroden y las tres
+> franjas); los demás pueblos siguen sin sub-lugares; y **tiendas y tablón no se
+> han movido** a los sitios.
+>
+> **Y Byroden queda corregido**: el usuario avisó de que ardió en **795 PD** pero
+> la campaña va por el **836** — son 41 años, está **reconstruido**. La entrada de
+> saber decía «un pueblo del que no queda nada». Ahora dice que se levantó sobre
+> sus ruinas y que en el cementerio hay una franja de lápidas con la misma fecha,
+> que además engancha con la tarjeta del cementerio.
+
+## 🚦 Antes de eso (2026-08-07)
 
 > **LAS MISIONES SE VUELVEN INDIVIDUALES, EL BOSQUE TIENE PROFUNDIDAD Y EL
 > SUSURRADO TIENE HISTORIA.** Tres ramas mergeadas a `master`.
