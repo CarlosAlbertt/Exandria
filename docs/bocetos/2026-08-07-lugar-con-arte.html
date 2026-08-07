@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exandria · /lugar con el arte de verdad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+body.tema-valle{
+  --hoja:#f4ead1; --hoja-2:#ebdfc0; --hoja-3:#d8c9a0;
+  --tinta:#3b2c1b; --tinta-2:#6b573c; --tinta-3:#8d7a5c;
+  --acento:#a3301d; --acento-2:#c4472f;
+  --metal:#a9812c; --metal-claro:#dcb453; --metal-hondo:#6f5215;
+  --natura:#4b6a35; --fondo:#1d1710;
+}
+body.tema-ciudadela{
+  --hoja:#eef0f4; --hoja-2:#e2e6ee; --hoja-3:#c8d0de;
+  --tinta:#232b3a; --tinta-2:#4a556b; --tinta-3:#78839a;
+  --acento:#7d1f2e; --acento-2:#a83145;
+  --metal:#8a94a8; --metal-claro:#cfd7e4; --metal-hondo:#525b70;
+  --natura:#2d4a8a; --fondo:#0f1420;
+}
+:root{--display:"Cinzel",serif;--body:"EB Garamond",Georgia,serif;--gotica:"UnifrakturMaguntia",serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--body);font-size:18px;line-height:1.7;color:var(--tinta);background:var(--fondo);transition:background .4s}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+img{display:block;max-width:100%}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.vell{position:relative}
+.vell::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.38;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.45'/></svg>")}
+
+.bench{position:fixed;top:0;left:0;right:0;z-index:300;background:rgba(10,8,6,.92);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--metal-hondo);padding:8px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bench b{font-family:var(--display);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--metal-claro)}
+.bench button{font-family:var(--display);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:9px 12px;border:1px solid var(--metal-hondo);border-radius:2px;color:#eee6d6;min-height:40px}
+.bench button:hover{background:rgba(255,255,255,.1)}
+
+/* ---- marco de oro reutilizable: es lo que enmarca TODA imagen ---- */
+/* `display:block` NO es opcional: va en un <span> dentro de un <button>, y en
+   inline el ancho y el alto no se aplican — el marco sale como una tira. */
+.marco-oro{display:block;position:relative;padding:7px;background:
+  linear-gradient(145deg,var(--metal-claro),var(--metal) 40%,var(--metal-hondo) 75%,var(--metal-claro));
+  box-shadow:0 4px 16px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.35)}
+.marco-oro::before{content:"";position:absolute;inset:3px;border:1px solid rgba(0,0,0,.35);pointer-events:none;z-index:2}
+.marco-oro > img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
+
+.escena{min-height:100dvh;padding-top:52px}
+.arte{position:relative;height:min(52dvh,420px);overflow:hidden;background:linear-gradient(180deg,#93b7d6,#c9dbc2 55%,#7d9a55)}
+.arte .bruma{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.12) 68%,var(--hoja) 100%)}
+.arte .sil{position:absolute;left:0;right:0;bottom:0;height:60%;color:var(--fondo);opacity:.5}
+.arte .titulo{position:absolute;left:0;right:0;bottom:24px;text-align:center;padding:0 20px}
+.rubrica{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--acento);margin:0 0 6px}
+.h1{font-family:var(--gotica);font-size:clamp(46px,9vw,86px);line-height:.95;margin:0;color:var(--tinta);
+  text-shadow:0 2px 0 rgba(255,255,255,.4),0 6px 18px rgba(0,0,0,.3)}
+.h1 .ini{color:var(--acento)}
+.sub{font-family:var(--display);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--tinta-2);margin:9px 0 0}
+
+.hoja{background:radial-gradient(100% 60% at 50% 0%,#ffffff2e,transparent 55%),var(--hoja);
+  border-top:2px solid var(--metal-hondo);padding:0 0 70px;transition:background .4s}
+.cenefa{height:15px;background:repeating-linear-gradient(90deg,var(--metal) 0 6px,transparent 6px 14px),
+  linear-gradient(180deg,rgba(0,0,0,.12),transparent);opacity:.55}
+.dentro{max-width:1280px;margin:0 auto;padding:0 28px}
+
+.caja{display:grid;gap:30px;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start;padding:32px 0 6px}
+@media (max-width:900px){.caja{grid-template-columns:1fr}}
+.capital{position:relative;float:left;width:90px;height:90px;margin:5px 18px 6px 0;display:grid;place-items:center;
+  border:2px solid var(--metal-hondo);
+  background:radial-gradient(circle at 28% 22%,rgba(255,255,255,.6),transparent 55%),
+    linear-gradient(150deg,var(--metal-claro),var(--metal) 55%,var(--metal-hondo));
+  box-shadow:0 3px 8px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.4)}
+.capital .letra{font-family:var(--gotica);font-size:56px;line-height:1;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6)}
+.prosa{font-size:19.5px;line-height:1.82;margin:0;text-align:justify;hyphens:auto}
+.prosa .rojo{color:var(--acento);font-weight:600}
+.aparte{border:1px solid var(--hoja-3);background:linear-gradient(180deg,#ffffff44,var(--hoja-2));padding:20px 22px;
+  box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.aparte h3{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--acento);margin:0 0 12px}
+.dato{display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px dashed var(--hoja-3);font-size:17px}
+.dato:last-child{border:0}
+.dato i{width:26px;color:var(--metal-hondo);font-size:15px}
+
+.sect{display:flex;align-items:center;justify-content:center;margin:44px 0 22px}
+.sect .cinta{position:relative;padding:10px 34px;border:1px solid var(--metal-hondo);
+  background:linear-gradient(180deg,#ffffff55,var(--hoja-2));font-family:var(--display);font-size:12px;font-weight:700;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--acento);box-shadow:0 2px 5px rgba(0,0,0,.16)}
+.sect .cinta::before,.sect .cinta::after{content:"";position:absolute;top:50%;width:min(22vw,150px);height:2px;
+  background:repeating-linear-gradient(90deg,var(--metal) 0 3px,transparent 3px 8px);opacity:.7}
+.sect .cinta::before{right:100%;margin-right:18px}.sect .cinta::after{left:100%;margin-left:18px}
+
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.puerta{position:relative;text-align:left;min-height:44px;padding:20px 20px 20px 82px;overflow:hidden;
+  border:1px solid var(--hoja-3);background:linear-gradient(180deg,#ffffff55,var(--hoja-2));
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 3px 10px rgba(0,0,0,.16);
+  transition:border-color .2s,transform .2s ease-out,box-shadow .2s}
+.puerta:hover,.puerta:focus-visible{border-color:var(--metal);transform:translateY(-3px);outline:none;
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 26px rgba(0,0,0,.24)}
+.puerta::before{content:"";position:absolute;left:0;top:0;bottom:0;width:9px;
+  background:repeating-linear-gradient(45deg,var(--metal) 0 3px,var(--metal-hondo) 3px 7px);opacity:.9}
+.puerta .lacre{position:absolute;left:28px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:999px;
+  display:grid;place-items:center;color:#fff;font-size:17px;
+  background:radial-gradient(circle at 34% 26%,var(--acento-2),var(--acento) 72%);
+  box-shadow:inset 0 -2px 5px rgba(0,0,0,.4),inset 0 2px 4px rgba(255,255,255,.3),0 2px 6px rgba(0,0,0,.3)}
+.puerta .t{display:block;font-family:var(--display);font-weight:700;font-size:17px;color:var(--tinta)}
+.puerta .s{display:block;font-size:16.5px;color:var(--tinta-2);margin-top:5px;line-height:1.5;font-style:italic}
+
+/* ---- LOS PNJ: la imagen es CUADRADA, así que el marco es cuadrado ---- */
+.row{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;padding:4px 0 8px}
+.med{flex:0 0 172px;text-align:center;min-height:44px;transition:transform .2s ease-out}
+.med:hover,.med:focus-visible{transform:translateY(-5px);outline:none}
+.med .marco-oro{width:172px;height:172px}
+.med:hover .marco-oro{box-shadow:0 10px 28px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.5)}
+.med .n{display:block;font-family:var(--display);font-weight:700;font-size:15px;color:var(--tinta);margin-top:12px}
+.med .r{display:block;font-size:16px;color:var(--tinta-3);font-style:italic}
+.med .bang{color:var(--acento);margin-left:5px;font-size:11px}
+
+/* ================= VENTANA ================= */
+.scrim{position:fixed;inset:0;z-index:250;padding:20px;display:none;align-items:center;justify-content:center;
+  background:rgba(12,10,8,.78);backdrop-filter:blur(5px);animation:fade .2s ease-out}
+.scrim.open{display:flex}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes up{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:none}}
+.win{position:relative;width:min(1000px,100%);max-height:min(90dvh,760px);display:flex;overflow:hidden;
+  border:1px solid var(--metal-hondo);background:var(--hoja);animation:rise .26s cubic-bezier(.2,.8,.3,1);
+  box-shadow:0 34px 90px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.5)}
+/* izquierda: retrato CUADRADO enmarcado + quién es, sobre pergamino */
+.izq{flex:0 0 356px;padding:22px;border-right:1px solid var(--hoja-3);
+  background:linear-gradient(180deg,#ffffff3d,transparent);display:flex;flex-direction:column}
+.izq .marco-oro{width:312px;height:312px;margin:0 auto}
+.izq .nm{font-family:var(--gotica);font-size:32px;line-height:1.08;color:var(--tinta);margin-top:18px;text-align:center}
+.izq .rl{font-size:16.5px;color:var(--tinta-2);font-style:italic;text-align:center;margin-top:2px}
+.tr{margin-top:16px}
+.tr .bar{height:9px;background:rgba(0,0,0,.14);border:1px solid var(--metal-hondo);overflow:hidden}
+.tr .bar i{display:block;height:100%;width:62%;background:linear-gradient(90deg,var(--metal-hondo),var(--metal-claro));transition:width .45s}
+.tr .lb{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--tinta-3);margin-top:7px;text-align:center}
+
+.talk{flex:1;min-width:0;display:flex;flex-direction:column}
+.bar-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 12px 14px 24px;
+  border-bottom:1px solid var(--hoja-3);background:linear-gradient(180deg,#ffffff4d,transparent)}
+.bar-top .place{font-family:var(--display);font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--acento)}
+.x{width:44px;height:44px;display:grid;place-items:center;color:var(--tinta-3);border:1px solid transparent}
+.x:hover,.x:focus-visible{color:var(--acento);border-color:var(--hoja-3);background:var(--hoja-2);outline:none}
+.body{flex:1;overflow-y:auto;padding:26px 26px 8px}
+.say{font-size:20px;line-height:1.84;margin:0;position:relative;padding-left:32px;text-align:justify}
+.say .cald{position:absolute;left:0;top:2px;font-family:var(--gotica);font-size:25px;color:var(--acento)}
+.opts{display:flex;flex-direction:column;gap:12px;padding:20px 26px 4px}
+.opt{position:relative;text-align:left;padding:16px 17px 16px 44px;min-height:44px;
+  border:1px solid var(--hoja-3);background:linear-gradient(180deg,#ffffff55,var(--hoja-2));color:var(--tinta);
+  font-family:var(--body);font-size:18.5px;box-shadow:0 1px 0 rgba(255,255,255,.55) inset;
+  transition:border-color .18s,transform .18s ease-out,box-shadow .18s}
+.opt::before{content:"❧";position:absolute;left:16px;top:15px;color:var(--metal);font-size:16px;transition:color .18s}
+.opt:hover:not(:disabled),.opt:focus-visible{border-color:var(--metal);transform:translateX(5px);outline:none;
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 16px rgba(0,0,0,.18)}
+.opt:hover:not(:disabled)::before{color:var(--acento)}
+.opt:disabled{opacity:.45;text-decoration:line-through;cursor:not-allowed}
+.cd{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-family:var(--display);font-size:10.5px;
+  font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--natura);
+  border:1px solid color-mix(in srgb,var(--natura) 45%,transparent);
+  background:color-mix(in srgb,var(--natura) 10%,transparent);padding:3px 9px;margin-right:10px}
+.foot{padding:16px 26px 24px;display:flex;gap:10px;border-top:1px solid var(--hoja-3);margin-top:14px}
+.foot input{flex:1;min-height:44px;background:#ffffffaa;border:1px solid var(--hoja-3);padding:0 16px;color:var(--tinta);
+  font-family:var(--body);font-size:18px;font-style:italic}
+.foot input:focus{outline:none;border-color:var(--metal)}
+.foot .send{min-width:58px;min-height:44px;color:#fff;font-weight:700;background:linear-gradient(180deg,var(--acento-2),var(--acento))}
+.tirando{margin:20px 26px 0;padding:26px;text-align:center;border:1px solid var(--metal-hondo);
+  background:radial-gradient(80% 130% at 50% 0%,color-mix(in srgb,var(--metal-claro) 55%,transparent),transparent)}
+.tirando .d20{font-size:42px;color:var(--acento);animation:girar 1.7s cubic-bezier(.5,.05,.5,.95) infinite}
+@keyframes girar{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.14)}100%{transform:rotate(360deg) scale(1)}}
+.tirando .q{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin-top:15px}
+.tirando .s{font-size:17px;color:var(--tinta-2);font-style:italic;margin-top:5px}
+.note{font-family:var(--display);font-size:11px;color:var(--tinta-3);border-left:3px solid var(--metal);
+  padding:12px 16px;margin:40px 0 0;line-height:1.8}
+
+@media (max-width:720px){
+  body{font-size:17px}
+  .arte{height:min(40dvh,300px)}
+  .dentro{padding:0 16px}
+  .capital{width:70px;height:70px}.capital .letra{font-size:44px}
+  .prosa,.say{text-align:left}
+  .med{flex:0 0 140px}.med .marco-oro{width:140px;height:140px}
+  .scrim{padding:0;align-items:flex-end}
+  .win{flex-direction:column;max-height:94dvh}
+  /* móvil: el retrato cuadrado se hace pequeño y va AL LADO del nombre */
+  .izq{flex:0 0 auto;flex-direction:row;align-items:center;gap:16px;padding:16px;
+    border-right:0;border-bottom:1px solid var(--hoja-3)}
+  .izq .marco-oro{width:96px;height:96px;margin:0;flex:none}
+  .izq .quien{flex:1;min-width:0}
+  .izq .nm{font-size:26px;margin-top:0;text-align:left}
+  .izq .rl{text-align:left;font-size:15px}
+  .tr{margin-top:9px}.tr .lb{text-align:left}
+  .body{padding:20px 18px 4px}.opts{padding:16px 18px 4px}
+  .foot{padding:14px 18px calc(16px + env(safe-area-inset-bottom))}
+}
+</style>
+</head>
+<body class="tema-valle">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="sil" viewBox="0 0 1200 300" preserveAspectRatio="none">
+    <path d="M0 300V150l120-90 90 70 110-120 140 150 120-80 150 110 130-60 140 90 200-40v220z" fill="currentColor"/>
+  </symbol>
+</svg>
+
+<div class="bench">
+  <b>Tema</b>
+  <button onclick="document.body.className='tema-valle'">Valle</button>
+  <button onclick="document.body.className='tema-ciudadela'">Ciudadela</button>
+  <b style="margin-left:12px">Ventana</b>
+  <button onclick="abrir('silas')">Silas</button>
+  <button onclick="abrir('elara')">Elara</button>
+  <button onclick="tir.style.display='block';opts.style.display='none'">Tirada</button>
+  <button onclick="tir.style.display='none';opts.style.display='flex'">Opciones</button>
+</div>
+
+<div class="escena">
+  <div class="arte">
+    <svg class="sil" viewBox="0 0 1200 300" preserveAspectRatio="none"><use href="#sil"/></svg>
+    <div class="bruma"></div>
+    <div class="titulo">
+      <p class="rubrica">Península de Pleabruma · Tal'Dorei</p>
+      <h1 class="h1"><span class="ini">B</span>yroden</h1>
+      <p class="sub">Pueblo · Año 836 de la Divergencia</p>
+    </div>
+  </div>
+
+  <div class="hoja vell">
+    <div class="cenefa"></div>
+    <div class="dentro">
+      <div class="caja">
+        <p class="prosa">
+          <span class="capital"><span class="letra">L</span></span>
+          evantado dos veces sobre la misma tierra. El valle se abre al norte en prados de flor y agua quieta, y las
+          montañas cierran el fondo. Huele a pan y a humo de fragua. Los que quedaron del incendio no hablan de él;
+          pero en el cementerio, cuesta arriba, hay una franja entera de lápidas con
+          <span class="rojo">la misma fecha grabada</span>.
+        </p>
+        <div class="aparte">
+          <h3>De un vistazo</h3>
+          <div class="dato"><i class="fa-solid fa-cloud-sun"></i><span>Despejado · 14° · Primavera</span></div>
+          <div class="dato"><i class="fa-solid fa-hourglass-half"></i><span>1 de Horisal, 836 PD</span></div>
+          <div class="dato"><i class="fa-solid fa-users"></i><span>Dos personas con quien hablar</span></div>
+          <div class="dato"><i class="fa-solid fa-scroll"></i><span>Un encargo en el tablón</span></div>
+        </div>
+      </div>
+
+      <div class="sect"><span class="cinta">Adónde ir</span></div>
+      <div class="grid">
+        <button class="puerta"><span class="lacre"><i class="fa-solid fa-beer-mug-empty"></i></span><span class="t">La Taberna</span><span class="s">Vigas bajas y el mejor sitio del pueblo para enterarse de algo.</span></button>
+        <button class="puerta"><span class="lacre"><i class="fa-solid fa-place-of-worship"></i></span><span class="t">La Iglesia</span><span class="s">Pequeña, encalada y con más velas de las que hacen falta.</span></button>
+        <button class="puerta"><span class="lacre"><i class="fa-solid fa-monument"></i></span><span class="t">El Cementerio</span><span class="s">Detrás de la iglesia, cuesta arriba.</span></button>
+        <button class="puerta"><span class="lacre"><i class="fa-solid fa-landmark"></i></span><span class="t">El Ayuntamiento</span><span class="s">Dos plantas, un archivo húmedo y un alguacil que hace de todo.</span></button>
+        <button class="puerta"><span class="lacre"><i class="fa-solid fa-tree"></i></span><span class="t">El bosque</span><span class="s">Los campos del norte se acaban de golpe contra una pared de árboles.</span></button>
+        <button class="puerta"><span class="lacre"><i class="fa-solid fa-water"></i></span><span class="t">El lago</span><span class="s">Quieto y frío, con una barca amarrada que no es de nadie.</span></button>
+      </div>
+
+      <div class="sect"><span class="cinta">Gente del lugar</span></div>
+      <div class="row">
+        <button class="med" onclick="abrir('silas')">
+          <span class="marco-oro"><img src="../../public/npcs/silas_trumble.webp" alt="Silas Trumble"></span>
+          <span class="n">Silas Trumble<i class="fa-solid fa-circle-exclamation bang"></i></span>
+          <span class="r">Escribano</span>
+        </button>
+        <button class="med" onclick="abrir('elara')">
+          <span class="marco-oro"><img src="../../public/npcs/elara_teje_raices.webp" alt="Elara Teje-Raíces"></span>
+          <span class="n">Elara Teje-Raíces</span>
+          <span class="r">Herborista</span>
+        </button>
+      </div>
+
+      <p class="note">Con el arte dentro. El marco de oro es el mismo en el medallón y en la ventana, y cambia de metal
+      con el tema —oro en el valle, <b>plata</b> en la ciudadela—. Pruébalo con los botones de arriba.</p>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="dlg" role="dialog" aria-modal="true" aria-labelledby="nm">
+  <div class="win vell">
+    <div class="izq">
+      <span class="marco-oro"><img id="foto" src="../../public/npcs/silas_trumble.webp" alt=""></span>
+      <span class="quien">
+        <div class="nm" id="nm">Silas Trumble</div>
+        <div class="rl" id="rl">Escribano del ayuntamiento</div>
+        <div class="tr">
+          <div class="bar" role="img" aria-label="Confianza 62 de 100"><i id="barra" style="width:62%"></i></div>
+          <div class="lb" id="lb">Te tiene medida</div>
+        </div>
+      </span>
+    </div>
+
+    <div class="talk">
+      <div class="bar-top">
+        <span class="place" id="place"><i class="fa-solid fa-landmark" style="margin-right:8px"></i>El Ayuntamiento · Byroden</span>
+        <button class="x" aria-label="Cerrar" onclick="dlg.classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="body">
+        <p class="say" id="say"><span class="cald">¶</span>«¿El archivo? El archivo está en orden, que es más de lo que
+        puede decirse del resto del pueblo.» Se seca la frente con un pañuelo que ya estaba húmedo. «Diga qué busca y
+        no toque nada.»</p>
+      </div>
+      <div class="tirando" id="tir" style="display:none">
+        <i class="fa-solid fa-dice-d20 d20"></i>
+        <div class="q">Perspicacia · CD 14</div>
+        <div class="s">Los dados están rodando en la mesa…</div>
+      </div>
+      <div class="opts" id="opts">
+        <button class="opt">¿Puedo consultar los registros del 795?</button>
+        <button class="opt"><span class="cd"><i class="fa-solid fa-dice-d20"></i> Perspicacia CD 14 · tu +3</span>Está usted sudando, y aquí no hace calor.</button>
+        <button class="opt" disabled><span class="cd"><i class="fa-solid fa-dice-d20"></i> Intimidación CD 15</span>Abra el archivo. Ahora.</button>
+        <button class="opt" style="color:var(--tinta-3);font-style:italic">Otro día será.</button>
+      </div>
+      <div class="foot">
+        <input placeholder="O dile lo que quieras…" aria-label="Escribe lo que le dices">
+        <button class="send" aria-label="Enviar"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PNJ = {
+  silas:{foto:'../../public/npcs/silas_trumble.webp',nm:'Silas Trumble',rl:'Escribano del ayuntamiento',
+    place:'<i class="fa-solid fa-landmark" style="margin-right:8px"></i>El Ayuntamiento · Byroden',conf:62,lb:'Te tiene medida',
+    say:'«¿El archivo? El archivo está en orden, que es más de lo que puede decirse del resto del pueblo.» Se seca la frente con un pañuelo que ya estaba húmedo. «Diga qué busca y no toque nada.»'},
+  elara:{foto:'../../public/npcs/elara_teje_raices.webp',nm:'Elara Teje-Raíces',rl:'Herborista del linde',
+    place:'<i class="fa-solid fa-tree" style="margin-right:8px"></i>El bosque · La linde',conf:78,lb:'Te tiene aprecio',
+    say:'«Llegáis con la tarde.» No deja de moler lo que tiene entre las manos. «Sentaos si queréis, pero no piséis lo que crece a vuestra izquierda: lleva ahí más años que vosotros.»'}
+};
+function abrir(k){
+  const p = PNJ[k];
+  foto.src = p.foto; nm.textContent = p.nm; rl.textContent = p.rl;
+  place.innerHTML = p.place; barra.style.width = p.conf + '%'; lb.textContent = p.lb;
+  say.innerHTML = '<span class="cald">¶</span>' + p.say;
+  tir.style.display='none'; opts.style.display='flex';
+  dlg.classList.add('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') dlg.classList.remove('open'); });
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.classList.remove('open'); });
+</script>
+</body>
+</html>
