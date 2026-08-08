@@ -5,6 +5,7 @@ import { knows, type SaberCtx } from "../lib/saber";
 import { CONTINENT_LORE } from "../data/continentes";
 import { CALAMIDAD_RELATO, CALAMIDAD_LORE } from "../data/calamidad";
 import { SUSURRADO_LORE } from "../data/susurrado";
+import { FIGURAS_LORE } from "../data/figuras";
 import { REGIONS_BY_CONTINENT, WORLD_POIS, CONTINENTS } from "../data/world";
 import { seedAtlas, mergeAtlas, type AtlasDefs } from "../data/atlas";
 import { PRIME_DEITIES, BETRAYER_GODS, LESSER_IDOLS } from "../data/pantheon";
@@ -204,6 +205,59 @@ for (const e of SUSURRADO_LORE) {
 // descubrimiento, es una nota.
 for (const e of SUSURRADO_LORE) {
   check(`"${e.id}" tiene título y texto con cuerpo`, e.title.trim().length > 0 && e.text.trim().length >= 200);
+}
+
+// --- QUIÉN FUE QUIÉN: LAS FIGURAS ------------------------------------------
+// Mismo sitio y mismo motivo que el bloque de arriba: la pregunta es la
+// integridad de SABER, y un `check-figuras.ts` aparte sería una segunda fuente
+// de verdad para la misma regla.
+const FIG = SABER.filter((e) => e.id.startsWith("fig:"));
+
+check("las figuras están en SABER", FIG.length === FIGURAS_LORE.length);
+check("FIGURAS_LORE no está vacío", FIGURAS_LORE.length > 0);
+check("ningún id repetido dentro de FIGURAS_LORE",
+  new Set(FIGURAS_LORE.map((e) => e.id)).size === FIGURAS_LORE.length);
+
+// Los temas, escritos a mano por el mismo motivo que los tres de `sus:`: si
+// salieran del propio dataset, borrar un tema entero no rompería nada.
+for (const t of ["La fundación", "Zan Tal'Dorei", "Errevon", "El Cónclave Cromático", "Piedrablanca", "El Consejo de Tal'Dorei"]) {
+  check(`hay figuras del tema "${t}"`, FIG.some((e) => e.topic === t));
+}
+
+check("todas las figuras son de profundidad 'profundo'", FIG.every((e) => e.depth === "profundo"));
+check("un personaje recién hecho no conoce ninguna figura", FIG.every((e) => !knows(e, base)));
+check("ninguna figura se sabe solo por ser de un continente",
+  FIG.every((e) => e.scope.kind !== "continente"));
+
+for (const e of FIGURAS_LORE) {
+  const en = SABER.find((s) => s.id === `fig:${e.continent.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-")}:${e.id}`);
+  check(`"${e.id}" existe en SABER`, !!en);
+  if (en) check(`"${e.id}" se archiva en ${e.continent}`, en.place === e.continent);
+  if (e.poi) check(`el POI "${e.poi}" de "${e.id}" existe en el atlas`, POI_NAMES.has(e.poi));
+  check(`"${e.id}" tiene título y texto con cuerpo`, e.title.trim().length > 0 && e.text.trim().length >= 200);
+  check(`"${e.id}" declara pericia si es erudito`, e.tier !== "erudito" || !!e.skill);
+}
+
+// ⚠️ LAS DOS REGLAS DE VOZ, que son decisiones tomadas y no manías de estilo.
+// Sin gate se pierden a la tercera entrada que añada alguien —incluido yo— y
+// nadie se entera, porque una entrada con una fecha de más se lee perfecta.
+//
+// 1. SIN FECHAS. Las fuentes publicadas no coinciden en cuándo cayó el Cónclave
+//    (ver el aviso de `data/history.ts`), y los años ya viven en
+//    `HISTORY_TIMELINE`. Una figura fechada obliga a elegir bando en esa
+//    discusión sin querer.
+const CON_FECHA = FIGURAS_LORE.filter((e) => /\b\d{2,4}\s*PD\b/i.test(e.text));
+check(`ninguna figura pone fechas (${CON_FECHA.map((e) => e.id).join(", ") || "ninguna"})`,
+  CON_FECHA.length === 0);
+
+// 2. LOS HÉROES NO SE NOMBRAN. Se les cita por lo que hicieron, como hace
+//    `thordak-final`. Ponerles nombre convierte en dato de consulta lo que el
+//    grupo tiene que descubrir en la mesa.
+const HEROES = ["Vox Machina", "Vex'ahlia", "Vex ", "Percival", "Percy", "Keyleth", "Vax'ildan", "Vax ", "Pike", "Grog", "Scanlan", "Tiberius"];
+for (const e of FIGURAS_LORE) {
+  const citados = HEROES.filter((h) => e.text.includes(h) || e.title.includes(h));
+  check(`"${e.id}" no nombra a ningún héroe${citados.length ? ` (cita: ${citados.join(", ")})` : ""}`,
+    citados.length === 0);
 }
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
