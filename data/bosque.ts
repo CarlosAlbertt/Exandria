@@ -137,7 +137,7 @@ export type EncuentroBosque = {
 /**
  * ⚠️ **Los que TODAVÍA no tienen ficha.** Escrito a mano, y esa es la gracia.
  *
- * La tabla se escribe entera y el bestiario la va alcanzando (van 151 de 501
+ * La tabla se escribe entera y el bestiario la va alcanzando (van 161 de 501
  * statblocks). Sin esta lista el gate no podría distinguir **un nombre mal
  * escrito** de **uno que aún no se ha extraído**, que es justo el fallo que
  * `check-despiece` cazó por mutación: un monstruo al que se le despieza y no
