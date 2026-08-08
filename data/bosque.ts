@@ -38,7 +38,8 @@ export const FRANJAS: { key: Franja; label: string; blurb: string }[] = [
     label: "La linde",
     blurb:
       "Los primeros kilómetros, donde todavía se ven los caminos de carro y el " +
-      "humo de Syngorn entre las copas. Lo que sale aquí muerde, pero no caza.",
+      "humo de Syngorn entre las copas. Aquí el bosque aún se deja andar, pero " +
+      "ya hay cosas que salen del suelo y cosas que bajan a por las colmenas.",
   },
   {
     key: "espesura",
@@ -52,7 +53,8 @@ export const FRANJAS: { key: Franja; label: string; blurb: string }[] = [
     label: "El corazón",
     blurb:
       "Donde los árboles llevan más años que Tal'Dorei y el pacto feérico aún se " +
-      "respeta. No se entra sin permiso, y lo que hay dentro sabe si lo tienes.",
+      "respeta. No se entra sin permiso, y lo que hay dentro sabe si lo tienes. " +
+      "Aquí sobrevive lo de una edad anterior, que nunca se fue.",
   },
 ];
 
@@ -89,6 +91,14 @@ export const PENDIENTES: string[] = [
   "Dríade", "Sátiro Juerguista", "Duende", "Duende Prodigioso", "Ent",
   "Oso Lechuza", "Oso Lechuza Primigenio", "Ettercap", "Bruja Verde", "Worg",
   "Grick", "Arpía", "Peryton", "Hongo Chillón",
+  // El fondo del corazón, pedido el 2026-08-08.
+  //
+  // ⚠️ **Los nombres ES son la CLAVE con la que se cruzará el statblock**, y los
+  // puse yo traduciendo del inglés que se pidió: `Tyrannosaurus Rex`,
+  // `Cyclops Sentry` y `Triceratops`. Si al extraerlos del Manual salen con otro
+  // nombre, hay que cambiarlos **aquí y en la tabla**, o el gate los tratará como
+  // inventados.
+  "Triceratops", "Cíclope Centinela", "Tiranosaurio Rex",
 ];
 
 /**
@@ -113,6 +123,12 @@ export const ENCUENTROS_VERDANTE: EncuentroBosque[] = [
   { name: "Araña Lobo Gigante", franja: "linde", nota: "Caza a la carrera, no con tela. El escalón entre la linde y la espesura." },
   { name: "Goblin Guerrero", franja: "linde", nota: "Partidas de saqueo que no se atreven a pasar del primer claro." },
   { name: "Hongo Chillón", franja: "linde", nota: "No hace daño: grita, y lo que viene detrás sí." },
+  // Los tres que bajan de la espesura o entran nuevos. ⚠️ Rompen el techo de la
+  // linde a propósito: hasta aquí era CR 1/4 y esto sube a 1 y a 2. Ver el aviso
+  // en la cabecera de la tabla.
+  { name: "Oso Pardo", franja: "linde", nota: "Baja al linde a por las colmenas y los frutales del camino. No busca pelea; la da si te interpones." },
+  { name: "Araña Gigante", franja: "linde", nota: "Tela de verdad entre dos troncos del sendero: se cae en ella antes de verla." },
+  { name: "Ankheg", franja: "linde", nota: "Sale del suelo en los claros de labranza, donde la tierra está removida. Es el techo del linde y el que enseña que aquí también se caza." },
 
   /* ----------------------------- LA ESPESURA ---------------------------- */
   { name: "Plaga de Enredaderas", franja: "espesura", nota: "Ya no crece al borde del camino: crece donde no hay camino." },
@@ -130,9 +146,9 @@ export const ENCUENTROS_VERDANTE: EncuentroBosque[] = [
   { name: "Lobo Huargo", franja: "espesura", nota: "El lobo de la linde, pero grande y sin miedo al fuego." },
   { name: "Worg", franja: "espesura", nota: "Habla, y sirve a quien le conviene. Suele venir con goblinoides encima." },
   { name: "Jabalí Gigante", franja: "espesura", nota: "Arrasa el sotobosque a su paso; se le oye antes de verlo." },
-  { name: "Oso Pardo", franja: "espesura", nota: "El escalón del oso negro." },
-  { name: "Araña Gigante", franja: "espesura", nota: "Tela de verdad: se cae en ella antes de verla." },
-  { name: "Ettercap", franja: "espesura", nota: "Pastorea a las arañas. Donde hay tela ordenada, hay uno." },
+  // El Oso Pardo y la Araña Gigante se han ido al LINDE. No están duplicados
+  // aquí a propósito: un bicho en dos franjas deja de decir dónde estás.
+  { name: "Ettercap", franja: "espesura", nota: "Pastorea a las arañas. Donde hay tela ordenada, hay una." },
   { name: "Oso Lechuza", franja: "espesura", nota: "Sin territorio fijo y con muy mal genio. El encuentro que nadie busca." },
   { name: "Osgo Acechador", franja: "espesura", nota: "Te sigue dos días antes de saltar." },
   { name: "Grick", franja: "espesura", nota: "Tentáculos desde una grieta o desde una rama. Nunca de frente." },
@@ -146,7 +162,16 @@ export const ENCUENTROS_VERDANTE: EncuentroBosque[] = [
   { name: "Oso Lechuza Primigenio", franja: "corazon", nota: "El de la espesura, viejo y crecido en el sitio donde nadie lo molestó." },
   { name: "Bruja Verde", franja: "corazon", nota: "Vive del trato, y siempre sale ganando." },
   { name: "Unicornio", franja: "corazon", nota: "El corazón del bosque tiene guardián, y no perdona un paso de más." },
-  { name: "Cría de Dragón Verde", franja: "corazon", nota: "Ya se cree el dueño, y aún no ha crecido. Es el techo de la tabla." },
+  // ⚠️ La nota decía «es el techo de la tabla» y ya NO lo es: por encima están el
+  // Triceratops, el Cíclope y el Tiranosaurio. Una nota que se queda vieja es
+  // peor que no tenerla, porque el DM la lee y decide con ella.
+  { name: "Cría de Dragón Verde", franja: "corazon", nota: "Ya se cree el dueño, y aún no ha crecido. El más peligroso de lo que vuela aquí." },
+  // Los tres del fondo del corazón. La justificación in-ficción es la que ya da
+  // el blurb de la franja —«los árboles llevan más años que Tal'Dorei»—: aquí
+  // sobrevive lo de una edad anterior, que nunca se fue.
+  { name: "Triceratops", franja: "corazon", nota: "Pasta en los claros hondos como si el mundo de fuera no hubiera cambiado. No ataca: arrolla lo que se le pone delante." },
+  { name: "Cíclope Centinela", franja: "corazon", nota: "Puesto de guardia de algo que ya no existe, y él no se ha enterado. Sigue cumpliendo la orden que le dieron." },
+  { name: "Tiranosaurio Rex", franja: "corazon", nota: "Lo que había antes del pacto, y el pacto no lo incluye. Es el techo de la tabla y no negocia con nadie." },
 ];
 
 /* ------------------------------ CONSULTAS ------------------------------ */
