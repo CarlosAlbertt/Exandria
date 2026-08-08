@@ -19,6 +19,19 @@ import { ALL_MONSTERS } from "./bestiary";
  */
 export type Franja = "linde" | "espesura" | "corazon";
 
+/**
+ * La región del atlas a la que pertenecen las franjas.
+ *
+ * ⚠️ **Hace falta escrito.** Una franja **no es de ningún POI** (`poiDeNodo`
+ * devuelve `null`), así que es el único nodo cuya región no se puede deducir de
+ * su id. Y de la región salen el clima y el nombre que se pinta en la cabecera:
+ * sin esto, el bosque heredaría el tiempo del pueblo desde el que se entró.
+ *
+ * El gate cruza este slug contra el atlas sembrado: si alguien renombra la
+ * región, el bosque se queda sin tiempo y no salta nada.
+ */
+export const REGION_DEL_BOSQUE = "expansion-verdante";
+
 export const FRANJAS: { key: Franja; label: string; blurb: string }[] = [
   {
     key: "linde",

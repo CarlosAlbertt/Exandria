@@ -61,6 +61,27 @@ su hora. Un desfase huérfano dejaría a alguien adelantado ocho horas **sentado
 la misma plaza que los demás**, y eso no se lee como un fallo: se lee como que la
 app miente. Se borran juntos, y el gate lo vigila.
 
+## ⚠️ EN DOS TANDAS, Y POR QUÉ
+
+**Esta tanda hace 1, 2, 5, 6 y 7.** Las piezas 3 y 4 —encender el desfase— se
+dejan para después. La razón la destapó este mismo plan:
+
+**El desfase es transitorio por diseño.** Por la decisión 2 lo que el jugador se
+anduvo caduca al mover al grupo, y por la invariante al caducar el `sitio` se
+borra el `desfase`. O sea que **solo vive entre «me largo a Emon» y «el DM mueve
+al grupo»**, que en una mesa es una ventana corta. Es mucha maquinaria —incluida
+una ruta de servidor con `service_role` y el cupo del taller— para un estado
+diseñado para no durar.
+
+**Pero el dato se guarda desde el primer día.** La pieza 1 escribe y acumula
+`desfase`, con su invariante vigilada por el gate; simplemente **nadie lo
+consume todavía**. El viaje enseña «6 h de camino» como información. Encenderlo
+después es cambiar **quién lo lee**, no rehacer nada.
+
+Lo que se pierde mientras tanto, y va dicho: **viajar es gratis e instantáneo**,
+así que se puede ir y volver de Emon sin coste. Con el aviso en pantalla y el DM
+delante, se aguanta.
+
 ## Las siete piezas, en orden
 
 1. **Las reglas puras** — `lib/viaje.ts` nuevo (destinos, coste), `Sitio.puesto`

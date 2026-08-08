@@ -16,7 +16,24 @@ function leerSitio(raw: unknown): Sitio | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   if (typeof o.nodo !== "string" || typeof o.desde !== "string") return null;
-  return { nodo: o.nodo, desde: o.desde };
+  // `puesto` solo se acepta si dice exactamente "dm". Cualquier otra cosa
+  // —incluido que falte, que es lo que hay en las fichas de antes de esta
+  // tanda— es «lo anduvo el jugador», que es el caso que CADUCA. Si el valor
+  // raro se colara como "dm", el sitio dejaría de caducar y alguien se quedaría
+  // solo en un pueblo que el grupo abandonó: el agujero que ya se tapó una vez.
+  const puesto = o.puesto === "dm" ? ("dm" as const) : undefined;
+  return puesto ? { nodo: o.nodo, desde: o.desde, puesto } : { nodo: o.nodo, desde: o.desde };
+}
+
+/**
+ * Los minutos de juego que este jugador lleva de más por haber viajado.
+ *
+ * Tolerante igual que `leerSitio`, y **nunca negativo**: un desfase en negativo
+ * mandaría a alguien al pasado, con la crónica y el cupo del taller detrás.
+ */
+function leerDesfase(raw: unknown): number {
+  const n = typeof raw === "number" ? raw : Number.NaN;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
 }
 
 /**
@@ -38,6 +55,7 @@ export function useSitio() {
   const userId = session?.id ?? null;
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [sitio, setSitio] = useState<Sitio | null>(null);
+  const [desfase, setDesfase] = useState(0);
   const [ready, setReady] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -45,7 +63,12 @@ export function useSitio() {
     const c = await loadActiveCharacter(userId);
     setCharacterId(c?.id ?? null);
     const play = (c?.play_state as Record<string, unknown> | undefined) ?? {};
-    setSitio(leerSitio(play.sitio));
+    const s = leerSitio(play.sitio);
+    setSitio(s);
+    // La invariante, también al LEER: un desfase sin sitio se ignora. Puede
+    // haber quedado uno huérfano si el DM editó la ficha a mano, y sumárselo
+    // dejaría a alguien adelantado sentado en la misma plaza que los demás.
+    setDesfase(s ? leerDesfase(play.desfase) : 0);
     setReady(true);
   }, [userId]);
 
@@ -72,19 +95,55 @@ export function useSitio() {
    * mientras el jugador andaba por el pueblo. Es exactamente lo que ya hace el
    * cupo del caldero, y por lo mismo.
    */
-  const mover = useCallback(async (nodoId: string | null, ancla: string | null) => {
-    const s = nodoId && ancla ? { nodo: nodoId, desde: ancla } : null;
+  const escribir = useCallback(async (s: Sitio | null, nuevoDesfase: number) => {
     setSitio(s);
+    setDesfase(s ? nuevoDesfase : 0);
     if (!supabaseConfigured || !characterId) return;
     const supabase = createClient();
     const { data } = await supabase.from("characters").select("play_state").eq("id", characterId).maybeSingle();
     const prev = (data?.play_state as Record<string, unknown>) ?? {};
     const next = { ...prev };
-    if (s) next.sitio = s; else delete next.sitio;
+    if (s) {
+      next.sitio = s;
+      // ⚠️ LA INVARIANTE: sin sitio no hay desfase, y se escriben JUNTOS.
+      // Volver con el grupo es volver a su hora. Si el desfase sobreviviera al
+      // borrado del sitio, alguien se quedaría ocho horas adelantado **en la
+      // misma plaza que los demás**, y eso no se lee como un fallo: se lee como
+      // que la app miente.
+      if (nuevoDesfase > 0) next.desfase = nuevoDesfase; else delete next.desfase;
+    } else {
+      delete next.sitio;
+      delete next.desfase;
+    }
     await supabase.from("characters")
       .update({ play_state: next, updated_at: new Date().toISOString() })
       .eq("id", characterId);
   }, [characterId]);
 
-  return { sitio, characterId, ready, mover, recargar: cargar };
+  /** Andar por el pueblo o por el bosque. No cuesta tiempo y no toca el desfase. */
+  const mover = useCallback(async (nodoId: string | null, ancla: string | null) => {
+    const s = nodoId && ancla ? { nodo: nodoId, desde: ancla } : null;
+    await escribir(s, s ? desfase : 0);
+  }, [escribir, desfase]);
+
+  /**
+   * Viajar a otro pueblo, que sí cuesta camino.
+   *
+   * ⚠️ **Volver a donde está el grupo BORRA el sitio y el desfase**, en vez de
+   * apuntarse el camino de vuelta. Es deliberado y tiene un precio dicho: el
+   * viaje de vuelta no se cobra. Se acepta porque la alternativa —dejar a
+   * alguien desfasado estando ya con el grupo— es la que se lee como un fallo, y
+   * porque es la misma decisión que hace que `mover` al ancla borre el sitio en
+   * vez de fijarlo.
+   *
+   * El `desfase` se acumula desde ya, aunque **todavía no lo consuma nadie**: la
+   * tanda que enciende el reloj por jugador solo tiene que cambiar quién lo lee.
+   */
+  const viajar = useCallback(async (nodoId: string, ancla: string | null, minutos: number) => {
+    if (!ancla) return;
+    if (nodoId === ancla) { await escribir(null, 0); return; }
+    await escribir({ nodo: nodoId, desde: ancla }, desfase + Math.max(0, Math.floor(minutos)));
+  }, [escribir, desfase]);
+
+  return { sitio, desfase, characterId, ready, mover, viajar, recargar: cargar };
 }
