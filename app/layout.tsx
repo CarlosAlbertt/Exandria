@@ -6,6 +6,7 @@ import EpicOverlay from "@/components/EpicOverlay";
 import DiceBoard from "@/components/DiceBoard";
 import PeticionesTirada from "@/components/PeticionesTirada";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import Avisos from "@/components/Avisos";
 import { SessionProvider } from "@/components/SessionProvider";
 import { getSessionProfile, isConfigured } from "@/lib/auth";
 
@@ -51,6 +52,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 nada pedido no pintan nada. */}
             <ErrorBoundary>
               <PeticionesTirada />
+            </ErrorBoundary>
+            {/* Los avisos (SILEO). Uno solo para toda la app y por el mismo
+                motivo que las peticiones de tirada: lo que se anuncia pasa
+                mientras el jugador está en cualquier pantalla. Dentro de un
+                ErrorBoundary porque una librería en 0.1.5 que reviente no puede
+                llevarse por delante la sesión entera. */}
+            <ErrorBoundary>
+              <Avisos />
             </ErrorBoundary>
           </SessionProvider>
         ) : (

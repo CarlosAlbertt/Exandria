@@ -6,6 +6,7 @@ import { loadActiveCharacter, type Item } from "@/lib/character";
 import { derive } from "@/lib/derive";
 import { rollVisual, isDiceBoxSupported } from "@/lib/diceBox";
 import { DIALOGOS } from "@/data/dialogos";
+import { avisar } from "@/components/Avisos";
 import {
   leerTrato, resolver, opcionDisponible, tonoConfianza, etapaVigente,
   type TratoPnj, type Premio,
@@ -47,7 +48,7 @@ export type PulsoTrato = { pct: number; color: string; texto: string };
  * `prefers-reduced-motion`), que es mejor que dejar la conversación bloqueada.
  */
 export default function DialogoArbol({
-  npcId, clave, onCerrar, onPremio, onTrato,
+  npcId, clave, onCerrar, onPremio, onTrato, onMision,
 }: {
   npcId: number;
   clave: string;
@@ -55,6 +56,8 @@ export default function DialogoArbol({
   onPremio?: (p: Premio) => void;
   /** Para que la ventana pinte la confianza junto al retrato, que es donde va. */
   onTrato?: (p: PulsoTrato) => void;
+  /** Se abrió una misión del catálogo hablando con este PNJ. */
+  onMision?: (info: { titulo: string; recompensa: string; yaLaTenias: boolean }) => void;
 }) {
   const arbol = DIALOGOS[clave];
   const session = useSession();
@@ -124,6 +127,11 @@ export default function DialogoArbol({
   // se aplica lo que venga.
   const entregar = useCallback(async (p: Premio) => {
     onPremio?.(p);
+    // ⚠️ El premio entraba en la bolsa SIN QUE NADIE SE ENTERARA: el objeto
+    // aparecía en el inventario tres pantallas más allá y el oro cambiaba solo.
+    if (p.tipo === "objeto") avisar({ tipo: "objeto", name: p.name, qty: p.qty });
+    else if (p.tipo === "oro") avisar({ tipo: "oro", cantidad: p.cantidad });
+    else if (p.tipo === "saber" && p.ids.length > 0) avisar({ tipo: "saber", cuantas: p.ids.length });
     if (!supabaseConfigured || !charId) return;
     const supabase = createClient();
     const { data } = await supabase.from("characters").select("items, gold, lore_unlocked").eq("id", charId).maybeSingle();
@@ -144,6 +152,32 @@ export default function DialogoArbol({
     await supabase.from("characters").update(patch).eq("id", charId);
   }, [charId, onPremio]);
 
+  /**
+   * Abre la misión que acaba de dar el PNJ.
+   *
+   * ⚠️ **Esto faltaba entero.** `resolver()` devolvía `mision` desde el primer
+   * día y aquí se tiraba: el jugador aceptaba el encargo, el PNJ se lo decía, y
+   * no se creaba ninguna fila en `quests`. La misión no aparecía en la Crónica
+   * ni existía para nadie.
+   *
+   * Va por `/api/mision-dialogo` y no por el cliente porque `quests` es DM-only
+   * por RLS, y porque el TEXTO tiene que ponerlo el servidor desde el catálogo:
+   * si lo mandara el cliente, cualquiera se escribiría su propia recompensa.
+   */
+  const abrirMision = useCallback(async (slug: string) => {
+    const r = await fetch("/api/mision-dialogo", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, npcId }),
+    });
+    const d = await r.json().catch(() => null);
+    if (!r.ok || !d?.ok) return;
+    if (d.yaLaTenias) avisar({ tipo: "mision-ya-la-tenias", titulo: d.titulo ?? "" });
+    else avisar({ tipo: "mision-aceptada", titulo: d.titulo ?? "", recompensa: d.recompensa });
+    onMision?.({
+      titulo: d.titulo ?? "", recompensa: d.recompensa ?? "", yaLaTenias: d.yaLaTenias === true,
+    });
+  }, [npcId, onMision]);
+
   const aplicar = useCallback(async (indice: number, total: number | null) => {
     if (!trato || !arbol) return;
     const r = resolver(arbol, trato, indice, total);
@@ -153,8 +187,9 @@ export default function DialogoArbol({
     setDicho(r.texto);
     void guardar(r.trato);
     if (r.premio) void entregar(r.premio);
+    if (r.mision) void abrirMision(r.mision);
     if (r.cierra) setTimeout(onCerrar, 1200);
-  }, [trato, arbol, guardar, entregar, onCerrar]);
+  }, [trato, arbol, guardar, entregar, abrirMision, onCerrar]);
 
   if (!arbol || !trato) return null;
 
