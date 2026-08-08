@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useInventarioVivo } from "@/lib/useInventarioVivo";
-import { useGameClock } from "@/lib/useGameClock";
+import { useRelojJugador } from "@/lib/useRelojJugador";
 import { rollVisual, RESULTADO_MS } from "@/lib/diceBox";
 import { roll as rollFallback } from "@/lib/dice";
 import { loadActiveCharacter, saveCharacter } from "@/lib/character";
@@ -56,7 +56,16 @@ export default function Caldero({ userId, dm }: { userId: string | null; dm: Mod
   // El cupo se mide en días de JUEGO, así que se compara con el reloj de
   // campaña y no con la hora real: adelantar días desde Panel DM › Tiempo tiene
   // que liberarlo, que es como la mesa entiende «vuelve dentro de tres días».
-  const { nowGameMin } = useGameClock();
+  // ⚠️ **La hora de este jugador, no la del grupo, y aquí es MECÁNICA**: el cupo
+  // del taller cuenta días de juego (`tallerCupo` es un minuto absoluto), así que
+  // quien se ha ido ocho horas de camino recupera el cupo ocho horas antes. Es lo
+  // que el usuario decidió: el desfase es su hora de verdad.
+  //
+  // El `tallerCupo` que se guarde llevará su desfase dentro. Al volver con el
+  // grupo el desfase se borra y el cupo le dura un poco más de lo apuntado: se
+  // acepta, es la misma simplificación que hace que el viaje de vuelta no se
+  // cobre, y el error va hacia el lado de no castigar.
+  const { nowGameMin } = useRelojJugador();
   const [sel, setSel] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ texto: string; exito: boolean } | null>(null);

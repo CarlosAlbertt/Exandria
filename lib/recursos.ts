@@ -42,6 +42,23 @@ export type PlayState = {
    * escriben `lib/recetario.ts` y el caldero.
    */
   tallerCupo?: number;
+  /** Dónde está este jugador por su cuenta. Ver `lib/nodos.ts` (`Sitio`). */
+  sitio?: { nodo: string; desde: string; puesto?: "dm" };
+  /**
+   * Minutos de juego que lleva de más por haber viajado o descansado solo.
+   *
+   * ⚠️ **Sin `sitio` no hay `desfase`**: volver con el grupo es volver a su hora.
+   * La regla vive en `sanearSitio` (`lib/nodos.ts`) y el gate la vigila.
+   */
+  desfase?: number;
+  /**
+   * Su último descanso largo, en SU minuto de juego (con el desfase dentro).
+   *
+   * Va por ficha desde la tanda del reloj por jugador: el freno vivía en
+   * `app_config.last_long_rest`, compartido, y quien se iba solo a Emon no podía
+   * descansar porque sus compañeros habían descansado en Byroden.
+   */
+  ultimoLargo?: number;
   [otros: string]: unknown;
 };
 
