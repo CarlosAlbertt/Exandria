@@ -2,7 +2,87 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08, noche)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08, cierre)
+
+> **TODO LO DE HOY ESTÁ EN `master` Y DESPLEGADO.** Ocho merges. **Sin ninguna
+> migración**: todo lo nuevo vive en `characters.play_state`, que es `jsonb`.
+> Último commit: `merge: el mapa suma lo que conoce cada jugador`.
+>
+> ### ✅ Las tres migraciones están ejecutadas
+> El usuario confirmó el 2026-08-08 haber corrido `v24`, `v25` y `v26`. **No queda
+> nada pendiente en Supabase.** Si algo falla en misiones individuales,
+> sub-lugares o diálogos, **no es la migración**.
+>
+> ### ⚠️ LO PRIMERO QUE HAY QUE ARREGLAR
+> **El corazón del bosque no tiene NI UN monstruo jugable.** Diez entradas
+> escritas y **ninguna con statblock**, así que `jugablesDe("corazon")` devuelve
+> vacío: ahí no puede haber un combate sacado de la tabla, y **nada lo avisa**.
+> La espesura está justo (6 de 21); la linde va sobrada (12 de 15).
+> Plan: `docs/superpowers/plans/2026-07-13-bestiario-2024.md`.
+> ⚠️ Tres de los diez —**Triceratops, Cíclope Centinela, Tiranosaurio Rex**— se
+> pidieron en inglés y **los nombres ES los puse yo**. Si al extraerlos salen con
+> otro nombre, cambiarlos **en `ENCUENTROS_VERDANTE` Y en `PENDIENTES`**, o el
+> gate los tratará como inventados. Va avisado en `data/bosque.ts`.
+>
+> **Y sería muy sano añadir un gate**: que toda franja tenga al menos N monstruos
+> jugables. Hoy el corazón está a cero y ninguna de las 43 comprobaciones lo dice.
+>
+> ### Lo que se hizo hoy, en una tabla
+> | Qué | Dónde vive |
+> |---|---|
+> | `/lugar` con la hoja de pergamino y **tema por sitio** (4 pieles × 15 tokens) | `app/globals.css`, `data/lugares.ts`, `app/lugar/page.tsx` |
+> | La **ventana** de diálogo, retrato cuadrado, d20 girando | `NpcSection.tsx`, `DialogoArbol.tsx` |
+> | **Posición por jugador** y viaje entre pueblos revelados | `lib/nodos.ts`, `lib/viaje.ts`, `components/lugar/Viajar.tsx` |
+> | **Reloj por jugador** (desfase por ficha) | `lib/useRelojJugador.ts`, `lib/tiempoDescanso.ts` |
+> | **Revelar a un jugador** y no al grupo | `lib/revelado.ts` |
+> | El **bosque** con las tres franjas y la piel que se cierra | `data/bosque.ts`, `Vereda.tsx`, `RastrosBosque.tsx` |
+> | **Panel DM** por familias + portada | `app/dm/DmDashboard.tsx`, `app/dm/ResumenPanel.tsx` |
+> | El **XP a quien marques** | `app/dm/GrupoPanel.tsx` |
+>
+> ### Las cinco reglas puras nuevas, y por qué están fuera de los hooks
+> `lib/viaje.ts`, `lib/revelado.ts`, `lib/tiempoDescanso.ts`, `sanearSitio` y
+> `ubicacionDeNodo` (en `lib/nodos.ts`). **Todas salieron de dentro de un hook o
+> de una ruta**, porque ahí no llega ningún gate. Es la lección de `puedeSembrar`
+> y ya van diez veces. Si tocas una regla de estas, **el gate tiene que verla**.
+>
+> ### Tres invariantes que NO se deben deshacer
+> 1. **Sin `sitio` no hay `desfase`.** Volver con el grupo es volver a su hora. Un
+>    desfase huérfano deja a alguien ocho horas adelantado **sentado en la misma
+>    plaza que los demás**, y eso se lee como que la app miente.
+> 2. **La anti-ratonera**: donde está el grupo se ofrece SIEMPRE como destino,
+>    revelado o no. Sin ella, revelar Emon y no Byroden dejaba **encerrado** a
+>    quien viajara a Emon.
+> 3. **La ubicación se RESUELVE, no se copia.** `useMiUbicacion` es la única
+>    fuente: la copió `/lugar` y el pin de la barra se lo inventó, y durante un
+>    rato la barra decía «Byroden» mientras la pantalla decía «Syngorn».
+>
+> ### Cuatro fallos que salieron solos al trabajar, y que ya estaban
+> - **El reloj se sumaba una vez por cada jugador**: cinco descansando juntos se
+>   comían **cuarenta horas** de golpe. Nadie lo veía porque el reloj corre solo.
+> - **El que descansaba solo adelantaba a los demás** ocho horas.
+> - **El freno del descanso largo era del grupo**: quien se iba solo a Emon no
+>   podía descansar porque sus compañeros habían descansado en Byroden.
+> - **`useSitio` era el único hook con el canal de realtime sin aleatorizar**, y al
+>   meterlo en la barra de navegación dos instancias chocaban en el mismo topic.
+>
+> ### ⚠️ SIGUE SIN VERSE EN LA APP CON DATOS
+> `/lugar` y `/dm` están detrás del proxy de auth: **sin sesión todo redirige a
+> `/login`**, así que nada de esto se ha mirado renderizado con datos reales. Lo
+> que sí se comprobó va en la entrada de la mañana (banco de CSS con estilos
+> computados). **Truco que funciona**: recortar el bloque de `globals.css`, pegarle
+> el marcado de los componentes y servirlo desde `public/` —que no pasa por el
+> proxy—, medir con `javascript_tool`, y **borrar el HTML al terminar**.
+>
+> ### Lo que el usuario tiene que hacer a mano
+> 1. **Abrir pueblos al viaje**: Panel DM › Mapa y pueblos, el **ojo** de cada
+>    pueblo. **Sin ninguno revelado nadie puede viajar** — la sección lo explica,
+>    pero no hay caminos.
+> 2. **Subir ilustraciones de cabecera** (16:9, 1920×1080). No hay ninguna, así que
+>    todos los sitios salen con el cielo del tema y su silueta.
+> 3. Decidir el tema de los pueblos que no son Byroden ni Emon (`TEMA_POR_POI`).
+>    El **`yermo` está dibujado y no lo usa nadie**.
+
+## 🚦 Antes de eso (2026-08-08, noche)
 
 > **EL RELOJ VA POR JUGADOR, Y LA TANDA ESTÁ COMPLETA.** Rama
 > `feat/reloj-por-jugador`. Piezas 3 y 4 del plan
