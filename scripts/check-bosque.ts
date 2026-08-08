@@ -86,8 +86,16 @@ const cr = (s: string) => (s in CR_NUM ? CR_NUM[s] : Number(s));
  * ⚠️ **La razón es el TAMAÑO DEL GRUPO: son cinco o seis jugadores.** Los techos
  * viejos —linde CR 1/2— estaban calculados para un grupo de cuatro de nivel
  * bajo, y con seis a la mesa el presupuesto de XP de un encuentro se dobla: lo
- * que era una pelea pasaba a ser un trámite. Las bandas pedidas son linde 2-3,
- * espesura 5-7 y corazón 10-15, y aquí se guardan como TECHOS.
+ * que era una pelea pasaba a ser un trámite. Las bandas pedidas son **linde 1-3,
+ * espesura 5-8 y corazón 9-15**, y aquí se guardan como TECHOS.
+ *
+ * ⚠️ **Corregidas el 2026-08-08 por el usuario**: aquí ponía «linde 2-3,
+ * espesura 5-7 y corazón 10-15», que no eran las que pidió. El desajuste no era
+ * inocente: con el corazón escrito en 10-15, **ninguno de los diez que lo
+ * habitan llegaba a su propia banda** —el más gordo es el Ent, CR 9—, y eso hace
+ * que la banda parezca imposible de cumplir cuando lo que estaba mal era el
+ * número apuntado. Si vuelves a tocar estas bandas, cámbialas AQUÍ: este
+ * comentario es lo único que dice qué se pidió.
  *
  * ⚠️ **Solo techo, y NO suelo, en la linde y la espesura.** Un Ciervo de CR 0 o
  * un Lobo de 1/4 siguen valiendo en la linde: contra seis jugadores no salen de
@@ -95,12 +103,14 @@ const cr = (s: string) => (s in CR_NUM ? CR_NUM[s] : Number(s));
  * `data/encounters.ts`. Poner suelo habría borrado once entradas escritas para
  * arreglar algo que no está roto.
  *
- * El suelo del corazón se queda en CR 1 —lo que había— y no sube a la banda
- * pedida: de los diez del corazón **ninguno tiene ficha todavía**, así que subir
- * el suelo sería legislar sobre números que no conocemos. Cuando se extraigan se
- * verá si hay que apretarlo.
+ * El suelo del corazón se queda en CR 1 —lo que había— y **no sube a 9**, que es
+ * lo que diría la banda. Los diez del corazón van de CR 2 (el Centauro Soldado y
+ * la Cría de Dragón Verde) a CR 9 (el Ent): un suelo de 9 echaría a nueve de los
+ * diez de la franja que la tabla escribió para ellos. Contra seis jugadores esos
+ * bichos salen **en número**, como los de la linde, y el peso lo pone el
+ * `XP_BUDGET`.
  */
-const TECHO_CR: Record<string, number> = { linde: 3, espesura: 7, corazon: 15 };
+const TECHO_CR: Record<string, number> = { linde: 3, espesura: 8, corazon: 15 };
 const SUELO_CR: Record<string, number> = { corazon: 1 };
 
 for (const e of ENCUENTROS_VERDANTE) {
@@ -191,10 +201,43 @@ for (const f of ESPERADAS) {
 check("encuentrosDe reparte todas las entradas",
   ESPERADAS.reduce((n, f) => n + encuentrosDe(f).length, 0) === ENCUENTROS_VERDANTE.length);
 
-// `jugablesDe` es lo que se puede poner en la mesa HOY. Que la linde tenga algo
-// jugable es lo que hace que la tabla no nazca muerta esperando al bestiario.
-check("la linde tiene monstruos jugables ya", jugablesDe("linde").length > 0);
-check("la espesura tiene monstruos jugables ya", jugablesDe("espesura").length > 0);
+/**
+ * `jugablesDe` es lo que se puede poner en la mesa HOY, y esto es LO QUE MUERDE.
+ *
+ * ⚠️ **Una franja sin jugables no da ningún error**: la tabla se pinta entera,
+ * las notas están escritas, el CR cuadra, y aun así ahí no se puede sacar un
+ * combate porque ningún bicho tiene ficha. Fue real durante toda una sesión —
+ * los diez del corazón escritos y **cero** con statblock— y **ninguna de las 43
+ * comprobaciones lo dijo**: las dos líneas que había aquí antes miraban la linde
+ * y la espesura una a una, `> 0`, y **se dejaban el corazón fuera**. Justo la
+ * franja que estaba rota.
+ *
+ * Ahora el bucle recorre `ESPERADAS`, que va escrito a mano arriba: una franja
+ * nueva entra en la comprobación sola, sin que nadie se acuerde de añadir la
+ * línea. Ese olvido es exactamente lo que pasó.
+ *
+ * **Por qué 5 y no 1.** Con uno la comprobación pasaría teniendo un único bicho
+ * en toda la franja, y eso no es una tabla: es el mismo encuentro repetido hasta
+ * que el DM se lo aprende. Son cinco o seis jugadores —la misma razón por la que
+ * los techos de `TECHO_CR` se subieron—, así que hacen falta cinco fichas para
+ * que la tirada tenga de dónde elegir.
+ *
+ * **Cuenta fichas, NO dificultad**, y va dicho porque se pensó y se descartó:
+ * exigir además un jugable dentro de la banda (linde 1-3, espesura 5-8, corazón
+ * 9-15) dejaría **la espesura en rojo y sin salida a corto plazo** — su máximo
+ * real es CR 2 y no tiene nada extraído entre 5 y 8. La linde pasaría por el
+ * Ankheg (CR 2) y el corazón por el Ent (CR 9) en cuanto se extraiga, así que la
+ * comprobación cazaría una sola franja y a cambio se quedaría roja por algo que
+ * no es un fallo, sino una extracción que aún no ha llegado. La banda es techo,
+ * no suelo; el peso de un encuentro lo pone el número de bichos y de eso se
+ * encarga el `XP_BUDGET` de `data/encounters.ts`.
+ */
+const MIN_JUGABLES = 5;
+for (const f of ESPERADAS) {
+  const n = jugablesDe(f).length;
+  check(`la franja "${f}" tiene al menos ${MIN_JUGABLES} monstruos jugables (tiene ${n})`,
+    n >= MIN_JUGABLES);
+}
 for (const f of ESPERADAS) {
   check(`jugablesDe("${f}") no devuelve ningún pendiente`,
     jugablesDe(f).every((j) => !pendientes.has(j.name)));
