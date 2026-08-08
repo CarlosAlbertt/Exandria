@@ -2,6 +2,23 @@
 // cap. 1). Los años, nombres y hechos son datos de la ambientación; el texto
 // de cada hito es un resumen propio en español, no una traducción del libro.
 // Herramienta de fans no oficial.
+//
+// ⚠️ **LAS FUENTES NO COINCIDEN EN LA FECHA DEL CÓNCLAVE CROMÁTICO, y aquí se
+// mantiene la del libro.** La entrada de 815 PD —el Cónclave y la caída de
+// Draconia— sale del capítulo 1 de Wildemount, que es de donde está transcrita
+// toda esta tabla. La cronología oficial de la productora sitúa esa misma
+// campaña **entre el 810 y el 812 PD**, y el escenario de Tal'Dorei Renacido
+// cuenta el 836 PD como veinticuatro años después de aquello, lo que cuadra con
+// el 812 y no con el 815.
+//
+// **No se toca sin decisión del usuario** (tomada el 2026-08-08: se queda el
+// 815). Cambiar el año aquí cambiaría un dato que los jugadores ya han visto en
+// la app, y los dos números están publicados: no es un error del repo, es una
+// discrepancia entre libros.
+//
+// Por eso `data/figuras.ts` **no lleva ninguna fecha**, y hay un gate en
+// `check-lore` que lo vigila: escribir «hace una generación» no obliga a elegir
+// bando en esta discusión.
 
 import type { Era } from "./taldorei";
 
