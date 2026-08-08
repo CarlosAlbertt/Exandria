@@ -11,7 +11,9 @@ import { useLugares } from "@/lib/useLugares";
 import { useSitio } from "@/lib/useSitio";
 import { indexar, nodoDelJugador, salidasDe, puedeIr, ubicacionDeNodo } from "@/lib/nodos";
 import { idPoi, alAireLibre, TEMAS } from "@/data/lugares";
-import { REGION_DEL_BOSQUE } from "@/data/bosque";
+import { REGION_DEL_BOSQUE, franjaDeNodo } from "@/data/bosque";
+import Vereda from "@/components/lugar/Vereda";
+import RastrosBosque from "@/components/lugar/RastrosBosque";
 import ClockWidget from "@/components/ClockWidget";
 import ShopSection from "@/components/lugar/ShopSection";
 import PosadaSection from "@/components/lugar/PosadaSection";
@@ -168,12 +170,60 @@ export default function LugarPage() {
     setYendo(null);
   }
 
+  // ⚠️ La PROFUNDIDAD solo existe en el bosque. Un pueblo es un sitio: llegas y
+  // estás. La clase `prof-*` se apila sobre el tema y le baja la luz por franja
+  // —aprobado del boceto, opción B—, y `franjaDeNodo` la valida contra `FRANJAS`
+  // para que un id inventado no deje la hoja sin ninguno de sus tokens.
+  const franja = franjaDeNodo(nodo.id);
+
   return (
-    <main className={`tema-${nodo.tema}`}>
+    <main className={`tema-${nodo.tema}${franja ? ` prof-${franja}` : ""}`}>
+      {/* Los troncos y los haces, definidos una vez y reusados por las cuatro
+          capas con distinto tamaño y opacidad. Todo SVG en línea: cero
+          imágenes, igual que el resto de la hoja. */}
+      {franja && (
+        <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
+          <symbol id="lug-troncos" viewBox="0 0 1200 400" preserveAspectRatio="none">
+            <path fill="currentColor" d="M60 400V120c0-18 6-30 14-42l10 4c-6 14-8 26-8 40v278zM86 400V128l16-6v278z" />
+            <path fill="currentColor" d="M210 400V80c0-22 10-40 22-56l12 8c-10 16-16 32-16 52v316z" />
+            <path fill="currentColor" d="M400 400V150c0-20-8-36-20-50l14-8c14 18 24 36 24 60v248z" />
+            <path fill="currentColor" d="M560 400V60c0-16 4-30 12-44l14 6c-6 12-10 24-10 40v338z" />
+            <path fill="currentColor" d="M740 400V140c0-24 12-44 26-62l12 10c-12 16-20 32-20 54v258z" />
+            <path fill="currentColor" d="M900 400V100c0-18-6-34-16-48l14-8c12 18 20 36 20 58v298z" />
+            <path fill="currentColor" d="M1060 400V170c0-22 8-40 20-56l12 8c-10 14-14 28-14 50v228z" />
+            <path fill="currentColor" d="M0 0h1200v96c-60 26-120 8-180 30-70 26-130-6-200 14-64 18-118-6-180 12-70 20-130-8-200 10-80 20-150-8-240 14z" />
+          </symbol>
+          <symbol id="lug-haz" viewBox="0 0 1200 400" preserveAspectRatio="none">
+            <g fill="#fff7cf">
+              <polygon points="180,0 250,0 190,400 130,400" opacity=".16" />
+              <polygon points="520,0 566,0 540,400 486,400" opacity=".13" />
+              <polygon points="820,0 900,0 870,400 800,400" opacity=".10" />
+            </g>
+          </symbol>
+        </svg>
+      )}
       {/* ---------------------- LA CABECERA A SANGRE ---------------------- */}
       <div className="lug-arte">
         {img ? (
           <img src={img} alt="" />
+        ) : franja ? (
+          /* En el bosque, CUATRO capas de troncos con la bruma entre ellas, no
+             una silueta sobre un degradado: la sensación de estar dentro la da
+             que haya cosas delante y detrás de ti. */
+          <>
+            {([["c1", "#2f4426"], ["c2", "#24361d"], ["c3", "#182612"], ["c4", "#0d1608"]] as const).map(([c, color], i) => (
+              <svg key={c} className={`lug-capa ${c}`} viewBox="0 0 1200 400" preserveAspectRatio="none"
+                aria-hidden="true" style={{ color, transform: `scale(${1 + i * 0.04})` }}>
+                <use href="#lug-troncos" />
+              </svg>
+            ))}
+            <svg className="lug-haces" viewBox="0 0 1200 400" preserveAspectRatio="none" aria-hidden="true"><use href="#lug-haz" /></svg>
+            <div className="lug-luces" aria-hidden="true">
+              {[["14%", "52%", "0s"], ["31%", "66%", "1.4s"], ["58%", "46%", "2.8s"], ["73%", "70%", ".7s"], ["88%", "58%", "3.6s"]].map(([left, top, delay]) => (
+                <i key={left} style={{ left, top, animationDelay: delay }} />
+              ))}
+            </div>
+          </>
         ) : (
           <svg className="lug-sil" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
             {/* ⚠️ `?.` y no acceso directo. `construirNodos` pone siempre un tema
@@ -196,6 +246,26 @@ export default function LugarPage() {
           <p className="lug-sub">{queEs} · {moment.dateStr}</p>
         </div>
       </div>
+
+      {/* La vereda va PEGADA a la cabecera y antes de la hoja: lo primero que
+          se pregunta en el bosque es cuánto llevas y hacia dónde sigues. */}
+      {franja && (
+        <ErrorBoundary fallback={(m) => <SeccionRota que="la vereda" mensaje={m} />}>
+          <Vereda
+            franja={franja}
+            salidaAlPueblo={(() => {
+              // Por dónde se sale del bosque: la salida de esta franja que sea
+              // un pueblo. Sale del GRAFO, no de una lista aparte, así que si el
+              // DM cambia desde qué pueblo se entra, la vereda lo sigue.
+              const p = salidasDe(nodo, index).find((n) => n.id.startsWith("poi:"));
+              return p ? { id: p.id, nombre: p.nombre } : null;
+            })()}
+            onIr={ir}
+            puedeIr={(id) => puedeIr(nodo.id, id, index)}
+            yendo={yendo}
+          />
+        </ErrorBoundary>
+      )}
 
       {/* -------------------------- LA HOJA ------------------------------- */}
       <div className="lug-hoja lug-vell">
@@ -248,9 +318,17 @@ export default function LugarPage() {
               resto del sitio sigue jugable. El mensaje se enseña a propósito:
               el error vivía únicamente en la consola del jugador, que es quien
               no la va a abrir nunca. */}
-          <ErrorBoundary fallback={(m) => <SeccionRota que="las salidas" mensaje={m} />}>
-            <Salidas desde={nodo.id} salidas={salidasDe(nodo, index)} onIr={ir} yendo={yendo} />
-          </ErrorBoundary>
+          {/* En el bosque las salidas ya las lleva la vereda: repetirlas aquí
+              serían las mismas dos puertas otra vez, y gemelas. */}
+          {franja ? (
+            <ErrorBoundary fallback={(m) => <SeccionRota que="lo que se ve venir" mensaje={m} />}>
+              <RastrosBosque franja={franja} />
+            </ErrorBoundary>
+          ) : (
+            <ErrorBoundary fallback={(m) => <SeccionRota que="las salidas" mensaje={m} />}>
+              <Salidas desde={nodo.id} salidas={salidasDe(nodo, index)} onIr={ir} yendo={yendo} />
+            </ErrorBoundary>
+          )}
 
           {/* Viajar va APARTE de las salidas a propósito: no es una arista del
               grafo, es que el DM haya revelado el pin. Solo desde la plaza de un

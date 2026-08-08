@@ -1096,6 +1096,137 @@ canvas.dice-box-canvas {
   --cielo-1: #6f8f5c; --cielo-2: #a8bd85; --cielo-3: #3d5a2a;
 }
 
+/* ═════════════ LA PROFUNDIDAD DEL BOSQUE — la piel se cierra ═══════════
+   Aprobado del boceto `docs/bocetos/2026-08-08-bosque-verdante.html`,
+   opción B. Valores copiados de ahí tal cual.
+
+   ⚠️ **NO es un tema nuevo, y por eso la regla sigue en pie.** «Un tema no
+   mueve nada de sitio, solo cambia la piel»: esto tampoco mueve nada, son
+   los MISMOS tokens de `.tema-bosque` con la luz bajada por franja. Se
+   apila encima (`class="tema-bosque prof-espesura"`), así que un cambio en
+   el tema sigue llegando a las tres.
+
+   ⚠️ **Solo el bosque tiene esto.** Un pueblo es un sitio: llegas y estás.
+   El bosque es una profundidad, y es lo único donde «cuánto te has metido»
+   es una pregunta.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* La linde: todavía entra sol. */
+.prof-linde {
+  --cielo-1: #8fae74; --cielo-2: #cfdcae; --cielo-3: #4e6c36;
+}
+/* La espesura: ya no se distingue la hora, y la hoja se ensucia. */
+.prof-espesura {
+  --cielo-1: #4f6b45; --cielo-2: #7e9668; --cielo-3: #2b3f1f;
+  --hoja: #e9e2c8; --hoja-2: #dbd2b0; --hoja-3: #c2b894;
+}
+/* El corazón: luz que no viene del cielo, y el rojo del lacre pasa a ser
+   el rojo del PACTO. */
+.prof-corazon {
+  --cielo-1: #2b3a2a; --cielo-2: #46603c; --cielo-3: #16210f;
+  --hoja: #e2dcc0; --hoja-2: #d2caa6; --hoja-3: #b6ac88;
+  --acento: #7c2f4a; --acento-2: #a8425f;
+  --metal: #7e8f6a; --metal-claro: #b9c79b; --metal-hondo: #43532f;
+}
+
+/* Las capas de troncos. La cabecera del pueblo es UNA silueta sobre un
+   degradado; la del bosque son cuatro capas a distintas distancias con la
+   bruma metiéndose entre ellas. La sensación de estar dentro no la da el
+   color: la da que haya cosas delante y detrás de ti. Es la lección de los
+   seis bocetos de `/lugar` — lo que salía «soso» eran los fondos planos. */
+.lug-capa { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lug-capa.c1 { opacity: 0.30; filter: blur(2px); }
+.lug-capa.c2 { opacity: 0.52; }
+.lug-capa.c3 { opacity: 0.78; }
+.lug-capa.c4 { opacity: 1; }
+/* Los haces de luz mueren en el corazón: allí la luz no viene de arriba. */
+.lug-haces { position: absolute; inset: 0; mix-blend-mode: screen; opacity: 0.5; transition: opacity 0.5s; }
+.prof-corazon .lug-haces { opacity: 0; }
+/* Y aparecen las luciérnagas, que es lo que dice «aquí la luz es otra cosa»
+   sin escribirlo. */
+.lug-luces { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s; pointer-events: none; }
+.prof-corazon .lug-luces { opacity: 1; }
+.lug-luces > i {
+  position: absolute; width: 5px; height: 5px; border-radius: 999px; background: #dff0a8;
+  box-shadow: 0 0 10px 3px rgba(200, 240, 140, 0.75);
+  animation: lug-vuela 7s ease-in-out infinite;
+}
+@keyframes lug-vuela {
+  0%, 100% { transform: translate(0, 0); opacity: 0.25 }
+  50% { transform: translate(14px, -22px); opacity: 1 }
+}
+
+/* ------------------------------ LA VEREDA ---------------------------- */
+/* Lo que el pueblo no necesita. Con dos tarjetas gemelas —una hacia dentro
+   y otra hacia fuera— el jugador no sabe cuál es cuál sin leerlas; aquí las
+   dos direcciones van DICHAS, y los tres hitos enseñan cuánto llevas. */
+.lug-vereda {
+  position: relative; padding: 18px 20px 16px;
+  background: var(--hoja-2);
+  border-top: 2px solid var(--metal-hondo); border-bottom: 1px solid var(--hoja-3);
+}
+.lug-vereda .raya {
+  position: absolute; left: 8%; right: 8%; top: 50%; height: 2px; opacity: 0.7;
+  background: repeating-linear-gradient(90deg, var(--metal) 0 6px, transparent 6px 13px);
+}
+.lug-hitos { position: relative; display: flex; justify-content: space-between; max-width: 760px; margin: 0 auto; }
+.lug-hito { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+.lug-hito .punto {
+  width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center;
+  border: 2px solid var(--metal-hondo); background: var(--hoja); color: var(--tinta-3); font-size: 13px;
+  transition: transform 0.3s, background 0.3s, color 0.3s;
+}
+.lug-hito .nm {
+  font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--tinta-3); text-align: center;
+}
+.lug-hito.aqui .punto {
+  background: radial-gradient(circle at 34% 26%, var(--acento-2), var(--acento) 72%);
+  color: #fff; transform: scale(1.28);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--acento) 22%, transparent);
+}
+.lug-hito.aqui .nm { color: var(--acento); }
+.lug-hito.hecho .punto { background: var(--metal-claro); color: var(--metal-hondo); border-color: var(--metal); }
+.lug-hito.hecho .nm { color: var(--tinta-2); }
+
+.lug-pasos { display: flex; justify-content: space-between; gap: 12px; max-width: 760px; margin: 14px auto 0; }
+.lug-paso {
+  flex: 0 0 auto; min-height: 44px; padding: 11px 16px;
+  border: 1px solid var(--hoja-3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), var(--hoja));
+  font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--tinta);
+  transition: border-color 0.2s, transform 0.2s;
+}
+.lug-paso:hover:not(:disabled) { border-color: var(--metal); transform: translateY(-2px); }
+.lug-paso:disabled { opacity: 0.35; cursor: not-allowed; }
+.lug-paso.dentro {
+  color: #fff; border-color: var(--acento);
+  background: linear-gradient(180deg, var(--acento-2), var(--acento));
+}
+
+/* --------------------------- LOS RASTROS ---------------------------- */
+/* El TONO de la franja, sin destripar la tabla de encuentros. */
+.lug-rastros { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.lug-rastro {
+  position: relative; padding: 16px 18px 16px 54px;
+  border: 1px solid var(--hoja-3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), var(--hoja-2));
+}
+.lug-rastro > i { position: absolute; left: 18px; top: 17px; font-size: 20px; color: var(--metal-hondo); opacity: 0.8; }
+.lug-rastro b {
+  display: block; font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--tinta);
+}
+.lug-rastro span { display: block; margin-top: 5px; font-size: 16.5px; line-height: 1.5; font-style: italic; color: var(--tinta-2); }
+
+@media (prefers-reduced-motion: reduce) { .lug-luces > i { animation: none; } }
+@media (max-width: 720px) {
+  .lug-hito .nm { font-size: 9px; letter-spacing: 0.08em; }
+  .lug-pasos { flex-direction: column; }
+  .lug-paso { width: 100%; text-align: center; }
+}
+
 /* --------------------------- EL VELLO DEL PAPEL ---------------------- */
 /* Grano de vitela por encima de todo, en multiply. Es lo que evita que la
    hoja parezca un div beige. SVG en línea: cero peticiones, cero imágenes. */
