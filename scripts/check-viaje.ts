@@ -9,7 +9,7 @@
 //
 // La pregunta de siempre: ¿qué rompo para que falle?
 import {
-  sitioVigente, ubicacionDeNodo, type PoiUbicado,
+  sitioVigente, ubicacionDeNodo, sanearSitio, type PoiUbicado,
 } from "../lib/nodos";
 import {
   destinosDesde, minutosDeViaje, duracionDeViaje,
@@ -48,6 +48,50 @@ check("lo que puso el DM vale incluso sin ancla", sitioVigente(enEmonPuestoPorDm
 // sitio dejaría de caducar sin que nadie lo hubiera decidido.
 const puestoRaro = { nodo: idPoi("Emon"), desde: idPoi("Byroden"), puesto: "jugador" } as unknown as Parameters<typeof sitioVigente>[0];
 check("un `puesto` que no es 'dm' caduca como lo andado", !sitioVigente(puestoRaro, idPoi("Westruun")));
+
+/* ------------- SIN SITIO NO HAY DESFASE, Y LO QUE SE LEE --------------- */
+// ⚠️ LA INVARIANTE DE LA TANDA. Un desfase huérfano dejaría a alguien adelantado
+// ocho horas **sentado en la misma plaza que los demás**, y eso no se lee como un
+// fallo: se lee como que la app miente. Se comprueba aquí porque la regla salió
+// de dentro de `useSitio` justo para eso — un hook no lo mira ningún gate, que
+// es la lección que ya costó `puedeSembrar`.
+const S_OK = { nodo: idPoi("Emon"), desde: idPoi("Byroden") };
+
+check("con sitio, el desfase se respeta", sanearSitio(S_OK, 390).desfase === 390);
+// LA GORDA: sin sitio, el desfase se tira.
+check("SIN sitio, el desfase se ignora", sanearSitio(null, 390).desfase === 0);
+check("y sin sitio tampoco hay sitio", sanearSitio(null, 390).sitio === null);
+check("un desfase huérfano sobre basura tampoco cuela", sanearSitio("no soy un sitio", 999).desfase === 0);
+
+// El desfase nunca es negativo: mandaría a alguien al pasado, con la crónica y
+// el cupo del taller detrás.
+check("un desfase negativo se queda en cero", sanearSitio(S_OK, -600).desfase === 0);
+check("un desfase que no es número se queda en cero", sanearSitio(S_OK, "390").desfase === 0);
+check("un desfase infinito se queda en cero", sanearSitio(S_OK, Number.POSITIVE_INFINITY).desfase === 0);
+check("un desfase con decimales se trunca", sanearSitio(S_OK, 390.9).desfase === 390);
+check("sin desfase guardado, cero", sanearSitio(S_OK, undefined).desfase === 0);
+
+// Y lo que se lee del `sitio`, que es un jsonb con varias versiones detrás: una
+// forma a medias no puede tumbar la pantalla, se cae al ancla.
+check("un sitio sin nodo no vale", sanearSitio({ desde: idPoi("Byroden") }, 0).sitio === null);
+check("un sitio sin desde no vale", sanearSitio({ nodo: idPoi("Emon") }, 0).sitio === null);
+check("un sitio con nodo vacío no vale", sanearSitio({ nodo: "  ", desde: idPoi("Byroden") }, 0).sitio === null);
+check("un sitio que no es objeto no vale", sanearSitio(42, 0).sitio === null);
+check("un sitio bueno se lee entero", sanearSitio(S_OK, 0).sitio?.nodo === idPoi("Emon"));
+
+// ⚠️ EL `puesto` SOLO CUELA SI DICE "dm". Si un valor raro colara, el sitio
+// dejaría de caducar y alguien se quedaría solo en un pueblo que el grupo
+// abandonó — el agujero que ya se tapó una vez.
+check("puesto 'dm' se lee", sanearSitio({ ...S_OK, puesto: "dm" }, 0).sitio?.puesto === "dm");
+check("un puesto que no es 'dm' NO se lee como dm", sanearSitio({ ...S_OK, puesto: "DM" }, 0).sitio?.puesto === undefined);
+check("un puesto 'jugador' tampoco", sanearSitio({ ...S_OK, puesto: "jugador" }, 0).sitio?.puesto === undefined);
+check("sin puesto, es lo que anduvo el jugador", sanearSitio(S_OK, 0).sitio?.puesto === undefined);
+// Y lo que sale de `sanearSitio` tiene que casar con `sitioVigente`: leer un
+// "dm" mal haría que el que caduca no caducara, o al revés.
+const leidoDm = sanearSitio({ ...S_OK, puesto: "dm" }, 0).sitio!;
+const leidoAndado = sanearSitio({ ...S_OK, puesto: "DM" }, 0).sitio!;
+check("lo leído como dm no caduca", sitioVigente(leidoDm, idPoi("Westruun")));
+check("lo leído con un puesto raro SÍ caduca", !sitioVigente(leidoAndado, idPoi("Westruun")));
 
 /* ------------------ DÓNDE ESTÁ ESO, EN EL MUNDO ------------------------ */
 // ⚠️ LO QUE EVITA QUE LA PANTALLA MIENTA. Byroden está en `peninsula-pleabruma`

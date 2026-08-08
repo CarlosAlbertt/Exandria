@@ -73,6 +73,57 @@ export function sitioVigente(sitio: Sitio, ancla: string | null): boolean {
   return !!ancla && sitio.desde === ancla;
 }
 
+/**
+ * Lee el `sitio` y el `desfase` de un `play_state` que puede traer cualquier
+ * cosa, **y hace cumplir la invariante**.
+ *
+ * ⚠️ **Vive aquí y no dentro de `useSitio` a propósito, y esa es la lección más
+ * repetida de este repo**: el guardia anti-duplicado de `seedNpcs` vivía pegado
+ * a la consulta de Supabase, **donde ningún gate llegaba**, así que romperlo
+ * dejaba el gate verde. Salió a `puedeSembrar` por lo mismo que esto sale aquí.
+ * Y hace más falta todavía porque la invariante se aplica en DOS sitios: este
+ * hook y `/api/dm/character`.
+ *
+ * ⚠️ **LA INVARIANTE: sin `sitio` no hay `desfase`.** Volver con el grupo es
+ * volver a su hora. Un desfase huérfano dejaría a alguien adelantado ocho horas
+ * **sentado en la misma plaza que los demás**, y eso no se lee como un fallo: se
+ * lee como que la app miente.
+ *
+ * Tolerante con lo que haya guardado, porque es un `jsonb` que ha pasado por
+ * varias versiones: una forma vieja o a medias **no puede tumbar la pantalla del
+ * jugador**, se cae al ancla, que es lo peor que debería pasar.
+ */
+export function sanearSitio(rawSitio: unknown, rawDesfase: unknown): { sitio: Sitio | null; desfase: number } {
+  const sitio = leerSitio(rawSitio);
+  return { sitio, desfase: sitio ? leerDesfase(rawDesfase) : 0 };
+}
+
+function leerSitio(raw: unknown): Sitio | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o.nodo !== "string" || typeof o.desde !== "string") return null;
+  if (!o.nodo.trim() || !o.desde.trim()) return null;
+  // `puesto` solo se acepta si dice EXACTAMENTE "dm". Cualquier otra cosa
+  // —incluido que falte, que es lo que hay en las fichas de antes de esta
+  // tanda— es «lo anduvo el jugador», que es el caso que CADUCA. Si un valor
+  // raro colara como "dm", el sitio dejaría de caducar y alguien se quedaría
+  // solo en un pueblo que el grupo abandonó: el agujero que ya se tapó una vez.
+  return o.puesto === "dm"
+    ? { nodo: o.nodo, desde: o.desde, puesto: "dm" }
+    : { nodo: o.nodo, desde: o.desde };
+}
+
+/**
+ * Los minutos que este jugador lleva de más por haber viajado.
+ *
+ * **Nunca negativo**: un desfase en negativo mandaría a alguien al pasado, con
+ * la crónica y el cupo del taller detrás.
+ */
+function leerDesfase(raw: unknown): number {
+  const n = typeof raw === "number" ? raw : Number.NaN;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
 /* --------------------- DÓNDE ESTÁ ESO, EN EL MUNDO --------------------- */
 
 /** Un POI aplanado del atlas: lo mínimo para saber dónde cae. */

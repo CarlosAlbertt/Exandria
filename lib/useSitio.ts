@@ -3,38 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient, supabaseConfigured } from "@/lib/supabase/client";
 import { useSession } from "@/components/SessionProvider";
 import { loadActiveCharacter } from "@/lib/character";
-import type { Sitio } from "@/lib/nodos";
-
-/**
- * Lee el `sitio` de un `play_state` que puede traer cualquier cosa.
- *
- * Tolerante a propósito: es un `jsonb` que ha pasado por varias versiones de la
- * app, y una forma vieja o a medias **no puede tumbar la pantalla del jugador**
- * — se cae al ancla, que es lo peor que debería pasar.
- */
-function leerSitio(raw: unknown): Sitio | null {
-  if (!raw || typeof raw !== "object") return null;
-  const o = raw as Record<string, unknown>;
-  if (typeof o.nodo !== "string" || typeof o.desde !== "string") return null;
-  // `puesto` solo se acepta si dice exactamente "dm". Cualquier otra cosa
-  // —incluido que falte, que es lo que hay en las fichas de antes de esta
-  // tanda— es «lo anduvo el jugador», que es el caso que CADUCA. Si el valor
-  // raro se colara como "dm", el sitio dejaría de caducar y alguien se quedaría
-  // solo en un pueblo que el grupo abandonó: el agujero que ya se tapó una vez.
-  const puesto = o.puesto === "dm" ? ("dm" as const) : undefined;
-  return puesto ? { nodo: o.nodo, desde: o.desde, puesto } : { nodo: o.nodo, desde: o.desde };
-}
-
-/**
- * Los minutos de juego que este jugador lleva de más por haber viajado.
- *
- * Tolerante igual que `leerSitio`, y **nunca negativo**: un desfase en negativo
- * mandaría a alguien al pasado, con la crónica y el cupo del taller detrás.
- */
-function leerDesfase(raw: unknown): number {
-  const n = typeof raw === "number" ? raw : Number.NaN;
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
-}
+// ⚠️ `sanearSitio` vive en `lib/nodos.ts`, que es NEUTRO, y no aquí dentro: una
+// regla metida en un hook **no la puede mirar ningún gate**, que es exactamente
+// por lo que `puedeSembrar` salió de `seedNpcs`. Y hace más falta todavía porque
+// la misma invariante se aplica también en `/api/dm/character`.
+import { sanearSitio, type Sitio } from "@/lib/nodos";
 
 /**
  * Dónde está ESTE jugador, por su cuenta.
@@ -63,12 +36,11 @@ export function useSitio() {
     const c = await loadActiveCharacter(userId);
     setCharacterId(c?.id ?? null);
     const play = (c?.play_state as Record<string, unknown> | undefined) ?? {};
-    const s = leerSitio(play.sitio);
-    setSitio(s);
-    // La invariante, también al LEER: un desfase sin sitio se ignora. Puede
-    // haber quedado uno huérfano si el DM editó la ficha a mano, y sumárselo
-    // dejaría a alguien adelantado sentado en la misma plaza que los demás.
-    setDesfase(s ? leerDesfase(play.desfase) : 0);
+    // La invariante se aplica también al LEER, no solo al escribir: puede haber
+    // quedado un desfase huérfano si el DM editó la ficha a mano.
+    const saneado = sanearSitio(play.sitio, play.desfase);
+    setSitio(saneado.sitio);
+    setDesfase(saneado.desfase);
     setReady(true);
   }, [userId]);
 
