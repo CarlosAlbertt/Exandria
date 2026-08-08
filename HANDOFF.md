@@ -2,9 +2,71 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08, cierre)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08, el corazón)
 
-> **TODO LO DE HOY ESTÁ EN `master` Y DESPLEGADO.** Ocho merges. **Sin ninguna
+> **EL CORAZÓN DEL BOSQUE YA TIENE MONSTRUOS.** Dos merges, los dos en `master`
+> y desplegados. **Sin migración.** Último commit: `merge: el corazon del bosque
+> ya tiene monstruos jugables`.
+>
+> ### Lo que estaba roto y ya no
+> `jugablesDe("corazon")` devolvía **un array vacío**: diez entradas escritas y
+> ninguna con statblock, así que en el fondo del bosque no se podía sacar un
+> combate de la tabla. Ahora son **10 de 10** y la cobertura del manual sube de
+> 151 a **161 de 501**.
+>
+> | Pieza | Dónde vive |
+> |---|---|
+> | El gate: **toda franja necesita 5 jugables** | `scripts/check-bosque.ts` |
+> | Los diez statblocks del corazón | `data/bestiary/lote-10.ts` (+ índice) |
+> | Los diez fuera de `PENDIENTES` | `data/bosque.ts` |
+>
+> ### El gate, y por qué cuenta fichas y no dificultad
+> Las dos líneas que había miraban `jugablesDe` de la linde y de la espesura, una
+> a una y con `> 0`, **y se dejaban el corazón fuera** — justo la franja rota.
+> Ahora el bucle recorre `ESPERADAS`, así que **una franja nueva entra sola**.
+> El mínimo es 5 porque son cinco o seis jugadores y con uno solo la franja no es
+> una tabla, es el mismo encuentro repetido. Se pensó y **se descartó** exigir
+> además un jugable dentro de la banda de la franja: dejaría **la espesura en
+> rojo sin salida a corto plazo** (su máximo real es CR 2 y no tiene nada
+> extraído entre 5 y 8). La banda es techo, no suelo; el peso lo pone el número
+> de bichos y de eso se encarga `XP_BUDGET`.
+>
+> ### ⚠️ Las bandas estaban mal apuntadas, y se han corregido
+> `check-bosque.ts` decía «linde 2-3, espesura 5-7 y corazón 10-15» y **el
+> usuario las corrigió: son 1-3, 5-8 y 9-15**. El desajuste no era inocente: con
+> el corazón escrito en 10-15, **ninguno de los diez que lo habitan llegaba a su
+> propia banda**, porque el más gordo es el Ent con CR 9. `TECHO_CR.espesura`
+> sube de 7 a 8; los otros dos ya coincidían. **El suelo del corazón se queda en
+> CR 1** y no sube a 9: echaría a nueve de los diez.
+>
+> ### ⚠️ Los tres nombres «inventados» quedan CONFIRMADOS
+> Triceratops, Cíclope Centinela y Tiranosaurio Rex **no cambian**. El Manual es
+> el inglés, así que del PDF no sale ningún nombre español: el ES lo pone siempre
+> quien extrae, y los tres traducen bien `Triceratops`, `Cyclops Sentry` y
+> `Tyrannosaurus Rex`. **Lo que sí salió torcido fue la capa OCR**, que daba
+> «CR 5» para el Cíclope cuando es **CR 6** (XP 2.300; PB +3). Las ocho páginas
+> se leyeron renderizadas, que es la única fuente que vale.
+>
+> ### CR reales de la franja, para calibrar encuentros
+> Ent 9 · Tiranosaurio Rex 8 · Centauro Guardián 7 · Oso Lechuza Primigenio 7 ·
+> Cíclope Centinela 6 · Unicornio 5 · Triceratops 5 · Bruja Verde 3 · Centauro
+> Soldado 2 · Cría de Dragón Verde 2.
+>
+> ### Cómo está cada franja
+> Linde 15 entradas / **12 jugables**; espesura 21 / **6** (pasa el gate por uno,
+> y es la siguiente que pide extracción); corazón 10 / **10**. Quedan **18
+> pendientes**, quince de ellos de la espesura.
+>
+> ### Lo que sigue sin verse en la app con datos
+> Igual que ayer: `/lugar` y `/dm` están detrás del proxy de auth y **sin sesión
+> todo redirige a `/login`**. Nada de esto se ha mirado renderizado con datos
+> reales. Y siguen pendientes a mano: **abrir pueblos al viaje** (Panel DM ›
+> Mapa, el ojo de cada pueblo — sin ninguno revelado nadie puede viajar) y
+> **subir ilustraciones de cabecera** 16:9.
+
+## 🚦 Antes de eso (2026-08-08, cierre)
+
+> **TODO LO DE ESE DÍA ESTÁ EN `master` Y DESPLEGADO.** Ocho merges. **Sin ninguna
 > migración**: todo lo nuevo vive en `characters.play_state`, que es `jsonb`.
 > Último commit: `merge: el mapa suma lo que conoce cada jugador`.
 >
@@ -13,7 +75,7 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > nada pendiente en Supabase.** Si algo falla en misiones individuales,
 > sub-lugares o diálogos, **no es la migración**.
 >
-> ### ⚠️ LO PRIMERO QUE HAY QUE ARREGLAR
+> ### ⚠️ LO PRIMERO QUE HAY QUE ARREGLAR — **YA RESUELTO, ver la entrada de arriba**
 > **El corazón del bosque no tiene NI UN monstruo jugable.** Diez entradas
 > escritas y **ninguna con statblock**, así que `jugablesDe("corazon")` devuelve
 > vacío: ahí no puede haber un combate sacado de la tabla, y **nada lo avisa**.
