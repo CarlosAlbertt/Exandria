@@ -10,11 +10,15 @@
 //   · Un lote nuevo que extraiga un pendiente y no lo quite de la lista → el
 //     bicho estaría en los dos sitios y el DM creería que sigue sin ficha.
 //   · Una franja que contradiga el CR de un monstruo que SÍ existe.
+import fs from "node:fs";
+import path from "node:path";
 import { ALL_MONSTERS } from "../data/bestiary";
 import {
   ENCUENTROS_VERDANTE, PENDIENTES, FRANJAS, encuentrosDe, jugablesDe,
+  franjaDeNodo, profundidadDe, franjaVecina,
   type Franja,
 } from "../data/bosque";
+import { idFranja } from "../data/lugares";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -118,6 +122,66 @@ for (const e of ENCUENTROS_VERDANTE) {
 // ninguna de las comprobaciones de arriba dijera nada.
 check("el techo sube de la linde a la espesura", TECHO_CR.linde < TECHO_CR.espesura);
 check("y de la espesura al corazón", TECHO_CR.espesura < TECHO_CR.corazon);
+
+/* ------------- LA PROFUNDIDAD: LA PIEL QUE SE CIERRA -------------------- */
+// ⚠️ LO QUE MUERDE: una clase `prof-*` que no existe **no da ningún error**. La
+// hoja se queda con la piel de la franja anterior —o con la del tema pelado— y
+// el bosque deja de cerrarse sin que nada lo diga. Es el mismo fallo silencioso
+// que ya se vigila con `.tema-*`.
+{
+  const CSS = fs.readFileSync(path.join(process.cwd(), "app", "globals.css"), "utf8");
+
+  for (const f of FRANJAS) {
+    const bloque = new RegExp(`\\.prof-${f.key}\\s*\\{([^}]*)\\}`).exec(CSS)?.[1];
+    check(`la franja "${f.key}" tiene su regla .prof-${f.key} en globals.css`, !!bloque);
+    // Toda franja tiene que mover AL MENOS el cielo: si no cambia nada, la
+    // clase existe y no hace nada, que se lee igual que si faltara.
+    check(`.prof-${f.key} baja la luz del cielo`, !!bloque?.includes("--cielo-1:"));
+  }
+
+  // El corazón es el que apaga los haces y enciende las luciérnagas. Si esas dos
+  // reglas se pierden, el fondo del bosque se ve igual que la linde.
+  check("en el corazón se apagan los haces de luz", /\.prof-corazon\s+\.lug-haces\s*\{[^}]*opacity:\s*0/.test(CSS));
+  check("y se encienden las luciérnagas", /\.prof-corazon\s+\.lug-luces\s*\{[^}]*opacity:\s*1/.test(CSS));
+
+  // Los rastros: el TONO de cada franja, que es lo que se le enseña al jugador.
+  for (const f of FRANJAS) {
+    check(`"${f.key}" tiene rastros escritos`, f.rastros.length >= 3);
+    for (const r of f.rastros) {
+      check(`el rastro "${r.titulo}" (${f.key}) tiene icono`, /^fa-[a-z0-9-]+$/.test(r.icono));
+      check(`el rastro "${r.titulo}" está escrito de verdad`, r.texto.trim().length > 25);
+    }
+    // ⚠️ Un rastro NO puede nombrar a un monstruo de la tabla: se destriparía lo
+    // que va a salir, que es justo lo que estos textos existen para no hacer.
+    for (const e of encuentrosDe(f.key)) {
+      const nombra = f.rastros.some((r) => `${r.titulo} ${r.texto}`.toLowerCase().includes(e.name.toLowerCase()));
+      check(`ningún rastro de "${f.key}" destripa a "${e.name}"`, !nombra);
+    }
+  }
+}
+
+// `franjaDeNodo` es el seto: valida contra FRANJAS en vez de fiarse del prefijo,
+// porque un `franja:inventada` daría la clase `prof-inventada`, que no casa con
+// nada y deja la hoja sin ninguno de sus tokens.
+for (const f of FRANJAS) {
+  check(`franjaDeNodo reconoce "${f.key}"`, franjaDeNodo(idFranja(f.key)) === f.key);
+}
+check("franjaDeNodo rechaza una franja inventada", franjaDeNodo("franja:inventada") === null);
+check("franjaDeNodo rechaza un pueblo", franjaDeNodo("poi:Byroden") === null);
+check("franjaDeNodo rechaza un sub-lugar", franjaDeNodo("sub:Byroden/taberna") === null);
+check("franjaDeNodo rechaza basura", franjaDeNodo("") === null && franjaDeNodo("franja:") === null);
+
+// La profundidad sale del ORDEN de FRANJAS y va de 1 a 3, sin huecos ni repes.
+const profs = FRANJAS.map((f) => profundidadDe(f.key));
+check("las profundidades son 1, 2 y 3", JSON.stringify(profs) === JSON.stringify([1, 2, 3]));
+
+// Y las vecinas encadenan el bosque de fuera adentro. Si esto se rompe, la
+// vereda ofrece un paso que no lleva a la franja de al lado.
+check("de la linde se entra a la espesura", franjaVecina("linde", "dentro") === "espesura");
+check("de la espesura al corazón", franjaVecina("espesura", "dentro") === "corazon");
+check("del corazón no se entra más adentro", franjaVecina("corazon", "dentro") === null);
+check("de la linde no se sale a otra franja", franjaVecina("linde", "fuera") === null);
+check("del corazón se vuelve a la espesura", franjaVecina("corazon", "fuera") === "espesura");
 
 /* ------------------------------ CONSULTAS ------------------------------ */
 // Las tres franjas tienen algo. Una vacía deja al DM sin tabla en ese tramo.

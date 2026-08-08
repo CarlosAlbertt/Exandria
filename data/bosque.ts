@@ -32,7 +32,26 @@ export type Franja = "linde" | "espesura" | "corazon";
  */
 export const REGION_DEL_BOSQUE = "expansion-verdante";
 
-export const FRANJAS: { key: Franja; label: string; blurb: string }[] = [
+/**
+ * Un rastro: lo que se ve venir en una franja **sin destripar la tabla**.
+ *
+ * ⚠️ **No es la lista de encuentros, y esa es toda la gracia.** El jugador
+ * necesita saber qué clase de sitio es antes de meterse; `ENCUENTROS_VERDANTE`
+ * lleva la `nota` de cada bicho, pero eso está escrito **para el DM** y
+ * enseñárselo sería contarle qué va a salir. Un rastro dice el TONO —rodadas de
+ * carro, tela ordenada, una raya de setas— que es lo que un guarda forestal te
+ * diría antes de dejarte pasar.
+ */
+export type RastroFranja = { icono: string; titulo: string; texto: string };
+
+/**
+ * Las tres franjas, de fuera adentro.
+ *
+ * El ORDEN ES LA PROFUNDIDAD: el índice de este array es lo que dice cuánto te
+ * has metido, y de ahí sale la piel que se va cerrando (`.prof-*` en
+ * `globals.css`) y la vereda de la pantalla. Reordenarlo invierte el bosque.
+ */
+export const FRANJAS: { key: Franja; label: string; blurb: string; rastros: RastroFranja[] }[] = [
   {
     key: "linde",
     label: "La linde",
@@ -40,6 +59,11 @@ export const FRANJAS: { key: Franja; label: string; blurb: string }[] = [
       "Los primeros kilómetros, donde todavía se ven los caminos de carro y el " +
       "humo de Syngorn entre las copas. Aquí el bosque aún se deja andar, pero " +
       "ya hay cosas que salen del suelo y cosas que bajan a por las colmenas.",
+    rastros: [
+      { icono: "fa-shoe-prints", titulo: "Rodadas de carro", texto: "Alguien ha pasado con una carreta, y no hace mucho." },
+      { icono: "fa-feather", titulo: "Un búho que no duerme", texto: "Vigía de Syngorn. Habla, y decide si te deja pasar." },
+      { icono: "fa-spider", titulo: "Telas en las ramas bajas", texto: "El primer aviso de lo que hay más adentro." },
+    ],
   },
   {
     key: "espesura",
@@ -47,6 +71,11 @@ export const FRANJAS: { key: Franja; label: string; blurb: string }[] = [
     blurb:
       "Bajo el dosel cerrado ya no se distingue la hora. Aquí el bosque deja de " +
       "ser un sitio por el que se pasa y empieza a ser un sitio donde algo vive.",
+    rastros: [
+      { icono: "fa-tree", titulo: "Árboles que se han movido", texto: "El camino por el que entraste ya no está donde lo dejaste." },
+      { icono: "fa-wine-glass", titulo: "Fiesta a deshora", texto: "Se oye reír. Peligroso por lo que te hace prometer, no por lo que pega." },
+      { icono: "fa-spider", titulo: "Tela ordenada", texto: "Donde la tela tiene un orden, hay alguien que la pastorea." },
+    ],
   },
   {
     key: "corazon",
@@ -55,8 +84,46 @@ export const FRANJAS: { key: Franja; label: string; blurb: string }[] = [
       "Donde los árboles llevan más años que Tal'Dorei y el pacto feérico aún se " +
       "respeta. No se entra sin permiso, y lo que hay dentro sabe si lo tienes. " +
       "Aquí sobrevive lo de una edad anterior, que nunca se fue.",
+    rastros: [
+      { icono: "fa-hand-sparkles", titulo: "La raya del pacto", texto: "Una línea de setas blancas. Cruzarla es aceptar algo." },
+      { icono: "fa-horse", titulo: "Cascos, en círculo", texto: "Han pasado por aquí muchas veces. Patrullan." },
+      { icono: "fa-dragon", titulo: "Algo grande y joven", texto: "Ya se cree el dueño, y aún no ha crecido." },
+    ],
   },
 ];
+
+/* ---------------------------- LA PROFUNDIDAD --------------------------- */
+
+/**
+ * ¿En qué franja estoy, si estoy en el bosque?
+ *
+ * Devuelve `null` en cualquier otro nodo, que es lo que hace que la piel que se
+ * cierra y la vereda **solo aparezcan dentro del bosque** sin que la pantalla
+ * tenga que saber nada de ids.
+ *
+ * ⚠️ Se valida contra `FRANJAS` en vez de fiarse del prefijo: un
+ * `franja:inventada` daría la clase `prof-inventada`, que no casa con ninguna
+ * regla del CSS y dejaría la hoja **sin ninguno de sus tokens** — el mismo fallo
+ * silencioso que ya se tapó con `esTema`.
+ */
+export function franjaDeNodo(nodoId: string): Franja | null {
+  if (!nodoId.startsWith("franja:")) return null;
+  const key = nodoId.slice("franja:".length);
+  return FRANJAS.some((f) => f.key === key) ? (key as Franja) : null;
+}
+
+/** Cuánto de metido estás: 1, 2 o 3. El orden de `FRANJAS` es la profundidad. */
+export function profundidadDe(franja: Franja): number {
+  return FRANJAS.findIndex((f) => f.key === franja) + 1;
+}
+
+/** La franja de al lado, hacia dentro o hacia fuera. `null` si no hay más. */
+export function franjaVecina(franja: Franja, hacia: "dentro" | "fuera"): Franja | null {
+  const i = FRANJAS.findIndex((f) => f.key === franja);
+  if (i < 0) return null;
+  const j = hacia === "dentro" ? i + 1 : i - 1;
+  return FRANJAS[j]?.key ?? null;
+}
 
 /** Una entrada de la tabla. `name` apunta al `Monster.name` exacto. */
 export type EncuentroBosque = {
