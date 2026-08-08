@@ -21,7 +21,24 @@ import SaberRoll from "@/components/lugar/SaberRoll";
 import ClimaEfectos from "@/components/lugar/ClimaEfectos";
 import Salidas from "@/components/lugar/Salidas";
 import Viajar from "@/components/lugar/Viajar";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { duracionDeViaje } from "@/lib/viaje";
+
+/**
+ * Una sección que se ha caído, dicha con nombre y con el mensaje.
+ *
+ * El resto del sitio sigue jugable. Y el mensaje se enseña porque hasta ahora un
+ * throw solo existía en la consola del jugador: quien se lo encuentra es
+ * exactamente quien no va a abrir las herramientas de desarrollo.
+ */
+function SeccionRota({ que, mensaje }: { que: string; mensaje: string }) {
+  return (
+    <p className="lug-note" style={{ borderLeftColor: "var(--acento)" }}>
+      No se ha podido cargar {que}. El resto del sitio sigue funcionando.
+      {mensaje ? <><br /><span style={{ fontFamily: "var(--font-body)", fontStyle: "italic" }}>{mensaje}</span></> : null}
+    </p>
+  );
+}
 
 /**
  * `/lugar` — LA HOJA. Referencia literal:
@@ -159,7 +176,13 @@ export default function LugarPage() {
           <img src={img} alt="" />
         ) : (
           <svg className="lug-sil" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
-            <path d={TEMAS[nodo.tema].silueta} fill="currentColor" />
+            {/* ⚠️ `?.` y no acceso directo. `construirNodos` pone siempre un tema
+                válido y `aplicarOverride` filtra el del DM, así que esto no
+                debería poder fallar — pero `TEMAS[algo-raro]` sería `undefined` y
+                `.silueta` **tumbaría la página entera**, y el tema acaba
+                viniendo de un JSON de `app_config` escrito a mano. La cabecera
+                sin silueta es un degradado; la página caída no es nada. */}
+            <path d={TEMAS[nodo.tema]?.silueta ?? ""} fill="currentColor" />
           </svg>
         )}
         {/* La bruma muere en el color de la hoja: es lo que cose el arte al
@@ -218,22 +241,35 @@ export default function LugarPage() {
 
           {alAireLibre(nodo.id) && <ClimaEfectos weather={weather} />}
 
-          <Salidas desde={nodo.id} salidas={salidasDe(nodo, index)} onIr={ir} yendo={yendo} />
+          {/* ⚠️ Cada sección va en su propia red, y no es paranoia: estas cuatro
+              leen datos que el DM escribe a mano (tiendas, PNJ, saber, el JSON
+              de sitios), y **un throw en cualquiera dejaba la pantalla del
+              jugador en blanco entera**. Aislada, se cae solo la sección y el
+              resto del sitio sigue jugable. El mensaje se enseña a propósito:
+              el error vivía únicamente en la consola del jugador, que es quien
+              no la va a abrir nunca. */}
+          <ErrorBoundary fallback={(m) => <SeccionRota que="las salidas" mensaje={m} />}>
+            <Salidas desde={nodo.id} salidas={salidasDe(nodo, index)} onIr={ir} yendo={yendo} />
+          </ErrorBoundary>
 
           {/* Viajar va APARTE de las salidas a propósito: no es una arista del
               grafo, es que el DM haya revelado el pin. Solo desde la plaza de un
               pueblo — de la taberna se sale primero y del bosque se vuelve
               andando por las franjas. */}
-          <Viajar
-            desde={enElPueblo && poiName && ubicacion ? { poiName, regionSlug: ubicacion.regionSlug } : null}
-            continente={ubicacion?.continent ?? null}
-            anclaPoi={location?.poiName ?? null}
-            atlas={atlas}
-            ocupado={yendo !== null}
-            onViajar={(nodoId, minutos) => viajar(nodoId, ancla, minutos)}
-          />
+          <ErrorBoundary fallback={(m) => <SeccionRota que="ponerse en camino" mensaje={m} />}>
+            <Viajar
+              desde={enElPueblo && poiName && ubicacion ? { poiName, regionSlug: ubicacion.regionSlug } : null}
+              continente={ubicacion?.continent ?? null}
+              anclaPoi={location?.poiName ?? null}
+              atlas={atlas}
+              ocupado={yendo !== null}
+              onViajar={(nodoId, minutos) => viajar(nodoId, ancla, minutos)}
+            />
+          </ErrorBoundary>
 
-          <NpcSection nodo={nodo} ambient={ambient} />
+          <ErrorBoundary fallback={(m) => <SeccionRota que="la gente del lugar" mensaje={m} />}>
+            <NpcSection nodo={nodo} ambient={ambient} />
+          </ErrorBoundary>
         </div>
       </div>
 
@@ -249,13 +285,21 @@ export default function LugarPage() {
             <i className="fas fa-store mr-2" style={{ color: "var(--color-bronze)" }} />
             Asuntos de {poiName}
           </p>
-          <ShopSection poiName={poiName} ambient={ambient} />
+          <ErrorBoundary fallback={(m) => <SeccionRota que="las tiendas" mensaje={m} />}>
+            <ShopSection poiName={poiName} ambient={ambient} />
+          </ErrorBoundary>
           <PosadaSection posada={!!poi?.services?.posada} />
-          {poi?.services?.tablon && <TablonSection poiName={poiName} />}
+          {poi?.services?.tablon && (
+            <ErrorBoundary fallback={(m) => <SeccionRota que="el tablón" mensaje={m} />}>
+              <TablonSection poiName={poiName} />
+            </ErrorBoundary>
+          )}
           {/* La tirada de saber va con la región DONDE ESTÁS: el saber de
               Pleabruma no es el del Litoral, y con el ancla del grupo un jugador
               en Emon habría estado tirando por la región de sus compañeros. */}
-          <SaberRoll poiName={poiName} regionSlug={ubicacion.regionSlug} continent={ubicacion.continent} />
+          <ErrorBoundary fallback={(m) => <SeccionRota que="la tirada de saber" mensaje={m} />}>
+            <SaberRoll poiName={poiName} regionSlug={ubicacion.regionSlug} continent={ubicacion.continent} />
+          </ErrorBoundary>
         </div>
       )}
     </main>

@@ -52,7 +52,15 @@ export function useSitio() {
     if (!supabaseConfigured || !characterId) return;
     const supabase = createClient();
     const ch = supabase
-      .channel(`sitio_rt_${characterId}`)
+      // ⚠️ **El sufijo aleatorio NO es decorativo, y su ausencia fue un fallo.**
+      // Este hook era el ÚNICO del repo con el nombre de canal fijo, y colaba
+      // mientras solo lo usaba `/lugar`. Al meterlo en `useRelojJugador` pasó a
+      // vivir también en la barra de navegación, así que **cada página tenía dos
+      // instancias suscribiéndose al MISMO topic**: el segundo `subscribe` choca
+      // y, peor, el `removeChannel` de uno al desmontarse le cierra el topic al
+      // otro — la pantalla del jugador deja de enterarse de que el DM lo ha
+      // movido. Los otros cinco hooks del repo aleatorizan por esto mismo.
+      .channel(`sitio_rt_${characterId}_${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "characters", filter: `id=eq.${characterId}` }, () => { void cargar(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
