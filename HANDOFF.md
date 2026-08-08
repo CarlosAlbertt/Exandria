@@ -2,7 +2,56 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08, tarde)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08, noche)
+
+> **EL RELOJ VA POR JUGADOR, Y LA TANDA ESTÁ COMPLETA.** Rama
+> `feat/reloj-por-jugador`. Piezas 3 y 4 del plan
+> `docs/superpowers/plans/2026-08-08-posicion-por-jugador.md`. **Sin migración.**
+>
+> `useRelojJugador` = el reloj del grupo **+ el desfase de esta ficha**. Lo usan
+> los cinco sitios que pintan la hora, el cupo del caldero y el descanso.
+> **El reloj sigue siendo UNO**: no hay cinco filas en `app_config`, hay la del
+> grupo (del DM) y un desfase por ficha encima. El DM no tiene ficha, así que ve
+> la del grupo — su reloj es el ancla.
+>
+> ### ⚠️ SALIERON DOS FALLOS QUE YA ESTABAN EN PRODUCCIÓN
+> Los dos vivían dentro de `/api/descanso`, pegados a los `upsert`, **donde
+> ningún gate llegaba**. Aparecieron al sacar la regla a `lib/tiempoDescanso.ts`.
+>
+> 1. **El reloj se sumaba UNA VEZ POR CADA UNO.** Cinco jugadores descansando
+>    largo juntos son cinco llamadas, y cada una hacía `epochGameMin = ahora +
+>    480`: **el grupo se comía cuarenta horas por una noche.** No lo veía nadie
+>    porque el reloj corre solo y nadie lo mira dos veces. Desduplicado con
+>    `app_config.ultimo_avance_descanso`.
+> 2. **El que descansaba solo adelantaba a los demás.** Un jugador en Emon les
+>    metía ocho horas a los cuatro de Byroden sin que hubieran hecho nada.
+>
+> Ahora: **con el grupo mueve el reloj compartido; por tu cuenta, solo tu
+> desfase.**
+>
+> ### El freno del descanso largo se fue a la ficha
+> Vivía en `app_config.last_long_rest`, **del grupo**: quien se iba solo a Emon
+> no podía descansar porque sus compañeros habían descansado en Byroden, y el
+> mensaje se lo decía tal cual. Ahora `play_state.ultimoLargo`, medido en **su**
+> hora (con el desfase dentro) — contra la del grupo le duraría de más, que es
+> justo el castigo que esto quita. **La clave compartida queda abandonada**: no
+> se borra de `app_config`, simplemente ya no se lee.
+>
+> ### Una simplificación aceptada, y va dicha
+> `PartyLocationWidget` se queda con la hora **del grupo** a propósito: trata de
+> dónde está el grupo, no de dónde estás tú. Y el `tallerCupo` que se guarde
+> lleva el desfase dentro, así que al volver con el grupo —donde el desfase se
+> borra— el cupo dura un poco más de lo apuntado. Es la misma simplificación que
+> hace que el viaje de vuelta no se cobre, y el error va hacia no castigar.
+>
+> ### El gate: 43 (uno nuevo), y CUATRO mutaciones
+> `check-descanso` nuevo, **34 comprobaciones**, con una por cada uno de los dos
+> fallos de arriba. Las cuatro mutaciones, verificadas con `git diff` antes de
+> correr y todas cazadas: reintroducir las 40 h (3 fallos), que el que duerme
+> solo arrastre a los demás (4), fallar cerrado y culpar al grupo (5), y sellar
+> el freno con la hora del grupo en vez de la propia (3).
+
+## 🚦 Antes de eso (2026-08-08, tarde)
 
 > **CADA JUGADOR ESTÁ DONDE ESTÁ.** Uno en Emon y otro en Byroden, a la vez.
 > Rama `feat/posicion-por-jugador`, **pusheada y SIN MERGEAR**. Siete commits.

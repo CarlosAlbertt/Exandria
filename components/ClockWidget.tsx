@@ -1,6 +1,6 @@
 "use client";
 
-import { useGameClock } from "@/lib/useGameClock";
+import { useRelojJugador } from "@/lib/useRelojJugador";
 import { momentFromGameMin } from "@/lib/gameClock";
 
 // Icono aproximado por estación (fallback fa-leaf si no coincide ninguno).
@@ -19,7 +19,7 @@ function pad(n: number): string {
 // Tiempo). La variante compacta de la barra de navegación vive ahora en
 // `ClockPopover`, que además despliega el mes.
 export default function ClockWidget() {
-  const { nowGameMin, ready } = useGameClock();
+  const { nowGameMin, ready } = useRelojJugador();
 
   if (!ready) {
     return (

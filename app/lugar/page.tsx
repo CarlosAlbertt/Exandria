@@ -3,7 +3,7 @@ import { useState } from "react";
 import { usePartyLocation } from "@/lib/usePartyLocation";
 import { useAtlas, regionsOf, poisOf, poisPlanos, regionesPlanas } from "@/lib/useAtlas";
 import { useTownMaps } from "@/lib/useTownMaps";
-import { useGameClock } from "@/lib/useGameClock";
+import { useRelojJugador } from "@/lib/useRelojJugador";
 import { momentFromGameMin } from "@/lib/gameClock";
 import { weatherFor, ambientLine } from "@/lib/weather";
 import { useClues } from "@/lib/useClues";
@@ -49,7 +49,7 @@ export default function LugarPage() {
   const { nodos, ready: nodosReady } = useLugares();
   const { sitio, desfase, ready: sitioReady, mover, viajar } = useSitio();
   const { townMap } = useTownMaps();
-  const { nowGameMin } = useGameClock();
+  const { nowGameMin } = useRelojJugador();
   const { clues } = useClues();
   const [yendo, setYendo] = useState<string | null>(null);
 
