@@ -93,7 +93,8 @@ export async function updateNpc(id: number, patch: Partial<Pick<LocationNpc, "na
  * por `venue`, así que en pantalla salen en el bosque igual.
  */
 export async function seedNpcs(
-  poiName: string, nodoId: string, plantilla: { name: string; role: string; prompt: string; publico?: boolean }[],
+  poiName: string, nodoId: string,
+  plantilla: { name: string; role: string; prompt: string; publico?: boolean; dialogo?: string }[],
 ): Promise<{ ok: true; creados: number } | { ok: false; error: string }> {
   if (!supabaseConfigured) return { ok: false, error: "Supabase no configurado." };
   const supabase = createClient();
@@ -110,6 +111,11 @@ export async function seedNpcs(
     plantilla.map((t) => ({
       poi_name: poiName, name: t.name, role: t.role, prompt: t.prompt,
       public: t.publico ?? true, venue: nodoId,
+      // ⚠️ La clave del árbol se siembra CON el PNJ. Antes se quedaba vacía y
+      // el DM tenía que escribirla a mano uno por uno; una clave mal tecleada
+      // no da error, solo deja al PNJ hablando por IA sin su conversación
+      // escrita —ni sus tiradas, ni sus misiones— y eso no lo canta nadie.
+      dialogo: t.dialogo ?? null,
     })),
   );
   if (error) return { ok: false, error: error.message };

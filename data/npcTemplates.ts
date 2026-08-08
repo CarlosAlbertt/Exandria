@@ -18,6 +18,17 @@ export type NpcTemplate = {
   prompt: string;
   /** false = el DM lo ve pero los jugadores no. Ninguno nace oculto hoy. */
   publico?: boolean;
+  /**
+   * Clave de su árbol en `data/dialogos.ts`, si lo tiene.
+   *
+   * ⚠️ **Sin esto, sembrar no ataba nada.** El árbol se cuelga de
+   * `location_npcs.dialogo` (schema_v26) y ese campo se quedaba vacío al
+   * sembrar, así que el DM tenía que ir PNJ por PNJ escribiendo la clave a
+   * mano — y una clave mal tecleada no da error: el PNJ se queda hablando solo
+   * por IA y su conversación escrita, con sus tiradas y sus misiones, no
+   * aparece nunca. `check-dialogos` cruza que toda clave de aquí exista.
+   */
+  dialogo?: string;
 };
 
 /**
@@ -30,6 +41,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Mirna Halbrook",
       role: "Tabernera",
+      dialogo: "mirna",
       prompt:
         "Eres Mirna Halbrook, tabernera de Byroden. Rondas los cincuenta, brazos de cargar " +
         "barriles y una paciencia que se te acabó hace años. Hablas rápido, en frases cortas, y " +
@@ -42,6 +54,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Odo el Torcido",
       role: "Parroquiano",
+      dialogo: "odo",
       prompt:
         "Eres Odo, viejo del pueblo al que llaman «el Torcido» por una pierna que le quedó mal. " +
         "Llevas media vida en el mismo taburete. Hablas despacio, te vas por las ramas y mezclas " +
@@ -57,6 +70,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Hermano Aldric",
       role: "Sacerdote del Amanecer",
+      dialogo: "aldric",
       prompt:
         "Eres el hermano Aldric, sacerdote de la pequeña iglesia de Byroden. Joven para el " +
         "puesto, y se te nota: eres amable hasta cuando no toca y te cuesta decir que no. " +
@@ -69,6 +83,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Sela Marrow",
       role: "Sacristana",
+      dialogo: "sela",
       prompt:
         "Eres Sela Marrow, sacristana. Sesenta años, seca, de pocas palabras y ninguna paciencia " +
         "con la palabrería. Llevas la iglesia de verdad —las cuentas, las llaves, el orden— " +
@@ -83,6 +98,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Vell Sombragrís",
       role: "Sepulturero",
+      dialogo: "vell",
       prompt:
         "Eres Vell, el sepulturero de Byroden. Enterraste a media fila de las lápidas que llevan " +
         "la misma fecha, la del año en que el pueblo ardió, y por eso el pueblo te respeta y te " +
@@ -94,6 +110,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Wren",
       role: "Chiquilla del pueblo",
+      dialogo: "wren",
       prompt:
         "Eres Wren, tienes once años y te escapas al cementerio porque es el único sitio donde " +
         "no te manda nadie. Hablas atropellado, preguntas más de lo que respondes y no tienes " +
@@ -109,6 +126,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Alguacil Brannoc",
       role: "Alguacil",
+      dialogo: "brannoc",
       prompt:
         "Eres Brannoc, alguacil de Byroden, que aquí significa guardia, juez y cartero a la vez. " +
         "Cansado y honrado. Hablas con formalidad de oficio y te escudas en el reglamento cuando " +
@@ -121,6 +139,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Perrin Lisquet",
       role: "Escribano",
+      dialogo: "perrin",
       prompt:
         "Eres Perrin Lisquet, escribano del ayuntamiento. Meticuloso hasta lo insoportable, " +
         "corriges a la gente en mitad de la frase y disfrutas haciéndolo. Hablas con precisión " +
@@ -138,6 +157,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Harn Bracamadera",
       role: "Leñador",
+      dialogo: "harn",
       prompt:
         "Eres Harn, leñador que trabaja el borde del bosque y no pasa de ahí nunca. Grande, " +
         "tranquilo, de hablar lento. Conoces la linde palmo a palmo y respetas lo que hay más " +
@@ -151,6 +171,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "Ashwen",
       role: "Dríade",
+      dialogo: "ashwen",
       prompt:
         "Eres Ashwen, dríade atada a un roble de la espesura de la Expansión Verdante. No eres " +
         "humana y no lo disimulas: hablas en presente, mezclas las escalas de tiempo —«hace " +
@@ -164,6 +185,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
     {
       name: "El Guardián de la Raya",
       role: "Centauro del pacto",
+      dialogo: "guardian-raya",
       prompt:
         "Eres un centauro guardián del corazón de la Expansión Verdante. Hablas con la " +
         "solemnidad de quien cumple un deber viejo, en frases medidas y sin una palabra de más. " +

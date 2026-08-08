@@ -13,6 +13,7 @@ import {
 } from "../lib/dialogo";
 import { SKILLS } from "../data/rules";
 import { MISIONES } from "../data/misiones";
+import { NPC_TEMPLATES } from "../data/npcTemplates";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -214,6 +215,33 @@ check("una etapa sin mínimo nunca caduca", etapaVigente(T, { confianza: 0, etap
     }
   }
   console.log(`\nOpciones que abren misión: ${conMision}.`);
+
+  // ⚠️ **TODA misión del catálogo tiene que tener quien la dé.** Una escrita y
+  // sin PNJ que la ofrezca es contenido muerto: está en el repo, pasa su gate,
+  // y en la mesa no aparece nunca porque no hay forma de llegar a ella. Es
+  // exactamente el fallo del corazón del bosque —diez entradas y ningún
+  // statblock— repetido con otra ropa.
+  const ofrecidas = new Set<string>();
+  for (const arbol of Object.values(DIALOGOS)) {
+    for (const etapa of Object.values(arbol.etapas)) {
+      for (const o of etapa.opciones) if (o.mision) ofrecidas.add(o.mision);
+    }
+  }
+  const huerfanas = MISIONES.filter((m) => !ofrecidas.has(m.slug)).map((m) => m.slug);
+  check(`toda misión del catálogo la ofrece alguien${huerfanas.length ? ` (sin dueño: ${huerfanas.join(", ")})` : ""}`,
+    huerfanas.length === 0);
+
+  // Y las claves de las plantillas: sembrar mete `dialogo` en la fila, así que
+  // una clave que no exista deja al PNJ sin su conversación escrita y sin sus
+  // misiones, hablando solo por IA. No da ningún error.
+  const claves = new Set(Object.keys(DIALOGOS));
+  for (const [sitio, gente] of Object.entries(NPC_TEMPLATES)) {
+    for (const t of gente) {
+      if (!t.dialogo) continue;
+      check(`la plantilla "${t.name}" (${sitio}) apunta a un árbol real ("${t.dialogo}")`,
+        claves.has(t.dialogo));
+    }
+  }
 }
 
 const nOpts = Object.values(DIALOGOS).reduce((n, a) => n + Object.values(a.etapas).reduce((m, e) => m + e.opciones.length, 0), 0);
