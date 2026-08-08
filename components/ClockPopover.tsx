@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CALENDAR } from "@/data/cosmology";
-import { useGameClock } from "@/lib/useGameClock";
+import { useRelojJugador } from "@/lib/useRelojJugador";
 import { momentFromGameMin, moonPhaseForDay } from "@/lib/gameClock";
 import {
   SEASON_COLOR, SEASON_ICON, seasonOfDay, daysLeftInSeason,
@@ -15,7 +15,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 // el mes de un vistazo (fecha, hora, estación, luna, próxima fiesta y la
 // rejilla del mes en curso) para no tener que ir a /reino.
 export default function ClockPopover() {
-  const { nowGameMin, ready } = useGameClock();
+  const { nowGameMin, ready } = useRelojJugador();
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 

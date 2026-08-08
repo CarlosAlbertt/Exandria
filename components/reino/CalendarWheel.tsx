@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { CALENDAR } from "@/data/cosmology";
-import { useGameClock } from "@/lib/useGameClock";
+import { useRelojJugador } from "@/lib/useRelojJugador";
 import { momentFromGameMin, moonPhaseForDay } from "@/lib/gameClock";
 import {
   YEAR, WEEK, STARTS, SEASON_COLOR, SEASON_RANGES, seasonOfDay, daysLeftInSeason,
@@ -40,7 +40,7 @@ function arcPath(a0: number, a1: number, rOut: number, rIn: number): string {
 }
 
 export default function CalendarWheel() {
-  const { nowGameMin, ready } = useGameClock();
+  const { nowGameMin, ready } = useRelojJugador();
   const moment = momentFromGameMin(nowGameMin);
   const [sel, setSel] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);

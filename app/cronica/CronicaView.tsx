@@ -6,7 +6,7 @@ import { esIndividual } from "@/lib/misiones";
 import { useClues } from "@/lib/useClues";
 import { REGIONS } from "@/data/taldorei";
 import { holidayFor } from "@/lib/gameDate";
-import { useGameClock } from "@/lib/useGameClock";
+import { useRelojJugador } from "@/lib/useRelojJugador";
 import { momentFromGameMin } from "@/lib/gameClock";
 
 const QUEST_BADGE: Record<Quest["status"], { icon: string; color: string; label: string }> = {
@@ -22,7 +22,7 @@ const regionName = (slug: string | null) => (slug ? REGIONS.find((r) => r.slug =
 export default function CronicaView() {
   const { entries, quests, npcs } = useChronicle();
   const { clues } = useClues();
-  const { nowGameMin, ready } = useGameClock();
+  const { nowGameMin, ready } = useRelojJugador();
   const [showClosed, setShowClosed] = useState(false);
   const discovered = clues.filter((c) => c.discovered);
 
