@@ -19,6 +19,7 @@ import { LORE_TIERS, type LoreSkill } from "@/data/loreTiers";
 import { CONTINENT_LORE, type ContinentLoreEntry } from "@/data/continentes";
 import { CALAMIDAD_LORE } from "@/data/calamidad";
 import { SUSURRADO_LORE } from "@/data/susurrado";
+import { FIGURAS_LORE } from "@/data/figuras";
 import { slugify } from "@/lib/slug";
 
 export type SaberScope =
@@ -267,6 +268,25 @@ function susurradoEntries(): Omit<SaberEntry, "place" | "category">[] {
   }));
 }
 
+// Quién fue quién: la fundación, el invierno, los otros tres del Cónclave, los
+// de Piedrablanca y quién manda hoy. Prefijo propio `fig:` por el mismo motivo
+// que `sus:` — no es lore de continente, es lore de PERSONAS, y el continente va
+// dentro del id para que `placeOf` lo lea igual que los otros dos.
+//
+// Todas `profundo`, como la Calamidad y el hilo del Susurrado: quién fue quién
+// se estudia o se descubre, no se nace sabiéndolo.
+function figurasEntries(): Omit<SaberEntry, "place" | "category">[] {
+  return FIGURAS_LORE.map((e) => ({
+    id: `fig:${slugKey(e.continent)}:${e.id}`,
+    scope: scopeOfContinentLore(e),
+    depth: "profundo" as const,
+    topic: e.topic,
+    title: e.title,
+    text: e.text,
+    poi: e.poi,
+  }));
+}
+
 // --- HISTORIA DETALLADA: la breve la sabe todo el mundo; el detalle, no -----
 function historyEntries(): Omit<SaberEntry, "place" | "category">[] {
   const out: Omit<SaberEntry, "place" | "category">[] = [];
@@ -348,6 +368,11 @@ function placeOf(e: Omit<SaberEntry, "place" | "category">): SaberPlace {
     const found = PLACES.find((p) => e.id.startsWith(`sus:${slugKey(p)}:`));
     if (found) return found;
   }
+  // Las figuras llevan el continente en el id igual que `cl:` y `sus:`.
+  if (e.id.startsWith("fig:")) {
+    const found = PLACES.find((p) => e.id.startsWith(`fig:${slugKey(p)}:`));
+    if (found) return found;
+  }
   return "Exandria";
 }
 
@@ -383,6 +408,7 @@ export const SABER: SaberEntry[] = tag([
   ...continentLoreEntries(),
   ...calamidadEntries(),
   ...susurradoEntries(),
+  ...figurasEntries(),
   ...historyEntries(),
   ...moonEntries(),
   ...planeEntries(),
