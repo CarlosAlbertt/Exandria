@@ -21,42 +21,138 @@ import CronicaPanel from "./CronicaPanel";
 import EncuentrosPanel from "./EncuentrosPanel";
 import RelojPanel from "./RelojPanel";
 import LugaresPanel from "./LugaresPanel";
+import ResumenPanel from "./ResumenPanel";
 
-type Tab = "narracion" | "grupo" | "baul" | "regiones" | "mapa" | "usuarios" | "dados" | "cronica" | "mesa" | "tiempo" | "arte" | "tiendas" | "pnjs" | "lugares";
+type Tab =
+  | "resumen" | "narracion" | "grupo" | "baul" | "regiones" | "mapa" | "usuarios"
+  | "dados" | "cronica" | "mesa" | "tiempo" | "arte" | "tiendas" | "pnjs" | "lugares";
+
+/**
+ * El panel del DM, por FAMILIAS y no por lista.
+ *
+ * ⚠️ **Antes eran catorce chips en una fila que envolvía**, todos del mismo
+ * tamaño y del mismo peso, dentro de un `max-w-5xl`. Dos problemas de verdad, y
+ * ninguno era estético:
+ *
+ * 1. **Catorce cosas iguales no se leen: se rastrean.** «Mesa», «Tiempo» y
+ *    «Lugares» no dicen nada por sí solos, y para encontrar el interruptor que
+ *    deja viajar a un jugador había que saberse de memoria que vive dentro de
+ *    Mapa. Agrupadas en cinco familias, la pregunta «¿dónde estaba eso?» tiene
+ *    respuesta antes de abrir nada.
+ * 2. **El ancho.** `max-w-5xl` son 1024 px para pantallas que tienen el doble, y
+ *    dentro hay tablas de POIs, fichas de personaje enteras y listas de tiendas.
+ *    Todo iba comprimido en una columna estrecha con hueco negro a los lados.
+ *
+ * Y se añade la **portada** (`ResumenPanel`), que es lo que de verdad faltaba: un
+ * sitio que conteste «¿qué está pasando ahora?» sin abrir cinco pestañas.
+ *
+ * El orden de las familias es el de una sesión de verdad: primero lo que usas
+ * jugando, luego el grupo, luego el mundo, y los ajustes al final.
+ */
+const FAMILIAS: { titulo: string; icono: string; tabs: [Tab, string, string, string][] }[] = [
+  {
+    titulo: "En la mesa", icono: "fa-dice",
+    tabs: [
+      ["resumen", "Resumen", "fa-gauge-high", "Qué está pasando ahora mismo"],
+      ["narracion", "Narración", "fa-feather-pointed", "Emitir escena a los jugadores"],
+      ["dados", "Dados", "fa-dice-d20", "Pedir tiradas y ver las que salen"],
+      ["mesa", "Combate", "fa-chess", "Encuentros y el tablero"],
+      ["tiempo", "Reloj", "fa-clock", "Hora, fecha y descansos"],
+    ],
+  },
+  {
+    titulo: "El grupo", icono: "fa-users-line",
+    tabs: [
+      ["grupo", "Jugadores", "fa-users-line", "Fichas, XP, nivel y dónde está cada uno"],
+      ["baul", "Baúl", "fa-box-archive", "Dar objetos y documentos"],
+      ["cronica", "Crónica", "fa-book-open", "Misiones, pistas y diario"],
+    ],
+  },
+  {
+    titulo: "El mundo", icono: "fa-earth-americas",
+    tabs: [
+      ["mapa", "Mapa y pueblos", "fa-map-location-dot", "Plantar al grupo y abrir pueblos al viaje"],
+      ["regiones", "Exploración", "fa-compass", "Qué continentes y regiones conocen"],
+      ["lugares", "Sitios", "fa-signs-post", "Sub-lugares, temas e imágenes"],
+      ["tiendas", "Tiendas", "fa-store", "Inventario de los comercios"],
+      ["pnjs", "PNJs", "fa-comments", "Gente con la que se puede hablar"],
+    ],
+  },
+  {
+    titulo: "Ajustes", icono: "fa-sliders",
+    tabs: [
+      ["arte", "Arte", "fa-image", "Imágenes de pueblos y del mundo"],
+      ["usuarios", "Usuarios", "fa-user-plus", "Dar de alta jugadores"],
+    ],
+  },
+];
+
+const TODAS = FAMILIAS.flatMap((f) => f.tabs);
 
 export default function DmDashboard() {
-  const [tab, setTab] = useState<Tab>("narracion");
+  const [tab, setTab] = useState<Tab>("resumen");
+  const actual = TODAS.find(([id]) => id === tab);
 
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-      <header className="text-center mb-8">
-        <p className="eyebrow mb-3"><i className="fas fa-crown mr-1.5" style={{ color: "var(--color-bronze)" }} />Director de Juego</p>
-        <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text">Panel de control</h1>
+    <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8">
+      <header className="flex items-end justify-between gap-4 flex-wrap mb-6">
+        <div>
+          <p className="eyebrow mb-2"><i className="fas fa-crown mr-1.5" style={{ color: "var(--color-bronze)" }} />Director de Juego</p>
+          <h1 className="font-display text-3xl md:text-4xl font-extrabold gold-text">{actual?.[1] ?? "Panel de control"}</h1>
+          {actual && <p className="font-ui text-[13px] mt-1.5" style={{ color: "var(--color-muted)" }}>{actual[3]}</p>}
+        </div>
       </header>
 
-      <div className="flex justify-center gap-2 mb-8 flex-wrap">
-        {([["narracion", "Narración", "fa-feather-pointed"], ["grupo", "Grupo", "fa-users-line"], ["baul", "Baúl", "fa-box-archive"], ["dados", "Dados", "fa-dice-d20"], ["cronica", "Crónica", "fa-book-open"], ["mesa", "Mesa", "fa-chess"], ["tiempo", "Tiempo", "fa-clock"], ["regiones", "Regiones", "fa-earth-americas"], ["mapa", "Mapa", "fa-map-location-dot"], ["arte", "Arte", "fa-image"], ["tiendas", "Tiendas", "fa-store"], ["pnjs", "PNJs", "fa-comments"], ["lugares", "Lugares", "fa-signs-post"], ["usuarios", "Usuarios", "fa-users"]] as const).map(([id, label, icon]) => (
-          <button key={id} onClick={() => setTab(id)} className="px-4 py-2 rounded-lg font-ui text-[13px] font-bold transition-colors"
-            style={{ color: tab === id ? "var(--color-ink)" : "var(--color-muted)", background: tab === id ? "var(--color-bronze)" : "transparent", border: `1px solid ${tab === id ? "var(--color-bronze)" : "var(--color-line)"}` }}>
-            <i className={`fas ${icon} mr-2`} />{label}
-          </button>
-        ))}
-      </div>
+      {/* En escritorio la navegación va a un lado y NO encima: así el panel
+          abierto empieza arriba del todo y se ve entero sin hacer scroll por
+          debajo de catorce botones. En móvil se apila, que es lo único que
+          cabe. */}
+      <div className="lg:flex lg:items-start lg:gap-6">
+        <nav className="lg:w-56 lg:shrink-0 mb-6 lg:mb-0 lg:sticky lg:top-20">
+          {FAMILIAS.map((fam) => (
+            <div key={fam.titulo} className="mb-4">
+              <p className="eyebrow !text-[9px] mb-2 px-1">
+                <i className={`fas ${fam.icono} mr-1.5`} style={{ color: "var(--color-bronze-deep)" }} />{fam.titulo}
+              </p>
+              <div className="flex lg:flex-col gap-1.5 flex-wrap">
+                {fam.tabs.map(([id, label, icon]) => {
+                  const on = tab === id;
+                  return (
+                    <button key={id} onClick={() => setTab(id)}
+                      aria-current={on ? "page" : undefined}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg font-ui text-[13px] font-bold transition-colors text-left lg:w-full"
+                      style={{
+                        color: on ? "var(--color-ink)" : "var(--color-muted)",
+                        background: on ? "var(--color-bronze)" : "transparent",
+                        border: `1px solid ${on ? "var(--color-bronze)" : "var(--color-line)"}`,
+                      }}>
+                      <i className={`fas ${icon} w-4 text-center`} />{label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
 
-      {tab === "narracion" && <NarracionPanel />}
-      {tab === "grupo" && <GrupoPanel />}
-      {tab === "baul" && <BaulPanel />}
-      {tab === "dados" && <DadosPanel />}
-      {tab === "cronica" && <CronicaPanel />}
-      {tab === "mesa" && <EncuentrosPanel />}
-      {tab === "tiempo" && <RelojPanel />}
-      {tab === "regiones" && <RegionesPanel />}
-      {tab === "mapa" && <MapaPanel />}
-      {tab === "arte" && <ArtePanel />}
-      {tab === "tiendas" && <TiendasPanel />}
-      {tab === "pnjs" && <NpcsPanel />}
-      {tab === "lugares" && <LugaresPanel />}
-      {tab === "usuarios" && <UsuariosPanel />}
+        <div className="min-w-0 flex-1">
+          {tab === "resumen" && <ResumenPanel onIr={(t) => setTab(t as Tab)} />}
+          {tab === "narracion" && <NarracionPanel />}
+          {tab === "grupo" && <GrupoPanel />}
+          {tab === "baul" && <BaulPanel />}
+          {tab === "dados" && <DadosPanel />}
+          {tab === "cronica" && <CronicaPanel />}
+          {tab === "mesa" && <EncuentrosPanel />}
+          {tab === "tiempo" && <RelojPanel />}
+          {tab === "regiones" && <RegionesPanel />}
+          {tab === "mapa" && <MapaPanel />}
+          {tab === "arte" && <ArtePanel />}
+          {tab === "tiendas" && <TiendasPanel />}
+          {tab === "pnjs" && <NpcsPanel />}
+          {tab === "lugares" && <LugaresPanel />}
+          {tab === "usuarios" && <UsuariosPanel />}
+        </div>
+      </div>
     </main>
   );
 }

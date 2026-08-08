@@ -49,7 +49,24 @@ export default function Viajar({
     ready && !!states[keyOf(regionSlug, poiName)]?.revealed;
 
   const destinos = destinosDesde({ desde, candidatos, regiones, revelado, anclaPoi });
-  if (destinos.length === 0) return null;
+
+  // ⚠️ **Sin destinos la sección SE PINTA IGUAL, y antes devolvía `null`.**
+  // Ese null fue un error mío y se notó a la primera: el jugador no podía
+  // distinguir «no hay sitios abiertos» de «esto no existe» de «está roto», y
+  // se puso a buscar un botón que no estaba. Un vacío explicado es información;
+  // un vacío invisible es un fallo aparente.
+  if (destinos.length === 0) {
+    return (
+      <section>
+        <div className="lug-sect"><span className="lug-cinta">Ponerse en camino</span></div>
+        <p className="lug-note" style={{ marginTop: 0 }}>
+          {ready
+            ? "Nadie ha abierto camino a ningún otro sitio todavía. El DM los abre desde Panel DM › Mapa y pueblos, con el ojo de cada pueblo."
+            : "Mirando qué caminos hay abiertos…"}
+        </p>
+      </section>
+    );
+  }
 
   async function ir(d: Destino) {
     if (yendo) return;

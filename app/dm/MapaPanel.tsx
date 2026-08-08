@@ -296,7 +296,17 @@ export default function MapaPanel() {
                           >
                             <i className="fas fa-location-crosshairs" />
                           </button>
-                          <button onClick={() => setPoiRevealed(region.slug, p.name, !on)} title={on ? "Visible" : "Oculto"} className="font-ui text-[11px] font-bold px-2 py-1 rounded-lg transition-colors"
+                          {/* ⚠️ El tooltip decía «Visible / Oculto», que suena a
+                              si se pinta el pin en el mapa. Y es MUCHO más que
+                              eso: **es el interruptor que deja viajar**. El DM
+                              no tenía forma de saberlo, y con nada revelado la
+                              sección «Ponerse en camino» no le sale a ningún
+                              jugador y nada explica por qué. */}
+                          <button onClick={() => setPoiRevealed(region.slug, p.name, !on)}
+                            title={on
+                              ? "Revelado: los jugadores lo ven en el mapa y PUEDEN VIAJAR aquí. Pulsa para cerrarlo."
+                              : "Oculto: no lo ven y NO pueden viajar aquí. Pulsa para abrirlo."}
+                            className="font-ui text-[11px] font-bold px-2 py-1 rounded-lg transition-colors"
                             style={{ color: on ? "var(--color-ink)" : "var(--color-muted)", background: on ? "var(--color-primitivo)" : "transparent", border: `1px solid ${on ? "var(--color-primitivo)" : "var(--color-line)"}` }}>
                             <i className={`fas ${on ? "fa-eye" : "fa-eye-slash"}`} />
                           </button>
