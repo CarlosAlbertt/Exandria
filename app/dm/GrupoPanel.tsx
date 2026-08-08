@@ -55,6 +55,14 @@ export default function GrupoPanel() {
   const [open, setOpen] = useState<string | null>(null);
   const [xpInput, setXpInput] = useState<Record<string, string>>({});
   const [allXp, setAllXp] = useState("");
+  /**
+   * A quién le toca lo que se pulse arriba.
+   *
+   * Empieza VACÍA a propósito. Arrancar con todos marcados haría que el caso
+   * peligroso —premiar a los cinco por una escena que jugaron dos— fuera el que
+   * pasa por no tocar nada.
+   */
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [archivados, setArchivados] = useState<Record<string, { id: string; name: string }[]>>({});
   const [nombres, setNombres] = useState<Record<string, string>>({});
   const [dmError, setDmError] = useState<string | null>(null);
@@ -138,6 +146,23 @@ export default function GrupoPanel() {
     );
   }
 
+  function toggle(userId: string) {
+    setSeleccion((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId); else next.add(userId);
+      return next;
+    });
+  }
+
+  // Los marcados que SIGUEN en el grupo: si alguien retira un personaje con la
+  // selección puesta, su id se quedaría en el Set y las acciones apuntarían a
+  // una ficha que ya no está en juego.
+  const marcados = party.filter((c) => seleccion.has(c.user_id));
+  const sufijo = marcados.length === 0 ? ""
+    : marcados.length === party.length ? " a todos"
+    : marcados.length === 1 ? " a 1"
+    : ` a ${marcados.length}`;
+
   return (
     <div className="space-y-4">
       {dmError && (
@@ -147,11 +172,57 @@ export default function GrupoPanel() {
           </p>
         </div>
       )}
-      <div className="panel p-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="eyebrow"><i className="fas fa-users mr-1.5" style={{ color: "var(--color-bronze)" }} />Todo el grupo</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <button className="btn-ghost" onClick={() => party.forEach((c) => dmPatch(c.user_id, { setLevel: Math.min(20, (c.level ?? 1) + 1) }))}>
-            <i className="fas fa-arrow-up mr-2" />Subir nivel a todos
+      {/* ---------------------- A QUIÉN, Y LUEGO QUÉ ----------------------
+          Antes solo había «a todos» y «a este uno». Pero el grupo se separa: a
+          veces la escena la juegan dos, o tres, y darle XP a los cinco premia a
+          quien no estaba, mientras que ir de uno en uno son cinco clics y la
+          cuenta a mano. Se marca a quién y luego se actúa.
+
+          ⚠️ **Sin nadie marcado los botones se DESHABILITAN explicándose**, en
+          vez de no hacer nada al pulsarlos o de actuar sobre todos por si acaso.
+          Es lo mismo que hace «Sembrar gente» en Panel DM › Lugares: si no, el
+          DM no sabe si el fallo era suyo. Y actuar sobre todos por defecto sería
+          justo el reparto que esto viene a evitar. */}
+      <div className="panel p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="eyebrow"><i className="fas fa-users mr-1.5" style={{ color: "var(--color-bronze)" }} />A quién</p>
+          <div className="flex items-center gap-2">
+            <button className="btn-ghost !py-1 !px-2 text-[11px]" onClick={() => setSeleccion(new Set(party.map((c) => c.user_id)))}>
+              Todos
+            </button>
+            <button className="btn-ghost !py-1 !px-2 text-[11px]" onClick={() => setSeleccion(new Set())} disabled={seleccion.size === 0}>
+              Ninguno
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {party.map((c) => {
+            const marcado = seleccion.has(c.user_id);
+            return (
+              <button key={c.user_id} onClick={() => toggle(c.user_id)}
+                aria-pressed={marcado}
+                className="px-3 py-1.5 rounded-full font-ui text-[12px] font-semibold transition-colors"
+                style={{
+                  border: `1px solid ${marcado ? "var(--color-bronze)" : "var(--color-line)"}`,
+                  background: marcado ? "rgba(201,163,92,0.14)" : "transparent",
+                  color: marcado ? "var(--color-bronze-bright)" : "var(--color-muted)",
+                }}>
+                <i className={`fas ${marcado ? "fa-circle-check" : "fa-circle"} mr-1.5`} />
+                {c.name || "Sin nombre"}
+              </button>
+            );
+          })}
+          {party.length === 0 && (
+            <p className="text-sm italic" style={{ color: "var(--color-dim)" }}>Nadie tiene personaje en juego todavía.</p>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <button className="btn-ghost" disabled={seleccion.size === 0}
+            title={seleccion.size === 0 ? "Marca antes a quién" : undefined}
+            onClick={() => marcados.forEach((c) => dmPatch(c.user_id, { setLevel: Math.min(20, (c.level ?? 1) + 1) }))}>
+            <i className="fas fa-arrow-up mr-2" />Subir nivel{sufijo}
           </button>
           <input
             type="number"
@@ -164,15 +235,25 @@ export default function GrupoPanel() {
           />
           <button
             className="btn-gold"
+            disabled={seleccion.size === 0 || (Number(allXp) || 0) <= 0}
+            title={seleccion.size === 0 ? "Marca antes a quién" : undefined}
             onClick={() => {
               const n = Number(allXp) || 0;
-              if (n <= 0) return;
-              party.forEach((c) => dmPatch(c.user_id, { addXp: n }));
+              if (n <= 0 || marcados.length === 0) return;
+              // El XP va a CADA UNO de los marcados tal cual, no repartido: en
+              // D&D 2024 la experiencia de un encuentro se le da a cada
+              // personaje, no se divide entre los presentes.
+              marcados.forEach((c) => dmPatch(c.user_id, { addXp: n }));
               setAllXp("");
             }}
           >
-            <i className="fas fa-star mr-2" />Dar XP a todos
+            <i className="fas fa-star mr-2" />Dar XP{sufijo}
           </button>
+          {seleccion.size === 0 && (
+            <span className="font-ui text-[11px]" style={{ color: "var(--color-dim)" }}>
+              Marca arriba a quién: puede ser uno, algunos o todos.
+            </span>
+          )}
         </div>
       </div>
 
