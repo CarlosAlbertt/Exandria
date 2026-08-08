@@ -12,6 +12,7 @@ import {
   etapaVigente, CONFIANZA_INICIAL, type ArbolDialogo, type TratoPnj,
 } from "../lib/dialogo";
 import { SKILLS } from "../data/rules";
+import { MISIONES } from "../data/misiones";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -93,7 +94,10 @@ const T: ArbolDialogo = {
           texto: "tirada", chequeo: { pericia: "Persuasión", cd: 12 },
           exito: "acierta y te da la cosa", fallo: "falla y no te da nada",
           premio: { tipo: "objeto", name: "Cosa" },
-          mision: { title: "Encargo de prueba", body: "cuerpo", reward: "10 po" },
+          // Slug del catálogo desde que la misión se ata por referencia. Este
+          // árbol es de mentira y no pasa por la comprobación del puente, así
+          // que aquí vale cualquier slug con forma de slug.
+          mision: "encargo-de-prueba",
           abreTienda: true,
           siguiente: "b",
         },
@@ -177,6 +181,40 @@ const enB: TratoPnj = { confianza: 60, etapa: "b", fallidas: {} };
 check("con confianza de sobra, la etapa aguanta", etapaVigente(T, enB) === "b");
 check("si la confianza baja del mínimo, se cae al inicio", etapaVigente(T, { ...enB, confianza: 40 }) === "a");
 check("una etapa sin mínimo nunca caduca", etapaVigente(T, { confianza: 0, etapa: "a", fallidas: {} }) === "a");
+
+/* ------------- EL PUENTE CON EL CATÁLOGO DE MISIONES -------------------- */
+// ⚠️ **Un `mision` es un SLUG de `data/misiones/`, no texto suelto.** Si apunta
+// a un slug que no existe, `/api/mision-dialogo` devuelve 404 y el jugador
+// acepta un encargo que no se abre nunca — y el PNJ le habrá dicho que sí. Es
+// un fallo mudo perfecto: la conversación se lee bien y no pasa nada.
+{
+  const slugs = new Set(MISIONES.map((m) => m.slug));
+  let conMision = 0;
+  for (const [clave, arbol] of Object.entries(DIALOGOS)) {
+    for (const [nombreEtapa, etapa] of Object.entries(arbol.etapas)) {
+      etapa.opciones.forEach((o, i) => {
+        if (!o.mision) return;
+        conMision++;
+        check(`"${clave}/${nombreEtapa}" opción ${i}: la misión "${o.mision}" existe en el catálogo`,
+          slugs.has(o.mision));
+      });
+    }
+  }
+  // Y la regla de oro del módulo: la misión NO sale al fallar. Ya se comprueba
+  // para el premio; esto es lo mismo y se olvidaría igual.
+  for (const [clave, arbol] of Object.entries(DIALOGOS)) {
+    for (const [nombreEtapa, etapa] of Object.entries(arbol.etapas)) {
+      etapa.opciones.forEach((o, i) => {
+        if (!o.mision || !o.chequeo) return;
+        const t = { confianza: CONFIANZA_INICIAL, etapa: nombreEtapa, fallidas: {} };
+        const fallo = resolver(arbol, t, i, o.chequeo.cd - 1);
+        check(`"${clave}/${nombreEtapa}" opción ${i}: al FALLAR no se abre la misión`,
+          fallo?.mision === undefined);
+      });
+    }
+  }
+  console.log(`\nOpciones que abren misión: ${conMision}.`);
+}
 
 const nOpts = Object.values(DIALOGOS).reduce((n, a) => n + Object.values(a.etapas).reduce((m, e) => m + e.opciones.length, 0), 0);
 const nEtapas = Object.values(DIALOGOS).reduce((n, a) => n + Object.keys(a.etapas).length, 0);

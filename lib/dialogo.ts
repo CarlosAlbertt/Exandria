@@ -30,8 +30,19 @@ export type OpcionDialogo = {
   /** Solo si hay chequeo. */
   fallo?: string;
   premio?: Premio;
-  /** Encargo que se ofrece al acertar (se cruza con `quests` por título). */
-  mision?: { title: string; body: string; reward: string };
+  /**
+   * Encargo que se abre al acertar: el **slug** de `data/misiones/`.
+   *
+   * ⚠️ Antes era `{ title, body, reward }` escrito aquí dentro, y eso duplicaba
+   * el texto de la misión en dos sitios que podían discrepar sin que nada lo
+   * dijera. Ahora manda el catálogo y aquí solo va la referencia; el gate cruza
+   * que el slug exista de verdad.
+   *
+   * Sigue siendo un `string` pelado y NO el objeto de la misión a propósito:
+   * este módulo es neutro —no importa nada— para que `check-dialogos` pueda
+   * mirarlo. Resolver el slug es cosa de quien lo consume.
+   */
+  mision?: string;
   /** Etapa a la que se salta al acertar. `null` explícito = cerrar. */
   siguiente?: string | null;
   /** Al fallar. Si no se dice, se queda en la etapa actual. */
@@ -134,7 +145,8 @@ export type Resolucion = {
   trato: TratoPnj;
   /** Solo si acertó: lo que hay que entregar de verdad. */
   premio?: Premio;
-  mision?: { title: string; body: string; reward: string };
+  /** Slug de `data/misiones/`, solo si acertó. Lo resuelve quien lo consume. */
+  mision?: string;
   abreTienda?: boolean;
   /** true = la conversación se cierra. */
   cierra: boolean;
