@@ -76,17 +76,48 @@ for (const e of ENCUENTROS_VERDANTE) {
 const CR_NUM: Record<string, number> = { "0": 0, "1/8": 0.125, "1/4": 0.25, "1/2": 0.5 };
 const cr = (s: string) => (s in CR_NUM ? CR_NUM[s] : Number(s));
 
+/**
+ * El techo de cada franja, subido el 2026-08-08 a pedido del usuario.
+ *
+ * ⚠️ **La razón es el TAMAÑO DEL GRUPO: son cinco o seis jugadores.** Los techos
+ * viejos —linde CR 1/2— estaban calculados para un grupo de cuatro de nivel
+ * bajo, y con seis a la mesa el presupuesto de XP de un encuentro se dobla: lo
+ * que era una pelea pasaba a ser un trámite. Las bandas pedidas son linde 2-3,
+ * espesura 5-7 y corazón 10-15, y aquí se guardan como TECHOS.
+ *
+ * ⚠️ **Solo techo, y NO suelo, en la linde y la espesura.** Un Ciervo de CR 0 o
+ * un Lobo de 1/4 siguen valiendo en la linde: contra seis jugadores no salen de
+ * uno en uno, salen **en número**, y de eso se encarga el `XP_BUDGET` de
+ * `data/encounters.ts`. Poner suelo habría borrado once entradas escritas para
+ * arreglar algo que no está roto.
+ *
+ * El suelo del corazón se queda en CR 1 —lo que había— y no sube a la banda
+ * pedida: de los diez del corazón **ninguno tiene ficha todavía**, así que subir
+ * el suelo sería legislar sobre números que no conocemos. Cuando se extraigan se
+ * verá si hay que apretarlo.
+ */
+const TECHO_CR: Record<string, number> = { linde: 3, espesura: 7, corazon: 15 };
+const SUELO_CR: Record<string, number> = { corazon: 1 };
+
 for (const e of ENCUENTROS_VERDANTE) {
   const m = porNombre.get(e.name);
   if (!m) continue;
   const c = cr(m.cr);
-  if (e.franja === "linde") {
-    check(`"${e.name}" en la linde no pasa de CR 1/2 (es ${m.cr})`, c <= 0.5);
+  const techo = TECHO_CR[e.franja];
+  if (techo !== undefined) {
+    check(`"${e.name}" en ${e.franja} no pasa de CR ${techo} (es ${m.cr})`, c <= techo);
   }
-  if (e.franja === "corazon") {
-    check(`"${e.name}" en el corazón no baja de CR 1 (es ${m.cr})`, c >= 1);
+  const suelo = SUELO_CR[e.franja];
+  if (suelo !== undefined) {
+    check(`"${e.name}" en ${e.franja} no baja de CR ${suelo} (es ${m.cr})`, c >= suelo);
   }
 }
+
+// Y los techos suben de fuera adentro. Si alguien los tocara dejando la linde
+// por encima de la espesura, la progresión del bosque se invertiría sin que
+// ninguna de las comprobaciones de arriba dijera nada.
+check("el techo sube de la linde a la espesura", TECHO_CR.linde < TECHO_CR.espesura);
+check("y de la espesura al corazón", TECHO_CR.espesura < TECHO_CR.corazon);
 
 /* ------------------------------ CONSULTAS ------------------------------ */
 // Las tres franjas tienen algo. Una vacía deja al DM sin tabla en ese tramo.
