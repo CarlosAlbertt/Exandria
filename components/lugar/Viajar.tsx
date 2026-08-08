@@ -4,6 +4,7 @@ import { regionsOf, poisOf } from "@/lib/useAtlas";
 import type { AtlasDefs } from "@/data/atlas";
 import { destinosDesde, duracionDeViaje, type Destino } from "@/lib/viaje";
 import { usePois } from "@/lib/usePois";
+import { poiVisible } from "@/lib/revelado";
 import { idPoi } from "@/data/lugares";
 
 /**
@@ -19,7 +20,7 @@ import { idPoi } from "@/data/lugares";
  * donde el gate la mira. Aquí solo se pinta y se pregunta.
  */
 export default function Viajar({
-  desde, continente, anclaPoi, atlas, onViajar, ocupado,
+  desde, continente, anclaPoi, atlas, onViajar, ocupado, revelados = [],
 }: {
   /** Dónde estás, **solo si estás en la plaza de un pueblo**. */
   desde: { poiName: string; regionSlug: string } | null;
@@ -29,6 +30,8 @@ export default function Viajar({
   atlas: AtlasDefs;
   onViajar: (nodoId: string, minutos: number) => Promise<void> | void;
   ocupado: boolean;
+  /** Los sitios que ESTE personaje conoce por su cuenta, además de los del grupo. */
+  revelados?: readonly string[];
 }) {
   const { states, keyOf, ready } = usePois();
   const [pendiente, setPendiente] = useState<Destino | null>(null);
@@ -45,8 +48,16 @@ export default function Viajar({
   // `continenteDescubierto` — en una niebla el fallo va hacia el lado de
   // esconder. Mientras las filas cargan tampoco se revela nada, para no
   // enseñar un destino y quitarlo medio segundo después.
+  //
+  // Y se SUMA lo que este personaje sabe por su cuenta (`play_state.revelados`):
+  // el que nació en Syngorn conoce Syngorn aunque el grupo no. La regla está en
+  // `lib/revelado.ts`, donde el gate la mira.
   const revelado = (regionSlug: string, poiName: string) =>
-    ready && !!states[keyOf(regionSlug, poiName)]?.revealed;
+    ready && poiVisible({
+      paraTodos: !!states[keyOf(regionSlug, poiName)]?.revealed,
+      propios: revelados,
+      poiName,
+    });
 
   const destinos = destinosDesde({ desde, candidatos, regiones, revelado, anclaPoi });
 

@@ -17,6 +17,7 @@ import {
   type PoiViaje, type RegionViaje,
 } from "../lib/viaje";
 import { REGION_DEL_BOSQUE } from "../data/bosque";
+import { poiVisible, leerRevelados, conRevelado } from "../lib/revelado";
 import { seedAtlas } from "../data/atlas";
 import { idPoi, idSub, idFranja } from "../data/lugares";
 
@@ -229,6 +230,72 @@ check("pero con grupo al que volver, siempre queda la vuelta", soloVuelta.length
 // Y estando YA con el grupo, el grupo no se ofrece como destino a sí mismo.
 const desdeElAncla = destinosDesde({ desde: enByroden, candidatos: CANDIDATOS, regiones: REGIONES, revelado, anclaPoi: "Byroden" });
 check("en el pueblo del grupo, el grupo no es un destino", !desdeElAncla.some((d) => d.esElGrupo));
+
+/* ------------- QUIÉN CONOCE QUÉ SITIO, Y NO ES EL GRUPO ---------------- */
+// ⚠️ LO QUE MUERDE AQUÍ: **un fallo hacia el lado ABIERTO le destripa el mapa a
+// toda la mesa, y no se puede deshacer.** El caso pedido es «el que nació en
+// Syngorn conoce Syngorn y los demás no»; si la regla se equivoca al revés, los
+// otros cuatro ven un sitio que su personaje no había descubierto y ya está
+// contado. Por eso falla CERRADO, igual que `continenteDescubierto`.
+
+// Es una SUMA, no una sustitución: lo del grupo sigue valiendo para todos.
+check("lo que el DM abre para todos lo ve cualquiera",
+  poiVisible({ paraTodos: true, propios: [], poiName: "Emon" }));
+check("y lo ve aunque no lo tenga en su lista",
+  poiVisible({ paraTodos: true, propios: ["Syngorn"], poiName: "Emon" }));
+// LA GORDA: lo propio se ve sin que el grupo lo tenga.
+check("el que nació en Syngorn conoce Syngorn",
+  poiVisible({ paraTodos: false, propios: ["Syngorn"], poiName: "Syngorn" }));
+// Y LA OTRA GORDA: no se le cuela a quien no lo tiene.
+check("y sus compañeros NO conocen Syngorn",
+  !poiVisible({ paraTodos: false, propios: [], poiName: "Syngorn" }));
+check("tener otro sitio no abre este",
+  !poiVisible({ paraTodos: false, propios: ["Emon", "Westruun"], poiName: "Syngorn" }));
+check("falla cerrado sin nada de nada",
+  !poiVisible({ paraTodos: false, propios: [], poiName: "Cualquiera" }));
+
+// Lo guardado es un `jsonb`: una forma a medias no puede tumbar el mapa, y sobre
+// todo no puede ABRIR nada de más.
+check("una lista que no es lista se lee vacía", leerRevelados("Syngorn").length === 0);
+check("los huecos y lo que no es cadena se caen", leerRevelados(["Syngorn", "", "  ", 7, null]).length === 1);
+check("y no se repite", leerRevelados(["Syngorn", "Syngorn"]).length === 1);
+check("los espacios de los lados se limpian", leerRevelados([" Syngorn "])[0] === "Syngorn");
+// ⚠️ Y el recorte tiene que valer también al COMPARAR: un " Syngorn" guardado con
+// espacio no debe dejar de reconocerse, o el DM revelaría un sitio y el jugador
+// seguiría sin verlo, sin ninguna pista de por qué.
+check("un nombre guardado con espacios sigue reconociéndose",
+  poiVisible({ paraTodos: false, propios: leerRevelados([" Syngorn "]), poiName: "Syngorn" }));
+
+// Añadir y quitar, que es lo que hace el botón del panel.
+check("conRevelado añade", conRevelado([], "Syngorn", true).includes("Syngorn"));
+check("no duplica al añadir dos veces", conRevelado(["Syngorn"], "Syngorn", true).length === 1);
+check("conRevelado quita", !conRevelado(["Syngorn", "Emon"], "Syngorn", false).includes("Syngorn"));
+check("quitar no toca a los demás", conRevelado(["Syngorn", "Emon"], "Syngorn", false).includes("Emon"));
+check("quitar lo que no está no rompe", conRevelado(["Emon"], "Syngorn", false).length === 1);
+check("un nombre vacío no añade nada", conRevelado([], "   ", true).length === 0);
+
+// Y el circuito completo: se revela, se ve; se quita, se deja de ver.
+{
+  const tras = conRevelado([], "Syngorn", true);
+  check("revelado → lo ve", poiVisible({ paraTodos: false, propios: tras, poiName: "Syngorn" }));
+  const quitado = conRevelado(tras, "Syngorn", false);
+  check("quitado → deja de verlo", !poiVisible({ paraTodos: false, propios: quitado, poiName: "Syngorn" }));
+}
+
+// Y en el viaje de verdad: con NADA revelado para el grupo, quien conoce Syngorn
+// por su cuenta puede ir, y quien no, no.
+{
+  const cand: PoiViaje[] = [
+    { name: "Byroden", regionSlug: "peninsula-pleabruma" },
+    { name: "Syngorn", regionSlug: "sierras-alabastro" },
+  ];
+  const soloSuyo = (propios: string[]) => (_s: string, n: string) =>
+    poiVisible({ paraTodos: false, propios, poiName: n });
+  const conSyngorn = destinosDesde({ desde: enByroden, candidatos: cand, regiones: REGIONES, revelado: soloSuyo(["Syngorn"]), anclaPoi: "Byroden" });
+  const sinNada2 = destinosDesde({ desde: enByroden, candidatos: cand, regiones: REGIONES, revelado: soloSuyo([]), anclaPoi: "Byroden" });
+  check("el que conoce Syngorn puede viajar ahí", conSyngorn.some((d) => d.poiName === "Syngorn"));
+  check("y su compañero no lo tiene como destino", !sinNada2.some((d) => d.poiName === "Syngorn"));
+}
 
 console.log(`\nViaje: ${desdeByroden.length} destinos desde Byroden. Byroden → Emon, ${duracionDeViaje(byrodenEmon)}.`);
 console.log(failures === 0 ? "Todas las comprobaciones pasaron." : `${failures} fallaron.`);

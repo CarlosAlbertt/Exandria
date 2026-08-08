@@ -66,7 +66,7 @@ export default function LugarPage() {
   const { location, ready } = usePartyLocation();
   const { atlas } = useAtlas();
   const { nodos, ready: nodosReady } = useLugares();
-  const { sitio, desfase, ready: sitioReady, mover, viajar } = useSitio();
+  const { sitio, desfase, revelados, ready: sitioReady, mover, viajar } = useSitio();
   const { townMap } = useTownMaps();
   const { nowGameMin } = useRelojJugador();
   const { clues } = useClues();
@@ -341,6 +341,9 @@ export default function LugarPage() {
               anclaPoi={location?.poiName ?? null}
               atlas={atlas}
               ocupado={yendo !== null}
+              // Lo que ESTE personaje conoce por su cuenta, encima de lo que el
+              // DM abrió para todos: el que nació en Syngorn conoce Syngorn.
+              revelados={revelados}
               onViajar={(nodoId, minutos) => viajar(nodoId, ancla, minutos)}
             />
           </ErrorBoundary>

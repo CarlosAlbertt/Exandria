@@ -8,6 +8,7 @@ import { loadActiveCharacter } from "@/lib/character";
 // por lo que `puedeSembrar` salió de `seedNpcs`. Y hace más falta todavía porque
 // la misma invariante se aplica también en `/api/dm/character`.
 import { sanearSitio, type Sitio } from "@/lib/nodos";
+import { leerRevelados } from "@/lib/revelado";
 
 /**
  * Dónde está ESTE jugador, por su cuenta.
@@ -29,6 +30,7 @@ export function useSitio() {
   const [characterId, setCharacterId] = useState<string | null>(null);
   const [sitio, setSitio] = useState<Sitio | null>(null);
   const [desfase, setDesfase] = useState(0);
+  const [revelados, setRevelados] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -36,6 +38,10 @@ export function useSitio() {
     const c = await loadActiveCharacter(userId);
     setCharacterId(c?.id ?? null);
     const play = (c?.play_state as Record<string, unknown> | undefined) ?? {};
+    // Lo que este personaje conoce por su cuenta. Se lee aquí porque el
+    // `play_state` ya está cargado: una consulta aparte sería una segunda
+    // lectura de la misma fila, y podrían discrepar.
+    setRevelados(leerRevelados(play.revelados));
     // La invariante se aplica también al LEER, no solo al escribir: puede haber
     // quedado un desfase huérfano si el DM editó la ficha a mano.
     const saneado = sanearSitio(play.sitio, play.desfase);
@@ -125,5 +131,5 @@ export function useSitio() {
     await escribir({ nodo: nodoId, desde: ancla }, desfase + Math.max(0, Math.floor(minutos)));
   }, [escribir, desfase]);
 
-  return { sitio, desfase, characterId, ready, mover, viajar, recargar: cargar };
+  return { sitio, desfase, revelados, characterId, ready, mover, viajar, recargar: cargar };
 }
