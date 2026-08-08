@@ -10,6 +10,9 @@ import { ABILITIES, fmtMod, OFICIOS, esOficio } from "@/data/rules";
 import { xpForNext, oficioPicks, OFICIO_LEVELS } from "@/data/leveling";
 import { derive } from "@/lib/derive";
 import { createClient } from "@/lib/supabase/client";
+import { useLugares } from "@/lib/useLugares";
+import { poiDeNodo, type Nodo } from "@/data/lugares";
+import { duracionDeViaje } from "@/lib/viaje";
 import LorePicker from "@/components/LorePicker";
 import { RECETAS, recetaPorSlug, produceNombre } from "@/data/recetas";
 import { recetasSabidas, sabeOficio, idReceta, slugDeId } from "@/lib/recetario";
@@ -63,6 +66,11 @@ export default function GrupoPanel() {
    * pasa por no tocar nada.
    */
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  // Los sitios a los que el DM puede plantar a alguien. Salen del MISMO grafo
+  // que ve el jugador: una segunda lista de sitios en el panel se
+  // desincronizaría en cuanto el DM añadiera un sub-lugar.
+  const { nodos } = useLugares();
+  const [destino, setDestino] = useState("");
   const [archivados, setArchivados] = useState<Record<string, { id: string; name: string }[]>>({});
   const [nombres, setNombres] = useState<Record<string, string>>({});
   const [dmError, setDmError] = useState<string | null>(null);
@@ -255,6 +263,27 @@ export default function GrupoPanel() {
             </span>
           )}
         </div>
+
+        {/* Llevarse a varios de golpe. La misma selección de arriba, porque el
+            problema es el mismo: mover a tres de uno en uno son tres clics y
+            «mover al grupo» se lleva a los cinco. */}
+        <div className="flex flex-wrap items-center gap-2 pt-1" style={{ borderTop: "1px solid var(--color-line)" }}>
+          <span className="eyebrow !text-[9px] pt-2">Llevar a</span>
+          <select value={destino} onChange={(e) => setDestino(e.target.value)}
+            className="px-2 py-1.5 rounded-lg font-ui text-[13px] bg-transparent"
+            style={{ border: "1px solid var(--color-line)", color: "var(--color-parch)" }}>
+            <option value="">Con el grupo (donde el DM plantó al grupo)</option>
+            {nodos.map((n) => (
+              <option key={n.id} value={n.id}>{etiquetaDeNodo(n)}</option>
+            ))}
+          </select>
+          <button className="btn-ghost" disabled={marcados.length === 0}
+            title={marcados.length === 0 ? "Marca antes a quién" : undefined}
+            onClick={() => marcados.forEach((c) => dmPatch(c.user_id, { setSitio: destino ? { nodo: destino } : null }))}>
+            <i className={`fas ${destino ? "fa-map-pin" : "fa-users"} mr-2`} />
+            {destino ? `Plantar${sufijo}` : `Traer${sufijo} con el grupo`}
+          </button>
+        </div>
       </div>
 
       {party.map((c) => {
@@ -372,6 +401,8 @@ export default function GrupoPanel() {
                   <i className="fas fa-star mr-2" />Dar XP
                 </button>
               </div>
+
+              <SitioDeJugador c={c} nodos={nodos} />
             </div>
 
             {(archivados[c.user_id] ?? []).length > 0 && (
@@ -758,6 +789,64 @@ function Stat({ icon, label, value, color }: { icon: string; label: string; valu
         <p className="eyebrow !text-[9px]">{label}</p>
         <p className="font-display font-extrabold" style={{ color: "var(--color-parch)" }}>{value}</p>
       </div>
+    </div>
+  );
+}
+
+/** El nombre de un nodo tal y como el DM lo reconoce: el sitio y de qué pueblo es. */
+function etiquetaDeNodo(n: Nodo): string {
+  const poi = poiDeNodo(n.id);
+  if (n.id.startsWith("poi:")) return n.nombre;
+  if (n.id.startsWith("franja:")) return `${n.nombre} (Expansión Verdante)`;
+  return poi ? `${n.nombre} — ${poi}` : n.nombre;
+}
+
+/**
+ * Dónde está este jugador, y moverlo.
+ *
+ * ⚠️ **Lo que el DM planta aquí lleva `puesto: "dm"` y NO caduca al mover al
+ * grupo** (`sitioVigente`). Ahí está lo que hacía falta para tener a uno en Emon
+ * y a otro en Byroden: sin esa marca, en cuanto el DM moviera al grupo el de
+ * Emon volvería solo, que es exactamente la red que se puso para que nadie se
+ * quedara olvidado en una taberna. Las dos cosas conviven porque se distinguen.
+ *
+ * Se enseña **de quién es la decisión**: «lo puso el DM» o «se fue por su
+ * cuenta». Sin eso, el DM ve a alguien en Emon y no sabe si lo mandó él o si el
+ * jugador se largó, que es justo lo que necesita saber para decidir.
+ */
+function SitioDeJugador({ c, nodos }: { c: { user_id: string; play_state?: unknown }; nodos: Nodo[] }) {
+  const play = (c.play_state as Record<string, unknown> | undefined) ?? {};
+  const s = play.sitio as { nodo?: string; puesto?: string } | undefined;
+  const nodoId = typeof s?.nodo === "string" ? s.nodo : "";
+  const puestoPorDm = s?.puesto === "dm";
+  const desfase = typeof play.desfase === "number" && play.desfase > 0 ? play.desfase : 0;
+  const nodo = nodoId ? nodos.find((n) => n.id === nodoId) : undefined;
+
+  return (
+    <div className="min-w-[210px]">
+      <p className="eyebrow !text-[9px] mb-1">
+        <i className="fas fa-location-dot mr-1.5" style={{ color: "var(--color-bronze)" }} />
+        {!nodoId
+          ? "Con el grupo"
+          : nodo
+            ? `${etiquetaDeNodo(nodo)} · ${puestoPorDm ? "lo pusiste tú" : "se fue solo"}`
+            /* Un sitio que ya no existe en el grafo: el jugador lo ve caer al
+               ancla (`nodoDelJugador`), y aquí se dice en vez de dejar el hueco
+               en blanco, que se leería como que está con el grupo. */
+            : `Un sitio que ya no existe (${nodoId})`}
+        {desfase > 0 && ` · ${duracionDeViaje(desfase)} de camino`}
+      </p>
+      <select
+        value={nodoId}
+        onChange={(e) => dmPatch(c.user_id, { setSitio: e.target.value ? { nodo: e.target.value } : null })}
+        className="w-full px-2 py-1.5 rounded-lg font-ui text-[13px] bg-transparent"
+        style={{ border: "1px solid var(--color-line)", color: "var(--color-parch)" }}
+      >
+        <option value="">Con el grupo</option>
+        {nodos.map((n) => (
+          <option key={n.id} value={n.id}>{etiquetaDeNodo(n)}</option>
+        ))}
+      </select>
     </div>
   );
 }
