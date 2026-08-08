@@ -6,6 +6,8 @@ import { POI_ICON, POI_COLOR, type Poi } from "@/data/pois";
 import { useTownMaps } from "@/lib/useTownMaps";
 import { usePois } from "@/lib/usePois";
 import { useRole } from "@/components/SessionProvider";
+import { useSitio } from "@/lib/useSitio";
+import { poiVisible } from "@/lib/revelado";
 
 // Visor a pantalla completa del mapa de una región con sus puntos de interés.
 export default function RegionExplore({
@@ -14,6 +16,8 @@ export default function RegionExplore({
   const isDM = useRole() === "dm";
   const { townMap } = useTownMaps();
   const { states, keyOf } = usePois();
+  // Lo que sabe este personaje por su cuenta, para sumarlo a lo del grupo.
+  const { revelados } = useSitio();
   const [sel, setSel] = useState<Poi | null>(null);
   const [townOpen, setTownOpen] = useState<{ name: string; image: string } | null>(null);
   const ratio = REGION_RATIO[slug] ?? "3300 / 2550";
@@ -47,10 +51,16 @@ export default function RegionExplore({
   }, [medir, image]);
 
   // POIs con posición guardada; jugadores solo ven los revelados.
+  //
+  // ⚠️ **Se suma lo que este personaje conoce por su cuenta.** Sin esto quedaba a
+  // medias y se notaba en cuanto se usaba: al que nació en Syngorn se le revelaba
+  // Syngorn, **podía viajar allí desde `/lugar` pero no lo veía en el mapa**. La
+  // misma regla que usa el viaje (`poiVisible`), para que no puedan discrepar.
   const pois = basePois
     .map((p) => {
       const st = states[keyOf(slug, p.name)];
-      return { ...p, x: st?.x ?? p.x, y: st?.y ?? p.y, revealed: isDM || !!st?.revealed };
+      const visible = isDM || poiVisible({ paraTodos: !!st?.revealed, propios: revelados, poiName: p.name });
+      return { ...p, x: st?.x ?? p.x, y: st?.y ?? p.y, revealed: visible };
     })
     .filter((p) => p.revealed);
 
