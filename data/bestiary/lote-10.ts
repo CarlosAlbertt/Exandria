@@ -1,0 +1,350 @@
+// Bestiario D&D 2024 — LOTE 10. Los DIEZ del corazón de la Expansión Verdante.
+//
+// ⚠️ **Este lote NO sigue el abecedario de los lotes 01-09**, que iban por el
+// nombre inglés y llegaron hasta la D. Es un lote DIRIGIDO: son exactamente las
+// diez entradas de la franja `corazon` de `ENCUENTROS_VERDANTE` (`data/bosque.ts`),
+// que estaban todas escritas y ninguna tenía ficha — `jugablesDe("corazon")`
+// devolvía un array vacío y en el fondo del bosque no se podía sacar ni un
+// combate de la tabla. Al entrar aquí, los diez salen de `PENDIENTES`.
+//
+// Páginas del libro 67, 88, 152, 156, 234, 308, 313 y 372 (70, 91, 155, 159,
+// 237, 311, 316 y 375 del PDF), TODAS leídas de la página renderizada. La capa
+// OCR no vale ni para los números: daba «CR 5» para el Cíclope Centinela, que es
+// CR 6 (XP 2.300; PB +3).
+//
+// Convención de troceo y criterio: ver la cabecera de `lote-01.ts`. Distancias
+// en metros (5 ft = 1,5 m). Blurbs y texto de rasgos y acciones son redacción
+// propia y concisa; del manual no se copia prosa.
+import type { Monster } from "./types";
+
+export const ENT: Monster = {
+  slug: "ent",
+  name: "Ent",
+  nameEn: "Treant",
+  size: "Enorme",
+  type: "Planta",
+  alignment: "Caótico Bueno",
+  ac: 16,
+  initiative: 3,
+  hp: 138,
+  hpFormula: "12d12 + 60",
+  speeds: "9 m",
+  abilities: { fue: 23, des: 8, con: 21, int: 12, sab: 16, car: 12 },
+  vulnerabilities: "Fuego",
+  resistances: "Contundente, perforante",
+  senses: "Percepción pasiva 13",
+  languages: "Común, druídico, élfico, silvano",
+  cr: "9",
+  xp: 5000,
+  pb: 4,
+  traits: [
+    { name: "Monstruo de Asedio", text: "Inflige el doble de daño a objetos y estructuras." },
+  ],
+  actions: [
+    { name: "Multiataque", text: "Dos ataques de Golpe." },
+    { name: "Golpe", text: "Ataque cuerpo a cuerpo: +10, alcance 1,5 m, 16 (3d6+6) contundente." },
+    { name: "Granizo de Corteza", text: "Ataque a distancia: +10, alcance 54 m, 28 (4d10+6) perforante." },
+    { name: "Animar Árboles (1/día)", text: "Anima hasta dos árboles que vea a 18 m. Cada uno usa este mismo bloque salvo que tiene Inteligencia y Carisma 1, no habla y carece de esta acción. Actúa justo después del ent en su misma iniciativa y le obedece. Sigue animado 1 día, hasta que muera, hasta que muera el ent o hasta que se aleje más de 36 m de él; entonces echa raíces si puede." },
+  ],
+  blurb: "Árbol andante que lleva siglos en el mismo claro y se acuerda de quién taló qué. No se mete en los pleitos de los que viven poco, pero si le tocan el bosque levanta también a los árboles de al lado.",
+  habitat: "Bosque",
+  treasure: "Ninguno",
+};
+
+export const CENTAURO_GUARDIAN: Monster = {
+  slug: "centauro-guardian",
+  name: "Centauro Guardián",
+  nameEn: "Centaur Warden",
+  size: "Grande",
+  type: "Feérico",
+  alignment: "Neutral Bueno",
+  ac: 16,
+  initiative: 2,
+  hp: 105,
+  hpFormula: "14d10 + 28",
+  speeds: "15 m",
+  abilities: { fue: 18, des: 14, con: 14, int: 9, sab: 18, car: 11 },
+  saves: "Con +5, Sab +7",
+  skills: "Atletismo +7, Naturaleza +5, Percepción +7",
+  senses: "Percepción pasiva 17",
+  languages: "Druídico, élfico, silvano",
+  cr: "7",
+  xp: 2900,
+  pb: 3,
+  actions: [
+    { name: "Multiataque", text: "Dos ataques, con Bastón del Bosque o Rayo de Sol en cualquier combinación." },
+    { name: "Bastón del Bosque", text: "Ataque cuerpo a cuerpo: +7, alcance 1,5 m, 13 (2d8+4) contundente más 14 (4d6) de veneno." },
+    { name: "Rayo de Sol", text: "Ataque a distancia: +7, alcance 27 m, 14 (3d6+4) radiante, y el objetivo queda Cegado hasta el inicio del siguiente turno del centauro." },
+    { name: "Lanzamiento de Conjuros", text: "Lanza con Sabiduría (CD 15). A voluntad: Artificio Druídico, Hablar con los Animales." },
+  ],
+  bonusActions: [
+    { name: "Rastro Enmarañado (Recarga 5-6)", text: "Se mueve hasta su Velocidad sin provocar ataques de oportunidad. Cada criatura a 1,5 m de su recorrido es objetivo una vez: salvación de Fuerza CD 15. Fallo: 11 (2d6+4) contundente y queda Apresada hasta el final de su siguiente turno." },
+  ],
+  blurb: "Manda la patrulla y habla por ella: es quien decide si el que ha cruzado la raya del pacto se va por su pie o no se va. Pregunta una vez.",
+  habitat: "Bosque, pradera, planar (Feywild)",
+  treasure: "Armamento, individual",
+};
+
+export const CENTAURO_SOLDADO: Monster = {
+  slug: "centauro-soldado",
+  name: "Centauro Soldado",
+  nameEn: "Centaur Trooper",
+  size: "Grande",
+  type: "Feérico",
+  alignment: "Neutral Bueno",
+  ac: 16,
+  initiative: 2,
+  hp: 45,
+  hpFormula: "6d10 + 12",
+  speeds: "15 m",
+  abilities: { fue: 18, des: 14, con: 14, int: 9, sab: 13, car: 11 },
+  skills: "Atletismo +6, Percepción +3",
+  gear: "Coraza, arco largo, pica",
+  senses: "Percepción pasiva 13",
+  languages: "Élfico, silvano",
+  cr: "2",
+  xp: 450,
+  pb: 2,
+  actions: [
+    { name: "Multiataque", text: "Dos ataques, con Pica o Arco Largo en cualquier combinación." },
+    { name: "Pica", text: "Ataque cuerpo a cuerpo: +6, alcance 3 m, 9 (1d10+4) perforante." },
+    { name: "Arco Largo", text: "Ataque a distancia: +4, alcance 45/180 m, 6 (1d8+2) perforante." },
+  ],
+  bonusActions: [
+    { name: "Carga Arrolladora (Recarga 5-6)", text: "Se mueve hasta su Velocidad sin provocar ataques de oportunidad y puede atravesar los espacios de criaturas Medianas o menores. Cada criatura cuyo espacio atraviesa es objetivo una vez: salvación de Fuerza CD 14. Fallo: 7 (1d6+4) contundente y queda Derribada." },
+  ],
+  blurb: "Guardián con armadura y modales de caballero, y muy poca paciencia con lo que no es feérico. Es el que viene cuando el guardián ya ha preguntado.",
+  habitat: "Bosque, pradera, planar (Feywild)",
+  treasure: "Armamento, individual",
+};
+
+export const OSO_LECHUZA_PRIMIGENIO: Monster = {
+  slug: "oso-lechuza-primigenio",
+  name: "Oso Lechuza Primigenio",
+  nameEn: "Primeval Owlbear",
+  size: "Enorme",
+  type: "Monstruosidad",
+  alignment: "Sin alineamiento",
+  ac: 16,
+  initiative: 5,
+  hp: 126,
+  hpFormula: "12d12 + 48",
+  speeds: "12 m, trepar 12 m, vuelo 1,5 m",
+  abilities: { fue: 22, des: 14, con: 19, int: 8, sab: 15, car: 7 },
+  saves: "Con +7, Sab +5",
+  skills: "Percepción +8",
+  senses: "Visión en la oscuridad 36 m; Percepción pasiva 18",
+  languages: "Ninguno",
+  cr: "7",
+  xp: 2900,
+  pb: 3,
+  traits: [
+    { name: "Resistencia Mágica", text: "Ventaja en las salvaciones contra conjuros y otros efectos mágicos." },
+  ],
+  actions: [
+    { name: "Multiataque", text: "Dos ataques de Destrozar." },
+    { name: "Destrozar", text: "Ataque cuerpo a cuerpo: +9, alcance 1,5 m, 15 (2d8+6) cortante. Si el objetivo es Enorme o menor y el oso lechuza se movió 6 m o más en línea recta hacia él justo antes del impacto, sufre 9 (2d8) cortantes más y queda Derribado." },
+    { name: "Chillido (Recarga 5-6)", text: "Salvación de Constitución CD 15 para cada criatura en una Emanación de 9 m desde el oso lechuza. Fallo: 27 (6d8) de trueno y queda Incapacitada hasta el final de su siguiente turno. Éxito: solo la mitad del daño." },
+  ],
+  blurb: "Un oso lechuza que creció donde nadie lo molestó nunca: el doble de grande, con las alas justas para dar un salto largo y un chillido que tumba a lo que tiene delante.",
+  habitat: "Bosque",
+  treasure: "Ninguno",
+};
+
+export const BRUJA_VERDE: Monster = {
+  slug: "bruja-verde",
+  name: "Bruja Verde",
+  nameEn: "Green Hag",
+  size: "Mediano",
+  type: "Feérico",
+  alignment: "Neutral Malvado",
+  ac: 17,
+  initiative: 1,
+  hp: 82,
+  hpFormula: "11d8 + 33",
+  speeds: "9 m, nadar 9 m",
+  abilities: { fue: 18, des: 12, con: 16, int: 13, sab: 14, car: 14 },
+  skills: "Arcanos +5, Engaño +4, Percepción +4, Sigilo +3",
+  senses: "Visión en la oscuridad 18 m; Percepción pasiva 14",
+  languages: "Común, élfico, silvano",
+  cr: "3",
+  xp: 700,
+  pb: 2,
+  traits: [
+    { name: "Anfibia", text: "Respira aire y agua." },
+    { name: "Magia de Aquelarre", text: "Mientras esté a 9 m de al menos dos brujas aliadas, puede lanzar Augurio, Encontrar Familiar, Identificar, Localizar Objeto, Clarividencia o Sirviente Invisible sin componentes materiales, con su tiempo de lanzamiento normal y con Inteligencia (CD 11). Debe terminar un Descanso Largo antes de volver a lanzar ese mismo conjuro." },
+    { name: "Imitación", text: "Imita sonidos de animales y voces humanoides. Distinguir que es falso requiere una prueba de Sabiduría (Perspicacia) CD 14." },
+  ],
+  actions: [
+    { name: "Multiataque", text: "Dos ataques de Garra." },
+    { name: "Garra", text: "Ataque cuerpo a cuerpo: +6, alcance 1,5 m, 8 (1d8+4) cortante más 3 (1d6) de veneno." },
+    { name: "Lanzamiento de Conjuros", text: "Lanza sin componentes materiales, con Sabiduría (CD 12, +4 al ataque). A voluntad: Luces Danzantes, Disfrazarse (dura 24 horas), Invisibilidad (solo sobre sí misma, y no deja rastro mientras está Invisible), Ilusión Menor, Rayo de Enfermedad (versión de nivel 3)." },
+  ],
+  blurb: "Vive del trato: sabe dónde está lo perdido y cómo se rompe una maldición, y lo cambia por algo que parecía no costar nada. Siempre sale ganando.",
+  habitat: "Bosque, colina, pantano",
+  treasure: "Arcano",
+};
+
+export const UNICORNIO: Monster = {
+  slug: "unicornio",
+  name: "Unicornio",
+  nameEn: "Unicorn",
+  size: "Grande",
+  type: "Celestial",
+  alignment: "Legal Bueno",
+  ac: 12,
+  initiative: 8,
+  hp: 97,
+  hpFormula: "13d10 + 26",
+  speeds: "15 m",
+  abilities: { fue: 18, des: 14, con: 15, int: 11, sab: 17, car: 16 },
+  immunities: "Veneno; Encantado, Paralizado, Envenenado",
+  senses: "Visión en la oscuridad 18 m; Percepción pasiva 13",
+  languages: "Celestial, élfico, silvano; telepatía 36 m",
+  cr: "5",
+  xp: 1800,
+  pb: 3,
+  traits: [
+    { name: "Resistencia Legendaria (3/día)", text: "Si falla una salvación, puede optar por superarla." },
+    { name: "Resistencia Mágica", text: "Ventaja en las salvaciones contra conjuros y otros efectos mágicos." },
+  ],
+  actions: [
+    { name: "Multiataque", text: "Un ataque de Cascos y uno de Cuerno Radiante." },
+    { name: "Cascos", text: "Ataque cuerpo a cuerpo: +7, alcance 1,5 m, 11 (2d6+4) contundente." },
+    { name: "Cuerno Radiante", text: "Ataque cuerpo a cuerpo: +7, alcance 1,5 m, 9 (1d10+4) radiante." },
+    { name: "Lanzamiento de Conjuros", text: "Lanza sin componentes, con Carisma (CD 14). A voluntad: Detectar el Bien y el Mal, Artificio Druídico. 1/día cada uno: Calmar Emociones, Disipar el Bien y el Mal, Enmarañar, Pasar sin Dejar Rastro, Palabra de Regreso." },
+  ],
+  bonusActions: [
+    { name: "Bendición del Unicornio (3/día)", text: "Toca a otra criatura con el cuerno y le lanza Curar Heridas o Restablecimiento Menor, con la misma característica que Lanzamiento de Conjuros." },
+  ],
+  legendary: [
+    { name: "Cuerno al Galope", text: "Se mueve hasta la mitad de su Velocidad sin provocar ataques de oportunidad y hace un ataque de Cuerno Radiante." },
+    { name: "Escudo Tornasolado", text: "Se toma a sí mismo o a una criatura que vea a 18 m como objetivo: gana 10 (3d6) Puntos de Golpe Temporales y +2 a la CA hasta el final del siguiente turno del unicornio. No puede repetirla hasta el inicio de su siguiente turno." },
+  ],
+  blurb: "Guardián del bosque intacto, reverenciado por los feéricos que viven bajo su amparo. Cura al que ampara y no perdona un paso de más al que no.",
+  habitat: "Bosque, planar (Feywild)",
+  treasure: "Cualquiera",
+};
+
+export const CRIA_DRAGON_VERDE: Monster = {
+  slug: "cria-dragon-verde",
+  name: "Cría de Dragón Verde",
+  nameEn: "Green Dragon Wyrmling",
+  size: "Mediano",
+  type: "Dragón (cromático)",
+  alignment: "Legal Malvado",
+  ac: 17,
+  initiative: 3,
+  hp: 38,
+  hpFormula: "7d8 + 7",
+  speeds: "9 m, vuelo 18 m, nadar 9 m",
+  abilities: { fue: 15, des: 12, con: 13, int: 14, sab: 11, car: 13 },
+  saves: "Des +3, Sab +2",
+  skills: "Percepción +4, Sigilo +3",
+  immunities: "Veneno; Envenenado",
+  senses: "Visión ciega 3 m, visión en la oscuridad 18 m; Percepción pasiva 14",
+  languages: "Dracónico",
+  cr: "2",
+  xp: 450,
+  pb: 2,
+  traits: [
+    { name: "Anfibia", text: "Respira aire y agua." },
+  ],
+  actions: [
+    { name: "Multiataque", text: "Dos ataques de Desgarro." },
+    { name: "Desgarro", text: "Ataque cuerpo a cuerpo: +4, alcance 1,5 m, 7 (1d10+2) cortante más 3 (1d6) de veneno." },
+    { name: "Aliento Venenoso (Recarga 5-6)", text: "Salvación de Constitución CD 11 para cada criatura en un Cono de 4,5 m. Fallo: 21 (6d6) de veneno. Éxito: la mitad." },
+  ],
+  blurb: "Aprende a manipular sirviendo de peón a dragones mayores, y en cuanto reúne súbditos propios se marcha a buscar su territorio. Ya se cree el dueño.",
+  habitat: "Bosque",
+  treasure: "Arcano",
+};
+
+export const TRICERATOPS: Monster = {
+  slug: "triceratops",
+  name: "Triceratops",
+  nameEn: "Triceratops",
+  size: "Enorme",
+  type: "Bestia (dinosaurio)",
+  alignment: "Sin alineamiento",
+  ac: 14,
+  initiative: -1,
+  hp: 114,
+  hpFormula: "12d12 + 36",
+  speeds: "15 m",
+  abilities: { fue: 22, des: 9, con: 17, int: 2, sab: 11, car: 5 },
+  senses: "Percepción pasiva 10",
+  languages: "Ninguno",
+  cr: "5",
+  xp: 1800,
+  pb: 3,
+  actions: [
+    { name: "Multiataque", text: "Dos ataques de Cornada." },
+    { name: "Cornada", text: "Ataque cuerpo a cuerpo: +9, alcance 1,5 m, 19 (2d12+6) perforante. Si el objetivo es Enorme o menor y el triceratops se movió 6 m o más en línea recta hacia él justo antes del impacto, sufre 9 (2d8) perforantes más y queda Derribado." },
+  ],
+  blurb: "Herbívoro acorazado del tamaño de una carreta. No caza a nadie: embiste lo que se le pone delante y sigue pastando.",
+};
+
+export const CICLOPE_CENTINELA: Monster = {
+  slug: "ciclope-centinela",
+  name: "Cíclope Centinela",
+  nameEn: "Cyclops Sentry",
+  size: "Enorme",
+  type: "Gigante",
+  alignment: "Caótico Neutral",
+  ac: 14,
+  initiative: 0,
+  hp: 138,
+  hpFormula: "12d12 + 60",
+  speeds: "12 m",
+  abilities: { fue: 22, des: 11, con: 20, int: 8, sab: 6, car: 10 },
+  senses: "Percepción pasiva 8",
+  languages: "Gigante",
+  cr: "6",
+  xp: 2300,
+  pb: 3,
+  actions: [
+    { name: "Multiataque", text: "Dos ataques, con Garrote o Roca en cualquier combinación." },
+    { name: "Garrote", text: "Ataque cuerpo a cuerpo: +9, alcance 3 m, 16 (3d6+6) contundente. Si el objetivo es Enorme o menor, queda Derribado." },
+    { name: "Roca", text: "Ataque a distancia: +9, alcance 9/36 m, 22 (3d10+6) contundente." },
+  ],
+  reactions: [
+    { name: "Presciencia Limitada (Recarga 6)", text: "Desencadenante: una criatura que vea hace una tirada de ataque contra él. Respuesta: impone Desventaja a esa tirada y gana Ventaja en sus tiradas de ataque contra ese objetivo hasta el final de su siguiente turno." },
+  ],
+  blurb: "Gigante de un solo ojo, descendiente de dioses, que ve venir el golpe un instante antes de que ocurra. Sigue montando la guardia que le encargaron.",
+  habitat: "Costero, desierto, pradera, colina, montaña, Underdark",
+  treasure: "Armamento",
+};
+
+export const TIRANOSAURIO_REX: Monster = {
+  slug: "tiranosaurio-rex",
+  name: "Tiranosaurio Rex",
+  nameEn: "Tyrannosaurus Rex",
+  size: "Enorme",
+  type: "Bestia (dinosaurio)",
+  alignment: "Sin alineamiento",
+  ac: 13,
+  initiative: 3,
+  hp: 136,
+  hpFormula: "13d12 + 52",
+  speeds: "15 m",
+  abilities: { fue: 25, des: 10, con: 19, int: 2, sab: 12, car: 9 },
+  saves: "Fue +10, Sab +4",
+  skills: "Percepción +4",
+  senses: "Percepción pasiva 14",
+  languages: "Ninguno",
+  cr: "8",
+  xp: 3900,
+  pb: 3,
+  actions: [
+    { name: "Multiataque", text: "Un ataque de Mordisco y uno de Cola." },
+    { name: "Mordisco", text: "Ataque cuerpo a cuerpo: +10, alcance 3 m, 33 (4d12+7) perforante. Si el objetivo es Grande o menor, queda Agarrado (CD 17 para escapar). Mientras esté Agarrado está también Apresado y la Cola no puede tomarlo como objetivo." },
+    { name: "Cola", text: "Ataque cuerpo a cuerpo: +10, alcance 4,5 m, 25 (4d8+7) contundente. Si el objetivo es Enorme o menor, queda Derribado." },
+  ],
+  blurb: "Depredador de dos pisos que agarra con la boca lo que quepa en ella y barre con la cola lo que no. Nada de lo que vive en el bosque le disputa un claro.",
+};
+
+export const LOTE_10_MONSTERS: Monster[] = [
+  ENT, CENTAURO_GUARDIAN, CENTAURO_SOLDADO, OSO_LECHUZA_PRIMIGENIO, BRUJA_VERDE,
+  UNICORNIO, CRIA_DRAGON_VERDE, TRICERATOPS, CICLOPE_CENTINELA, TIRANOSAURIO_REX,
+];

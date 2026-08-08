@@ -150,22 +150,23 @@ export type EncuentroBosque = {
  */
 export const PENDIENTES: string[] = [
   // De los que pidió el DM.
-  "Montículo Reptante", "Ser del Agua", "Unicornio", "Lobo Huargo",
-  "Jabalí Gigante", "Centauro Guardián", "Centauro Soldado", "Oso Pardo",
-  "Araña Gigante", "Osgo Acechador", "Cría de Dragón Verde",
+  "Montículo Reptante", "Ser del Agua", "Lobo Huargo",
+  "Jabalí Gigante", "Oso Pardo",
+  "Araña Gigante", "Osgo Acechador",
   // Los que pide un bosque feérico y salen de cruzar el censo con el hábitat
   // "Forest" del apéndice B.
-  "Dríade", "Sátiro Juerguista", "Duende", "Duende Prodigioso", "Ent",
-  "Oso Lechuza", "Oso Lechuza Primigenio", "Ettercap", "Bruja Verde", "Worg",
+  "Dríade", "Sátiro Juerguista", "Duende", "Duende Prodigioso",
+  "Oso Lechuza", "Ettercap", "Worg",
   "Grick", "Arpía", "Peryton", "Hongo Chillón",
-  // El fondo del corazón, pedido el 2026-08-08.
+  // Los DIEZ del corazón salieron de aquí el 2026-08-08: están extraídos en
+  // `data/bestiary/lote-10.ts` y la franja pasó de 0 a 10 jugables.
   //
-  // ⚠️ **Los nombres ES son la CLAVE con la que se cruzará el statblock**, y los
-  // puse yo traduciendo del inglés que se pidió: `Tyrannosaurus Rex`,
-  // `Cyclops Sentry` y `Triceratops`. Si al extraerlos del Manual salen con otro
-  // nombre, hay que cambiarlos **aquí y en la tabla**, o el gate los tratará como
-  // inventados.
-  "Triceratops", "Cíclope Centinela", "Tiranosaurio Rex",
+  // ⚠️ **Los tres nombres ES que puso Claude —Triceratops, Cíclope Centinela y
+  // Tiranosaurio Rex— se han confirmado contra el Manual y NO cambian.** El
+  // libro es el inglés (`Triceratops`, `Cyclops Sentry`, `Tyrannosaurus Rex`),
+  // así que del PDF no sale ningún nombre español: el ES lo pone siempre quien
+  // extrae. Lo que sí salió mal de la capa OCR fue el CR del Cíclope: dice 5 y
+  // es 6.
 ];
 
 /**
