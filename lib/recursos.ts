@@ -59,6 +59,15 @@ export type PlayState = {
    * descansar porque sus compañeros habían descansado en Byroden.
    */
   ultimoLargo?: number;
+  /**
+   * Los sitios que este personaje conoce **por su cuenta**, por nombre de POI.
+   *
+   * ⚠️ **Se SUMA a `poi_state.revealed`, no lo sustituye.** Es para el caso de
+   * «el que nació en Syngorn conoce Syngorn y los demás no»: revelar al grupo
+   * sigue funcionando igual y esto solo añade. La regla vive en
+   * `lib/revelado.ts`, donde el gate la mira, y falla CERRADO.
+   */
+  revelados?: string[];
   [otros: string]: unknown;
 };
 

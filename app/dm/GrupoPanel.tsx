@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useLugares } from "@/lib/useLugares";
 import { poiDeNodo, type Nodo } from "@/data/lugares";
 import { duracionDeViaje } from "@/lib/viaje";
+import { leerRevelados } from "@/lib/revelado";
 import LorePicker from "@/components/LorePicker";
 import { RECETAS, recetaPorSlug, produceNombre } from "@/data/recetas";
 import { recetasSabidas, sabeOficio, idReceta, slugDeId } from "@/lib/recetario";
@@ -71,6 +72,13 @@ export default function GrupoPanel() {
   // desincronizaría en cuanto el DM añadiera un sub-lugar.
   const { nodos } = useLugares();
   const [destino, setDestino] = useState("");
+  const [poiRevelar, setPoiRevelar] = useState("");
+  // Los pueblos, sacados de los MISMOS nodos: una segunda lista se
+  // desincronizaría del atlas en cuanto el DM añadiera uno.
+  const pueblos = nodos
+    .filter((n) => n.id.startsWith("poi:"))
+    .map((n) => n.nombre)
+    .sort((a, b) => a.localeCompare(b, "es"));
   const [archivados, setArchivados] = useState<Record<string, { id: string; name: string }[]>>({});
   const [nombres, setNombres] = useState<Record<string, string>>({});
   const [dmError, setDmError] = useState<string | null>(null);
@@ -283,6 +291,33 @@ export default function GrupoPanel() {
             <i className={`fas ${destino ? "fa-map-pin" : "fa-users"} mr-2`} />
             {destino ? `Plantar${sufijo}` : `Traer${sufijo} con el grupo`}
           </button>
+        </div>
+
+        {/* ---- REVELAR UN SITIO SOLO A ESTOS ----
+            ⚠️ El ojo de Panel DM › Mapa revela **para todo el grupo**, y eso no
+            sirve para «el que nació en Syngorn conoce Syngorn y los demás no».
+            Esto SUMA sobre aquello: no le quita nada a nadie, y revelar al grupo
+            sigue funcionando igual. */}
+        <div className="flex flex-wrap items-center gap-2 pt-1" style={{ borderTop: "1px solid var(--color-line)" }}>
+          <span className="eyebrow !text-[9px] pt-2">Solo estos conocen</span>
+          <select value={poiRevelar} onChange={(e) => setPoiRevelar(e.target.value)}
+            className="px-2 py-1.5 rounded-lg font-ui text-[13px] bg-transparent max-w-[240px]"
+            style={{ border: "1px solid var(--color-line)", color: "var(--color-parch)" }}>
+            <option value="">Elige un pueblo…</option>
+            {pueblos.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <button className="btn-ghost" disabled={marcados.length === 0 || !poiRevelar}
+            title={marcados.length === 0 ? "Marca antes a quién" : !poiRevelar ? "Elige un pueblo" : undefined}
+            onClick={() => marcados.forEach((c) => dmPatch(c.user_id, { revelarPoi: { poiName: poiRevelar, on: true } }))}>
+            <i className="fas fa-eye mr-2" />Revelar{sufijo}
+          </button>
+          <button className="btn-ghost" disabled={marcados.length === 0 || !poiRevelar}
+            onClick={() => marcados.forEach((c) => dmPatch(c.user_id, { revelarPoi: { poiName: poiRevelar, on: false } }))}>
+            <i className="fas fa-eye-slash mr-2" />Quitar
+          </button>
+          <span className="font-ui text-[11px] w-full" style={{ color: "var(--color-dim)" }}>
+            Se suma a lo que hayas abierto para todos en Mapa. Podrán viajar ahí aunque el grupo no lo conozca.
+          </span>
         </div>
       </div>
 
@@ -820,6 +855,7 @@ function SitioDeJugador({ c, nodos }: { c: { user_id: string; play_state?: unkno
   const nodoId = typeof s?.nodo === "string" ? s.nodo : "";
   const puestoPorDm = s?.puesto === "dm";
   const desfase = typeof play.desfase === "number" && play.desfase > 0 ? play.desfase : 0;
+  const propios = leerRevelados(play.revelados);
   const nodo = nodoId ? nodos.find((n) => n.id === nodoId) : undefined;
 
   return (
@@ -836,6 +872,13 @@ function SitioDeJugador({ c, nodos }: { c: { user_id: string; play_state?: unkno
             : `Un sitio que ya no existe (${nodoId})`}
         {desfase > 0 && ` · ${duracionDeViaje(desfase)} de camino`}
       </p>
+      {/* Lo que sabe SOLO él. Sin esto el DM revela Syngorn a uno y a los dos
+          días no hay forma de recordar a quién se lo dio. */}
+      {propios.length > 0 && (
+        <p className="font-ui text-[11px] mb-1" style={{ color: "var(--color-arcane)" }}>
+          <i className="fas fa-eye mr-1.5" />Conoce solo él: {propios.join(", ")}
+        </p>
+      )}
       <select
         value={nodoId}
         onChange={(e) => dmPatch(c.user_id, { setSitio: e.target.value ? { nodo: e.target.value } : null })}
