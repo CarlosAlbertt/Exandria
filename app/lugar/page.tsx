@@ -20,6 +20,8 @@ import TablonSection from "@/components/lugar/TablonSection";
 import SaberRoll from "@/components/lugar/SaberRoll";
 import ClimaEfectos from "@/components/lugar/ClimaEfectos";
 import Salidas from "@/components/lugar/Salidas";
+import Viajar from "@/components/lugar/Viajar";
+import { duracionDeViaje } from "@/lib/viaje";
 
 /**
  * `/lugar` — LA HOJA. Referencia literal:
@@ -45,7 +47,7 @@ export default function LugarPage() {
   const { location, ready } = usePartyLocation();
   const { atlas } = useAtlas();
   const { nodos, ready: nodosReady } = useLugares();
-  const { sitio, ready: sitioReady, mover } = useSitio();
+  const { sitio, desfase, ready: sitioReady, mover, viajar } = useSitio();
   const { townMap } = useTownMaps();
   const { nowGameMin } = useGameClock();
   const { clues } = useClues();
@@ -199,12 +201,37 @@ export default function LugarPage() {
                 <i className={`fas ${nodo.icono}`} />
                 <span>{queEs}{region ? ` · ${region.name}` : ""}</span>
               </div>
+              {/* El camino que llevas hecho por tu cuenta.
+                  ⚠️ Se enseña como CAMINO ANDADO y no como una hora distinta, y
+                  eso es deliberado: el desfase se guarda desde ya pero **el
+                  reloj todavía no lo consume nadie**. Pintarlo como «vas 6 h 30
+                  adelantado» mientras el reloj de la barra dice otra cosa sería
+                  la app contradiciéndose a sí misma. */}
+              {desfase > 0 && (
+                <div className="lug-dato">
+                  <i className="fas fa-person-walking" />
+                  <span>{duracionDeViaje(desfase)} de camino por tu cuenta</span>
+                </div>
+              )}
             </div>
           </div>
 
           {alAireLibre(nodo.id) && <ClimaEfectos weather={weather} />}
 
           <Salidas desde={nodo.id} salidas={salidasDe(nodo, index)} onIr={ir} yendo={yendo} />
+
+          {/* Viajar va APARTE de las salidas a propósito: no es una arista del
+              grafo, es que el DM haya revelado el pin. Solo desde la plaza de un
+              pueblo — de la taberna se sale primero y del bosque se vuelve
+              andando por las franjas. */}
+          <Viajar
+            desde={enElPueblo && poiName && ubicacion ? { poiName, regionSlug: ubicacion.regionSlug } : null}
+            continente={ubicacion?.continent ?? null}
+            anclaPoi={location?.poiName ?? null}
+            atlas={atlas}
+            ocupado={yendo !== null}
+            onViajar={(nodoId, minutos) => viajar(nodoId, ancla, minutos)}
+          />
 
           <NpcSection nodo={nodo} ambient={ambient} />
         </div>
