@@ -6,7 +6,7 @@
 // en juego es que una tarjeta no lleve a ninguna parte, o que moverse no tenga
 // efecto — dos fallos que no gritan.
 
-import type { Nodo } from "@/data/lugares";
+import { poiDeNodo, type Nodo } from "@/data/lugares";
 
 /** Índice por id, que es como se consulta el grafo en todas partes. */
 export function indexar(nodos: readonly Nodo[]): Map<string, Nodo> {
@@ -43,17 +43,136 @@ export function nodoDelJugador(
  * al grupo a Emon y alguien que se había metido en la taberna de Byroden **se
  * quede allí solo**, en un pueblo que el grupo ya abandonó.
  */
-export type Sitio = { nodo: string; desde: string };
+export type Sitio = {
+  nodo: string;
+  desde: string;
+  /**
+   * Quién lo puso ahí.
+   *
+   * ⚠️ **`"dm"` NO caduca al mover al grupo**, y ahí está toda la diferencia
+   * que pidió el usuario: hay que distinguir «el DM te plantó en Emon» de «te
+   * metiste en la taberna». Lo primero es una decisión de la mesa y tiene que
+   * aguantar; lo segundo es un paseo y se recoge solo.
+   *
+   * **Ausente = lo anduvo el jugador**, que es lo que hay guardado en las fichas
+   * de antes de esta tanda: sin el campo se comportan exactamente como siempre.
+   */
+  puesto?: "dm";
+};
 
 /**
  * ¿Sigue valiendo lo que este jugador se movió?
  *
- * Solo si el grupo no se ha ido a otra parte desde entonces. En cuanto el ancla
- * cambia, todo lo andado por libre **caduca solo**: no hace falta que el DM
- * limpie nada ni que se escriba en la ficha de cinco personas.
+ * Lo que puso el DM vale **siempre**. Lo que el jugador se anduvo, solo si el
+ * grupo no se ha ido a otra parte desde entonces: en cuanto el ancla cambia,
+ * todo lo andado por libre **caduca solo**, sin que el DM limpie nada ni haya
+ * que escribir en la ficha de cinco personas.
  */
 export function sitioVigente(sitio: Sitio, ancla: string | null): boolean {
+  if (sitio.puesto === "dm") return true;
   return !!ancla && sitio.desde === ancla;
+}
+
+/**
+ * Lee el `sitio` y el `desfase` de un `play_state` que puede traer cualquier
+ * cosa, **y hace cumplir la invariante**.
+ *
+ * ⚠️ **Vive aquí y no dentro de `useSitio` a propósito, y esa es la lección más
+ * repetida de este repo**: el guardia anti-duplicado de `seedNpcs` vivía pegado
+ * a la consulta de Supabase, **donde ningún gate llegaba**, así que romperlo
+ * dejaba el gate verde. Salió a `puedeSembrar` por lo mismo que esto sale aquí.
+ * Y hace más falta todavía porque la invariante se aplica en DOS sitios: este
+ * hook y `/api/dm/character`.
+ *
+ * ⚠️ **LA INVARIANTE: sin `sitio` no hay `desfase`.** Volver con el grupo es
+ * volver a su hora. Un desfase huérfano dejaría a alguien adelantado ocho horas
+ * **sentado en la misma plaza que los demás**, y eso no se lee como un fallo: se
+ * lee como que la app miente.
+ *
+ * Tolerante con lo que haya guardado, porque es un `jsonb` que ha pasado por
+ * varias versiones: una forma vieja o a medias **no puede tumbar la pantalla del
+ * jugador**, se cae al ancla, que es lo peor que debería pasar.
+ */
+export function sanearSitio(rawSitio: unknown, rawDesfase: unknown): { sitio: Sitio | null; desfase: number } {
+  const sitio = leerSitio(rawSitio);
+  return { sitio, desfase: sitio ? leerDesfase(rawDesfase) : 0 };
+}
+
+function leerSitio(raw: unknown): Sitio | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o.nodo !== "string" || typeof o.desde !== "string") return null;
+  if (!o.nodo.trim() || !o.desde.trim()) return null;
+  // `puesto` solo se acepta si dice EXACTAMENTE "dm". Cualquier otra cosa
+  // —incluido que falte, que es lo que hay en las fichas de antes de esta
+  // tanda— es «lo anduvo el jugador», que es el caso que CADUCA. Si un valor
+  // raro colara como "dm", el sitio dejaría de caducar y alguien se quedaría
+  // solo en un pueblo que el grupo abandonó: el agujero que ya se tapó una vez.
+  return o.puesto === "dm"
+    ? { nodo: o.nodo, desde: o.desde, puesto: "dm" }
+    : { nodo: o.nodo, desde: o.desde };
+}
+
+/**
+ * Los minutos que este jugador lleva de más por haber viajado.
+ *
+ * **Nunca negativo**: un desfase en negativo mandaría a alguien al pasado, con
+ * la crónica y el cupo del taller detrás.
+ */
+function leerDesfase(raw: unknown): number {
+  const n = typeof raw === "number" ? raw : Number.NaN;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+/* --------------------- DÓNDE ESTÁ ESO, EN EL MUNDO --------------------- */
+
+/** Un POI aplanado del atlas: lo mínimo para saber dónde cae. */
+export type PoiUbicado = { name: string; continent: string; regionSlug: string };
+
+/** Continente, región y pueblo de un nodo. `poiName` es null en el bosque. */
+export type Ubicacion = { continent: string; regionSlug: string; poiName: string | null };
+
+/**
+ * Dónde está este nodo **de verdad**, mirándolo en el atlas.
+ *
+ * ⚠️ **Esto es lo que hace que la posición por jugador no mienta.** Antes la
+ * región y el continente salían del ancla del grupo, y en cuanto un jugador
+ * estuviera en otro pueblo se rompían cuatro cosas a la vez y ninguna gritaba:
+ * Byroden está en `peninsula-pleabruma` y Emon en `litoral-filofulgor`, así que
+ * el que estuviera en Emon vería **el clima y la región de Pleabruma**, y
+ * `poisOf` no encontraría Emon — **sin tienda, sin posada, sin tablón y sin
+ * tirada de saber**, en silencio.
+ *
+ * ⚠️ **Se RESUELVE, no se copia.** Guardar el continente y la región en la ficha
+ * junto al nodo sería una segunda fuente que se desincroniza en cuanto el DM
+ * mueva un POI de región — el fallo que ya tuvo `regionEntries()`. El nombre de
+ * POI **es único en todo el mundo** y hay un gate que lo exige
+ * (`comprobarContinente` lo cruza contra `nombresAjenos`), así que buscar por
+ * nombre no es ambiguo.
+ *
+ * Recibe los POIs y las regiones **aplanados desde fuera**, no el atlas: es la
+ * misma razón por la que `construirNodos` recibe los pueblos en vez de
+ * importarlos, y es lo que permite que el gate lo pruebe sin arrastrar el atlas.
+ */
+export function ubicacionDeNodo(
+  nodoId: string,
+  pois: readonly PoiUbicado[],
+  regiones: readonly { continent: string; slug: string }[],
+  regionDelBosque: string,
+): Ubicacion | null {
+  if (nodoId.startsWith("franja:")) {
+    // Una franja no es de ningún POI, así que su región va escrita y su
+    // continente sale de buscarla en el atlas.
+    const r = regiones.find((x) => x.slug === regionDelBosque);
+    return r ? { continent: r.continent, regionSlug: r.slug, poiName: null } : null;
+  }
+  // `poiDeNodo` se IMPORTA en vez de copiarse aquí: `data/lugares` es neutro
+  // igual que este módulo, así que no hay nada que ganar duplicando cuatro
+  // líneas y sí una segunda forma de leer un id esperando a divergir.
+  const poi = poiDeNodo(nodoId);
+  if (!poi) return null;
+  const p = pois.find((x) => x.name === poi);
+  return p ? { continent: p.continent, regionSlug: p.regionSlug, poiName: p.name } : null;
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { usePartyLocation } from "@/lib/usePartyLocation";
-import { useAtlas, regionsOf, poisOf } from "@/lib/useAtlas";
+import { useAtlas, regionsOf, poisOf, poisPlanos, regionesPlanas } from "@/lib/useAtlas";
 import { useTownMaps } from "@/lib/useTownMaps";
 import { useGameClock } from "@/lib/useGameClock";
 import { momentFromGameMin } from "@/lib/gameClock";
@@ -9,8 +9,9 @@ import { weatherFor, ambientLine } from "@/lib/weather";
 import { useClues } from "@/lib/useClues";
 import { useLugares } from "@/lib/useLugares";
 import { useSitio } from "@/lib/useSitio";
-import { indexar, nodoDelJugador, salidasDe, puedeIr } from "@/lib/nodos";
-import { idPoi, poiDeNodo, alAireLibre, TEMAS } from "@/data/lugares";
+import { indexar, nodoDelJugador, salidasDe, puedeIr, ubicacionDeNodo } from "@/lib/nodos";
+import { idPoi, alAireLibre, TEMAS } from "@/data/lugares";
+import { REGION_DEL_BOSQUE } from "@/data/bosque";
 import ClockWidget from "@/components/ClockWidget";
 import ShopSection from "@/components/lugar/ShopSection";
 import PosadaSection from "@/components/lugar/PosadaSection";
@@ -19,6 +20,8 @@ import TablonSection from "@/components/lugar/TablonSection";
 import SaberRoll from "@/components/lugar/SaberRoll";
 import ClimaEfectos from "@/components/lugar/ClimaEfectos";
 import Salidas from "@/components/lugar/Salidas";
+import Viajar from "@/components/lugar/Viajar";
+import { duracionDeViaje } from "@/lib/viaje";
 
 /**
  * `/lugar` — LA HOJA. Referencia literal:
@@ -44,7 +47,7 @@ export default function LugarPage() {
   const { location, ready } = usePartyLocation();
   const { atlas } = useAtlas();
   const { nodos, ready: nodosReady } = useLugares();
-  const { sitio, ready: sitioReady, mover } = useSitio();
+  const { sitio, desfase, ready: sitioReady, mover, viajar } = useSitio();
   const { townMap } = useTownMaps();
   const { nowGameMin } = useGameClock();
   const { clues } = useClues();
@@ -54,39 +57,52 @@ export default function LugarPage() {
     return <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center"><p className="pulse font-ui text-[13px]" style={{ color: "var(--color-muted)" }}>Cargando…</p></main>;
   }
 
-  const region = location ? regionsOf(atlas, location.continent).find((r) => r.slug === location.regionSlug) : undefined;
-
-  // El ANCLA es donde el DM ha plantado al grupo; el SITIO es donde se ha ido
-  // este jugador por su cuenta. Sin sitio propio se está en el ancla, que es lo
-  // que hace que quien no se haya movido nunca vea exactamente lo de siempre.
+  // El ANCLA es donde el DM ha plantado al grupo; el SITIO es donde está este
+  // jugador —porque se movió, o porque el DM lo puso ahí—. Sin sitio propio se
+  // está en el ancla, que es lo que hace que quien no se haya movido nunca vea
+  // exactamente lo de siempre.
   const index = indexar(nodos);
   const ancla = location ? idPoi(location.poiName) : null;
   const nodo = nodoDelJugador(sitio, ancla, index);
 
   // De camino: sin ubicación, o el POI del ancla no está en el atlas.
   if (!nodo) {
+    const regionDelGrupo = location ? regionsOf(atlas, location.continent).find((r) => r.slug === location.regionSlug) : undefined;
     return (
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center">
         <i className="fas fa-route text-4xl mb-4" style={{ color: "var(--color-dim)" }} />
         <h1 className="font-display text-3xl font-extrabold gold-text mb-2">De camino…</h1>
         <p className="font-ui text-[14px] mb-6" style={{ color: "var(--color-muted)" }}>
-          {region ? <>El grupo viaja por <span style={{ color: "var(--color-bronze)" }}>{region.name}</span>.</> : "El grupo está de viaje, sin un lugar fijo."}
+          {regionDelGrupo ? <>El grupo viaja por <span style={{ color: "var(--color-bronze)" }}>{regionDelGrupo.name}</span>.</> : "El grupo está de viaje, sin un lugar fijo."}
         </p>
         <div className="flex justify-center"><ClockWidget /></div>
       </main>
     );
   }
 
+  // ⚠️ **DÓNDE ESTÁ ESTE JUGADOR, RESUELTO — no heredado del grupo.**
+  //
+  // Antes el continente y la región salían de `location`, que es el ancla, y eso
+  // valía mientras todos estuvieran en el mismo pueblo. En cuanto uno está en
+  // Emon y otro en Byroden se rompen cuatro cosas a la vez y ninguna grita:
+  // Byroden está en `peninsula-pleabruma` y Emon en `litoral-filofulgor`, así que
+  // el de Emon vería el clima y la región de Pleabruma, y `poisOf` no
+  // encontraría Emon — sin tienda, sin posada, sin tablón y sin tirada de saber.
+  //
+  // Se cae al ancla si no se puede resolver: es lo peor que debería pasar.
+  const ubicacion = ubicacionDeNodo(nodo.id, poisPlanos(atlas), regionesPlanas(atlas), REGION_DEL_BOSQUE) ?? location;
+  const region = ubicacion ? regionsOf(atlas, ubicacion.continent).find((r) => r.slug === ubicacion.regionSlug) : undefined;
+
   // El POI del que cuelga este nodo. Una franja del bosque no cuelga de
   // ninguno: ahí no hay tienda, ni posada, ni tablón, ni tirada de saber.
-  const poiName = poiDeNodo(nodo.id);
-  const poi = poiName && location
-    ? poisOf(atlas, location.continent, location.regionSlug).find((p) => p.name === poiName)
+  const poiName = ubicacion?.poiName ?? null;
+  const poi = poiName && ubicacion
+    ? poisOf(atlas, ubicacion.continent, ubicacion.regionSlug).find((p) => p.name === poiName)
     : undefined;
   const enElPueblo = nodo.id === idPoi(poiName ?? "");
 
   const moment = momentFromGameMin(nowGameMin);
-  const weather = weatherFor(location?.continent ?? "Tal'Dorei", location?.regionSlug ?? "", region?.name, moment);
+  const weather = weatherFor(ubicacion?.continent ?? "Tal'Dorei", ubicacion?.regionSlug ?? "", region?.name, moment);
   const rumores = clues
     .filter((c) => c.rumor && !c.discovered && (!c.lugar || c.lugar === poiName))
     .map((c) => c.texto);
@@ -151,7 +167,7 @@ export default function LugarPage() {
         <div className="lug-bruma" />
         <div className="lug-titulo">
           <p className="lug-rubrica">
-            {region ? `${region.name} · ${location?.continent}` : location?.continent}
+            {region ? `${region.name} · ${ubicacion?.continent}` : ubicacion?.continent}
           </p>
           <h1 className="lug-h1"><span className="ini">{inicial}</span>{restoNombre}</h1>
           <p className="lug-sub">{queEs} · {moment.dateStr}</p>
@@ -185,12 +201,37 @@ export default function LugarPage() {
                 <i className={`fas ${nodo.icono}`} />
                 <span>{queEs}{region ? ` · ${region.name}` : ""}</span>
               </div>
+              {/* El camino que llevas hecho por tu cuenta.
+                  ⚠️ Se enseña como CAMINO ANDADO y no como una hora distinta, y
+                  eso es deliberado: el desfase se guarda desde ya pero **el
+                  reloj todavía no lo consume nadie**. Pintarlo como «vas 6 h 30
+                  adelantado» mientras el reloj de la barra dice otra cosa sería
+                  la app contradiciéndose a sí misma. */}
+              {desfase > 0 && (
+                <div className="lug-dato">
+                  <i className="fas fa-person-walking" />
+                  <span>{duracionDeViaje(desfase)} de camino por tu cuenta</span>
+                </div>
+              )}
             </div>
           </div>
 
           {alAireLibre(nodo.id) && <ClimaEfectos weather={weather} />}
 
           <Salidas desde={nodo.id} salidas={salidasDe(nodo, index)} onIr={ir} yendo={yendo} />
+
+          {/* Viajar va APARTE de las salidas a propósito: no es una arista del
+              grafo, es que el DM haya revelado el pin. Solo desde la plaza de un
+              pueblo — de la taberna se sale primero y del bosque se vuelve
+              andando por las franjas. */}
+          <Viajar
+            desde={enElPueblo && poiName && ubicacion ? { poiName, regionSlug: ubicacion.regionSlug } : null}
+            continente={ubicacion?.continent ?? null}
+            anclaPoi={location?.poiName ?? null}
+            atlas={atlas}
+            ocupado={yendo !== null}
+            onViajar={(nodoId, minutos) => viajar(nodoId, ancla, minutos)}
+          />
 
           <NpcSection nodo={nodo} ambient={ambient} />
         </div>
@@ -202,7 +243,7 @@ export default function LugarPage() {
           decidirlo dejaría media plaza vacía sin avisar. Y siguen con el
           estilo oscuro de la app, que es por lo que van AQUÍ y no dentro
           del pergamino: son paneles oscuros con texto claro. */}
-      {enElPueblo && poiName && location && (
+      {enElPueblo && poiName && ubicacion && (
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
           <p className="eyebrow mb-3">
             <i className="fas fa-store mr-2" style={{ color: "var(--color-bronze)" }} />
@@ -211,7 +252,10 @@ export default function LugarPage() {
           <ShopSection poiName={poiName} ambient={ambient} />
           <PosadaSection posada={!!poi?.services?.posada} />
           {poi?.services?.tablon && <TablonSection poiName={poiName} />}
-          <SaberRoll poiName={poiName} regionSlug={location.regionSlug} continent={location.continent} />
+          {/* La tirada de saber va con la región DONDE ESTÁS: el saber de
+              Pleabruma no es el del Litoral, y con el ancla del grupo un jugador
+              en Emon habría estado tirando por la región de sus compañeros. */}
+          <SaberRoll poiName={poiName} regionSlug={ubicacion.regionSlug} continent={ubicacion.continent} />
         </div>
       )}
     </main>

@@ -102,3 +102,31 @@ export function regionsOf(atlas: AtlasDefs, cont: string): Region[] {
 export function poisOf(atlas: AtlasDefs, cont: string, slug: string): Poi[] {
   return atlas[cont]?.pois[slug] ?? [];
 }
+
+/**
+ * Todos los POI del mundo, aplanados con su continente y su región.
+ *
+ * Existe para **resolver dónde está un jugador**: `ubicacionDeNodo` busca por
+ * nombre de POI, y para eso hace falta el atlas entero en una lista, no el árbol
+ * de tres niveles. Se aplana aquí, junto al atlas, y no dentro de la pantalla:
+ * `/lugar` y el panel del DM necesitan lo mismo, y dos aplanados serían dos
+ * formas de leer el mapa.
+ */
+export function poisPlanos(atlas: AtlasDefs): { name: string; continent: string; regionSlug: string }[] {
+  const out: { name: string; continent: string; regionSlug: string }[] = [];
+  for (const [cont, c] of Object.entries(atlas)) {
+    for (const [slug, ps] of Object.entries(c.pois ?? {})) {
+      for (const p of ps) out.push({ name: p.name, continent: cont, regionSlug: slug });
+    }
+  }
+  return out;
+}
+
+/** Todas las regiones del mundo con su continente, para lo mismo. */
+export function regionesPlanas(atlas: AtlasDefs): { continent: string; slug: string; name: string; map?: { x: number; y: number } }[] {
+  const out: { continent: string; slug: string; name: string; map?: { x: number; y: number } }[] = [];
+  for (const [cont, c] of Object.entries(atlas)) {
+    for (const r of c.regions ?? []) out.push({ continent: cont, slug: r.slug, name: r.name, map: r.map });
+  }
+  return out;
+}

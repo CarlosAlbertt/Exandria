@@ -23,9 +23,10 @@ export async function POST(req: Request) {
   if (!userId) return Response.json({ error: "Falta userId." }, { status: 400 });
 
   const admin = createAdminClient();
-  const { addItems, addGold, setLevel, addXp, unlockLore, setUses, ...direct } = patch as {
+  const { addItems, addGold, setLevel, addXp, unlockLore, setUses, setSitio, ...direct } = patch as {
     addItems?: Item[]; addGold?: number; setLevel?: number; addXp?: number; unlockLore?: string[];
     setUses?: { key: string; gastados: number };
+    setSitio?: { nodo: string } | null;
   } & Record<string, unknown>;
   const update: Record<string, unknown> = { ...direct };
 
@@ -33,7 +34,9 @@ export async function POST(req: Request) {
     update.level = Math.max(1, Math.min(20, Math.floor(setLevel)));
   }
 
-  if (Array.isArray(addItems) || typeof addGold === "number" || typeof addXp === "number" || Array.isArray(unlockLore) || (setUses && typeof setUses.key === "string")) {
+  const tocaSitio = setSitio !== undefined;
+
+  if (Array.isArray(addItems) || typeof addGold === "number" || typeof addXp === "number" || Array.isArray(unlockLore) || (setUses && typeof setUses.key === "string") || tocaSitio) {
     // Solo el personaje EN JUEGO. Desde schema_v14 hay varias filas por jugador
     // (activo + archivados), así que sin este filtro `maybeSingle()` reventaría
     // en cuanto alguien archivara algo. Se trae play_state para poder fusionar
@@ -67,6 +70,40 @@ export async function POST(req: Request) {
       const prevPlay = (row?.play_state as Record<string, unknown>) ?? {};
       const prevUsos = (prevPlay.usos as Record<string, number>) ?? {};
       update.play_state = { ...prevPlay, usos: { ...prevUsos, [setUses.key]: Math.max(0, Math.floor(setUses.gastados)) } };
+    }
+
+    /* -------- EL DM COLOCA A UN JUGADOR, O SE LO TRAE AL GRUPO -------- */
+    // ⚠️ Se parte de `update.play_state` si `setUses` ya lo tocó, y si no del
+    // `play_state` de la fila. Sin eso, mandar las dos cosas en el mismo patch
+    // haría que la segunda pisara a la primera — y ahí viven también los PG y
+    // las condiciones.
+    if (tocaSitio) {
+      const base = (update.play_state as Record<string, unknown>) ?? (row?.play_state as Record<string, unknown>) ?? {};
+      const next = { ...base };
+      if (setSitio && typeof setSitio.nodo === "string" && setSitio.nodo.trim()) {
+        // El ancla se lee aquí para dejarla apuntada, no porque manda: un sitio
+        // con `puesto: "dm"` **no caduca** (`sitioVigente`), que es justo lo que
+        // permite tener a uno en Emon y a otro en Byroden. El `desde` queda como
+        // registro de desde dónde lo movió el DM.
+        const { data: locRow } = await admin.from("app_config").select("value").eq("key", "party_location").maybeSingle();
+        let ancla = "";
+        try {
+          const loc = JSON.parse((locRow?.value as string) || "") as { poiName?: string };
+          if (loc?.poiName) ancla = `poi:${loc.poiName}`;
+        } catch { /* sin ancla: se apunta el propio nodo */ }
+        next.sitio = { nodo: setSitio.nodo, desde: ancla || setSitio.nodo, puesto: "dm" };
+        // ⚠️ LA INVARIANTE, también aquí: colocar a alguien a dedo NO es haber
+        // andado, así que el camino que llevara hecho por su cuenta se borra. Si
+        // no, el DM te planta en Emon y sigues arrastrando seis horas de desfase
+        // que ya no corresponden a ningún viaje.
+        delete next.desfase;
+      } else {
+        // Traer al grupo: se borran los dos juntos. Volver con el grupo es
+        // volver a su hora.
+        delete next.sitio;
+        delete next.desfase;
+      }
+      update.play_state = next;
     }
   }
 

@@ -2,7 +2,101 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08, tarde)
+
+> **CADA JUGADOR ESTÁ DONDE ESTÁ.** Uno en Emon y otro en Byroden, a la vez.
+> Rama `feat/posicion-por-jugador`, **pusheada y SIN MERGEAR**. Siete commits.
+> **Sin migración** — es la misma columna `play_state`.
+>
+> El plan, con las siete decisiones del usuario y su motivo:
+> `docs/superpowers/plans/2026-08-08-posicion-por-jugador.md`.
+>
+> ### ⚠️ VA EN DOS TANDAS, Y LA SEGUNDA ESTÁ SIN HACER
+> Esta tanda hace las piezas **1, 2, 5, 6 y 7**. Faltan la **3 y la 4**:
+> encender el reloj por jugador. **El `desfase` ya se guarda y se acumula**, con
+> su invariante vigilada por el gate; lo que falta es **quién lo lee**.
+>
+> La razón de partirlo la destapó el propio plan: **el desfase es transitorio por
+> diseño.** Lo que el jugador se anduvo caduca al mover al grupo, y al caducar el
+> `sitio` se borra el `desfase`, así que solo vive entre «me largo a Emon» y «el
+> DM mueve al grupo». Es mucha maquinaria —`/api/descanso` con `service_role`, el
+> cupo del taller, la crónica— para un estado diseñado para no durar.
+>
+> **Mientras tanto viajar es gratis e instantáneo**, y se puede ir y volver de
+> Emon sin coste. El coste se enseña («6 h 30 de camino») pero no se cobra.
+>
+> ### Lo que hay que tocar para encender la tanda 2
+> `useGameClock` tiene **once consumidores**. Tres no son decoración:
+> `app/api/descanso/route.ts`, `components/taller/Caldero.tsx` +
+> `lib/recetario.ts` (el cupo cuenta días de juego) y `useChronicle`.
+> ⚠️ Y **`/api/descanso` guarda el anti-abuso del descanso largo en
+> `app_config.last_long_rest`, compartido** («El grupo ya ha descansado hace
+> poco»): con relojes por jugador eso pasa a estar mal y hay que volverlo por
+> ficha. El usuario ya decidió que el desfase **sí** afecta a la mecánica.
+>
+> ### El estado nuevo, sin migración
+> ```ts
+> play_state.sitio = { nodo, desde, puesto?: "dm" }  // el del DM NO caduca
+> play_state.desfase?: number                        // minutos viajando
+> ```
+> ⚠️ **INVARIANTE: sin `sitio` no hay `desfase`.** Volver con el grupo es volver
+> a su hora. Un desfase huérfano dejaría a alguien adelantado ocho horas
+> **sentado en la misma plaza que los demás**, y eso no se lee como un fallo: se
+> lee como que la app miente. Se escriben juntos, se ignora al leer, y el gate lo
+> vigila por las dos vías.
+>
+> ### Los siete commits
+> | Pieza | Qué |
+> |---|---|
+> | plan | Las siete decisiones, con su motivo |
+> | 1 | `Sitio.puesto`, `ubicacionDeNodo`, `lib/viaje.ts`, gate 42 nuevo |
+> | 2 | `/lugar` con la ubicación **efectiva** |
+> | 5 | «Ponerse en camino» en `/lugar` |
+> | XP | **El XP va a quien marques**, no solo a uno o a todos |
+> | 6 | Panel DM › Grupo: plantar a cada jugador y traérselo |
+> | 7 | `sanearSitio` sale del hook para que el gate la vea |
+>
+> ### Tres decisiones de diseño que conviene no deshacer
+> 1. **Viajar NO es una arista del grafo**, y por eso vive en `lib/viaje.ts` y no
+>    en `lib/nodos.ts`. `puedeIr` pregunta «¿hay camino?»; viajar pregunta «¿lo
+>    ha revelado el DM?». Como arista habría obligado a reconstruir el grafo con
+>    cada pin y a que `check-lugares` tratara media docena de pueblos como
+>    salidas de Byroden.
+> 2. ⚠️ **LA ANTI-RATONERA: donde está el grupo se ofrece SIEMPRE, revelado o
+>    no.** `poi_state` solo tiene fila para lo que el DM ha tocado, así que sin
+>    fila no está revelado; si el DM revelaba Emon y no Byroden, quien viajara a
+>    Emon **se quedaba encerrado**. Es lo mismo que `check-lugares` vigila con
+>    «todo nodo al que se puede entrar tiene por dónde salir».
+> 3. **La ubicación se RESUELVE, no se copia.** Guardar continente y región en la
+>    ficha sería una segunda fuente que se desincroniza en cuanto el DM mueva un
+>    POI — el fallo de `regionEntries()`. Se puede buscar por nombre porque
+>    **el nombre de POI es único en todo el mundo y ya hay gate que lo exige**.
+>
+> ### El gate: 42 (uno nuevo), y SEIS mutaciones
+> `tsc` limpio, `next build` limpio, los 42 en verde. `check-viaje` nuevo con
+> **74 comprobaciones**. Las seis mutaciones, todas verificadas con `git diff`
+> antes de correr el gate y todas cazadas:
+>
+> | Se rompió | Falló |
+> |---|---|
+> | El desfase sobrevive sin sitio | 2 |
+> | Cualquier `puesto` cuenta como `"dm"` | 3 |
+> | Quitar la anti-ratonera | 5 |
+> | Lo del DM vuelve a caducar | 3 |
+> | Todo POI resuelve a la misma región | 4 |
+> | Quitar el suelo del viaje | 3 |
+>
+> **`sanearSitio` tuvo que salir de `useSitio` para poder mutarla**: una regla
+> dentro de un hook no la mira ningún gate. Es la lección de `puedeSembrar`, y
+> van nueve.
+>
+> ### ⚠️ SIN VER EN LA APP, otra vez
+> `/lugar` está detrás del proxy de auth y sin sesión redirige a `/login`. Lo
+> primero que hay que probar con sesión: revelar Emon en Panel DM › Mapa, que
+> aparezca «Ponerse en camino», viajar, y comprobar que en Emon salen **su**
+> clima, **su** región y **sus** tienda/posada/tablón/saber.
+
+## 🚦 Antes de eso (2026-08-08, mañana)
 
 > **EL REDISEÑO DE `/lugar` ESTÁ CONSTRUIDO.** Rama `feat/lugar-con-arte`,
 > **pusheada**, cinco commits, uno por pieza. **Sin migración nueva.**

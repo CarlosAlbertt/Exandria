@@ -1282,6 +1282,36 @@ canvas.dice-box-canvas {
 .lug-med .r { display: block; font-size: 16px; font-style: italic; color: var(--tinta-3); }
 .lug-med .bang { margin-left: 5px; font-size: 11px; color: var(--acento); }
 
+/* Lo que cuesta un camino. Va en la puerta de viajar, y NO reusa `.lug-cd`
+   —la chapa verde de las CD— porque no es una tirada: es tiempo. */
+.lug-camino {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 3px 9px;
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--metal-hondo);
+  border: 1px solid var(--hoja-3); background: rgba(255, 255, 255, 0.4);
+}
+.lug-camino.is-grupo { color: var(--acento); border-color: color-mix(in srgb, var(--acento) 45%, transparent); }
+
+/* La confirmación de un viaje: se pregunta antes de irse del pueblo. */
+.lug-confirmar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  margin-top: 16px; padding: 16px 18px;
+  border: 1px solid var(--metal-hondo);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), var(--hoja-2));
+}
+.lug-confirmar p { margin: 0; flex: 1; min-width: 220px; font-size: 17px; }
+.lug-confirmar .si {
+  min-height: 44px; padding: 0 18px; color: #fff; font-weight: 700;
+  font-family: var(--font-display); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  background: linear-gradient(180deg, var(--acento-2), var(--acento));
+}
+.lug-confirmar .no {
+  min-height: 44px; padding: 0 14px; color: var(--tinta-2);
+  font-family: var(--font-display); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px solid var(--hoja-3);
+}
+.lug-confirmar .si:disabled, .lug-confirmar .no:disabled { opacity: 0.45; }
+
 .lug-note {
   margin: 40px 0 0; padding: 12px 16px; border-left: 3px solid var(--metal);
   font-family: var(--font-display); font-size: 11px; line-height: 1.8; color: var(--tinta-3);
