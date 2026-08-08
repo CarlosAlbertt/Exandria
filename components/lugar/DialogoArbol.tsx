@@ -6,6 +6,7 @@ import { loadActiveCharacter, type Item } from "@/lib/character";
 import { derive } from "@/lib/derive";
 import { rollVisual, isDiceBoxSupported } from "@/lib/diceBox";
 import { DIALOGOS } from "@/data/dialogos";
+import { avisar } from "@/components/Avisos";
 import {
   leerTrato, resolver, opcionDisponible, tonoConfianza, etapaVigente,
   type TratoPnj, type Premio,
@@ -126,6 +127,11 @@ export default function DialogoArbol({
   // se aplica lo que venga.
   const entregar = useCallback(async (p: Premio) => {
     onPremio?.(p);
+    // ⚠️ El premio entraba en la bolsa SIN QUE NADIE SE ENTERARA: el objeto
+    // aparecía en el inventario tres pantallas más allá y el oro cambiaba solo.
+    if (p.tipo === "objeto") avisar({ tipo: "objeto", name: p.name, qty: p.qty });
+    else if (p.tipo === "oro") avisar({ tipo: "oro", cantidad: p.cantidad });
+    else if (p.tipo === "saber" && p.ids.length > 0) avisar({ tipo: "saber", cuantas: p.ids.length });
     if (!supabaseConfigured || !charId) return;
     const supabase = createClient();
     const { data } = await supabase.from("characters").select("items, gold, lore_unlocked").eq("id", charId).maybeSingle();
@@ -165,6 +171,8 @@ export default function DialogoArbol({
     });
     const d = await r.json().catch(() => null);
     if (!r.ok || !d?.ok) return;
+    if (d.yaLaTenias) avisar({ tipo: "mision-ya-la-tenias", titulo: d.titulo ?? "" });
+    else avisar({ tipo: "mision-aceptada", titulo: d.titulo ?? "", recompensa: d.recompensa });
     onMision?.({
       titulo: d.titulo ?? "", recompensa: d.recompensa ?? "", yaLaTenias: d.yaLaTenias === true,
     });

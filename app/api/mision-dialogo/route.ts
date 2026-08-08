@@ -51,7 +51,9 @@ export async function POST(req: Request) {
     .eq("title", mision.titulo)
     .or(`assigned_character_id.eq.${char.id},assigned_character_id.is.null`)
     .maybeSingle();
-  if (yaEsta) return Response.json({ ok: true, id: yaEsta.id, yaLaTenias: true });
+  // El título va también aquí: el aviso de «ya llevas ese encargo» lo necesita
+  // para decir CUÁL, y sin él saldría una caja vacía.
+  if (yaEsta) return Response.json({ ok: true, id: yaEsta.id, yaLaTenias: true, titulo: mision.titulo });
 
   // Las de grupo y las legendarias NO se asignan a una ficha: son del grupo, y
   // asignarlas las escondería del resto por la RLS de la v24. Las demás sí.
