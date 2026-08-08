@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exandria · La Expansión Verdante, las tres franjas</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   LO QUE YA ESTÁ CONSTRUIDO — copiado de app/globals.css sin tocar nada.
+   El boceto parte de la piel que ya existe (.tema-bosque) para que lo que
+   se decida aquí sea SOLO lo nuevo, y no un rediseño de lo ya aprobado.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{
+  --color-ink:#090c11;
+  --font-display:"Cinzel",serif; --font-body:"EB Garamond",Georgia,serif;
+  --font-gotica:"UnifrakturMaguntia",serif;
+}
+.tema-bosque{
+  --hoja:#f1ead4; --hoja-2:#e5dcbe; --hoja-3:#cfc49f;
+  --tinta:#2f2c1c; --tinta-2:#5b5a38; --tinta-3:#83805c;
+  --acento:#8f2f22; --acento-2:#b4442f;
+  --metal:#8a8b4a; --metal-claro:#c7c684; --metal-hondo:#565a26;
+  --natura:#3f6b2f;
+  --cielo-1:#6f8f5c; --cielo-2:#a8bd85; --cielo-3:#3d5a2a;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LO NUEVO, Y ES LO QUE HAY QUE DECIDIR
+   ───────────────────────────────────────────────────────────────────────
+   El pueblo y el bosque NO tienen el mismo problema. Un pueblo es un
+   SITIO: llegas y estás. El bosque es una PROFUNDIDAD: linde → espesura →
+   corazón, y lo que importa es cuánto te has metido y qué te va a pasar si
+   sigues. Eso el tema no lo cuenta, porque un tema es una piel.
+
+   Así que aquí se propone UNA COSA NUEVA (la vereda) y UNA VARIANTE del
+   tema (que se oscurezca con la profundidad). Van marcadas.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* --- LA VARIANTE: la piel se cierra a medida que entras -------------- */
+/* La OPCIÓN B de abajo. Los mismos quince tokens, movidos por franja: el
+   cielo se apaga, la hoja se ensucia y el verde se vuelve más oscuro.
+   No es un tema nuevo — es el mismo con la luz bajada. */
+.prof-1{ /* la linde: todavía entra sol */
+  --cielo-1:#8fae74; --cielo-2:#cfdcae; --cielo-3:#4e6c36;
+}
+.prof-2{ /* la espesura: ya no se distingue la hora */
+  --cielo-1:#4f6b45; --cielo-2:#7e9668; --cielo-3:#2b3f1f;
+  --hoja:#e9e2c8; --hoja-2:#dbd2b0; --hoja-3:#c2b894;
+}
+.prof-3{ /* el corazón: luz que no viene del cielo */
+  --cielo-1:#2b3a2a; --cielo-2:#46603c; --cielo-3:#16210f;
+  --hoja:#e2dcc0; --hoja-2:#d2caa6; --hoja-3:#b6ac88;
+  --acento:#7c2f4a; --acento-2:#a8425f; /* el rojo del pacto, no del lacre */
+  --metal:#7e8f6a; --metal-claro:#b9c79b; --metal-hondo:#43532f;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-ink);font-family:var(--font-body);font-size:18px;line-height:1.7}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+img{display:block;max-width:100%}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Banco de pruebas, fuera de lo que se decide */
+.bench{position:sticky;top:0;z-index:50;background:rgba(10,12,8,.94);backdrop-filter:blur(6px);
+  border-bottom:1px solid #3a4a2a;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bench b{font-family:var(--font-display);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c7c684}
+.bench button{font-family:var(--font-display);font-size:10.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:9px 12px;border:1px solid #3a4a2a;color:#eee6d6;min-height:40px}
+.bench button.on{background:#3f6b2f;border-color:#7e8f6a}
+.rotulo{font-family:var(--font-display);font-size:11px;font-weight:800;letter-spacing:.28em;
+  text-transform:uppercase;color:#c7c684;padding:28px 20px 8px;max-width:1280px;margin:0 auto}
+.rotulo small{display:block;letter-spacing:0;text-transform:none;font-weight:400;font-size:14px;
+  color:#8ba06e;margin-top:6px;font-family:var(--font-body)}
+
+/* ---------------------- LA CABECERA DEL BOSQUE ---------------------- */
+/* ⚠️ Aquí está la diferencia con el pueblo, y es lo que evita que salga
+   «soso»: la cabecera del pueblo es UNA silueta contra un degradado. La
+   del bosque son CUATRO CAPAS de troncos a distintas distancias, con la
+   niebla metiéndose entre ellas. La sensación de estar dentro no la da el
+   color: la da que haya cosas delante y detrás de ti. */
+.arte{position:relative;overflow:hidden;height:min(52dvh,420px);
+  background:linear-gradient(180deg,var(--cielo-1),var(--cielo-2) 55%,var(--cielo-3))}
+.capa{position:absolute;inset:0;width:100%;height:100%}
+/* Cada capa más cerca: más oscura, más grande, menos nítida al fondo. */
+.capa.c1{opacity:.30;filter:blur(2px)}
+.capa.c2{opacity:.52}
+.capa.c3{opacity:.78}
+.capa.c4{opacity:1}
+/* Los haces de luz. Solo en la linde y la espesura: en el corazón la luz
+   no viene de arriba, y por eso ahí se apagan. */
+.haces{position:absolute;inset:0;mix-blend-mode:screen;opacity:.5;transition:opacity .5s}
+.prof-3 .haces{opacity:0}
+.bruma{position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 38%,rgba(0,0,0,.18) 66%,var(--hoja) 100%)}
+/* Luciérnagas: SOLO en el corazón. Es lo que dice «aquí la luz es otra
+   cosa» sin escribirlo. Cinco divs, cero imágenes. */
+.luces{position:absolute;inset:0;opacity:0;transition:opacity .8s;pointer-events:none}
+.prof-3 .luces{opacity:1}
+.luces i{position:absolute;width:5px;height:5px;border-radius:999px;background:#dff0a8;
+  box-shadow:0 0 10px 3px rgba(200,240,140,.75);animation:vuela 7s ease-in-out infinite}
+@keyframes vuela{0%,100%{transform:translate(0,0);opacity:.25}50%{transform:translate(14px,-22px);opacity:1}}
+
+.titulo{position:absolute;left:0;right:0;bottom:24px;text-align:center;padding:0 20px}
+.rubrica{font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--acento);margin:0 0 6px}
+.h1{font-family:var(--font-gotica);font-size:clamp(46px,9vw,86px);line-height:.95;margin:0;color:var(--tinta);
+  text-shadow:0 2px 0 rgba(255,255,255,.35),0 6px 18px rgba(0,0,0,.45)}
+.h1 .ini{color:var(--acento)}
+.sub{font-family:var(--font-display);font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--tinta-2);margin:9px 0 0}
+
+/* ════════════════════ LA VEREDA — LO NUEVO DE VERDAD ════════════════════
+   Un pueblo no necesita esto. El bosque sí: lo único que importa aquí es
+   CUÁNTO TE HAS METIDO, y con las tarjetas de «Adónde ir» eso no se ve —
+   dos puertas iguales, una hacia dentro y otra hacia fuera, y el jugador
+   no sabe cuál es cuál sin leerlas.
+
+   Va pegada bajo la cabecera, cruzando la hoja: tres hitos, el tuyo
+   encendido, y las dos direcciones dichas con palabras («volver» /
+   «adentrarse»), no con dos tarjetas gemelas.
+   ═══════════════════════════════════════════════════════════════════════ */
+.vereda{position:relative;background:var(--hoja-2);border-top:2px solid var(--metal-hondo);
+  border-bottom:1px solid var(--hoja-3);padding:18px 20px 16px}
+.vereda .raya{position:absolute;left:8%;right:8%;top:50%;height:2px;
+  background:repeating-linear-gradient(90deg,var(--metal) 0 6px,transparent 6px 13px);opacity:.7}
+.hitos{position:relative;display:flex;justify-content:space-between;max-width:760px;margin:0 auto}
+.hito{position:relative;display:flex;flex-direction:column;align-items:center;gap:9px;flex:1}
+.hito .punto{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;
+  border:2px solid var(--metal-hondo);background:var(--hoja);color:var(--tinta-3);font-size:13px;
+  transition:transform .3s,background .3s,color .3s}
+.hito .nm{font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--tinta-3);text-align:center}
+/* Donde estás */
+.hito.aqui .punto{background:radial-gradient(circle at 34% 26%,var(--acento-2),var(--acento) 72%);
+  color:#fff;transform:scale(1.28);box-shadow:0 0 0 5px color-mix(in srgb,var(--acento) 22%,transparent)}
+.hito.aqui .nm{color:var(--acento)}
+/* Por donde ya has pasado */
+.hito.hecho .punto{background:var(--metal-claro);color:var(--metal-hondo);border-color:var(--metal)}
+.hito.hecho .nm{color:var(--tinta-2)}
+
+.pasos{display:flex;justify-content:space-between;gap:12px;max-width:760px;margin:14px auto 0}
+.paso{flex:0 0 auto;min-height:44px;padding:11px 16px;border:1px solid var(--hoja-3);
+  background:linear-gradient(180deg,rgba(255,255,255,.4),var(--hoja));
+  font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tinta);transition:border-color .2s,transform .2s}
+.paso:hover:not(:disabled){border-color:var(--metal);transform:translateY(-2px)}
+.paso:disabled{opacity:.35;cursor:not-allowed}
+.paso.dentro{color:#fff;border-color:var(--acento);
+  background:linear-gradient(180deg,var(--acento-2),var(--acento))}
+
+/* ------------------------------ LA HOJA ----------------------------- */
+.hoja{background:radial-gradient(100% 60% at 50% 0%,rgba(255,255,255,.16),transparent 55%),var(--hoja);
+  color:var(--tinta);padding:0 0 60px;transition:background .5s}
+.dentro{max-width:1280px;margin:0 auto;padding:0 28px}
+.vell{position:relative}
+.vell::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.38;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.45'/></svg>")}
+
+.caja{display:grid;gap:30px;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start;padding:32px 0 6px}
+@media (max-width:900px){.caja{grid-template-columns:1fr}}
+.capital{position:relative;float:left;width:90px;height:90px;margin:5px 18px 6px 0;display:grid;place-items:center;
+  border:2px solid var(--metal-hondo);
+  background:radial-gradient(circle at 28% 22%,rgba(255,255,255,.6),transparent 55%),
+    linear-gradient(150deg,var(--metal-claro),var(--metal) 55%,var(--metal-hondo));
+  box-shadow:0 3px 8px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.4)}
+.capital .letra{font-family:var(--font-gotica);font-size:56px;line-height:1;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6)}
+.prosa{font-size:19.5px;line-height:1.82;margin:0;text-align:justify;hyphens:auto}
+.aparte{border:1px solid var(--hoja-3);background:linear-gradient(180deg,rgba(255,255,255,.27),var(--hoja-2));
+  padding:20px 22px;box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.aparte h3{font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--acento);margin:0 0 12px}
+.dato{display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px dashed var(--hoja-3);font-size:17px}
+.dato:last-child{border:0}
+.dato>i{width:26px;color:var(--metal-hondo);font-size:15px}
+
+.sect{display:flex;align-items:center;justify-content:center;margin:44px 0 22px}
+.cinta{position:relative;padding:10px 34px;border:1px solid var(--metal-hondo);
+  background:linear-gradient(180deg,rgba(255,255,255,.33),var(--hoja-2));font-family:var(--font-display);
+  font-size:12px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:var(--acento);
+  box-shadow:0 2px 5px rgba(0,0,0,.16)}
+.cinta::before,.cinta::after{content:"";position:absolute;top:50%;width:min(22vw,150px);height:2px;
+  background:repeating-linear-gradient(90deg,var(--metal) 0 3px,transparent 3px 8px);opacity:.7}
+.cinta::before{right:100%;margin-right:18px}.cinta::after{left:100%;margin-left:18px}
+
+/* ═══════════ LO QUE SE VE VENIR — la otra cosa que el bosque pide ══════
+   En un pueblo entras a una taberna y no te come nada. Aquí el jugador
+   necesita saber QUÉ CLASE DE SITIO es antes de meterse, sin que le
+   spoileen la tabla de encuentros. `ENCUENTROS_VERDANTE` ya tiene la
+   `nota` de cada bicho escrita para el DM; esto no la enseña: enseña el
+   TONO de la franja, que es lo que un guarda forestal te diría.
+   ═══════════════════════════════════════════════════════════════════════ */
+.rastros{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.rastro{position:relative;padding:16px 18px 16px 54px;border:1px solid var(--hoja-3);
+  background:linear-gradient(180deg,rgba(255,255,255,.3),var(--hoja-2))}
+.rastro>i{position:absolute;left:18px;top:17px;font-size:20px;color:var(--metal-hondo);opacity:.8}
+.rastro b{display:block;font-family:var(--font-display);font-size:12px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--tinta)}
+.rastro span{display:block;margin-top:5px;font-size:16.5px;line-height:1.5;font-style:italic;color:var(--tinta-2)}
+
+/* Gente del lugar, igual que en el pueblo: mismo marco, misma medida. */
+.marco-oro{display:block;position:relative;padding:7px;
+  background:linear-gradient(145deg,var(--metal-claro),var(--metal) 40%,var(--metal-hondo) 75%,var(--metal-claro));
+  box-shadow:0 4px 16px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.35)}
+.marco-oro::before{content:"";position:absolute;inset:3px;border:1px solid rgba(0,0,0,.35);pointer-events:none;z-index:2}
+.marco-oro>img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
+.row{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;padding:4px 0 8px}
+.med{flex:0 0 172px;text-align:center;min-height:44px}
+.med .marco-oro{width:172px;height:172px}
+.med .sincara{display:grid;place-items:center;width:100%;height:100%;font-size:46px;color:var(--hoja-2);
+  background:linear-gradient(160deg,var(--metal-hondo),var(--tinta-2))}
+.med .n{display:block;font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--tinta);margin-top:12px}
+.med .r{display:block;font-size:16px;color:var(--tinta-3);font-style:italic}
+
+.note{font-family:var(--font-display);font-size:11px;color:var(--tinta-3);border-left:3px solid var(--metal);
+  padding:12px 16px;margin:40px 0 0;line-height:1.8}
+@media (max-width:720px){
+  .arte{height:min(40dvh,300px)}
+  .dentro{padding:0 16px}
+  .capital{width:70px;height:70px}.capital .letra{font-size:44px}
+  .prosa{text-align:left}
+  .hito .nm{font-size:9px;letter-spacing:.08em}
+  .pasos{flex-direction:column}
+  .paso{width:100%;text-align:center}
+  .med{flex:0 0 140px}.med .marco-oro{width:140px;height:140px}
+}
+</style>
+</head>
+<body>
+
+<!-- Los troncos, una vez, y se reusan en las cuatro capas con distinto
+     tamaño y opacidad. Cero imágenes, como todo lo aprobado. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="troncos" viewBox="0 0 1200 400" preserveAspectRatio="none">
+    <path fill="currentColor" d="M60 400V120c0-18 6-30 14-42l10 4c-6 14-8 26-8 40v278zM86 400V128l16-6v278z"/>
+    <path fill="currentColor" d="M210 400V80c0-22 10-40 22-56l12 8c-10 16-16 32-16 52v316z"/>
+    <path fill="currentColor" d="M400 400V150c0-20-8-36-20-50l14-8c14 18 24 36 24 60v248z"/>
+    <path fill="currentColor" d="M560 400V60c0-16 4-30 12-44l14 6c-6 12-10 24-10 40v338z"/>
+    <path fill="currentColor" d="M740 400V140c0-24 12-44 26-62l12 10c-12 16-20 32-20 54v258z"/>
+    <path fill="currentColor" d="M900 400V100c0-18-6-34-16-48l14-8c12 18 20 36 20 58v298z"/>
+    <path fill="currentColor" d="M1060 400V170c0-22 8-40 20-56l12 8c-10 14-14 28-14 50v228z"/>
+    <!-- el dosel: lo que cierra por arriba -->
+    <path fill="currentColor" d="M0 0h1200v96c-60 26-120 8-180 30-70 26-130-6-200 14-64 18-118-6-180 12-70 20-130-8-200 10-80 20-150-8-240 14z"/>
+  </symbol>
+  <symbol id="haz" viewBox="0 0 1200 400" preserveAspectRatio="none">
+    <g fill="#fff7cf">
+      <polygon points="180,0 250,0 190,400 130,400" opacity=".16"/>
+      <polygon points="520,0 566,0 540,400 486,400" opacity=".13"/>
+      <polygon points="820,0 900,0 870,400 800,400" opacity=".10"/>
+    </g>
+  </symbol>
+</svg>
+
+<div class="bench">
+  <b>Franja</b>
+  <button id="b1" class="on" onclick="ir(1)">La linde</button>
+  <button id="b2" onclick="ir(2)">La espesura</button>
+  <button id="b3" onclick="ir(3)">El corazón</button>
+  <b style="margin-left:14px">Opción</b>
+  <button id="oA" onclick="opcion('A')">A · una piel</button>
+  <button id="oB" class="on" onclick="opcion('B')">B · se cierra</button>
+</div>
+
+<p class="rotulo">La Expansión Verdante
+  <small>El bosque no es un pueblo. Un pueblo es un SITIO: llegas y estás. Esto es una
+  PROFUNDIDAD, y lo único que importa es cuánto te has metido. Pulsa las tres franjas arriba.</small>
+</p>
+
+<main class="tema-bosque prof-1" id="escena">
+
+  <div class="arte">
+    <svg class="capa c1" viewBox="0 0 1200 400" preserveAspectRatio="none" style="color:#2f4426"><use href="#troncos"/></svg>
+    <svg class="capa c2" viewBox="0 0 1200 400" preserveAspectRatio="none" style="color:#24361d" transform="scale(1.1)"><use href="#troncos"/></svg>
+    <svg class="haces" viewBox="0 0 1200 400" preserveAspectRatio="none"><use href="#haz"/></svg>
+    <svg class="capa c3" viewBox="0 0 1200 400" preserveAspectRatio="none" style="color:#182612"><use href="#troncos"/></svg>
+    <svg class="capa c4" viewBox="0 0 1200 400" preserveAspectRatio="none" style="color:#0d1608"><use href="#troncos"/></svg>
+    <div class="luces">
+      <i style="left:14%;top:52%;animation-delay:0s"></i>
+      <i style="left:31%;top:66%;animation-delay:1.4s"></i>
+      <i style="left:58%;top:46%;animation-delay:2.8s"></i>
+      <i style="left:73%;top:70%;animation-delay:.7s"></i>
+      <i style="left:88%;top:58%;animation-delay:3.6s"></i>
+    </div>
+    <div class="bruma"></div>
+    <div class="titulo">
+      <p class="rubrica">Expansión Verdante · Tal'Dorei</p>
+      <h1 class="h1"><span class="ini" id="ini">L</span><span id="resto">a linde</span></h1>
+      <p class="sub" id="sub">Primera franja · 1 de Horisal, 836 PD</p>
+    </div>
+  </div>
+
+  <!-- ══ LA VEREDA ══ Lo nuevo. Tres hitos y las dos direcciones DICHAS. -->
+  <div class="vereda">
+    <div class="raya"></div>
+    <div class="hitos">
+      <div class="hito" id="h1"><span class="punto"><i class="fa-solid fa-shoe-prints"></i></span><span class="nm">La linde</span></div>
+      <div class="hito" id="h2"><span class="punto"><i class="fa-solid fa-tree"></i></span><span class="nm">La espesura</span></div>
+      <div class="hito" id="h3"><span class="punto"><i class="fa-solid fa-hand-sparkles"></i></span><span class="nm">El corazón</span></div>
+    </div>
+    <div class="pasos">
+      <button class="paso" id="atras"><i class="fa-solid fa-arrow-left" style="margin-right:8px"></i><span id="atrasTxt">Salir a Byroden</span></button>
+      <button class="paso dentro" id="adelante"><span id="adelanteTxt">Adentrarse en la espesura</span><i class="fa-solid fa-arrow-right" style="margin-left:8px"></i></button>
+    </div>
+  </div>
+
+  <div class="hoja vell">
+    <div class="dentro">
+      <div class="caja">
+        <p class="prosa">
+          <span class="capital"><span class="letra" id="cap">L</span></span><span id="prosa">os primeros kilómetros, donde
+          todavía se ven los caminos de carro y el humo de Syngorn entre las copas. Lo que sale aquí muerde,
+          pero no caza.</span>
+        </p>
+        <div class="aparte">
+          <h3>De un vistazo</h3>
+          <div class="dato"><i class="fa-solid fa-cloud-sun"></i><span id="dClima">Cubierto · 12° · Primavera</span></div>
+          <div class="dato"><i class="fa-solid fa-hourglass-half"></i><span>1 de Horisal, 836 PD</span></div>
+          <div class="dato"><i class="fa-solid fa-arrows-down-to-line"></i><span id="dProf">Profundidad 1 de 3</span></div>
+          <div class="dato"><i class="fa-solid fa-person-walking"></i><span id="dCamino">2 h de camino desde Byroden</span></div>
+        </div>
+      </div>
+
+      <div class="sect"><span class="cinta" id="cRastros">Lo que se ve venir</span></div>
+      <div class="rastros" id="rastros"></div>
+
+      <div class="sect"><span class="cinta">Gente del lugar</span></div>
+      <div class="row" id="gente"></div>
+
+      <p class="note" id="nota"></p>
+    </div>
+  </div>
+</main>
+
+<script>
+/* Contenido REAL del repo, no relleno:
+   - blurbs: data/bosque.ts (FRANJAS)
+   - gente:  data/npcTemplates.ts (franja:linde / espesura / corazon)
+   - rastros: el TONO de ENCUENTROS_VERDANTE, sin destripar la tabla */
+const F = [
+  null,
+  {
+    nombre:"La linde", sub:"Primera franja",
+    prosa:"os primeros kilómetros, donde todavía se ven los caminos de carro y el humo de Syngorn entre las copas. Lo que sale aquí muerde, pero no caza.",
+    clima:"Cubierto · 12° · Primavera", camino:"2 h de camino desde Byroden",
+    atras:"Salir a Byroden", adelante:"Adentrarse en la espesura",
+    rastros:[
+      ["fa-shoe-prints","Rodadas de carro","Alguien ha pasado con una carreta, y no hace mucho."],
+      ["fa-feather","Un búho que no duerme","Vigía de Syngorn. Habla, y decide si te deja pasar."],
+      ["fa-spider","Telas en las ramas bajas","El primer aviso de lo que hay más adentro."]
+    ],
+    gente:[["Harn Bracamadera","Leñador","../../public/npcs/elara_teje_raices.webp"]]
+  },
+  {
+    nombre:"La espesura", sub:"Segunda franja",
+    prosa:"ajo el dosel cerrado ya no se distingue la hora. Aquí el bosque deja de ser un sitio por el que se pasa y empieza a ser un sitio donde algo vive.",
+    clima:"Sin cielo · 9° · Primavera", camino:"5 h de camino desde Byroden",
+    atras:"Volver a la linde", adelante:"Adentrarse en el corazón",
+    rastros:[
+      ["fa-tree","Árboles que se han movido","El camino por el que entraste ya no está donde lo dejaste."],
+      ["fa-wine-glass","Fiesta a deshora","Se oye reír. Peligroso por lo que te hace prometer, no por lo que pega."],
+      ["fa-spider","Tela ordenada","Donde la tela tiene un orden, hay alguien que la pastorea."]
+    ],
+    gente:[["Ashwen","Dríade",null]]
+  },
+  {
+    nombre:"El corazón", sub:"Tercera franja",
+    prosa:"onde los árboles llevan más años que Tal'Dorei y el pacto feérico aún se respeta. No se entra sin permiso, y lo que hay dentro sabe si lo tienes.",
+    clima:"Sin cielo · 7° · Primavera", camino:"9 h de camino desde Byroden",
+    atras:"Volver a la espesura", adelante:"No hay más adentro",
+    rastros:[
+      ["fa-hand-sparkles","La raya del pacto","Una línea de setas blancas. Cruzarla es aceptar algo."],
+      ["fa-horse","Cascos, en círculo","Han pasado por aquí muchas veces. Patrullan."],
+      ["fa-dragon","Algo grande y joven","Ya se cree el dueño, y aún no ha crecido."]
+    ],
+    gente:[["El Guardián de la Raya","Centauro del pacto",null]]
+  }
+];
+const NOTAS = {
+  A:"OPCIÓN A · una sola piel para las tres franjas. El tema `bosque` que ya está construido, sin tocar. La profundidad la cuenta SOLO la vereda. Ventaja: cero código nuevo de tema y la maqueta no cambia. Contra: la linde y el corazón se ven igual, y la sensación de meterse la lleva entera un medidor.",
+  B:"OPCIÓN B · la piel se CIERRA a medida que entras. Los mismos quince tokens, movidos por franja: el cielo se apaga, la hoja se ensucia, y en el corazón el rojo del lacre pasa a ser el rojo del pacto. No es un tema nuevo — es el mismo con la luz bajada, así que la regla «un tema no mueve nada de sitio» se respeta. Contra: son tres juegos de tokens más que mantener, y el gate tendría que exigirlos."
+};
+let franja = 1, opt = "B";
+
+function ir(n){
+  franja = n;
+  const f = F[n], e = document.getElementById("escena");
+  e.className = "tema-bosque " + (opt === "B" ? "prof-" + n : "prof-1");
+  ini.textContent = f.nombre.slice(0,1);
+  resto.textContent = f.nombre.slice(1);
+  sub.textContent = f.sub + " · 1 de Horisal, 836 PD";
+  cap.textContent = f.prosa.slice(0,0) || f.nombre.slice(0,1);
+  document.getElementById("prosa").textContent = f.prosa;
+  dClima.textContent = f.clima;
+  dProf.textContent = "Profundidad " + n + " de 3";
+  dCamino.textContent = f.camino;
+  atrasTxt.textContent = f.atras;
+  adelanteTxt.textContent = f.adelante;
+  adelante.disabled = n === 3;
+  for (let i = 1; i <= 3; i++){
+    const h = document.getElementById("h" + i);
+    h.className = "hito" + (i === n ? " aqui" : i < n ? " hecho" : "");
+  }
+  rastros.innerHTML = f.rastros.map(([ic,t,s]) =>
+    `<div class="rastro"><i class="fa-solid ${ic}"></i><b>${t}</b><span>${s}</span></div>`).join("");
+  gente.innerHTML = f.gente.map(([nm,rl,img]) =>
+    `<button class="med"><span class="marco-oro">${img
+      ? `<img src="${img}" alt="">`
+      : `<span class="sincara"><i class="fa-solid fa-tree"></i></span>`}</span>
+      <span class="n">${nm}</span><span class="r">${rl}</span></button>`).join("");
+  for (let i = 1; i <= 3; i++) document.getElementById("b" + i).className = i === n ? "on" : "";
+  nota.textContent = NOTAS[opt];
+}
+function opcion(o){
+  opt = o;
+  oA.className = o === "A" ? "on" : "";
+  oB.className = o === "B" ? "on" : "";
+  ir(franja);
+}
+document.getElementById("adelante").onclick = () => { if (franja < 3) ir(franja + 1); };
+document.getElementById("atras").onclick = () => { if (franja > 1) ir(franja - 1); };
+ir(1);
+</script>
+</body>
+</html>
