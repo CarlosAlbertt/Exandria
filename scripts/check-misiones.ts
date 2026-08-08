@@ -20,6 +20,11 @@ import {
   INSTRUCCION_OPCIONES,
   type MisionMin,
 } from "../lib/misiones";
+import { MISIONES } from "../data/misiones";
+import { ALL_MONSTERS } from "../data/bestiary";
+import { CR_XP, XP_BUDGET } from "../data/encounters";
+import { franjaDeNodo } from "../data/bosque";
+import { seedAtlas } from "../data/atlas";
 
 let failures = 0;
 function check(label: string, cond: boolean) {
@@ -202,6 +207,116 @@ check("bloque vacío conserva el texto", r7.texto === "Hola.");
 check("la instrucción menciona la etiqueta de apertura", INSTRUCCION_OPCIONES.includes("<opciones>"));
 check("la instrucción menciona la etiqueta de cierre", INSTRUCCION_OPCIONES.includes("</opciones>"));
 check("la instrucción pide el mismo tope de 4", INSTRUCCION_OPCIONES.includes("4"));
+
+/* ===================== EL CATÁLOGO DE MISIONES PREPARADAS ================ */
+// Va en este script y no en uno nuevo por lo mismo que las figuras fueron a
+// `check-lore`: la pregunta es «las misiones están bien», que es la que este
+// script ya responde. Dos scripts para un tema son dos fuentes de verdad.
+//
+// ⚠️ **LO QUE DE VERDAD MUERDE ES EL CRUCE CONTRA EL BESTIARIO.** Un guion en
+// markdown puede decir «tres osgos acechadores» y nadie se entera hasta el día
+// de jugar, cuando resulta que el Osgo Acechador está en `PENDIENTES` y no
+// tiene statblock. Esa es la razón entera de que el catálogo sea TypeScript.
+{
+  const porNombre = new Map(ALL_MONSTERS.map((m) => [m.name, m]));
+  const CR_NUM: Record<string, number> = { "0": 0, "1/8": 0.125, "1/4": 0.25, "1/2": 0.5 };
+  const xpDe = (cr: string) => CR_XP.find((c) => c.cr === cr)?.xp ?? -1;
+  void CR_NUM;
+
+  check(`el catálogo tiene 15 misiones (tiene ${MISIONES.length})`, MISIONES.length === 15);
+
+  const slugs = MISIONES.map((m) => m.slug);
+  check("slugs únicos", new Set(slugs).size === slugs.length);
+  check("títulos únicos", new Set(MISIONES.map((m) => m.titulo)).size === MISIONES.length);
+
+  // El reparto que se pidió, escrito a mano aquí: si saliera del propio
+  // catálogo, borrar las tres legendarias no rompería nada.
+  const de = (t: string) => MISIONES.filter((m) => m.tamano === t).length;
+  check(`5-6 misiones para uno o dos (hay ${de("solitaria") + de("pareja")})`,
+    de("solitaria") + de("pareja") >= 5 && de("solitaria") + de("pareja") <= 6);
+  check(`3-4 misiones para tres (hay ${de("trio")})`, de("trio") >= 3 && de("trio") <= 4);
+  check(`2 misiones de grupo (hay ${de("grupo")})`, de("grupo") === 2);
+  check(`2-3 legendarias (hay ${de("legendaria")})`, de("legendaria") >= 2 && de("legendaria") <= 3);
+
+  // Los lugares: un POI del atlas o una franja del bosque. Una misión en un
+  // sitio inventado no se puede poner en el mapa, y el fallo no se ve hasta que
+  // alguien la busca.
+  const POIS = new Set(Object.values(seedAtlas()).flatMap((c) => Object.values(c.pois).flat().map((p) => p.name)));
+
+  for (const m of MISIONES) {
+    const tag = `"${m.slug}"`;
+
+    check(`${tag} el lugar existe (${m.lugar})`,
+      m.lugar.startsWith("franja:") ? franjaDeNodo(m.lugar) !== null : POIS.has(m.lugar));
+
+    check(`${tag} el rango de nivel va de menos a más`, m.nivel[0] <= m.nivel[1]);
+    check(`${tag} tiene gancho, recompensa, fracaso y body`,
+      m.gancho.trim().length >= 80 && m.recompensa.trim().length >= 40 &&
+      m.siFalla.trim().length >= 40 && m.body.trim().length >= 40);
+    check(`${tag} tiene al menos dos escenas`, m.escenas.length >= 2);
+    check(`${tag} toda escena tiene título y texto`,
+      m.escenas.every((e) => e.titulo.trim().length > 0 && e.texto.trim().length >= 80));
+    check(`${tag} tiene al menos un encuentro`, m.encuentros.length >= 1);
+
+    // El tamaño manda sobre el número de jugadores, y de ahí sale todo el
+    // presupuesto. Si divergen, la misión está medida para otra mesa.
+    const esperado: Record<string, (n: number) => boolean> = {
+      solitaria: (n) => n === 1,
+      pareja: (n) => n === 2,
+      trio: (n) => n === 3,
+      grupo: (n) => n >= 4,
+      legendaria: (n) => n >= 4,
+    };
+    check(`${tag} el tamaño "${m.tamano}" cuadra con ${m.jugadores} jugador(es)`,
+      esperado[m.tamano](m.jugadores));
+
+    for (const e of m.encuentros) {
+      // 1. Todo monstruo citado TIENE FICHA. No vale que esté en la tabla del
+      //    bosque ni en PENDIENTES: si no hay statblock, no se puede jugar.
+      const sinFicha = e.monstruos.filter((x) => !porNombre.has(x.name)).map((x) => x.name);
+      check(`${tag} · "${e.nombre}": todos los monstruos tienen ficha${sinFicha.length ? ` (faltan: ${sinFicha.join(", ")})` : ""}`,
+        sinFicha.length === 0);
+      check(`${tag} · "${e.nombre}": ninguna cantidad a cero`, e.monstruos.every((x) => x.n >= 1));
+
+      // 2. La XP declarada se RECALCULA. Un número escrito a ojo es un
+      //    encuentro mal medido que nadie detecta hasta la mesa.
+      if (sinFicha.length === 0) {
+        const suma = e.monstruos.reduce((n, x) => n + xpDe(porNombre.get(x.name)!.cr) * x.n, 0);
+        check(`${tag} · "${e.nombre}": la XP declarada (${e.xp}) es la suma real (${suma})`, e.xp === suma);
+      }
+
+      check(`${tag} · "${e.nombre}": explica cómo se juega`, e.nota.trim().length >= 60);
+    }
+
+    // 3. EL PRESUPUESTO, en los DOS sentidos. `XP_BUDGET` va por nivel (índice
+    //    = nivel-1) y por jugador. Se mide contra el nivel MÁXIMO del rango,
+    //    que es el más benévolo: si ni así cabe, no cabe.
+    const alta = XP_BUDGET.alta[m.nivel[1] - 1] * m.jugadores;
+    const gordo = Math.max(...m.encuentros.map((e) => e.xp));
+    if (m.letal) {
+      // Una legendaria que cupiera en `alta` sería una promesa incumplida: se
+      // anuncia como mortal y no mata a nadie.
+      check(`${tag} es legendaria y se pasa de alta (${gordo} > ${alta})`, gordo > alta);
+      check(`${tag} solo las legendarias son letales`, m.tamano === "legendaria");
+    } else {
+      check(`${tag} ningún encuentro se pasa de alta (${gordo} <= ${alta})`, gordo <= alta);
+    }
+  }
+
+  // Y al revés: toda legendaria va marcada. Una legendaria sin `letal` se
+  // mediría con la vara de las normales y el aviso de arriba no la miraría.
+  check("todas las legendarias van marcadas como letales",
+    MISIONES.filter((m) => m.tamano === "legendaria").every((m) => m.letal === true));
+
+  // El zigurat es la que se preparó a fondo: si alguien la recorta, que se note.
+  const zig = MISIONES.find((m) => m.slug === "zigurat-de-la-linde");
+  check("la misión del zigurat sigue en el catálogo", !!zig);
+  check("la del zigurat conserva sus ocho escenas y tres combates",
+    (zig?.escenas.length ?? 0) >= 8 && (zig?.encuentros.length ?? 0) === 3);
+
+  const total = MISIONES.reduce((n, m) => n + m.encuentros.length, 0);
+  console.log(`\nCatálogo: ${MISIONES.length} misiones, ${total} encuentros escritos.`);
+}
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} fallaron.`);
 process.exit(failures === 0 ? 0 : 1);
