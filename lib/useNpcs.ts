@@ -94,7 +94,7 @@ export async function updateNpc(id: number, patch: Partial<Pick<LocationNpc, "na
  */
 export async function seedNpcs(
   poiName: string, nodoId: string,
-  plantilla: { name: string; role: string; prompt: string; publico?: boolean; dialogo?: string }[],
+  plantilla: { name: string; role: string; prompt: string; publico?: boolean; dialogo?: string; enLaPlaza?: true }[],
 ): Promise<{ ok: true; creados: number } | { ok: false; error: string }> {
   if (!supabaseConfigured) return { ok: false, error: "Supabase no configurado." };
   const supabase = createClient();
@@ -110,7 +110,13 @@ export async function seedNpcs(
   const { error } = await supabase.from("location_npcs").insert(
     plantilla.map((t) => ({
       poi_name: poiName, name: t.name, role: t.role, prompt: t.prompt,
-      public: t.publico ?? true, venue: nodoId,
+      public: t.publico ?? true,
+      // ⚠️ **Sin `venue` se ve en la PLAZA; con `venue` solo dentro.** La regla
+      // es de `npcsDeNodo` y es excluyente: no existe «en los dos sitios». Los
+      // marcados `enLaPlaza` se plantan en el pueblo aunque se siembren desde
+      // la taberna, que es lo que pidió el usuario para los cinco importantes —
+      // si no, hay que recorrer cuatro edificios buscando quién da las misiones.
+      venue: t.enLaPlaza ? null : nodoId,
       // ⚠️ La clave del árbol se siembra CON el PNJ. Antes se quedaba vacía y
       // el DM tenía que escribirla a mano uno por uno; una clave mal tecleada
       // no da error, solo deja al PNJ hablando por IA sin su conversación
