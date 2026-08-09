@@ -6,6 +6,7 @@ import { derive } from "@/lib/derive";
 import { rollVisual, RESULTADO_MS } from "@/lib/diceBox";
 import { roll as rollFallback } from "@/lib/dice";
 import { loadLoreRoll, saveLoreRoll, unlockCount } from "@/lib/loreRolls";
+import { avisar } from "@/components/Avisos";
 import { SABER, saberById } from "@/data/saber";
 
 // "¿Qué sé de esto?": tirada de saber al visitar un lugar. Una sola por lugar y
@@ -63,6 +64,10 @@ export default function SaberRoll({ poiName, regionSlug, continent }: { poiName:
       const next = [...unlocked, ...learned];
       await saveCharacter(char.id, { lore_unlocked: next });
       setChar({ ...char, lore_unlocked: next });
+      // Lo aprendido se guarda en la ficha y se lee tres pantallas más allá, en
+      // El Mundo de Exandria. Sin aviso, recordar algo y no recordar nada se
+      // parecen demasiado en el momento de la tirada.
+      avisar({ tipo: "saber", cuantas: learned.length });
     }
     setPrev(total);
     setMsg(

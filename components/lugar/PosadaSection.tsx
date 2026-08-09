@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
 import { loadActiveCharacter } from "@/lib/character";
 import { descansar, PRECIO_DESCANSO } from "@/lib/descanso";
+import { avisar } from "@/components/Avisos";
 
 export default function PosadaSection({ posada }: { posada: boolean }) {
   const session = useSession();
@@ -29,7 +30,14 @@ export default function PosadaSection({ posada }: { posada: boolean }) {
     if (kind === "largo" && !confirm(`¿Descansar la noche (${coste} po)? Avanza el reloj 8 horas.`)) return;
     setBusy(true); setMsg(null);
     const r = await descansar(kind, kind === "largo" ? room : undefined);
-    if (r.ok) { setGold(r.gold); setMsg(kind === "corto" ? "Descanso corto: +1 h." : `Pasáis la noche. +8 h${coste ? `, -${coste} po` : ""}.`); }
+    if (r.ok) {
+      setGold(r.gold); setMsg(kind === "corto" ? "Descanso corto: +1 h." : `Pasáis la noche. +8 h${coste ? `, -${coste} po` : ""}.`);
+      // El mensaje de aquí abajo solo lo ve quien esté mirando esta sección. El
+      // aviso lo ve estés donde estés, que es lo que hace falta cuando el
+      // descanso lo pide otro y a ti te cambian los PG.
+      avisar({ tipo: "descanso", largo: kind === "largo" });
+      if (kind === "largo" && coste > 0) avisar({ tipo: "oro", cantidad: -coste });
+    }
     else setMsg(r.error);
     setBusy(false);
   }
