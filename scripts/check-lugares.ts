@@ -344,14 +344,32 @@ check("la clave de un sub-lugar es su slug", claveDePlantilla(idSub("Byroden", "
 check("la clave de una franja es su id entero", claveDePlantilla(idFranja("linde")) === "franja:linde");
 check("un pueblo no tiene plantilla propia", claveDePlantilla(idPoi("Byroden")) === null);
 
-// Los cinco sitios de Byroden y las tres franjas traen gente. Escrito a mano:
-// si saliera de NPC_TEMPLATES, quedarse sin sepulturero no rompería nada.
+// Los sitios de Byroden y las tres franjas traen gente. Escrito a mano: si
+// saliera de NPC_TEMPLATES, quedarse sin sepulturero no rompería nada.
+//
+// ⚠️ **Aquí se contaban CABEZAS —«trae DOS»— y era un calco del reparto
+// inventado que tenía el repo, no una decisión de diseño.** Al entrar el elenco
+// real (2026-08-09) la comprobación empezó a fallar por sitios que están
+// perfectamente poblados: la iglesia tiene una sacerdotisa y el cementerio un
+// sepulturero, y no hacen falta dos de cada para que el sitio funcione. Lo que
+// de verdad hay que vigilar es que **esté QUIEN tiene que estar**: perder a
+// Elara o a Garrick rompe la campaña, y un recuento no lo habría notado
+// mientras alguien pusiera a otro cualquiera en su lugar.
+const IMPRESCINDIBLES: Record<string, string[]> = {
+  taberna: ["Cora Mano de Malta"],
+  iglesia: ["Elara Teje-Raíces"],
+  cementerio: ["Viejo Yorick"],
+  ayuntamiento: ["Silas Trumble", "Garrick Vance"],
+};
 for (const clave of ["taberna", "iglesia", "cementerio", "ayuntamiento"]) {
   check(`"${clave}" trae gente escrita`, plantillaDe(clave).length > 0);
-  check(`"${clave}" trae DOS`, plantillaDe(clave).length === 2);
+  const nombres = plantillaDe(clave).map((t) => t.name);
+  for (const quien of IMPRESCINDIBLES[clave]) {
+    check(`"${clave}" sigue trayendo a ${quien}`, nombres.includes(quien));
+  }
 }
 for (const f of ["franja:linde", "franja:espesura", "franja:corazon"]) {
-  check(`"${f}" trae a alguien`, plantillaDe(f).length === 1);
+  check(`"${f}" trae a alguien`, plantillaDe(f).length >= 1);
 }
 
 // Toda plantilla apunta a un sitio que EXISTE. Una escrita para un sitio que

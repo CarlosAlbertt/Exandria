@@ -10,562 +10,571 @@
 // ⚠️ **La clave es estable y el id del PNJ no.** Los PNJ son filas que crea el
 // DM; si borra y recrea a alguien, el id cambia. Por eso el árbol se ata por
 // esta clave (`location_npcs.dialogo`, schema_v26) y no por `npc:42`.
+//
+// ⚠️ **ESTE ARCHIVO SE REESCRIBIÓ ENTERO EL 2026-08-09.** Antes tenía once
+// árboles escritos contra los PNJ de `npcTemplates.ts` —Mirna, Vell, Brannoc,
+// Harn…— que **no existen en la partida**: eran gente inventada en el repo, y
+// los árboles colgaban de nadie. El reparto de verdad son cinco personas, que
+// el usuario dictó: Silas, Garrick, Elara, Cora y Yorick. A esos cinco se les
+// dan las misiones IMPORTANTES; lo secundario lo reparten cinco PNJ nuevos.
+//
+// ⚠️ **La niebla devora-mentes está RESUELTA** —la cerraron los aventureros— y
+// por eso aquí se menciona como pasado reciente y nunca como amenaza abierta.
+// El pueblo acaba de salir de una y no se ha repuesto, que es distinto.
 
 import type { ArbolDialogo } from "@/lib/dialogo";
 
 export const DIALOGOS: Record<string, ArbolDialogo> = {
-  /* =========================== MIRNA, LA TABERNERA ======================= */
-  // Tres etapas: te sirve, te habla, te cuenta lo suyo. Lo del 795 es lo
-  // último y hay que ganárselo — está escrito en su `prompt` que no lo suelta.
-  mirna: {
+  /* ===================== SILAS TRUMBLE, ALCALDE ========================= */
+  // No contrata: te quita de encima. La única misión que da es la que le deja
+  // seguir negando —que nadie diga la palabra «dragón» en la plaza— y por eso
+  // va detrás de Intimidación, que es lo único que le mueve.
+  silas: {
+    inicio: "despacho",
+    etapas: {
+      despacho: {
+        saludo:
+          "El alcalde os recibe de pie, sin invitaros a sentaros, dándole vueltas al anillo de " +
+          "sello. «Aventureros. Qué bien. Mirad, si venís por lo de la niebla, eso ya está " +
+          "cerrado y el pueblo necesita pasar página. Hablad con Garrick.»",
+        opciones: [
+          {
+            texto: "No venimos por la niebla. Venimos por el temblor de esta madrugada.",
+            exito:
+              "Se le va la mano al anillo. «Un asentamiento del terreno. Pasa.» Mira a la " +
+              "puerta. «Y si en la plaza alguien dice otra cosa, os agradecería que no le " +
+              "siguierais la corriente.»",
+            siguiente: "presion",
+            confianza: { exito: 5 },
+          },
+          {
+            texto: "¿Cuánto está dispuesto a gastar el ayuntamiento?",
+            chequeo: { pericia: "Persuasión", cd: 14 },
+            exito:
+              "«Lo justo.» Abre un cajón, lo cierra, lo vuelve a abrir. «El tesoro del pueblo " +
+              "es para el pueblo, no para… expediciones.» Saca una bolsa pequeña. «Esto es mío. " +
+              "Y no ha salido de aquí.»",
+            fallo:
+              "«El presupuesto está comprometido hasta la primavera.» Sonríe con toda la boca y " +
+              "con ningún ojo. «Hablad con el comandante Garrick. Él tiene… recursos.»",
+            siguiente: "presion",
+            confianza: { exito: 10, fallo: -5 },
+          },
+          { texto: "No le molestamos más.", exito: "«Faltaría más. Y bajad la voz al salir.»", siguiente: null },
+        ],
+      },
+      presion: {
+        saludo:
+          "«Escuchadme bien, y esto no lo he dicho.» Se seca la frente con un pañuelo que ya " +
+          "está empapado. «Hay una cosa que no puede saberse. Si se sabe, la mitad del pueblo " +
+          "hace las maletas antes del jueves.»",
+        opciones: [
+          {
+            texto: "Suéltalo de una vez.",
+            chequeo: { pericia: "Intimidación", cd: 13 },
+            exito:
+              "«Han visto algo verde y con alas posarse en las copas del norte.» Lo dice de " +
+              "corrido, para acabar antes. «Y han desaparecido dos cabras y un perro. Este " +
+              "pueblo ya ardió una vez por… por uno de esos. No pienso ser el alcalde que lo " +
+              "anuncie.» Empuja la bolsa. «Id, miradlo, y volved a mí. A mí, no a Garrick.»",
+            fallo:
+              "«Nada. Rumores de pastores.» Se recompone el chaleco. «Este pueblo funciona con " +
+              "calma, y la calma es un bien público.»",
+            mision: "cria-en-el-nido",
+            confianza: { exito: 10, fallo: -10 },
+          },
+          {
+            texto: "¿Por qué no se lo cuenta a Garrick?",
+            chequeo: { pericia: "Perspicacia", cd: 12 },
+            exito:
+              "«Porque Garrick declararía la cuarentena antes de comer.» Baja la voz. «Y una " +
+              "cuarentena en temporada de madera es este pueblo cerrado hasta el deshielo. " +
+              "No es cobardía. Son las cuentas.» Casi suena honesto.",
+            fallo: "«Garrick tiene sus competencias y yo las mías.» Y ahí se acabó.",
+            confianza: { exito: 5, fallo: -5 },
+          },
+          { texto: "Lo pensaremos.", exito: "«Pensadlo en voz baja, os lo ruego.»", siguiente: null },
+        ],
+      },
+    },
+  },
+
+  /* ============== GARRICK VANCE, COMANDANTE DE LA GUARDIA =============== */
+  // El que sí reparte trabajo de verdad. Da las dos misiones gordas del pueblo,
+  // y las da a cambio de honestidad: sus dos opciones buenas se abren
+  // diciéndole la verdad a la cara, no engatusándolo.
+  garrick: {
+    inicio: "cuerpo-de-guardia",
+    etapas: {
+      "cuerpo-de-guardia": {
+        saludo:
+          "El semiorco os mira sin levantarse de la mesa donde está limpiando una ballesta. La " +
+          "cicatriz de la quemadura le tira de medio rostro al hablar. «Forasteros. Decid lo " +
+          "que venís a decir y decidlo entero. Si me lo adornáis, os acompaño a la puerta.»",
+        opciones: [
+          {
+            texto: "Venimos a trabajar. Y no sabemos en qué nos metemos.",
+            exito:
+              "Deja la ballesta. «Eso último es lo primero honrado que oigo esta semana.» " +
+              "Señala un taburete con la barbilla. «Sentaos.»",
+            siguiente: "trabajo",
+            confianza: { exito: 15 },
+          },
+          {
+            texto: "Esa cicatriz no es de una pelea de taberna.",
+            chequeo: { pericia: "Perspicacia", cd: 13 },
+            exito:
+              "Ni se la toca. «795. Yo tenía diecinueve años y estaba en el tejado equivocado.» " +
+              "Vuelve a la ballesta. «Los que me la hicieron ya no están. El que la mandó, " +
+              "tampoco. Y aun así aquí seguimos todos con la misma cara de susto.»",
+            fallo:
+              "«No.» Un silencio muy largo. «Y no es asunto vuestro.» Tarda en volver a hablaros.",
+            siguiente: "trabajo",
+            confianza: { exito: 10, fallo: -10 },
+          },
+          { texto: "Volveremos en otro momento.", exito: "«Aquí estaré. No me muevo nunca.»", siguiente: null },
+        ],
+      },
+      trabajo: {
+        saludo:
+          "«Dos cosas me quitan el sueño, y ninguna es la que le quita el sueño al alcalde.» " +
+          "Extiende un mapa mal dibujado sobre la mesa. «Una está al norte. La otra me ha " +
+          "costado ocho hombres.»",
+        opciones: [
+          {
+            texto: "Lo del norte. El temblor.",
+            chequeo: { pericia: "Persuasión", cd: 12 },
+            exito:
+              "«Salió algo del suelo en la linde y no se cae.» Golpea el mapa con dos dedos. " +
+              "«El alcalde dice que es un asentamiento del terreno. Un asentamiento del terreno " +
+              "no deja las lápidas del cementerio torcidas hacia el norte.» Os mira. «Id, " +
+              "miradlo y volved. No quiero heroicidades, quiero un informe.»",
+            fallo:
+              "«Aún no.» Enrolla el mapa. «No mando a gente que no conozco a un sitio que no " +
+              "conozco yo. Volved cuando os haya visto trabajar.»",
+            mision: "zigurat-de-la-linde",
+            confianza: { exito: 10, fallo: -5 },
+          },
+          {
+            texto: "Ocho hombres. Cuéntanos qué pasó.",
+            chequeo: { pericia: "Perspicacia", cd: 14 },
+            exito:
+              "«Pagué a ocho mercenarios para limpiar un campamento goblinoide en la espesura. " +
+              "Volvió uno.» Aprieta la mandíbula. «Y no repite que los mataron. Repite que los " +
+              "CAMBIARON DE SITIO.» Escupe al suelo. «Mis guardias son buena gente con una " +
+              "lanza y nada más. No los voy a mandar a eso.»",
+            fallo:
+              "«Pasó lo que pasa.» Se levanta y da por terminada esa parte de la conversación.",
+            mision: "partida-que-no-volvio",
+            siguiente: "armeria",
+            confianza: { exito: 15, fallo: -5 },
+          },
+          {
+            texto: "¿Qué opinas del alcalde?",
+            exito:
+              "«Que es un hombre decente.» Pausa. «Y que los burócratas nos van a matar a " +
+              "todos. Las dos cosas caben en la misma frase, ya lo iréis viendo.»",
+            confianza: { exito: 5 },
+          },
+          { texto: "Nos ponemos con ello.", exito: "«Ya me contaréis. Enteros, a ser posible.»", siguiente: null },
+        ],
+      },
+      armeria: {
+        saludo:
+          "«Ya que os habéis ganado que os hable claro, os enseño lo único que puedo daros.» " +
+          "Aparta una lona: media docena de lanzas, dos ballestas y aceite.",
+        confianzaMin: 65,
+        opciones: [
+          {
+            texto: "Aceptamos lo que puedas dar.",
+            chequeo: { pericia: "Persuasión", cd: 11 },
+            exito:
+              "«Coged aceite. Arde, y casi todo lo que hay ahí fuera odia el fuego.» Os pone " +
+              "dos frascos en la mano sin ceremonia. «No os puedo dar un ejército. Puedo daros " +
+              "esto y dos guardias para vigilar un punto. Elegid bien el punto.»",
+            fallo:
+              "«Todavía no.» Vuelve a echar la lona. «El material del pueblo se le da a quien " +
+              "lo devuelve.»",
+            premio: { tipo: "objeto", name: "Frasco de aceite", qty: 2, notes: "De la armería de Byroden. Garrick lo apuntó en su lista." },
+            confianza: { exito: 5, fallo: -5 },
+          },
+          { texto: "No hace falta.", exito: "«Eso lo dice todo el mundo hasta que hace falta.»", siguiente: null },
+        ],
+      },
+    },
+  },
+
+  /* ============ ELARA TEJE-RAÍCES, SACERDOTISA (Y SU FACHADA) ============ */
+  // ⚠️ **NO HAY FORMA DE DESTAPARLA HABLANDO, Y ES A PROPÓSITO.** Decisión del
+  // usuario, 2026-08-09: ninguna tirada, ningún «casi», ninguna grieta. Su
+  // árbol es té, dulzura y metáforas de raíces de principio a fin.
+  //
+  // La única misión que da existe para QUITÁRSELOS DE ENCIMA: los manda al
+  // campanario, que está en la torre y no en la nave, y así pasan la tarde
+  // lejos del altar. El jugador lee un encargo piadoso; la mesa, con el tiempo,
+  // leerá otra cosa.
+  //
+  // ⚠️ `scripts/check-dialogos.ts` PROHÍBE vocabulario oscuro en este árbol.
+  // Si alguien —yo el primero— le escribe alguna vez «ritual», «Susurrado» o
+  // «sacrificio» en la boca, el gate falla. Su tapadera es una regla, no un
+  // estilo.
+  elara: {
+    inicio: "nave",
+    etapas: {
+      nave: {
+        saludo:
+          "La anciana elfa deja la escoba apoyada en un banco y os sonríe con toda la cara. " +
+          "«Pasad, pasad, que fuera hace un aire que corta. Hay té. Siempre hay té.»",
+        opciones: [
+          {
+            texto: "Aceptamos el té.",
+            exito:
+              "Os sirve sin preguntar cómo lo queréis y acierta igual. «La raíz sabe dónde " +
+              "está el agua antes que el árbol», dice, y se ríe sola de su propio dicho. Se " +
+              "está bien aquí.",
+            siguiente: "te",
+            confianza: { exito: 10 },
+          },
+          {
+            texto: "El pueblo viene de pasar algo muy feo.",
+            exito:
+              "Le cambia la cara, pero no a miedo: a pena. «Sí.» Os pone una mano en el brazo. " +
+              "«Y lo peor ya pasó, criaturas. Ahora toca lo lento: enterrar bien, dormir mal " +
+              "unos meses y volver a plantar.»",
+            siguiente: "te",
+            confianza: { exito: 5 },
+          },
+          { texto: "Solo veníamos a ver la iglesia.", exito: "«Está para eso. Y para menos, también.»", siguiente: null },
+        ],
+      },
+      te: {
+        saludo:
+          "«Sentaos donde queráis, menos ahí, que la madera está podrida y os vais al suelo.» " +
+          "Señala vagamente hacia el fondo de la nave y se sienta ella junto a la puerta.",
+        opciones: [
+          {
+            texto: "¿Podemos ayudar en algo?",
+            exito:
+              "Se le ilumina la cara. «Pues mirad, sí. La campana.» Señala la torre. «Tres " +
+              "semanas muda. Subió el chico de los Halloran y bajó con el cuello lleno de " +
+              "picotazos y seis días de fiebre.» Junta las manos. «Y el día santo es dentro de " +
+              "nueve. Un pueblo que acaba de pasar lo que ha pasado necesita oír su campana.»",
+            mision: "colmena-del-campanario",
+            confianza: { exito: 10 },
+          },
+          {
+            texto: "¿Y esa puerta del fondo?",
+            exito:
+              "«La sacristía, cariño. Cuatro velas viejas y una gotera.» Se levanta a rellenar " +
+              "las tazas, que no estaban vacías. «Si os aburrís de verdad, os la enseño otro " +
+              "día. No hay nada, os lo aviso.»",
+            confianza: { exito: 5 },
+          },
+          {
+            texto: "Nos han dicho que la Madre Salvaje no se venera mucho por aquí.",
+            exito:
+              "«Poco, poco. Aquí la gente reza a lo que trae cosecha.» Sonríe. «Yo llevo " +
+              "ciento cuarenta años sirviéndola y os digo una cosa: le da igual. Ella no " +
+              "cuenta fieles, cuenta raíces.»",
+            confianza: { exito: 5 },
+          },
+          { texto: "Gracias por el té.", exito: "«Volved cuando queráis. La puerta no se cierra.»", siguiente: null },
+        ],
+      },
+    },
+  },
+
+  /* ==================== CORA MANO DE MALTA, TABERNERA =================== */
+  // Lo que le faltaba, escrito aquí: enana de brazos como jamones, tercera
+  // generación detrás de la misma barra, sorda de un oído de una explosión de
+  // alambique. Cobra por adelantado a los forasteros y fía a los del pueblo,
+  // y las dos cosas le parecen justicia. No cotillea gratis: cotillea a cambio
+  // de que le compres algo, que es distinto.
+  cora: {
     inicio: "barra",
     etapas: {
       barra: {
         saludo:
-          "Mirna deja de secar un vaso y te mira de arriba abajo sin ninguna prisa. " +
-          "«Si vas a beber, siéntate. Si vas a preguntar, pide algo primero.»",
+          "La tabernera llena tres jarras a la vez sin mirar y os grita desde la otra punta de " +
+          "la barra, más alto de lo necesario. «¡Los forasteros pagan por delante! ¡No es " +
+          "personal, es aritmética!»",
         opciones: [
           {
-            texto: "Ponme lo que estén bebiendo los demás.",
+            texto: "Pagamos por delante. Y otra para ti.",
             exito:
-              "Te sirve una jarra sin decir nada y da media vuelta. A la tercera, vuelve. " +
-              "«¿De dónde salís vosotros?»",
-            siguiente: "charla",
-            confianza: { exito: 5 },
-          },
-          {
-            texto: "Buen local. ¿Lo llevas tú sola?",
-            chequeo: { pericia: "Persuasión", cd: 12 },
-            exito:
-              "Se le escapa media sonrisa. «Sola desde hace doce años. Y no lo cambio.» " +
-              "Te pone una jarra que no has pedido y no te la cobra.",
-            fallo:
-              "«Llevo la taberna, no una conversación.» Se va a la otra punta de la barra " +
-              "y tarda un buen rato en volver.",
-            premio: { tipo: "objeto", name: "Jarra de cerveza de Byroden", notes: "Tibia y honesta." },
-            siguiente: "charla",
-          },
-          {
-            texto: "Necesito saber quién ha pasado por aquí este mes.",
-            chequeo: { pericia: "Intimidación", cd: 15 },
-            exito:
-              "Deja el trapo. «Dos tratantes de Kymal y un tipo que no dijo su nombre y pagó " +
-              "en monedas viejas. Ese me dio mala espina.» Se acerca. «Y ahora bebe algo o vete.»",
-            fallo:
-              "Mirna se ríe en tu cara. «Chaval, aquí ha entrado gente peor que tú y también " +
-              "pagó.» Un par de parroquianos se giran. Esa vía se cierra.",
-            confianza: { fallo: -15 },
-          },
-          { texto: "Solo miraba. Gracias.", exito: "Asiente y sigue a lo suyo.", siguiente: null },
-        ],
-      },
-
-      charla: {
-        role: "Tabernera · te tiene medida",
-        confianzaMin: 45,
-        saludo:
-          "«Otra vez por aquí.» Te sirve sin preguntar. «Contadme algo de fuera, que aquí " +
-          "las noticias llegan cuando ya no sirven.»",
-        opciones: [
-          {
-            texto: "¿Qué se cuenta por el pueblo?",
-            exito:
-              "«El alguacil lleva meses escribiendo a Emon y Emon no contesta. Y el escribano " +
-              "anda raro, más de lo suyo. Yo no digo nada, yo sirvo.»",
-            confianza: { exito: 5 },
-          },
-          {
-            texto: "El pueblo es nuevo. ¿Qué pasó aquí?",
-            chequeo: { pericia: "Perspicacia", cd: 14 },
-            exito:
-              "Se queda quieta un momento demasiado largo. «Ardió. En el 795. Lo levantaron " +
-              "otra vez porque la gente es tonta y vuelve siempre al mismo sitio.» Se seca las " +
-              "manos. «Pregúntale a Vell, en el cementerio. Él los enterró.»",
-            fallo:
-              "«Historia antigua.» Suelta un chiste malo sobre la cerveza y no vuelve al tema.",
-            siguiente: "confidencia",
-          },
-          { texto: "Nada, gracias.", exito: "«Aquí estaré.»", siguiente: null },
-        ],
-      },
-
-      confidencia: {
-        role: "Tabernera · confía en ti",
-        confianzaMin: 60,
-        saludo:
-          "Mirna te sirve, se sirve una a ella y se apoya en la barra. Es la primera vez que " +
-          "la ves sentarse. «Preguntaste por el incendio.»",
-        opciones: [
-          {
-            texto: "Escucho.",
-            exito:
-              "«Yo tenía nueve años. Mi madre me metió en el pozo del corral y puso la tapa. " +
-              "Estuve ahí abajo hasta que dejó de oírse.» Bebe. «No me acuerdo del fuego. Me " +
-              "acuerdo del silencio de después.» Te empuja la jarra. «Invita la casa. Siempre.»",
-            premio: { tipo: "oro", cantidad: 0 },
+              "Cobra, sirve, se sirve, y se apoya en la barra con los codos. «Ahora sí.» Se " +
+              "señala la oreja izquierda. «Habladme por este lado, que del otro llevo sorda " +
+              "desde que un alambique decidió volar en el 823.»",
+            siguiente: "cotilleo",
             confianza: { exito: 15 },
           },
           {
-            texto: "¿Y por qué te quedaste?",
-            chequeo: { pericia: "Perspicacia", cd: 13 },
+            texto: "¿Qué se cuenta en el pueblo?",
+            chequeo: { pericia: "Persuasión", cd: 12 },
             exito:
-              "«Porque alguien tiene que estar cuando vuelvan.» Se da cuenta de lo que ha " +
-              "dicho y se corrige demasiado deprisa. «Cuando vuelvan los que se fueron, digo.»",
-            fallo: "«Porque sí.» Se levanta y vuelve a la barra.",
-          },
-          {
-            // La panadera no es un PNJ sembrado, así que su encargo llega por
-            // donde llega todo en este pueblo: la tabernera. Y Mirna solo lo
-            // suelta con confianza 60, que es esta etapa.
-            texto: "¿Y la panadera? No ha dormido en semanas.",
-            chequeo: { pericia: "Perspicacia", cd: 14 },
-            exito:
-              "Mirna deja la jarra. «Doce años sin poder tener un hijo y de pronto lo tiene.» " +
-              "Mira a la puerta antes de seguir. «Y desde entonces su marido la mira raro y su " +
-              "madre no se acuerda de ella. Pregúntale por el cuenco. Yo no he dicho nada.»",
+              "«Se cuenta que ya no se cuenta nada, que es lo que quiere el alcalde.» Baja la " +
+              "voz un poco, que en ella sigue siendo alto. «Y se cuenta que la ruta del norte " +
+              "está cortada. Eso a mí me toca el bolsillo.»",
             fallo:
-              "«Duerme lo que puede, como todas.» Se acabó la confidencia por hoy: recoge las " +
-              "jarras y se pone a fregar.",
-            mision: "caldero-de-la-bruja",
-            confianza: { exito: 10, fallo: -10 },
-          },
-          { texto: "Gracias por contármelo.", exito: "Asiente una sola vez.", siguiente: null },
-        ],
-      },
-    },
-  },
-
-  /* ========================= VELL, EL SEPULTURERO ======================== */
-  vell: {
-    inicio: "tumbas",
-    etapas: {
-      tumbas: {
-        saludo:
-          "El sepulturero no levanta la vista de la pala. «Si buscáis a alguien, está aquí. " +
-          "Si buscáis dónde meter a alguien, hablamos.»",
-        opciones: [
-          {
-            texto: "Hay una fila entera con la misma fecha.",
-            exito:
-              "Clava la pala. «795. Cuarenta y uno el primer día, once más esa semana.» " +
-              "Sigue cavando. «Los conté yo. Alguien tenía que contarlos.»",
-            siguiente: "cuenta",
-            confianza: { exito: 10 },
-          },
-          {
-            texto: "¿Necesitas ayuda con algo?",
-            chequeo: { pericia: "Persuasión", cd: 11 },
-            exito:
-              "Te mira por primera vez. «Hay una losa que no puedo yo solo. Lleva ahí desde " +
-              "el invierno.» Señala con la barbilla. «Si me echáis una mano, os debo una.»",
-            fallo: "«No.» Vuelve a la pala.",
-            siguiente: "cuenta",
-          },
-          { texto: "Perdona la molestia.", exito: "Gruñe algo y sigue cavando.", siguiente: null },
-        ],
-      },
-
-      cuenta: {
-        role: "Sepulturero · te habla",
-        confianzaMin: 50,
-        saludo:
-          "«Otra vez.» Deja la pala apoyada, que en él es una invitación. «Preguntad.»",
-        opciones: [
-          {
-            texto: "¿Están todos los del incendio?",
-            chequeo: { pericia: "Perspicacia", cd: 15 },
-            exito:
-              "Tarda en contestar. «No.» Señala tres lápidas al fondo, más limpias que las " +
-              "demás. «Esas tres están vacías. Nunca aparecieron los cuerpos. Las puse igual " +
-              "porque las familias necesitaban un sitio donde ir.»",
-            fallo:
-              "«Están los que traje.» Coge la pala. No hay más conversación por hoy.",
-            siguiente: "vacias",
-          },
-          {
-            texto: "¿Vive alguien más que estuviera aquí aquel día?",
-            exito:
-              "«La de la taberna. Y el viejo Odo, si ese día estaba sobrio, que lo dudo.» " +
-              "Escupe a un lado. «Y yo. Ya está.»",
-            confianza: { exito: 5 },
-          },
-          { texto: "Te dejo trabajar.", exito: "Asiente una vez y vuelve a la pala.", siguiente: null },
-        ],
-      },
-
-      vacias: {
-        role: "Sepulturero · te cuenta lo que no cuenta",
-        confianzaMin: 65,
-        saludo:
-          "Vell os está esperando junto a las tres lápidas limpias. «He estado pensando en " +
-          "lo que preguntasteis.»",
-        opciones: [
-          {
-            texto: "¿Qué nombres son?",
-            exito:
-              "«Dos hermanos y una cría. Los Halbrook.» Pasa la mano por la piedra. «El " +
-              "apellido os sonará. La de la taberna es la única que quedó.»",
-            premio: { tipo: "saber", ids: [] },
-            confianza: { exito: 10 },
-          },
-          {
-            texto: "¿Y si alguien los movió?",
-            chequeo: { pericia: "Investigación", cd: 16 },
-            exito:
-              "Vell se queda callado tanto rato que crees que no va a contestar. «La tierra " +
-              "de esas tres está removida por debajo. Lo noté al cavar la de al lado.» Te " +
-              "mira. «No se lo he dicho a nadie. Decidid vosotros qué hacéis con eso.»",
-            fallo:
-              "«Aquí no se mueve nada sin que yo lo sepa.» Se ofende de verdad, y esa " +
-              "conversación no vuelve.",
-            confianza: { exito: 15, fallo: -10 },
-          },
-          { texto: "Gracias, Vell.", exito: "«Id con cuidado.»", siguiente: null },
-        ],
-      },
-    },
-  },
-
-  /* ===================== BRANNOC, EL ALGUACIL DE BYRODEN ================= */
-  // Cuatro de las quince misiones salen de él, y es a propósito: es el único
-  // que puede PAGAR. Las reparte por urgencia, no por dificultad — primero los
-  // bancales, que es comer este invierno, y el zigurat cuando ya no puede
-  // seguir fingiendo que no ha pasado nada.
-  brannoc: {
-    inicio: "mesa",
-    etapas: {
-      mesa: {
-        saludo:
-          "El alguacil no levanta la vista del libro de cuentas. «Si venís a denunciar algo, " +
-          "poneos a la cola. Si venís a cobrar, no hay. Y si venís a trabajar, sentaos.»",
-        opciones: [
-          {
-            texto: "Venimos a trabajar. ¿Qué hay?",
-            exito:
-              "Cierra el libro con las dos manos, que es lo más parecido a alegrarse que hace. " +
-              "«Hay de todo. Empezad por lo que no puede esperar.»",
-            siguiente: "encargos",
-            confianza: { exito: 5 },
-          },
-          {
-            texto: "¿Qué fue el temblor de esta madrugada?",
-            chequeo: { pericia: "Perspicacia", cd: 12 },
-            exito:
-              "Se le va la mano al cuello un momento. «No lo sé. Y llevo desde las cuatro sin " +
-              "saberlo, que es peor.» Baja la voz. «El agua sabe a metal y en el cementerio se " +
-              "han torcido lápidas. Alguien tiene que ir a mirar.»",
-            fallo:
-              "«Un temblor. Pasan.» Vuelve al libro. «Byroden lleva en pie más de lo que " +
-              "parece.» No dice nada más de eso hoy.",
-            siguiente: "encargos",
+              "«Se cuenta que hay quien pregunta mucho y bebe poco.» Se va a atender a otro.",
+            siguiente: "cotilleo",
             confianza: { exito: 10, fallo: -5 },
           },
-          { texto: "Solo pasábamos.", exito: "«Pues seguid pasando.»", siguiente: null },
+          { texto: "Solo estamos de paso.", exito: "«Todos estáis de paso hasta que no.»", siguiente: null },
         ],
       },
-      encargos: {
+      cotilleo: {
         saludo:
-          "«Tres cosas. Los bancales del norte, que no se pueden sembrar. Un campamento en la " +
-          "espesura que ya me ha costado ocho hombres. Y lo del bosque, que ni sé cómo se llama.»",
+          "«Mirad, yo aquí veo entrar a todo el mundo dos veces: cuando le va bien y cuando le " +
+          "va mal. Y ahora mismo hay dos que me preocupan.»",
         opciones: [
           {
-            texto: "Los bancales. ¿Qué sale de ahí?",
+            texto: "¿Qué pasa con la ruta del norte?",
+            chequeo: { pericia: "Supervivencia", cd: 12 },
             exito:
-              "«Algo que se tragó una mula delante de tres testigos. Y es semana de siembra.» " +
-              "Empuja una bolsa por la mesa. «Setenta, y los pone el pueblo entero.»",
-            mision: "ankhegs-de-los-campos",
-            confianza: { exito: 5 },
+              "«Tres reses abiertas en el arcén y ninguna comida.» Golpea la barra. «Un lobo " +
+              "mata para comer. Eso no comió.» Os mira de reojo. «Si vais, buscad una huella " +
+              "más grande y con más peso, y fijaos en que va DETRÁS de las otras. Algo los " +
+              "manda. Y sin esa ruta este pueblo se queda sin sal en dos semanas.»",
+            fallo:
+              "«Lobos, dicen.» Se encoge de hombros. «Yo sirvo cerveza, no rastreo bichos.»",
+            mision: "lobo-que-no-era-lobo",
+            confianza: { exito: 10, fallo: -5 },
           },
           {
-            texto: "Cuéntanos lo del bosque.",
-            chequeo: { pericia: "Persuasión", cd: 13 },
+            texto: "¿Y la otra persona que te preocupa?",
+            chequeo: { pericia: "Perspicacia", cd: 14 },
             exito:
-              "«Salió algo del suelo en la linde y está ahí colgado, sin caerse. No pido que lo " +
-              "arregléis. Pido que vayáis, lo miréis y volváis a contármelo.» Cuenta veinticinco " +
-              "monedas. «La otra mitad al volver, si volvéis.»",
+              "Deja el trapo. «La panadera. Doce años sin poder tener un crío y de pronto lo " +
+              "tiene.» Mira hacia la puerta. «Y desde entonces su marido la mira raro y su " +
+              "madre no se acuerda de ella.» Muy bajo, por fin. «Preguntadle por el cuenco. Yo " +
+              "no he dicho nada y no me metáis en esto.»",
             fallo:
-              "«Cuando sepa qué es, os lo cuento. Ahora mismo lo único que sé es que no se cae, " +
-              "y eso no se lo digo a nadie que no me haya demostrado que aguanta el susto.»",
-            mision: "zigurat-de-la-linde",
-            siguiente: "confianza-alta",
+              "«Cosas mías.» Recoge jarras y se pone a fregar, que es su forma de colgar el " +
+              "teléfono.",
+            mision: "caldero-de-la-bruja",
+            confianza: { exito: 15, fallo: -10 },
+          },
+          { texto: "Otra ronda y nos callamos.", exito: "«Eso es música.»", siguiente: null },
+        ],
+      },
+    },
+  },
+
+  /* ======================= EL VIEJO YORICK, SEPULTURERO ================= */
+  // Cobra en favores raros, no en oro: su misión se abre cantándole a una
+  // lápida, que es exactamente lo que pediste que hiciera.
+  yorick: {
+    inicio: "jardin",
+    etapas: {
+      jardin: {
+        saludo:
+          "El sepulturero está apoyado en la pala, hablando con una lápida. Se gira a medias. " +
+          "«Un momento, que Petra estaba terminando.» Pausa. Asiente a nadie. «Ya. Decidme.»",
+        opciones: [
+          {
+            texto: "¿Petra tiene algo que contar?",
+            exito:
+              "«Petra ya no está, como los demás.» Sonríe y le falta un diente. «Se fueron " +
+              "ayer. Todos. Recogieron sus cosas —es una forma de hablar, no tienen cosas— y " +
+              "tiraron hacia el sur.» Se rasca la nuca. «Ni siquiera la muerte quiere ser " +
+              "olvidada, ¿sabéis?»",
+            siguiente: "favor",
+            confianza: { exito: 10 },
+          },
+          {
+            texto: "Hay una fila entera de lápidas con la misma fecha.",
+            chequeo: { pericia: "Religión", cd: 11 },
+            exito:
+              "«795.» Clava la pala. «Cuarenta y uno el primer día, once esa semana. Los conté " +
+              "yo, que alguien tenía que.» Señala al norte con el mentón. «Y esta madrugada se " +
+              "han torcido. Todas. Hacia allá. Preguntadle al soldado de la cara quemada, que " +
+              "ese sí se lo cree.»",
+            fallo:
+              "«Gente muerta.» Vuelve a cavar. «Ya me diréis qué esperabais en un cementerio.»",
+            siguiente: "favor",
+            confianza: { exito: 10, fallo: -5 },
+          },
+          { texto: "Te dejamos con ellos.", exito: "«Con ellos me dejáis siempre.»", siguiente: null },
+        ],
+      },
+      favor: {
+        saludo:
+          "«Yo no cobro en monedas, que aquí abajo no valen.» Da unos golpecitos con la bota " +
+          "en una lápida pequeña, sin nombre. «Cobro en favores. Y os voy a pedir uno tonto.»",
+        opciones: [
+          {
+            texto: "Pide.",
+            chequeo: { pericia: "Interpretación", cd: 12 },
+            exito:
+              "«Cantadle algo a esta. Cualquier cosa. Lleva sin nombre desde antes que yo.» " +
+              "Escucha con los ojos cerrados y al acabar aplaude dos veces, despacio. «Bien. " +
+              "Ahora lo raro: al pastor de las afueras le entra un perro en el corral con la " +
+              "puerta cerrada. Todos se ríen. Yo he visto las huellas: empiezan en mitad del " +
+              "barro y no vienen de ningún sitio.»",
+            fallo:
+              "«Ay.» Hace una mueca. «No, no. Así no. Volved cuando sepáis cantar o cuando " +
+              "traigáis vino, que es lo mismo pero al revés.»",
+            mision: "perro-que-va-y-viene",
             confianza: { exito: 15, fallo: -5 },
           },
           {
-            texto: "Ocho hombres es mucha gente. ¿Qué campamento es ese?",
-            chequeo: { pericia: "Investigación", cd: 14 },
+            texto: "¿Por qué se fueron al sur y no al norte?",
+            chequeo: { pericia: "Perspicacia", cd: 15 },
             exito:
-              "«Goblinoides, o eso creía yo cuando pagué.» Saca un mapa manoseado. «Volvió uno " +
-              "de los ocho y solo repite que ahora hay más. A los otros siete no los mataron: los " +
-              "cambiaron de sitio, dice.»",
+              "Se queda muy quieto, y por un momento no parece loco en absoluto. «Porque de lo " +
+              "del norte se huye.» Vuelve a sonreír. «Lo de la niebla les daba igual, ¿eh? Eso " +
+              "asustaba a los vivos. Esto otro asusta a los míos.»",
             fallo:
-              "«Un campamento. Como todos.» Se cierra en banda. «No os voy a mandar a que os pase " +
-              "lo mismo sin saber con quién hablo.»",
-            mision: "partida-que-no-volvio",
-            confianza: { exito: 10, fallo: -10 },
-          },
-          { texto: "Volveremos.", exito: "«Aquí estaré. Aquí estoy siempre.»", siguiente: null },
-        ],
-      },
-      "confianza-alta": {
-        saludo:
-          "«Ya que estáis, hay una cuarta cosa. Y esta no se habla en la plaza ni delante de mi " +
-          "escribano.» Cierra la puerta.",
-        confianzaMin: 60,
-        opciones: [
-          {
-            texto: "Cierra la puerta y dilo.",
-            chequeo: { pericia: "Perspicacia", cd: 13 },
-            exito:
-              "«Alguien ha visto algo verde con alas posarse en las copas del norte. Y han " +
-              "desaparecido dos cabras y un perro.» Traga. «Este pueblo ardió una vez por un " +
-              "dragón. Si se dice en voz alta, la mitad se va antes de que comprobemos nada.»",
-            fallo:
-              "Se lo piensa y se echa atrás. «Nada. Cosas de pastores.» Abre la puerta otra vez.",
-            mision: "cria-en-el-nido",
+              "«Al sur hace mejor tiempo.» Y se ríe él solo un rato largo.",
             confianza: { exito: 10, fallo: -5 },
           },
-          { texto: "Lo dejamos aquí.", exito: "«Mejor. Yo tampoco quería decirlo.»", siguiente: null },
+          { texto: "Gracias, Yorick.", exito: "«A mandar. Y traed vino la próxima.»", siguiente: null },
         ],
       },
     },
   },
 
-  /* ===================== PERRIN LISQUET, EL ESCRIBANO =================== */
-  perrin: {
+  /* ======================= NESSA QUILL, ESCRIBANA ======================= */
+  nessa: {
     inicio: "archivo",
     etapas: {
       archivo: {
         saludo:
-          "El escribano os mira por encima de unas lentes atadas con cordel. «Si es una " +
-          "propiedad, tercera estantería. Si es un nacimiento, cuarta. Si es un muerto, " +
-          "eso está abajo y abajo no bajo.»",
+          "La escribana os mira por encima de unas lentes atadas con cordel, sin dejar de " +
+          "copiar. «Propiedades, tercera estantería. Nacimientos, cuarta. Muertes, abajo. Y " +
+          "abajo no bajo.»",
         opciones: [
           {
             texto: "¿Por qué no bajas?",
             chequeo: { pericia: "Perspicacia", cd: 11 },
             exito:
               "«Porque hay medio palmo de agua desde el deshielo y porque algo se está comiendo " +
-              "las actas.» Se quita las lentes. «Falta el estante entero de hace cuarenta años. " +
-              "Papel roído. Y el agujero de la pared da al cementerio, no a la calle.»",
+              "las actas.» Deja la pluma. «Falta el estante entero de hace cuarenta años. Y el " +
+              "agujero de la pared da al cementerio, no a la calle.»",
             fallo:
-              "«Porque tengo sesenta y un años y las escaleras están mojadas.» Vuelve a lo suyo.",
+              "«Porque tengo sesenta y un años y las escaleras están mojadas.» Sigue copiando.",
             mision: "ratas-del-archivo",
             siguiente: "cuarenta",
             confianza: { exito: 10, fallo: -5 },
           },
           {
-            texto: "Buscamos algo escrito sobre el bosque.",
+            texto: "Buscamos algo escrito sobre el temblor.",
             exito:
-              "«Todo el mundo busca algo escrito sobre el bosque, y el bosque no escribe.» " +
-              "Señala un montón. «Lo que hay son quejas de leñadores. Cuarenta años de quejas.»",
+              "«Todo el mundo busca algo escrito, y luego nadie lo lee.» Señala un montón con " +
+              "la pluma. «Hay algo. Pero está justo en el estante que se están comiendo.»",
             siguiente: "cuarenta",
           },
-          { texto: "Ya volveremos.", exito: "«Aquí sigo. Aquí sigo siempre.»", siguiente: null },
+          { texto: "Volveremos.", exito: "«Aquí sigo. Aquí sigo siempre.»", siguiente: null },
         ],
       },
       cuarenta: {
         saludo:
-          "«Ya que estáis: hace cuarenta años hubo otro temblor como el de esta noche. Está " +
-          "anotado. Lo anotó alguien y no lo volvió a leer nadie hasta hoy.»",
+          "«Y ya que estáis: esto no es la primera vez. Hace cuarenta años hubo otro temblor " +
+          "igual. Está anotado. Lo anotó alguien y no volvió a leerlo nadie hasta hoy.»",
         opciones: [
           {
             texto: "Enséñanos esa anotación.",
             chequeo: { pericia: "Investigación", cd: 12 },
             exito:
-              "Es una línea sola, con la misma letra apretada. «Temblor de madrugada. Sin daños. " +
-              "El agua de los pozos con sabor.» Y debajo, otra mano: «igual que la otra vez».",
+              "Es una línea sola. «Temblor de madrugada. Sin daños. El agua de los pozos con " +
+              "sabor.» Y debajo, con otra letra y otra tinta: «igual que la otra vez».",
             fallo:
               "Rebusca veinte minutos y no la encuentra. «Estaba en el estante que se están " +
               "comiendo.» Os mira. «¿Entendéis ahora por qué me importa el estante?»",
             confianza: { exito: 5, fallo: -5 },
           },
-          { texto: "Gracias, Perrin.", exito: "«A mandar. Con papel de por medio.»", siguiente: null },
+          { texto: "Gracias, Nessa.", exito: "«A mandar. Con papel de por medio.»", siguiente: null },
         ],
       },
     },
   },
 
-  /* ======================= SELA MARROW, LA SACRISTANA =================== */
-  sela: {
-    inicio: "nave",
+  /* ==================== MAELA TERRONES, LABRADORA ======================= */
+  maela: {
+    inicio: "bancales",
     etapas: {
-      nave: {
+      bancales: {
         saludo:
-          "La sacristana está encendiendo velas que ya estaban encendidas. «Podéis rezar o " +
-          "podéis ayudar. Rezar lo hace todo el mundo.»",
+          "Una mujer con las botas hasta las rodillas de barro os corta el paso en el camino " +
+          "de los bancales. «Por aquí no. Y no es por antipatía, es porque el suelo se mueve.»",
         opciones: [
           {
-            texto: "Ayudamos. ¿Qué hace falta?",
+            texto: "¿Cómo que se mueve?",
             exito:
-              "«La campana.» Señala arriba con la barbilla. «Tres semanas sin tocarse. El " +
-              "último que subió bajó con el cuello lleno de picotazos y seis días de fiebre.»",
-            siguiente: "campanario",
-            confianza: { exito: 5 },
-          },
-          {
-            texto: "¿Por qué hay tantas velas encendidas?",
-            chequeo: { pericia: "Religión", cd: 12 },
-            exito:
-              "«Porque esta iglesia se reconstruyó antes que las casas.» Enciende otra. «Cuando " +
-              "un pueblo hace eso, no es por fe. Es por miedo a que se vuelva a apagar.»",
-            fallo: "«Porque se gastan.» Y sigue encendiendo velas.",
-            siguiente: "campanario",
-            confianza: { exito: 10, fallo: -5 },
-          },
-          { texto: "Volveremos en otro momento.", exito: "«La puerta no se cierra.»", siguiente: null },
-        ],
-      },
-      campanario: {
-        saludo:
-          "«El día santo es dentro de nueve días y esa campana tiene que sonar. No me importa " +
-          "cómo. Sí me importa una cosa, y la voy a decir dos veces.»",
-        opciones: [
-          {
-            texto: "Subimos nosotros.",
-            chequeo: { pericia: "Persuasión", cd: 11 },
-            exito:
-              "«Bien.» Os pone una mano en el hombro, corta. «Nada de fuego. La viga es la " +
-              "original. Si arde el campanario, esta iglesia se quema por segunda vez en su " +
-              "historia y esta vez con nombre y apellidos.»",
-            fallo:
-              "Os mira de arriba abajo. «¿Con esas manos? Volved cuando tengáis una cuerda.» " +
-              "No cede hoy.",
-            mision: "colmena-del-campanario",
-            confianza: { exito: 10, fallo: -10 },
-          },
-          { texto: "Que suba otro.", exito: "«Ya. Eso dijeron los otros.»", siguiente: null },
-        ],
-      },
-    },
-  },
-
-  /* ============================ WREN, LA CHIQUILLA ====================== */
-  // La única que da una misión sin cobrar nada y sin que se la pidan: es una
-  // cría, y lo que sabe lo sabe porque nadie la vigila.
-  wren: {
-    inicio: "tapia",
-    etapas: {
-      tapia: {
-        saludo:
-          "Una cría de unos once años, sentada en la tapia del cementerio, balanceando las " +
-          "piernas. «Vosotros no sois de aquí. Lo sé porque miráis las cosas.»",
-        opciones: [
-          {
-            texto: "¿Y tú qué miras?",
-            chequeo: { pericia: "Perspicacia", cd: 10 },
-            exito:
-              "«Todo.» Se encoge de hombros. «Nadie mira a los críos, así que los críos miramos " +
-              "a todos.» Baja la voz, encantada. «¿Queréis saber algo que no sabe ni el alguacil?»",
-            fallo:
-              "«Pájaros.» Y se queda mirando los pájaros hasta que os vais, que es su forma de " +
-              "decir que no le habéis caído bien.",
-            siguiente: "secreto",
-            confianza: { exito: 10, fallo: -5 },
-          },
-          { texto: "Nada. Sigue con lo tuyo.", exito: "«Vale.» Vuelve a los pájaros.", siguiente: null },
-        ],
-      },
-      secreto: {
-        saludo:
-          "«El pastor de las afueras dice que le entra un perro en el corral con la puerta " +
-          "cerrada. Todos se ríen de él. Yo lo he visto.»",
-        opciones: [
-          {
-            texto: "¿Qué viste exactamente?",
-            chequeo: { pericia: "Percepción", cd: 12 },
-            exito:
-              "«Que aparece.» Junta las manos y las abre. «Así. Y las huellas empiezan en mitad " +
-              "del barro, sin venir de ningún sitio.» Os mira muy seria. «No es mentira. Id.»",
-            fallo:
-              "«Un perro.» Se cierra. «Si vais a poner esa cara vosotros también, me lo quedo " +
-              "para mí.»",
-            mision: "perro-que-va-y-viene",
-            confianza: { exito: 10, fallo: -10 },
-          },
-          { texto: "Te creemos.", exito: "«Ya sabía yo.» Sonríe de oreja a oreja.", siguiente: null },
-        ],
-      },
-    },
-  },
-
-  /* ========================= ODO EL TORCIDO, PARROQUIANO ================ */
-  odo: {
-    inicio: "taburete",
-    etapas: {
-      taburete: {
-        saludo:
-          "El viejo levanta la jarra sin girarse. «Si vais a preguntar por el camino del " +
-          "norte, la respuesta es no. Y si vais a invitarme, la respuesta es sí.»",
-        opciones: [
-          {
-            texto: "Te invito. Habla del camino del norte.",
-            exito:
-              "Se bebe media jarra de un tirón. «Tres reses abiertas en el arcén y ninguna " +
-              "comida.» Se limpia la boca. «Un lobo mata para comer. Eso de ahí no comió.»",
-            siguiente: "reses",
+              "«Como lo oís.» Señala una hondonada de tierra removida. «El martes se tragó una " +
+              "mula delante de tres testigos. Y es semana de siembra, así que o se limpia esto " +
+              "o el invierno lo pasamos contando granos.»",
+            siguiente: "trato",
             confianza: { exito: 10 },
           },
           {
-            texto: "¿Tú qué fuiste antes de esto?",
-            chequeo: { pericia: "Persuasión", cd: 13 },
+            texto: "Enséñanos las huellas.",
+            chequeo: { pericia: "Naturaleza", cd: 12 },
             exito:
-              "«Carretero. Treinta y un años haciendo esa ruta.» Mira la jarra. «Hasta que " +
-              "dejó de valer la pena.» Es lo más honrado que dirá en toda la noche.",
-            fallo: "«Un hombre con menos preguntas encima.» Y se calla una hora.",
-            siguiente: "reses",
-            confianza: { exito: 10, fallo: -10 },
+              "Hay tres bocas de túnel, no una, y todas apuntan al bosque. «Subieron después " +
+              "del temblor», dice ella, que no es tonta. «Antes del temblor esto era tierra.»",
+            fallo:
+              "«Huellas.» Se encoge de hombros. «Yo siembro, no leo el suelo como un libro.»",
+            siguiente: "trato",
+            confianza: { exito: 5, fallo: -5 },
           },
-          { texto: "Buenas noches, Odo.", exito: "«Y que lo sean.»", siguiente: null },
+          { texto: "Buscaremos otro camino.", exito: "«Buscadlo. Y con cuidado.»", siguiente: null },
         ],
       },
-      reses: {
+      trato: {
         saludo:
-          "«Los carreteros ya no hacen la ruta de noche. Y sin ruta, este pueblo se queda sin " +
-          "sal en dos semanas. Sin sal no se cura la carne. Y ya sabéis cómo acaba eso.»",
+          "«El ayuntamiento no paga esto, ya se lo pedí. Así que lo paga el pueblo, que somos " +
+          "nosotros, que somos menos ricos y más rápidos.»",
         opciones: [
           {
-            texto: "Lo miramos nosotros. Cuéntanos qué buscar.",
-            chequeo: { pericia: "Supervivencia", cd: 12 },
+            texto: "¿Cuánto y para cuándo?",
+            chequeo: { pericia: "Persuasión", cd: 11 },
             exito:
-              "«Huellas de lobo hay muchas. Buscad una más grande, con más peso.» Golpea la " +
-              "barra con el dedo. «Y fijaos en que esa va DETRÁS de las otras. Algo los manda.»",
+              "«Setenta, juntados entre todos, y para ayer.» Escupe en la mano y la tiende. " +
+              "«Un consejo gratis: no bajéis a los túneles. Cebadlos arriba con una cabra y " +
+              "esperad. Cuesta un día y una cabra, y os deja elegir dónde peleáis.»",
             fallo:
-              "«Buscad lobos, digo yo.» Se encoge de hombros. «Yo llevaba un carro, no un arco.»",
-            mision: "lobo-que-no-era-lobo",
+              "«Lo que se pueda, cuando se pueda.» No se fía todavía y no suelta la cifra.",
+            mision: "ankhegs-de-los-campos",
             confianza: { exito: 10, fallo: -5 },
           },
-          { texto: "Nos vamos a dormir.", exito: "«Yo me quedo un rato. Como siempre.»", siguiente: null },
+          { texto: "Lo hablamos y volvemos.", exito: "«Hablad rápido. La siembra no espera.»", siguiente: null },
         ],
       },
     },
   },
 
-  /* ===================== HARN BRACAMADERA, EL LEÑADOR =================== */
-  harn: {
-    inicio: "leña",
+  /* ================= BRAM HACHASECA, CAPATAZ DE LA TALA ================= */
+  // Tres misiones, y la tercera es la legendaria del Ent. No la ofrece como
+  // encargo: la confiesa. Es el culpable y lo sabe.
+  bram: {
+    inicio: "leñera",
     etapas: {
-      leña: {
+      leñera: {
         saludo:
-          "El leñador parte un tronco de un golpe y os habla sin dejar de trabajar. «Si venís " +
+          "El capataz parte un tronco de un golpe y os habla sin dejar de trabajar. «Si venís " +
           "a comprar leña, está apilada. Si venís a hablar del bosque, dejadme que respire.»",
         opciones: [
           {
             texto: "Del bosque. ¿Qué pasa ahí dentro?",
             chequeo: { pericia: "Persuasión", cd: 12 },
             exito:
-              "Clava el hacha y por fin os mira. «Que ya no está donde lo dejas.» Escupe. «Marcas " +
-              "un tronco, andas cien pasos, vuelves y la marca sigue ahí. Lo que ha cambiado es " +
-              "todo lo demás.»",
+              "Clava el hacha y por fin os mira. «Que ya no está donde lo dejas.» Escupe. " +
+              "«Marcas un tronco, andas cien pasos, vuelves, y la marca sigue ahí. Lo que ha " +
+              "cambiado es todo lo demás.»",
             fallo:
-              "«Pasa que hay árboles.» Sigue partiendo leña. «Y que cada vez cuesta más traerlos.»",
+              "«Pasa que hay árboles.» Sigue partiendo leña. «Y que cada vez cuesta más " +
+              "traerlos.»",
             siguiente: "adentro",
             confianza: { exito: 10, fallo: -5 },
           },
           {
-            texto: "Nos han hablado de un carro perdido.",
+            texto: "Nos han hablado de un carro perdido entre telarañas.",
             exito:
               "«El de las telas.» Deja el hacha. «Hay un tramo de la linde donde las telarañas " +
-              "no están puestas de cualquier manera. Forman pasillos. Y dentro hay un carro.»",
+              "no están puestas de cualquier manera: forman pasillos. Y dentro hay un carro que " +
+              "lleva ahí desde antes del invierno.»",
             siguiente: "telas",
           },
           { texto: "Te dejamos con la leña.", exito: "«Os lo agradezco.»", siguiente: null },
@@ -573,17 +582,16 @@ export const DIALOGOS: Record<string, ArbolDialogo> = {
       },
       telas: {
         saludo:
-          "«Ese carro lleva ahí desde antes del invierno. Y lo que me quita el sueño no es la " +
-          "araña: es que dentro no hay muertos.»",
+          "«Y lo que me quita el sueño de ese carro no es la araña. Es que dentro no hay " +
+          "muertos.»",
         opciones: [
           {
             texto: "¿Cómo que no hay muertos?",
             chequeo: { pericia: "Percepción", cd: 13 },
             exito:
               "«Hay ropa. Hay un diario mojado. Y hay marcas de que alguien salió de ahí por su " +
-              "propio pie.» Se frota la nuca. «Hacia dentro, no hacia el camino.»",
-            fallo:
-              "«Yo no me acerqué a mirar, y vosotros tampoco deberíais.» No suelta más.",
+              "propio pie.» Se frota la nuca. «Hacia dentro. No hacia el camino.»",
+            fallo: "«Yo no me acerqué a mirar, y vosotros tampoco deberíais.» No suelta más.",
             mision: "tela-ordenada",
             siguiente: "adentro",
             confianza: { exito: 10, fallo: -5 },
@@ -600,79 +608,39 @@ export const DIALOGOS: Record<string, ArbolDialogo> = {
             texto: "Faltan tres. ¿Dónde están?",
             chequeo: { pericia: "Supervivencia", cd: 13 },
             exito:
-              "«Dos. El tercero volvió solo.» Traga. «Los dos están vivos, o lo estaban ayer. " +
-              "Arrinconados en un hueco de roca, sin agua.» Os da un cordel. «Atadlo a un tronco. " +
-              "Es lo único que funciona ahí dentro.»",
+              "«Dos. El tercero volvió solo y no habla.» Traga. «Los dos están vivos, o lo " +
+              "estaban ayer. Arrinconados en un hueco de roca, sin agua.» Os da un cordel. " +
+              "«Atadlo a un tronco. Es lo único que funciona ahí dentro.»",
             fallo:
-              "«Si lo supiera, estaría yo allí y no aquí partiendo leña.» Y se le nota que es " +
-              "verdad y que le duele.",
+              "«Si lo supiera estaría yo allí y no aquí partiendo leña.» Y se le nota que es " +
+              "verdad, y que le duele.",
             mision: "arboles-que-se-han-movido",
+            siguiente: "confesion",
             confianza: { exito: 15, fallo: -5 },
-          },
-          {
-            texto: "¿Hasta dónde habéis estado talando?",
-            chequeo: { pericia: "Perspicacia", cd: 14 },
-            exito:
-              "Tarda en contestar. «Más allá del límite antiguo. Tres años ya.» Mira al suelo. " +
-              "«Está marcado. Lo marcaron antes de que naciera mi abuelo, y el gremio decidió que " +
-              "era una leyenda.»",
-            fallo:
-              "«Hasta donde nos dejan.» Corta la conversación con el hacha, literalmente.",
-            confianza: { exito: 10, fallo: -10 },
           },
           { texto: "Vamos a por ellos.", exito: "«Traedlos. Da igual cómo.»", siguiente: null },
         ],
       },
-    },
-  },
-
-  /* ======================= HERMANO ALDRIC, SACERDOTE ==================== */
-  // Del Ent no habla como de un monstruo: habla como de una cuenta pendiente.
-  // La misión que da es de nivel 10 y él lo sabe — por eso no la ofrece, la
-  // avisa.
-  aldric: {
-    inicio: "altar",
-    etapas: {
-      altar: {
+      confesion: {
         saludo:
-          "El sacerdote está de espaldas, ordenando el altar. «El Amanecer no promete que salga " +
-          "bien. Solo promete que saldrá el sol. Con eso me llega para levantarme.»",
+          "Deja el hacha en el suelo, que es la primera vez que la suelta. «Ya que vais a " +
+          "entrar de todas formas, os debo una verdad. Y me va a costar el puesto.»",
+        confianzaMin: 70,
         opciones: [
           {
-            texto: "¿Qué le preocupa a un sacerdote de Byroden?",
-            chequeo: { pericia: "Religión", cd: 13 },
+            texto: "Dila.",
+            chequeo: { pericia: "Perspicacia", cd: 14 },
             exito:
-              "Se gira. «Que llevo tres años oyendo lo mismo en confesión y no es un pecado: es " +
-              "una cuenta.» Junta las manos. «Los leñadores han talado más allá del límite " +
-              "antiguo. Y el bosque cuenta mejor que nosotros.»",
+              "«Llevamos tres años talando más allá del límite antiguo.» Mira al suelo. «Está " +
+              "marcado. Lo marcaron antes de que naciera mi abuelo y el gremio decidió que era " +
+              "una leyenda.» Se pasa la mano por la cara. «Dos aserraderos han dejado de " +
+              "existir este mes. No quemados. Borrados. Y no ha quedado nada que enterrar.»",
             fallo:
-              "«Lo mismo que a cualquiera. El invierno, la cosecha, los que faltan.» Y sigue " +
-              "ordenando el altar.",
-            siguiente: "cuenta",
-            confianza: { exito: 10, fallo: -5 },
-          },
-          { texto: "Que tenga buen día, hermano.", exito: "«Que salga el sol.»", siguiente: null },
-        ],
-      },
-      cuenta: {
-        saludo:
-          "«Dos aserraderos han dejado de existir. No quemados: borrados. Y no ha quedado nada " +
-          "que enterrar, que en mi oficio es la parte que más dice.»",
-        confianzaMin: 55,
-        opciones: [
-          {
-            texto: "¿Y qué se hace contra eso?",
-            chequeo: { pericia: "Perspicacia", cd: 15 },
-            exito:
-              "«Devolver el límite a su sitio antes de que lo ponga él.» Os mira sin " +
-              "parpadear. «Y si llega antes, ponerse en medio. Sabiendo lo que significa ponerse " +
-              "en medio, que no lo digo por bonito.»",
-            fallo:
-              "«Rezar.» Sonríe sin ganas. «Ya sé que no os vale. A mí tampoco, y es mi oficio.»",
+              "«Nada.» Recoge el hacha. «Olvidadlo. Hablo demasiado cuando estoy cansado.»",
             mision: "el-ent-no-negocia",
-            confianza: { exito: 15, fallo: -5 },
+            confianza: { exito: 10, fallo: -10 },
           },
-          { texto: "Aún no estamos para eso.", exito: "«No. Aún no. Volved cuando lo estéis.»", siguiente: null },
+          { texto: "No queremos saberlo.", exito: "«Ojalá pudiera yo elegir eso.»", siguiente: null },
         ],
       },
     },
@@ -711,8 +679,8 @@ export const DIALOGOS: Record<string, ArbolDialogo> = {
             texto: "¿Qué le ha pasado?",
             chequeo: { pericia: "Percepción", cd: 12 },
             exito:
-              "«Un ala.» Señala hacia el sur con dos dedos. «Y una partida de goblins acampada " +
-              "en su tramo, que es lo que de verdad hay que quitar de en medio.»",
+              "«Un ala.» Señala al sur con dos dedos. «Y una partida de goblins acampada en su " +
+              "tramo, que es lo que de verdad hay que quitar de en medio.»",
             fallo:
               "«Si lo supiera no os lo estaría contando a vosotros.» Se queda mirando el sur.",
             mision: "vigia-de-syngorn",
@@ -748,8 +716,6 @@ export const DIALOGOS: Record<string, ArbolDialogo> = {
   },
 
   /* ================== EL GUARDIÁN DE LA RAYA, CENTAURO ================== */
-  // No da un encargo: da un permiso, y lo niega. La misión que sale de aquí es
-  // cruzar de todas formas, que es lo que la hace legendaria.
   "guardian-raya": {
     inicio: "raya",
     etapas: {
@@ -809,3 +775,26 @@ export const DIALOGOS: Record<string, ArbolDialogo> = {
 
 /** Las claves que el DM puede elegir en el panel. */
 export const CLAVES_DIALOGO = Object.keys(DIALOGOS).sort();
+
+/**
+ * Los PNJ que existen DE VERDAD en la partida, dictados por el usuario el
+ * 2026-08-09.
+ *
+ * ⚠️ Va escrito a mano y aparte del resto: `check-dialogos` lo usa para exigir
+ * que estos cinco tengan siempre su árbol. Si saliera de `DIALOGOS`, borrar a
+ * Elara no rompería nada — y borrar a Elara sí que rompe la campaña.
+ */
+export const PNJ_REALES = ["silas", "garrick", "elara", "cora", "yorick"] as const;
+
+/**
+ * Lo que Elara NUNCA dice.
+ *
+ * Su tapadera es una regla del juego, no una cuestión de estilo: es la líder
+ * local del culto y **no se la puede destapar hablando** (decisión del usuario:
+ * ninguna tirada, ningún «casi»). Una palabra de estas en su boca la delata sin
+ * que nadie lo haya decidido en la mesa.
+ */
+export const PALABRAS_PROHIBIDAS_ELARA = [
+  "ritual", "susurrado", "sacrificio", "nigroman", "culto", "sótano",
+  "pasadizo", "cripta", "altar", "muerto",
+] as const;

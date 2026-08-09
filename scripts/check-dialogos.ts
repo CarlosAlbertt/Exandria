@@ -6,7 +6,7 @@
 // desmadre y que ninguna etapa lleve a un sitio que no existe.
 //
 // La pregunta de siempre: ¿qué rompo para que falle?
-import { DIALOGOS, CLAVES_DIALOGO } from "../data/dialogos";
+import { DIALOGOS, CLAVES_DIALOGO, PNJ_REALES, PALABRAS_PROHIBIDAS_ELARA } from "../data/dialogos";
 import {
   tratoInicial, leerTrato, resolver, opcionDisponible, tonoConfianza,
   etapaVigente, CONFIANZA_INICIAL, type ArbolDialogo, type TratoPnj,
@@ -25,9 +25,41 @@ function check(label: string, cond: boolean) {
 const PERICIAS = new Set(SKILLS.map((s) => s.name));
 
 check("hay árboles escritos", CLAVES_DIALOGO.length > 0);
-// Escritas a mano: si salieran de DIALOGOS, borrar a Vell no rompería nada.
-for (const clave of ["mirna", "vell"]) {
-  check(`existe el árbol "${clave}"`, !!DIALOGOS[clave]);
+// ⚠️ Los CINCO que existen de verdad en la partida, escritos a mano aquí. Si la
+// lista saliera de `DIALOGOS`, borrar a Elara no rompería nada — y borrar a
+// Elara rompe la campaña, porque es la líder del culto.
+for (const clave of ["silas", "garrick", "elara", "cora", "yorick"]) {
+  check(`existe el árbol del PNJ real "${clave}"`, !!DIALOGOS[clave]);
+}
+check("PNJ_REALES no se ha quedado corto", PNJ_REALES.length === 5);
+for (const clave of PNJ_REALES) {
+  check(`"${clave}" sigue teniendo árbol`, !!DIALOGOS[clave]);
+}
+
+/* ---------------------- LA TAPADERA DE ELARA ---------------------------- */
+// ⚠️ **Es una REGLA, no un estilo.** El usuario decidió el 2026-08-09 que a
+// Elara no se la puede destapar hablando: ninguna tirada, ningún «casi». Una
+// palabra suelta en su boca —«ritual», «altar», «sótano»— la delata sin que
+// nadie lo haya decidido en la mesa, y quien la escriba (yo el primero, dentro
+// de tres meses y sin acordarme) no se va a dar cuenta.
+{
+  const elara = DIALOGOS["elara"];
+  check("Elara tiene árbol", !!elara);
+  if (elara) {
+    const texto = Object.values(elara.etapas)
+      .flatMap((e) => [e.saludo, ...e.opciones.flatMap((o) => [o.texto, o.exito, o.fallo ?? ""])])
+      .join(" ")
+      .toLowerCase();
+    for (const p of PALABRAS_PROHIBIDAS_ELARA) {
+      check(`Elara nunca dice "${p}"`, !texto.includes(p));
+    }
+    // Y ninguna tirada la desmonta: si alguna opción suya lleva chequeo, es que
+    // alguien ha abierto una puerta que se decidió tener cerrada.
+    const conTirada = Object.entries(elara.etapas).flatMap(([ek, e]) =>
+      e.opciones.map((o, i) => (o.chequeo ? `${ek}/${i}` : null)).filter(Boolean));
+    check(`ninguna opción de Elara se resuelve con una tirada${conTirada.length ? ` (${conTirada.join(", ")})` : ""}`,
+      conTirada.length === 0);
+  }
 }
 
 for (const [clave, arbol] of Object.entries(DIALOGOS)) {
