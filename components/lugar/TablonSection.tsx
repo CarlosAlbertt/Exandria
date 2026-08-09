@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useChronicle } from "@/lib/useChronicle";
 import { aceptarEncargo } from "@/lib/encargo";
+import { avisar } from "@/components/Avisos";
 
 // Tablón de misiones del POI: ofertas (status 'oferta') publicadas aquí por el
 // DM. El jugador acepta → pasa a 'activa' (endpoint service_role) y aparece en
@@ -18,7 +19,14 @@ export default function TablonSection({ poiName }: { poiName: string }) {
     if (busy != null) return;
     setBusy(id); setMsg(null);
     const r = await aceptarEncargo(id);
-    if (r.ok) setMsg("Encargo aceptado. Lo tenéis en la Crónica.");
+    if (r.ok) {
+      setMsg("Encargo aceptado. Lo tenéis en la Crónica.");
+      // El del tablón avisa igual que el que da un PNJ hablando: para el
+      // jugador es el mismo suceso, y que uno avise y el otro no se lee como
+      // que el tablón no ha hecho nada.
+      const q = quests.find((x) => x.id === id);
+      avisar({ tipo: "mision-aceptada", titulo: q?.title ?? "Encargo", recompensa: q?.reward || undefined });
+    }
     else setMsg(r.error);
     setBusy(null);
   }

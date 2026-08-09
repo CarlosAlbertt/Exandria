@@ -4,6 +4,7 @@ import { useSession } from "@/components/SessionProvider";
 import { useShops, type Shop, type ShopItem } from "@/lib/useShops";
 import { kindLabel, kindIcon } from "@/data/shopTemplates";
 import { buy, sell, type ShopChar } from "@/lib/shopTx";
+import { avisar } from "@/components/Avisos";
 import { loadActiveCharacter, type Item } from "@/lib/character";
 import { narrar, type Msg } from "@/lib/narrador";
 
@@ -30,13 +31,22 @@ export default function ShopSection({ poiName, ambient }: { poiName: string; amb
   async function doBuy(item: ShopItem) {
     if (!char) { setMsg("No tienes una ficha en juego."); return; }
     const r = await buy(char, item);
-    if (r.ok) { setChar({ ...char, gold: r.gold, items: r.items }); setMsg(`Compraste ${item.name} por ${item.price} po.`); }
+    if (r.ok) {
+      setChar({ ...char, gold: r.gold, items: r.items }); setMsg(`Compraste ${item.name} por ${item.price} po.`);
+      // Dos avisos y no uno: lo que entra y lo que sale. Es la compra, y en una
+      // compra lo que más se mira es el oro que queda.
+      avisar({ tipo: "objeto", name: item.name });
+      avisar({ tipo: "oro", cantidad: -item.price });
+    }
     else setMsg(r.error);
   }
   async function doSell(shop: Shop, name: string, basePrice: number) {
     if (!char) { setMsg("No tienes una ficha en juego."); return; }
     const r = await sell(char, shop.id, name, basePrice);
-    if (r.ok) { setChar({ ...char, gold: r.gold, items: r.items }); setMsg(`Vendiste ${name} por ${Math.floor(basePrice / 2)} po.`); }
+    if (r.ok) {
+      setChar({ ...char, gold: r.gold, items: r.items }); setMsg(`Vendiste ${name} por ${Math.floor(basePrice / 2)} po.`);
+      avisar({ tipo: "oro", cantidad: Math.floor(basePrice / 2) });
+    }
     else setMsg(r.error);
   }
 
