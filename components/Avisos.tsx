@@ -8,6 +8,12 @@
 // ⚠️ **SILEO va por la 0.1.5.** Si cambia de API o se abandona, se toca ESTE
 // archivo y nada más: los sitios que avisan llaman a `avisar(...)` con un objeto
 // del tipo `Aviso`, no a la librería.
+// ⚠️ **La hoja de la librería hay que importarla A MANO.** `sileo` la publica
+// como `sileo/styles.css` y NO la inyecta sola: sin esta línea los avisos salen
+// sin una sola regla —sin caja, sin sombra, sin animación— y parecen un fallo
+// de la app. Se fue así en el primer commit y no se vio porque el `<Toaster>`
+// solo se monta con sesión y `/lugar` cae a `/login` sin ella.
+import "sileo/styles.css";
 import { sileo, Toaster } from "sileo";
 import { textoDe, type Aviso } from "@/lib/avisos";
 
@@ -24,12 +30,27 @@ export function avisar(a: Aviso): void {
 }
 
 /**
+ * El fondo del aviso: el mismo `--color-panel` de la app (#131b25).
+ *
+ * ⚠️ **Va en hexadecimal y no como `var(--color-panel)` a propósito.** SILEO lo
+ * pinta dentro de un SVG (`fill`), y ahí una variable de CSS del documento no
+ * siempre resuelve. Si algún día se cambia la paleta, este número hay que
+ * cambiarlo aquí — por eso está escrito con el nombre del token al lado.
+ *
+ * ⚠️ Y `theme` NO sirve para esto, aunque lo parezca: los rellenos de la
+ * librería son `{ light: "#1a1a1a", dark: "#f2f2f2" }`, o sea que `theme`
+ * describe **la página**, no el aviso. `theme="dark"` daba un aviso BLANCO, que
+ * es justo lo que se veía mal sobre esta app.
+ */
+const FONDO = "#131b25"; // --color-panel
+
+/**
  * El contenedor. Va una sola vez, en el layout.
  *
- * Abajo a la derecha y no arriba: la barra de navegación de la app vive arriba,
- * y un aviso encima del reloj o del pin de ubicación tapa justo lo que el
- * jugador está mirando cuando algo pasa.
+ * **Arriba y al centro**, a petición del usuario: es donde se mira cuando algo
+ * acaba de pasar, y no compite con la hoja de personaje ni con el tablero de
+ * dados, que viven abajo.
  */
 export default function Avisos() {
-  return <Toaster position="bottom-right" theme="dark" />;
+  return <Toaster position="top-center" options={{ fill: FONDO }} />;
 }

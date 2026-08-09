@@ -10,6 +10,8 @@
 //     pero un `title` vacío SÍ compila y pinta una caja gris sin nada dentro.
 //   · Un tipo que se queda fuera de `TIPOS_AVISO` → el gate dejaría de mirarlo
 //     sin que nadie lo note, que es el fallo de las listas escritas a mano.
+import fs from "node:fs";
+import path from "node:path";
 import { textoDe, TIPOS_AVISO, type Aviso } from "../lib/avisos";
 
 let failures = 0;
@@ -90,6 +92,35 @@ const suelto = textoDe({ tipo: "objeto", name: "Cuerda" });
 const varios = textoDe({ tipo: "objeto", name: "Flecha", qty: 20 });
 check("un objeto suelto no enseña la cantidad", suelto.description === "Cuerda");
 check("varios objetos sí la enseñan", varios.description === "Flecha ×20");
+
+/* ------------------- LA HOJA DE LA LIBRERÍA, QUE SE PERDIÓ --------------- */
+// ⚠️ **Esto ya pasó y no lo cantó nadie.** `sileo` publica su CSS como
+// `sileo/styles.css` y **no lo inyecta sola**. El primer commit de los avisos se
+// fue sin ese import: los toasts salían sin una sola regla —sin caja, sin
+// sombra, sin animación— y aun así `tsc`, `next build` y las 43 comprobaciones
+// pasaban en verde. No se vio porque el `<Toaster>` solo se monta con sesión.
+//
+// Se comprueba leyendo el archivo, que es feo, pero es que el fallo es
+// exactamente ese: un import que falta. No hay forma de notarlo ejecutando
+// código, solo mirándolo.
+{
+  const avisosTsx = fs.readFileSync(path.join(process.cwd(), "components", "Avisos.tsx"), "utf8");
+  check("`components/Avisos.tsx` importa la hoja de SILEO",
+    /import\s+["']sileo\/styles\.css["']/.test(avisosTsx));
+
+  // Y el relleno oscuro va explícito. `theme` NO vale para esto: los rellenos de
+  // la librería son { light: "#1a1a1a", dark: "#f2f2f2" }, así que `theme`
+  // describe la PÁGINA y no el aviso — `theme="dark"` daba un aviso blanco.
+  check("el aviso lleva un relleno explícito y no se fía de `theme`",
+    /options=\{\{\s*fill:/.test(avisosTsx));
+
+  // El texto de la librería es `#00000080` —negro semitransparente, pensado
+  // para su relleno claro—. Sobre el nuestro sería ilegible, y un aviso dura
+  // tres segundos: no da tiempo ni a quejarse.
+  const css = fs.readFileSync(path.join(process.cwd(), "app", "globals.css"), "utf8");
+  check("globals.css fija el color del texto del aviso",
+    /\[data-sileo-toast\]\s+\[data-sileo-description\]/.test(css));
+}
 
 console.log(`\nAvisos: ${TIPOS_AVISO.length} tipos, ${MUESTRAS.length} muestras.`);
 console.log(failures === 0 ? "Todas las comprobaciones pasaron." : `${failures} fallaron.`);
