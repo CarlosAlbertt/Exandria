@@ -1614,3 +1614,27 @@ canvas.dice-box-canvas {
   .lug-opts { padding: 16px 18px 4px; }
   .pnj-foot { padding: 14px 18px calc(16px + env(safe-area-inset-bottom)); }
 }
+
+/* ------------------------------ AVISOS (SILEO) ---------------------------- */
+/* El aviso se pinta con `fill` (#131b25, el --color-panel) desde
+   `components/Avisos.tsx`. La hoja de la librería deja el texto en
+   `currentColor`, así que sobre un fondo oscuro puede salir letra oscura sobre
+   oscuro — ilegible, y en un aviso que dura tres segundos no da tiempo ni a
+   quejarse. Esto lo fija a los tonos de la app.
+
+   ⚠️ Solo el TEXTO NEUTRO. El título de un aviso con estado —éxito, error—
+   lleva `[data-state]` y su color lo pone la librería (`--sileo-tone`): pisarlo
+   aquí borraría la diferencia entre «Encargo completado» y «Encargo fallido»,
+   que es justo lo que hay que distinguir de un vistazo. */
+[data-sileo-toast] {
+  color: var(--color-parch);
+  border: 1px solid rgba(201, 163, 92, 0.28); /* --color-bronze al 28% */
+}
+/* ⚠️ Los dos selectores van ANIDADOS —`[data-sileo-toast] [data-…]`— y no
+   sueltos, y no es manía: la hoja de la librería trae
+   `[data-sileo-description] { color: #00000080 }`, texto NEGRO semitransparente
+   pensado para su relleno claro. Con la misma especificidad que ella, quién
+   gana depende del orden en que el empaquetador junte los archivos, que puede
+   cambiar en cualquier build. Anidado (0,2,0) gana siempre y sin `!important`. */
+[data-sileo-toast] [data-sileo-title]:not([data-state]) { color: var(--color-parch); }
+[data-sileo-toast] [data-sileo-description] { color: var(--color-warm); }
