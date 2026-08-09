@@ -1637,4 +1637,24 @@ canvas.dice-box-canvas {
    gana depende del orden en que el empaquetador junte los archivos, que puede
    cambiar en cualquier build. Anidado (0,2,0) gana siempre y sin `!important`. */
 [data-sileo-toast] [data-sileo-title]:not([data-state]) { color: var(--color-parch); }
+
+/* Los titulos, en la tipografia de la app y con peso: el aviso es un grito
+   corto, no un parrafo. */
+[data-sileo-toast] [data-sileo-title] {
+  font-family: var(--font-ui, inherit);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none; /* la libreria pone capitalize y nos parte los nombres propios */
+}
+
+/* EL ACENTO: el color por MATERIA, no por estado. El oro en dorado, un objeto
+   en pergamino, una mision en bronce claro. Con un solo color todo se lee
+   igual de soso, que es justo lo que se pidio arreglar. */
+.aviso-enfasis { font-weight: 800; }
+.acento-oro, strong.acento-oro { color: var(--color-bronze-bright); }
+.acento-objeto, strong.acento-objeto { color: var(--color-parch); }
+.acento-mision, strong.acento-mision { color: var(--color-bronze); }
+.acento-saber, strong.acento-saber { color: var(--color-arcane); }
+.acento-peligro, strong.acento-peligro { color: var(--color-ember); }
+.acento-descanso, strong.acento-descanso { color: var(--color-primitivo); }
 [data-sileo-toast] [data-sileo-description] { color: var(--color-warm); }

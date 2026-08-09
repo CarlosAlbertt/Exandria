@@ -25,8 +25,36 @@ import { textoDe, type Aviso } from "@/lib/avisos";
  * en silencio y la app sigue funcionando — que es lo que se quiere de un aviso.
  */
 export function avisar(a: Aviso): void {
-  const { title, description, tono } = textoDe(a);
-  sileo[tono]({ title, description });
+  const { title, description, tono, acento, enfasis } = textoDe(a);
+  sileo[tono]({
+    title,
+    description: describir(description, enfasis, acento),
+  });
+}
+
+/**
+ * La descripción con su trozo resaltado.
+ *
+ * Parte el texto en tres —lo de antes, el énfasis, lo de después— y solo el del
+ * medio va en negrita y con color. Se hace aquí y no en `lib/avisos.ts` porque
+ * esto ya es JSX: allí vive QUÉ se resalta, aquí CÓMO se pinta.
+ *
+ * Si el énfasis no aparece en el texto —no debería, el gate lo comprueba— se
+ * devuelve la descripción tal cual en vez de romperse. Un aviso plano es peor
+ * que uno bonito, pero mucho mejor que ninguno.
+ */
+function describir(description: string | undefined, enfasis: string | undefined, acento: string) {
+  if (!description) return undefined;
+  if (!enfasis) return description;
+  const i = description.indexOf(enfasis);
+  if (i < 0) return description;
+  return (
+    <>
+      {description.slice(0, i)}
+      <strong className={`aviso-enfasis acento-${acento}`}>{enfasis}</strong>
+      {description.slice(i + enfasis.length)}
+    </>
+  );
 }
 
 /**

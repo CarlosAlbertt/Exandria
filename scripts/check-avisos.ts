@@ -59,6 +59,30 @@ for (const m of MUESTRAS) {
   // La descripción puede faltar, pero si está, que diga algo.
   check(`"${etiqueta}" no tiene una descripción vacía`,
     t.description === undefined || t.description.trim().length > 0);
+
+  // El ACENTO es obligatorio: es el color por materia (oro, objeto, misión…) y
+  // sin él el aviso sale plano. Es lo que se pidió arreglar.
+  check(`"${etiqueta}" declara acento`,
+    ["oro", "objeto", "mision", "saber", "peligro", "descanso"].includes(t.acento));
+
+  // ⚠️ **Y EL ÉNFASIS TIENE QUE ESTAR DENTRO DE LA DESCRIPCIÓN.** Si no está,
+  // `describir()` devuelve el texto tal cual: el aviso sale sin negrita y sin
+  // color, exactamente igual que antes, y NADIE se entera. Es el fallo mudo de
+  // este cambio, y por eso se comprueba uno a uno.
+  if (t.enfasis !== undefined) {
+    check(`"${etiqueta}" resalta un trozo que existe en su descripción ("${t.enfasis}")`,
+      t.description !== undefined && t.description.includes(t.enfasis));
+  }
+}
+
+// Todo acento declarado tiene su color escrito en la hoja. Un acento sin regla
+// CSS hereda el color del texto y el resaltado se queda en solo negrita.
+{
+  const css = fs.readFileSync(path.join(process.cwd(), "app", "globals.css"), "utf8");
+  for (const ac of ["oro", "objeto", "mision", "saber", "peligro", "descanso"]) {
+    check(`el acento "${ac}" tiene color en globals.css`, css.includes(`.acento-${ac}`));
+  }
+  check("el énfasis va en negrita", /\.aviso-enfasis\s*\{[^}]*font-weight/.test(css));
 }
 
 // 3. Reglas concretas que se pensaron y que se perderían al reescribir el texto.
