@@ -368,6 +368,26 @@ for (const clave of ["taberna", "iglesia", "cementerio", "ayuntamiento"]) {
     check(`"${clave}" sigue trayendo a ${quien}`, nombres.includes(quien));
   }
 }
+// ⚠️ **QUIÉN SE VE DESDE LA PLAZA.** `npcsDeNodo` es excluyente: sin `venue` se
+// está en el pueblo, con `venue` solo dentro del edificio. Decisión del usuario
+// (2026-08-09): los cinco importantes en la plaza, los secundarios dentro.
+//
+// Sin esta comprobación, quitarle el `enLaPlaza` a Garrick lo esconde en el
+// ayuntamiento y **no falla nada**: el PNJ existe, habla, tiene su árbol y sus
+// misiones, y simplemente no está donde el jugador lo busca. Es el mismo fallo
+// mudo de siempre con otra ropa.
+{
+  const EN_LA_PLAZA = ["Silas Trumble", "Garrick Vance", "Elara Teje-Raíces", "Cora Mano de Malta", "Viejo Yorick"];
+  const todos = ["taberna", "iglesia", "cementerio", "ayuntamiento"].flatMap((c) => plantillaDe(c));
+  for (const quien of EN_LA_PLAZA) {
+    const t = todos.find((x) => x.name === quien);
+    check(`"${quien}" se ve desde la plaza`, t?.enLaPlaza === true);
+  }
+  const secundarios = todos.filter((t) => !EN_LA_PLAZA.includes(t.name));
+  check(`los secundarios se quedan dentro de su sitio (${secundarios.map((t) => t.name).join(", ")})`,
+    secundarios.length > 0 && secundarios.every((t) => !t.enLaPlaza));
+}
+
 for (const f of ["franja:linde", "franja:espesura", "franja:corazon"]) {
   check(`"${f}" trae a alguien`, plantillaDe(f).length >= 1);
 }

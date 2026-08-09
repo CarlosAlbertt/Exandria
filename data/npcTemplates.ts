@@ -41,6 +41,23 @@ export type NpcTemplate = {
    * `check-dialogos` cruza que toda clave de aquí exista.
    */
   dialogo?: string;
+  /**
+   * `true` = se planta en la PLAZA del pueblo, no dentro del edificio.
+   *
+   * ⚠️ La regla de quién se ve dónde vive en `npcsDeNodo` (`lib/nodos.ts`) y es
+   * excluyente: **un PNJ aparece en un solo sitio**, en la plaza si no tiene
+   * `venue` y dentro del edificio si lo tiene. No hay «en los dos».
+   *
+   * Decisión del usuario (2026-08-09): los CINCO importantes —Silas, Garrick,
+   * Elara, Cora y Yorick— se ven desde la plaza, para no obligar a recorrer
+   * cuatro edificios buscando a quien reparte las misiones; los secundarios
+   * solo dentro de su sitio, que es lo que mantiene la sensación de pueblo.
+   *
+   * Sin este campo, `seedNpcs` le ponía `venue` a TODO el que sembraba —porque
+   * siembra desde un nodo— y los cinco quedaban escondidos cada uno en su
+   * edificio.
+   */
+  enLaPlaza?: true;
 };
 
 /**
@@ -54,6 +71,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
       name: "Cora Mano de Malta",
       role: "Tabernera",
       dialogo: "cora",
+      enLaPlaza: true,
       prompt:
         "Eres Cora Mano de Malta, tabernera enana de Byroden, tercera generación detrás de la " +
         "misma barra. Brazos como jamones, delantal de cuero y sorda del oído izquierdo desde " +
@@ -113,6 +131,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
       name: "Elara Teje-Raíces",
       role: "Sacerdotisa de la Madre Salvaje",
       dialogo: "elara",
+      enLaPlaza: true,
       prompt:
         "Eres Elara Teje-Raíces, una anciana sacerdotisa élfica de la Madre Salvaje en Byroden. " +
         "Tu personalidad pública es extremadamente maternal, dulce, pacífica y amable. Hablas " +
@@ -142,6 +161,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
       name: "Viejo Yorick",
       role: "Sepulturero",
       dialogo: "yorick",
+      enLaPlaza: true,
       prompt:
         "Eres el Viejo Yorick, el sepulturero humano del cementerio «Jardín del Reposo» en " +
         "Byroden. Eres encorvado, esquelético, te falta un diente y hueles a tierra húmeda y " +
@@ -171,6 +191,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
       name: "Silas Trumble",
       role: "Alcalde",
       dialogo: "silas",
+      enLaPlaza: true,
       prompt:
         "Eres Silas Trumble, el alcalde humano de Byroden. Eres un hombre de mediana edad, " +
         "regordete, que viste chalecos de seda caros pero manchados de sudor, ya que eres muy " +
@@ -198,6 +219,7 @@ export const NPC_TEMPLATES: Record<string, NpcTemplate[]> = {
       name: "Garrick Vance",
       role: "Comandante de la Guardia",
       dialogo: "garrick",
+      enLaPlaza: true,
       prompt:
         "Eres Garrick Vance, un veterano semiorco y Comandante de la guardia de Byroden. Tienes " +
         "el rostro cruzado por una horrible cicatriz de quemadura, recuerdo del ataque del " +
