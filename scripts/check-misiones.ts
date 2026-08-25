@@ -17,12 +17,16 @@ import {
   esIndividual,
   opcionesDeMision,
   parseOpciones,
+  seAsignaAlAceptar,
   INSTRUCCION_OPCIONES,
   type MisionMin,
 } from "../lib/misiones";
 import fs from "node:fs";
 import path from "node:path";
-import { MISIONES, TAMANOS, TAMANO_LABEL } from "../data/misiones";
+import {
+  MISIONES, TAMANOS, TAMANO_LABEL, TAMANOS_DE_GRUPO, esDelGrupo, poiDeMision,
+} from "../data/misiones";
+import { esFranja } from "../data/lugares";
 import { ALL_MONSTERS } from "../data/bestiary";
 import { CR_XP, XP_BUDGET } from "../data/encounters";
 import { franjaDeNodo } from "../data/bosque";
@@ -335,6 +339,94 @@ check("la instrucción pide el mismo tope de 4", INSTRUCCION_OPCIONES.includes("
 
   const total = MISIONES.reduce((n, m) => n + m.encuentros.length, 0);
   console.log(`\nCatálogo: ${MISIONES.length} misiones, ${total} encuentros escritos.`);
+}
+
+/* ------------------- LAS REGLAS QUE VIVÍAN EN LAS RUTAS ------------------ */
+// Tres reglas decidían quién ve qué desde DENTRO de `app/api/*/route.ts`, y una
+// regla dentro de una ruta no la mira ningún gate: se podía cambiar el reparto
+// de misiones del grupo y tener las 45 comprobaciones en verde.
+//
+// Se comprueban por los DOS lados, y el segundo es el que importa: que la regla
+// exista aquí no sirve de nada si la ruta se guarda su copia. Es la misma
+// comprobación de texto que ya se le hace al Panel DM más arriba.
+
+// ── esDelGrupo: quién es el dueño de una misión sacada hablando ──
+// Escritos a mano, no salidos de TAMANOS_DE_GRUPO (ver el aviso de la cabecera):
+// si las dos mitades se movieran juntas, esto sería verde por construcción.
+check("esDelGrupo: una solitaria es de quien la saca", esDelGrupo("solitaria") === false);
+check("esDelGrupo: una de pareja es de quien la saca", esDelGrupo("pareja") === false);
+check("esDelGrupo: una de trío es de quien la saca", esDelGrupo("trio") === false);
+check("esDelGrupo: una de grupo es del grupo", esDelGrupo("grupo") === true);
+check("esDelGrupo: una legendaria es del grupo", esDelGrupo("legendaria") === true);
+
+// ⚠️ El que caza el tamaño NUEVO. Añadir un `Tamano` sin decidir de quién son
+// sus misiones las dejaba individuales en silencio.
+for (const t of TAMANOS) {
+  check(`el tamaño "${t}" tiene decidido si es del grupo`, typeof esDelGrupo(t) === "boolean");
+}
+check("TAMANOS_DE_GRUPO no inventa tamaños que no existan",
+  TAMANOS_DE_GRUPO.every((t) => TAMANOS.includes(t)));
+check("no todos los tamaños son del grupo (si no, nadie tendría misión propia)",
+  TAMANOS_DE_GRUPO.length < TAMANOS.length);
+
+// ── poiDeMision: una franja del bosque no es un pin del mapa ──
+check("poiDeMision: un pueblo se guarda tal cual", poiDeMision("Byroden") === "Byroden");
+check("poiDeMision: una franja no se guarda", poiDeMision("franja:linde") === null);
+check("poiDeMision: el corazón tampoco", poiDeMision("franja:corazon") === null);
+check("esFranja: un pueblo no es una franja", esFranja("Byroden") === false);
+
+// Y ninguna misión del catálogo puede acabar con un `poi_name` que el mapa no
+// sepa pintar: o es una franja y no se guarda, o es un POI del atlas.
+const POIS_ATLAS = new Set(
+  Object.values(seedAtlas()).flatMap((c) => Object.values(c.pois).flat().map((p) => p.name)),
+);
+for (const m of MISIONES) {
+  const poi = poiDeMision(m.lugar);
+  check(`el lugar de "${m.slug}" o es franja o es un POI del atlas`,
+    poi === null || POIS_ATLAS.has(poi));
+}
+
+// ── seAsignaAlAceptar: de quién es la oferta que se acepta ──
+check("seAsignaAlAceptar: una oferta de PNJ es de quien la acepta",
+  seAsignaAlAceptar({ npc_id: HERRERO }, true) === true);
+check("seAsignaAlAceptar: una de tablón sigue siendo del grupo",
+  seAsignaAlAceptar({ npc_id: null }, true) === false);
+check("seAsignaAlAceptar: sin ficha en juego no se asigna nada",
+  seAsignaAlAceptar({ npc_id: HERRERO }, false) === false);
+
+// ⚠️ La asimetría, FIJADA a propósito. `esDelGrupo` mira el `tamano` del
+// catálogo; `seAsignaAlAceptar` mira una fila de `quests`, que NO tiene esa
+// columna. Son dos preguntas con dos entradas, y esto lo deja escrito: una
+// oferta de PNJ se asigna aunque su misión fuera «de grupo» en el catálogo,
+// porque al aceptar del tablón el tamaño no está disponible.
+check("las dos reglas son independientes: la del tablón no consulta el tamaño",
+  seAsignaAlAceptar({ npc_id: HERRERO }, true) === true && esDelGrupo("grupo") === true);
+
+// ── Y que las rutas usen ESTO, en vez de guardarse su copia ──
+const RUTAS: { fichero: string; importa: string; prohibido: RegExp; queEra: string }[] = [
+  {
+    fichero: "app/api/mision-dialogo/route.ts",
+    importa: "esDelGrupo",
+    prohibido: /tamano\s*===\s*"(grupo|legendaria)"/,
+    queEra: "el reparto de las de grupo",
+  },
+  {
+    fichero: "app/api/mision-dialogo/route.ts",
+    importa: "poiDeMision",
+    prohibido: /startsWith\(\s*"franja:"\s*\)/,
+    queEra: "el prefijo de las franjas",
+  },
+  {
+    fichero: "app/api/aceptar-encargo/route.ts",
+    importa: "seAsignaAlAceptar",
+    prohibido: /npc_id\s*!=\s*null/,
+    queEra: "de quién es la oferta aceptada",
+  },
+];
+for (const r of RUTAS) {
+  const src = fs.readFileSync(path.join(process.cwd(), ...r.fichero.split("/")), "utf8");
+  check(`${r.fichero} importa ${r.importa}`, src.includes(r.importa));
+  check(`${r.fichero} ya no lleva dentro ${r.queEra}`, !r.prohibido.test(src));
 }
 
 console.log(failures === 0 ? "\nTodas las comprobaciones pasaron." : `\n${failures} fallaron.`);

@@ -43,6 +43,30 @@ export const TAMANO_LABEL: Record<Tamano, string> = {
   legendaria: "Legendaria — se puede morir",
 };
 
+/**
+ * ¿La misión es DEL GRUPO, o de quien la saca hablando?
+ *
+ * ⚠️ **Esto decide quién la ve.** Una misión del grupo se abre SIN asignar a
+ * ninguna ficha, y la RLS de la `schema_v24` enseña las no asignadas a todo el
+ * mundo; una asignada solo la ve su dueño. Así que equivocarse aquí no da error:
+ * o esconde del resto del grupo una misión que era de todos, o enseña a todos
+ * una que era de uno.
+ *
+ * Vivía DENTRO de `app/api/mision-dialogo/route.ts`, escrita como
+ * `m.tamano === "grupo" || m.tamano === "legendaria"`. Una regla dentro de una
+ * ruta no la mira ningún gate: se podía añadir un `Tamano` nuevo y esta línea lo
+ * trataba como individual en silencio, con las 45 comprobaciones en verde.
+ *
+ * Se resuelve por LISTA y no por comparaciones sueltas para que
+ * `check-misiones` pueda cruzarla contra `TAMANOS` y cantar un tamaño sin
+ * clasificar.
+ */
+export const TAMANOS_DE_GRUPO: Tamano[] = ["grupo", "legendaria"];
+
+export function esDelGrupo(tamano: Tamano): boolean {
+  return TAMANOS_DE_GRUPO.includes(tamano);
+}
+
 /** Un combate escrito, con la cuenta hecha. */
 export type Encuentro = {
   nombre: string;

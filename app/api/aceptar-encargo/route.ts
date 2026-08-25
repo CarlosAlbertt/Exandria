@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { seAsignaAlAceptar } from "@/lib/misiones";
 
 export const runtime = "nodejs";
 
@@ -40,7 +41,11 @@ export async function POST(req: Request) {
   //    `body`: era un parche de texto a falta de columna donde apuntarlo, y
   //    reescribía la misión del DM cada vez. Ahora hay columna. Los encargos de
   //    tablón siguen sin ella, así que ahí se conserva la nota.
-  const individual = quest.npc_id != null && char != null;
+  //    ⚠️ La regla vive en `lib/misiones.ts`, no aquí. Y **no es `esDelGrupo`**:
+  //    esta fila la escribió el DM y `quests` no tiene columna `tamano`, así que
+  //    la marca es el PNJ. Las dos están escritas juntas allí para que se vea
+  //    que la asimetría es a propósito.
+  const individual = seAsignaAlAceptar(quest, char != null);
   const update: Record<string, unknown> = { status: "activa", updated_at: new Date().toISOString() };
   if (individual) {
     update.assigned_character_id = char!.id;
