@@ -80,6 +80,61 @@ export function seAsignaAlAceptar(
   return q.npc_id !== null && tieneFichaEnJuego;
 }
 
+/* ------------------------------- ENTREGAR ------------------------------- */
+
+/**
+ * Por qué NO se puede entregar esta misión, o `null` si sí se puede.
+ *
+ * ⚠️ **Esta es la regla, y antes estaba escrita DOS veces.** `opcionesDeMision`
+ * decidía en el navegador qué opción enseñar, y `app/api/entregar-mision` volvía
+ * a comprobar las mismas tres condiciones a mano contra la base de datos. Dos
+ * copias, una vigilada por el gate y otra no: se tocaba esta y la puerta del
+ * servidor se quedaba con el criterio viejo, en verde.
+ *
+ * Ahora la escriben las dos desde aquí. **Y la ruta sigue siendo la puerta**:
+ * que el navegador no ofrezca la opción no impide llamar a la API a mano, así
+ * que el servidor la vuelve a preguntar. Lo que se comparte es el CRITERIO, no
+ * la confianza.
+ *
+ * Devuelve el motivo y no un booleano porque la ruta necesita decir CUÁL de las
+ * tres falló: «ya no está en curso» y «no es tuya» no son el mismo error ni el
+ * mismo código HTTP, y un booleano obligaría a la ruta a volver a mirarlo por su
+ * cuenta — que es exactamente el problema que esto viene a quitar.
+ *
+ * El ORDEN importa y es el que ya tenía la ruta: primero el estado, luego el
+ * PNJ, luego el dueño. Cambiarlo cambia qué mensaje ve el jugador.
+ *
+ * `no-existe` no está aquí a propósito: que la fila no aparezca en la tabla no
+ * es una regla de misiones, es una búsqueda fallida, y la resuelve la ruta.
+ */
+export type MotivoNoEntregable = "no-activa" | "otro-pnj" | "no-es-tuya";
+
+export function motivoNoEntregable(
+  // Lo mínimo, y no `MisionMin` entero, para que la ruta pueda pasarle su fila
+  // sin inventarse un `title` que no ha pedido a la base de datos.
+  q: Pick<MisionMin, "status" | "npc_id" | "assigned_character_id">,
+  npcId: number,
+  fichaActivaId: string | null,
+): MotivoNoEntregable | null {
+  if (q.status !== "activa") return "no-activa";
+  if (q.npc_id !== npcId) return "otro-pnj";
+  if (q.assigned_character_id === null || q.assigned_character_id !== fichaActivaId) return "no-es-tuya";
+  return null;
+}
+
+/**
+ * Qué contesta la ruta por cada motivo.
+ *
+ * Vive aquí y no dentro del `if` de la ruta para que el gate pueda exigir que
+ * **todo motivo tenga respuesta**. Un motivo nuevo sin entrada aquí dejaría a la
+ * ruta cayéndose por el final con un 500 genérico, y eso no lo canta nadie.
+ */
+export const RESPUESTA_NO_ENTREGABLE: Record<MotivoNoEntregable, { status: number; error: string }> = {
+  "no-activa": { status: 409, error: "Esa misión ya no está en curso." },
+  "otro-pnj": { status: 409, error: "Esa misión no es de este personaje." },
+  "no-es-tuya": { status: 403, error: "Esa misión no es tuya." },
+};
+
 /* ------------------------------- OPCIONES ------------------------------- */
 
 /** Una opción de diálogo. `accion` la distingue de las que propone la IA. */
@@ -112,9 +167,11 @@ export function opcionesDeMision(
 
   // Entregar va primero: si ya tienes una suya hecha, eso es lo que quieres
   // decirle antes que aceptarle otra.
-  const entregable = mias.find(
-    (q) => q.status === "activa" && q.assigned_character_id === fichaActivaId,
-  );
+  //
+  // ⚠️ El criterio es `motivoNoEntregable`, el MISMO que usa la ruta. Antes
+  // estaba escrito aquí a mano y allí otra vez, y podían separarse sin que nada
+  // fallara: el jugador veía la opción y el servidor se la negaba, o al revés.
+  const entregable = mias.find((q) => motivoNoEntregable(q, npcId, fichaActivaId) === null);
   if (entregable) {
     return [{ texto: `Está hecho: ${entregable.title}`, accion: "entregar", questId: entregable.id }];
   }
