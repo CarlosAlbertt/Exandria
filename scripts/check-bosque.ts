@@ -245,6 +245,28 @@ for (const f of ESPERADAS) {
     jugablesDe(f).every((j) => j.monster.name === j.name));
 }
 
+/* ------------------- EL BOCETO QUE NO ERA UN BOCETO --------------------- */
+// ⚠️ «Worg» estuvo en `PENDIENTES` sin que le faltara NADA: la ficha existía
+// desde hacía lotes bajo su nombre español, «Huargo». `jugablesDe` cruza por
+// nombre EXACTO, así que la entrada no casaba con nada y el bicho parecía estar
+// esperando una extracción YA HECHA. De haberla hecho, el monstruo acabaría
+// DUPLICADO en el bestiario.
+//
+// Las dos comprobaciones de arriba —«está en el bestiario o declarado
+// pendiente» y «no está en los dos a la vez»— no lo cazan, y por eso vivió ahí
+// meses: las dos miran el nombre ES, y el problema era que la tabla traía el
+// INGLÉS. La señal está en `nameEn`, que es justo el puente entre los dos.
+const POR_NOMBRE_EN = new Map(ALL_MONSTERS.map((m) => [m.nameEn.toLowerCase(), m]));
+
+for (const p of PENDIENTES) {
+  const yaEsta = POR_NOMBRE_EN.get(p.toLowerCase());
+  check(
+    `"${p}" está pendiente de verdad` +
+      (yaEsta ? ` — ojo: es el nameEn de "${yaEsta.name}", que YA tiene ficha` : ""),
+    !yaEsta,
+  );
+}
+
 const jugables = ESPERADAS.reduce((n, f) => n + jugablesDe(f).length, 0);
 console.log(`\nTabla de la Expansión Verdante: ${ENCUENTROS_VERDANTE.length} entradas, ` +
   `${jugables} con ficha y ${PENDIENTES.length} esperando extracción.`);
