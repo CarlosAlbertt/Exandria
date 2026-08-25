@@ -85,6 +85,27 @@ export type Mision = {
   /** Lo que ven los jugadores. Se pega tal cual en `quests.body`. */
   body: string;
   /**
+   * Cómo se encuentra esta misión SIN que nadie la encargue.
+   *
+   * ⚠️ **No todas lo llevan, y ahí está la gracia.** Solo las que un grupo
+   * observador encontraría por su cuenta: unas lápidas torcidas, un rastro en el
+   * arcén, la cara de alguien que lleva semanas sin dormir. Las demás siguen
+   * necesitando que un PNJ las dé, que es lo que mantiene a los PNJ en el
+   * centro. Si todas fueran descubribles, hablar con la gente sería opcional.
+   *
+   * `pericia` se limita a las TRES de buscar —Percepción, Perspicacia,
+   * Supervivencia— y el gate lo exige: con Historia o Religión esto sería otra
+   * vez la tirada de saber, que ya existe (`SaberRoll`) y hace otra cosa.
+   *
+   * `texto` es lo que se ve al acertar, y va escrito desde los ojos del
+   * jugador. No dice el nombre de la misión: dice qué hay raro.
+   */
+  descubrimiento?: {
+    pericia: "Percepción" | "Perspicacia" | "Supervivencia";
+    cd: number;
+    texto: string;
+  };
+  /**
    * Se salta el presupuesto ALTO a propósito.
    *
    * ⚠️ El gate lo usa **en los dos sentidos**: una misión normal que se pase de

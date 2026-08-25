@@ -111,6 +111,13 @@ export const MENORES: Mision[] = [
       "en vez de matarlos se gana que aparezcan una vez más, en el peor momento de otra misión, " +
       "de su lado.",
     siFalla: "El pastor pierde el rebaño y se va del pueblo. Una casa vacía más en Byroden.",
+    descubrimiento: {
+      pericia: "Supervivencia", cd: 12,
+      texto:
+        "Hay huellas de perro en el barro del sendero, y eso no tendría nada de particular si " +
+        "no fuera porque empiezan en mitad del camino. No vienen de ningún sitio. Cuatro pasos " +
+        "y se acaban igual de secas.",
+    },
     body:
       "Un pastor de las afueras de Byroden paga por saber qué se le lleva las ovejas de un " +
       "corral cerrado. Dice que el perro aparece dentro. Nadie le cree.",
@@ -212,6 +219,12 @@ export const MENORES: Mision[] = [
     siFalla:
       "La ruta del norte queda cerrada un mes. Sube el precio de todo en Byroden y aparece un " +
       "contrabandista dispuesto a traer sal por el bosque, que es una misión nueva y peor.",
+    descubrimiento: {
+      pericia: "Supervivencia", cd: 13,
+      texto:
+        "Una res abierta en el arcén, y no le falta un solo bocado. Alrededor, huellas de lobo " +
+        "a montones — y una más grande y con más peso que va DETRÁS de las otras, no delante.",
+    },
     body:
       "Los carreteros de Byroden pagan por limpiar el camino del norte. Tres reses muertas y " +
       "ninguna devorada. Buscan a dos personas, no a un ejército.",
@@ -266,6 +279,13 @@ export const MENORES: Mision[] = [
     siFalla:
       "El carro se queda ahí y la tela sigue creciendo hacia el camino. En un mes, los pasillos " +
       "llegan a la vereda por la que se entra al bosque desde Byroden.",
+    descubrimiento: {
+      pericia: "Percepción", cd: 13,
+      texto:
+        "Las telarañas de este tramo no están puestas de cualquier manera. Dejan huecos, y los " +
+        "huecos hacen pasillos, y los pasillos van todos al mismo sitio. Al fondo se adivina " +
+        "una forma envuelta del tamaño de un carro.",
+    },
     body:
       "Un leñador paga por que alguien mire un tramo de la linde donde las telarañas forman " +
       "pasillos. Dice que hay un carro dentro. Trabajo para dos.",

@@ -201,6 +201,13 @@ export const TRIOS: Mision[] = [
       "La bruja cobra. El niño sigue vivo y sano — eso nunca falla — pero la panadera deja de " +
       "reconocer a su propio hijo, y él a ella. Se queda en el pueblo, atendida por vecinos, " +
       "como recordatorio permanente de lo que costó no llegar a tiempo.",
+    descubrimiento: {
+      pericia: "Perspicacia", cd: 14,
+      texto:
+        "En un claro hay un cuenco de barro, limpio, puesto con cuidado sobre una piedra plana. " +
+        "Dentro no hay nada. Y a diez pasos hay otro igual, y más allá un tercero: alguien ha " +
+        "estado pagando aquí, y no en monedas.",
+    },
     body:
       "La panadera de Byroden paga todo lo que tiene por que tres personas vayan a la espesura y " +
       "recuperen «lo que dejó en un cuenco». No dice qué dejó. Pide que no se le pregunte.",
@@ -257,6 +264,13 @@ export const TRIOS: Mision[] = [
       "Los bancales del norte no se siembran. Byroden entra en invierno con déficit, sube el " +
       "precio del grano y aparecen dos misiones nuevas que nadie quería: comprar fuera y " +
       "escoltar la compra.",
+    descubrimiento: {
+      pericia: "Supervivencia", cd: 12,
+      texto:
+        "La tierra de los bancales del norte está removida en tres sitios, y no por el arado: " +
+        "son bocas de túnel, del ancho de un hombre, y las tres apuntan hacia el bosque. La de " +
+        "en medio tiene arreos de mula alrededor.",
+    },
     body:
       "Byroden paga por limpiar de bichos los bancales del norte antes de la siembra. Ya se han " +
       "tragado una mula. Hace falta gente que sepa pelear con el suelo moviéndose.",
