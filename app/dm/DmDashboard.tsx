@@ -19,6 +19,7 @@ import AiConfigPanel from "./AiConfigPanel";
 import DadosPanel from "./DadosPanel";
 import AvisosPanel from "./AvisosPanel";
 import CronicaPanel from "./CronicaPanel";
+import CatalogoPanel from "./CatalogoPanel";
 import EncuentrosPanel from "./EncuentrosPanel";
 import RelojPanel from "./RelojPanel";
 import LugaresPanel from "./LugaresPanel";
@@ -26,7 +27,7 @@ import ResumenPanel from "./ResumenPanel";
 
 type Tab =
   | "resumen" | "narracion" | "grupo" | "baul" | "regiones" | "mapa" | "usuarios"
-  | "dados" | "cronica" | "mesa" | "tiempo" | "arte" | "tiendas" | "pnjs" | "lugares" | "avisos";
+  | "dados" | "cronica" | "mesa" | "tiempo" | "arte" | "tiendas" | "pnjs" | "lugares" | "avisos" | "catalogo";
 
 /**
  * El panel del DM, por FAMILIAS y no por lista.
@@ -68,6 +69,7 @@ const FAMILIAS: { titulo: string; icono: string; tabs: [Tab, string, string, str
       ["grupo", "Jugadores", "fa-users-line", "Fichas, XP, nivel y dónde está cada uno"],
       ["baul", "Baúl", "fa-box-archive", "Dar objetos y documentos"],
       ["cronica", "Crónica", "fa-book-open", "Misiones, pistas y diario"],
+      ["catalogo", "Catálogo", "fa-scroll", "Las quince misiones escritas, listas para abrir"],
     ],
   },
   {
@@ -145,6 +147,7 @@ export default function DmDashboard() {
           {tab === "dados" && <DadosPanel />}
           {tab === "avisos" && <AvisosPanel />}
           {tab === "cronica" && <CronicaPanel />}
+          {tab === "catalogo" && <CatalogoPanel />}
           {tab === "mesa" && <EncuentrosPanel />}
           {tab === "tiempo" && <RelojPanel />}
           {tab === "regiones" && <RegionesPanel />}

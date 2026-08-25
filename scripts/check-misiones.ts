@@ -20,7 +20,9 @@ import {
   INSTRUCCION_OPCIONES,
   type MisionMin,
 } from "../lib/misiones";
-import { MISIONES } from "../data/misiones";
+import fs from "node:fs";
+import path from "node:path";
+import { MISIONES, TAMANOS, TAMANO_LABEL } from "../data/misiones";
 import { ALL_MONSTERS } from "../data/bestiary";
 import { CR_XP, XP_BUDGET } from "../data/encounters";
 import { franjaDeNodo } from "../data/bosque";
@@ -313,6 +315,23 @@ check("la instrucción pide el mismo tope de 4", INSTRUCCION_OPCIONES.includes("
   check("la misión del zigurat sigue en el catálogo", !!zig);
   check("la del zigurat conserva sus ocho escenas y tres combates",
     (zig?.escenas.length ?? 0) >= 8 && (zig?.encuentros.length ?? 0) === 3);
+
+  // ⚠️ TAMANOS es la lista que pinta los filtros del Panel DM. Si se queda
+  // corta, el filtro deja de ofrecer un tamaño y esas misiones se vuelven
+  // invisibles salvo en «Todas» — sin que falle nada.
+  for (const m of MISIONES) {
+    check(`el tamaño "${m.tamano}" de "${m.slug}" está en TAMANOS`, TAMANOS.includes(m.tamano));
+  }
+  check("TAMANOS no repite ninguno", new Set(TAMANOS).size === TAMANOS.length);
+  check("todo tamaño de TAMANOS tiene etiqueta", TAMANOS.every((t) => !!TAMANO_LABEL[t]));
+
+  // Y el panel NO puede tener su propia copia de la lista: una lista paralela
+  // se queda vieja sola. Esto ya pasó aquí mismo y se corrigió al escribirlo.
+  const panel = fs.readFileSync(path.join(process.cwd(), "app", "dm", "CatalogoPanel.tsx"), "utf8");
+  check("el Panel DM importa TAMANOS en vez de copiarla",
+    panel.includes("TAMANOS,") && !/const\s+TAMANOS\s*:/.test(panel));
+  check("el Panel DM pinta el catálogo entero desde MISIONES",
+    panel.includes("MISIONES.length") && panel.includes("MISIONES.filter"));
 
   const total = MISIONES.reduce((n, m) => n + m.encuentros.length, 0);
   console.log(`\nCatálogo: ${MISIONES.length} misiones, ${total} encuentros escritos.`);

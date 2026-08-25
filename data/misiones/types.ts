@@ -25,6 +25,16 @@
  */
 export type Tamano = "solitaria" | "pareja" | "trio" | "grupo" | "legendaria";
 
+/**
+ * Los cinco tamaños, EN ORDEN, de menos gente a más.
+ *
+ * ⚠️ Va aquí y no escrito a mano en la pantalla que los pinte. El panel del
+ * catálogo tenía su propia copia, y una lista paralela se queda vieja sola: se
+ * añade un tamaño, nadie toca la copia, y el filtro deja de ofrecerlo sin que
+ * falle nada. Misma lección que el recuento de PNJ de `check-lugares`.
+ */
+export const TAMANOS: Tamano[] = ["solitaria", "pareja", "trio", "grupo", "legendaria"];
+
 export const TAMANO_LABEL: Record<Tamano, string> = {
   solitaria: "En solitario",
   pareja: "Para dos",
