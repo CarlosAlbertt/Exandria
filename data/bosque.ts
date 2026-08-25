@@ -151,11 +151,22 @@ export type EncuentroBosque = {
 export const PENDIENTES: string[] = [
   // De los que pidió el DM.
   "Montículo Reptante", "Ser del Agua", "Lobo Huargo",
-  "Jabalí Gigante", "Oso Pardo",
+  "Oso Pardo",
   "Araña Gigante", "Osgo Acechador",
+  // ⚠️ **«Jabalí Gigante» NO TIENE FUENTE.** No existe en el Manual 2024: no
+  // está en el índice y la sección de bestias va Boar → Brown Bear sin nada en
+  // medio. Se queda aquí **a propósito** —decisión del usuario el 2026-08-25—
+  // para que conste por qué no se puede jugar, en vez de borrarlo y que dentro
+  // de tres meses alguien lo vuelva a añadir sin saberlo. Si algún día se
+  // quiere, hay que sacarlo de otro libro y eso rompe la regla de la casa.
+  "Jabalí Gigante",
   // Los que pide un bosque feérico y salen de cruzar el censo con el hábitat
   // "Forest" del apéndice B.
-  "Dríade", "Sátiro Juerguista", "Duende", "Duende Prodigioso",
+  //
+  // «Duende» salió de aquí el 2026-08-25, segundo caso «Worg»: es el Pixie del
+  // Manual y su ficha ya existía. «Duende Prodigioso» sí falta — es el **Pixie
+  // Wonderbringer** (p. 244) — y sigue aquí hasta decidir cómo se llama en ES.
+  "Dríade", "Sátiro Juerguista", "Duende Prodigioso",
   // «Worg» salió de aquí el 2026-08-25 sin extraer nada: NUNCA le faltó la
   // ficha. Estaba en la tabla con el nombre INGLÉS y la ficha se llama
   // «Huargo», así que `jugablesDe` no las cruzaba. Un boceto que no lo era.
@@ -210,7 +221,11 @@ export const ENCUENTROS_VERDANTE: EncuentroBosque[] = [
   { name: "Árbol Despierto", franja: "espesura", nota: "Ya no solo avisa. Aquí el bosque empieza a defenderse." },
   { name: "Dríade", franja: "espesura", nota: "Atada a su roble. Negocia antes que pelear, pero el roble no se toca." },
   { name: "Sátiro Juerguista", franja: "espesura", nota: "Como el sátiro, pero con menos escrúpulos y más aguante." },
-  { name: "Duende", franja: "espesura", nota: "Se ríe de ti desde un sitio donde no estabas mirando." },
+  // ⚠️ Segundo caso «Worg»: esto es el Pixie del Manual, y su ficha existe desde
+  // el lote de CR bajos con el nombre «Pixie». Escrito «Duende» no cruzaba con
+  // nada. Se deja el nombre del bestiario para que `jugablesDe` lo encuentre;
+  // castellanizar la ficha es otra decisión y está sin tomar.
+  { name: "Pixie", franja: "espesura", nota: "Se ríe de ti desde un sitio donde no estabas mirando." },
   { name: "Duende Prodigioso", franja: "espesura", nota: "La broma se vuelve trampa y la trampa mata." },
   { name: "Montículo Reptante", franja: "espesura", nota: "El suelo del bosque cuando el bosque decide moverse." },
   { name: "Ser del Agua", franja: "espesura", nota: "Los arroyos de la espesura llevan más años que Syngorn." },
