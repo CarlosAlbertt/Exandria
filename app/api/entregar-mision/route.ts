@@ -9,8 +9,12 @@ export const runtime = "nodejs";
 // /api/aceptar-encargo (schema_v17) y /api/descanso.
 //
 // ⚠️ Esto es la PUERTA, no el escaparate. `opcionesDeMision` en lib/misiones.ts
-// decide qué opción se le ENSEÑA al jugador, pero se evalúa en su navegador:
-// las cuatro condiciones se vuelven a comprobar aquí contra la base de datos.
+// decide qué opción se le ENSEÑA al jugador, pero se evalúa en su navegador, así
+// que aquí se vuelve a preguntar contra la base de datos.
+//
+// Lo que se comparte con el escaparate es el CRITERIO —`motivoNoEntregable`,
+// una sola regla en lugar de dos copias—, no la confianza: que el navegador no
+// ofrezca la opción no impide llamar a esta API a mano.
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
