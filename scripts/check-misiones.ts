@@ -18,8 +18,11 @@ import {
   opcionesDeMision,
   parseOpciones,
   seAsignaAlAceptar,
+  motivoNoEntregable,
+  RESPUESTA_NO_ENTREGABLE,
   INSTRUCCION_OPCIONES,
   type MisionMin,
+  type MotivoNoEntregable,
 } from "../lib/misiones";
 import fs from "node:fs";
 import path from "node:path";
@@ -402,6 +405,58 @@ check("seAsignaAlAceptar: sin ficha en juego no se asigna nada",
 check("las dos reglas son independientes: la del tablón no consulta el tamaño",
   seAsignaAlAceptar({ npc_id: HERRERO }, true) === true && esDelGrupo("grupo") === true);
 
+// ── motivoNoEntregable: el criterio que ANTES estaba escrito dos veces ──
+const SUYA_HECHA = q({ id: 40, npc_id: HERRERO, assigned_character_id: FICHA_MIA });
+check("entregable: la suya, activa y de ese PNJ",
+  motivoNoEntregable(SUYA_HECHA, HERRERO, FICHA_MIA) === null);
+check("no entregable: ya completada",
+  motivoNoEntregable({ ...SUYA_HECHA, status: "completada" }, HERRERO, FICHA_MIA) === "no-activa");
+check("no entregable: es de otro PNJ",
+  motivoNoEntregable(SUYA_HECHA, TABERNERO, FICHA_MIA) === "otro-pnj");
+check("no entregable: es de otra ficha",
+  motivoNoEntregable(SUYA_HECHA, HERRERO, FICHA_AJENA) === "no-es-tuya");
+check("no entregable: sin ficha en juego",
+  motivoNoEntregable(SUYA_HECHA, HERRERO, null) === "no-es-tuya");
+// ⚠️ Una de GRUPO (sin asignar) no se entrega hablando: las cierra el DM desde
+// la Crónica. Sin esto, cualquiera cerraría la misión de todos.
+check("no entregable: una del grupo no se cierra hablando",
+  motivoNoEntregable({ ...SUYA_HECHA, assigned_character_id: null }, HERRERO, FICHA_MIA) === "no-es-tuya");
+
+// El ORDEN de las tres, que decide qué mensaje ve el jugador. Una completada de
+// otro PNJ tiene que decir «ya no está en curso», no «no es de este personaje».
+check("el estado se mira antes que el PNJ",
+  motivoNoEntregable({ ...SUYA_HECHA, status: "completada" }, TABERNERO, FICHA_AJENA) === "no-activa");
+check("el PNJ se mira antes que el dueño",
+  motivoNoEntregable(SUYA_HECHA, TABERNERO, FICHA_AJENA) === "otro-pnj");
+
+// ⚠️ Todo motivo tiene respuesta. Uno nuevo sin entrada aquí dejaría a la ruta
+// contestando un 500 genérico sin que falle nada.
+const MOTIVOS: MotivoNoEntregable[] = ["no-activa", "otro-pnj", "no-es-tuya"];
+for (const m of MOTIVOS) {
+  check(`el motivo "${m}" tiene respuesta`, !!RESPUESTA_NO_ENTREGABLE[m]?.error);
+  check(`el motivo "${m}" contesta 4xx y no 5xx`,
+    RESPUESTA_NO_ENTREGABLE[m].status >= 400 && RESPUESTA_NO_ENTREGABLE[m].status < 500);
+}
+check("RESPUESTA_NO_ENTREGABLE no tiene motivos de más",
+  Object.keys(RESPUESTA_NO_ENTREGABLE).length === MOTIVOS.length);
+check("«no es tuya» contesta 403 y no 409 (es permiso, no estado)",
+  RESPUESTA_NO_ENTREGABLE["no-es-tuya"].status === 403);
+
+// Y el ESPEJO: lo que la app ofrece y lo que el servidor acepta son la misma
+// pregunta. Que `opcionesDeMision` enseñe «entregar» exactamente cuando
+// `motivoNoEntregable` dice que sí es lo que se rompía en silencio.
+for (const caso of [
+  { q: SUYA_HECHA, ficha: FICHA_MIA },
+  { q: { ...SUYA_HECHA, status: "completada" as const }, ficha: FICHA_MIA },
+  { q: { ...SUYA_HECHA, assigned_character_id: null }, ficha: FICHA_MIA },
+  { q: SUYA_HECHA, ficha: FICHA_AJENA },
+]) {
+  const ofrece = opcionesDeMision([caso.q], HERRERO, caso.ficha).some((o) => o.accion === "entregar");
+  const acepta = motivoNoEntregable(caso.q, HERRERO, caso.ficha) === null;
+  check(`la app ofrece entregar exactamente cuando el servidor lo acepta (${caso.q.status}/${caso.ficha === FICHA_MIA ? "mía" : "ajena"}/${caso.q.assigned_character_id ? "asignada" : "sin asignar"})`,
+    ofrece === acepta);
+}
+
 // ── Y que las rutas usen ESTO, en vez de guardarse su copia ──
 const RUTAS: { fichero: string; importa: string; prohibido: RegExp; queEra: string }[] = [
   {
@@ -421,6 +476,12 @@ const RUTAS: { fichero: string; importa: string; prohibido: RegExp; queEra: stri
     importa: "seAsignaAlAceptar",
     prohibido: /npc_id\s*!=\s*null/,
     queEra: "de quién es la oferta aceptada",
+  },
+  {
+    fichero: "app/api/entregar-mision/route.ts",
+    importa: "motivoNoEntregable",
+    prohibido: /quest\.status\s*!==\s*"activa"|quest\.npc_id\s*!==\s*npcId/,
+    queEra: "las tres condiciones de entrega",
   },
 ];
 for (const r of RUTAS) {
