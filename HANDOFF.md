@@ -2,7 +2,118 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-25)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-25, por la tarde)
+
+> **LAS REGLAS DE LAS MISIONES YA NO VIVEN DENTRO DE LAS RUTAS.** Dos merges,
+> los dos en `master` y desplegados. **Sin ninguna migración** y **sin cambio de
+> comportamiento**: todo lo de esta tanda es la misma lógica en otro sitio, más
+> el gate que la vigila. Último commit: `merge: entregar una mision es una sola
+> regla, y el gate vigila el espejo`.
+>
+> ### El gate SIGUEN siendo 45 scripts
+> No se añadió ninguno. Lo que crece es `check-misiones.ts`, que pasa de **291 a
+> 330** comprobaciones. Si buscas dónde se vigila algo de misiones, está todo ahí.
+>
+> ### Qué se movió, y de dónde
+> | Regla | Vivía en | Ahora |
+> |---|---|---|
+> | `esDelGrupo(tamano)` + `TAMANOS_DE_GRUPO` | `mision-dialogo/route.ts` | `data/misiones/types.ts` |
+> | `poiDeMision(lugar)` sobre `esFranja` | `mision-dialogo/route.ts` | `data/misiones/index.ts` + `data/lugares.ts` |
+> | `seAsignaAlAceptar(quest, ficha)` | `aceptar-encargo/route.ts` | `lib/misiones.ts` |
+> | `motivoNoEntregable` + `RESPUESTA_NO_ENTREGABLE` | `entregar-mision/route.ts` **y** `opcionesDeMision` | `lib/misiones.ts` |
+>
+> ### ⚠️ EL GATE MIRA LOS DOS LADOS, Y ESA ES LA PIEZA QUE IMPORTA
+> Sacar la regla a un módulo no sirve de nada si la ruta se queda con su copia.
+> `check-misiones` lee el **TEXTO** de las cuatro rutas y exige dos cosas: que
+> importen la regla y que **ya no lleven dentro** el literal que se les quitó.
+> Es el mismo truco que ya se le hacía al `CatalogoPanel` con `TAMANOS`.
+>
+> Si alguna vez hay que volver a escribir una condición dentro de una ruta, el
+> gate va a chillar **a propósito**. No se silencia: se mueve la regla.
+>
+> ### ⚠️ `esDelGrupo` y `seAsignaAlAceptar` NO se unifican, y no es un descuido
+> Parecen la misma pregunta —«¿de quién es esta misión?»— y **no pueden serlo**:
+> - `esDelGrupo` mira el `tamano` del CATÁLOGO (`data/misiones/`).
+> - `seAsignaAlAceptar` mira una fila de `quests`, que **no tiene columna
+>   `tamano`** (ver `schema_v12` + `schema_v24`): la escribió el DM a mano y el
+>   catálogo no existe ahí. Usa el `npc_id` como marca.
+>
+> Dos entradas distintas, dos reglas. Juntarlas sería inventarse un dato que no
+> está. Hay un check dedicado a **fijar la asimetría** para que nadie la
+> «arregle». Si algún día `quests` guarda el tamaño, esto se replantea.
+>
+> ### El espejo, que es lo que se rompía en silencio
+> Entregar una misión estaba escrito **dos veces**: en `opcionesDeMision` (lo que
+> el navegador ENSEÑA) y otra vez a mano en la ruta (la PUERTA de verdad). Solo
+> la primera la miraba el gate. Podían separarse sin que fallara nada, y el
+> síntoma habría sido el peor: el jugador viendo «Está hecho: …» y el servidor
+> negándoselo, o al revés.
+>
+> Ahora las dos preguntan a `motivoNoEntregable`, y el gate comprueba en cuatro
+> estados que **la app ofrezca entregar exactamente cuando el servidor lo
+> acepta**. La ruta sigue siendo la puerta: se comparte el criterio, no la
+> confianza.
+>
+> Devuelve el MOTIVO y no un booleano porque la ruta necesita decir cuál de las
+> tres falló (409, 409, 403 — «no es tuya» es permiso, no estado). El orden de
+> las tres —estado, PNJ, dueño— decide qué mensaje lee el jugador y **está fijado
+> por el gate**.
+>
+> ### Prueba de mutación: ocho roturas, ocho cazadas
+> Commiteado antes de mutar, `git diff` para confirmar que se aplicaba, y
+> restaurado. Las dos que más tranquilidad dan:
+> - Volver `opcionesDeMision` a su criterio viejo → **tres** checks en rojo, uno
+>   de ellos de los de antes de esta tanda.
+> - Re-escribir una condición dentro de la ruta → el check de texto la caza.
+>
+> ### ⚠️ ESTO NO SE HA EJECUTADO NUNCA
+> El gate compila y comprueba las reglas; **nadie ha aceptado ni entregado un
+> encargo de verdad**. La extracción conserva las expresiones exactas —por eso se
+> hizo así—, pero sin sesión y con la clave de servicio caducada no hay forma de
+> ejercitar las rutas desde el repo. Si en mesa algo va raro con una misión de
+> grupo o con una entrega, **empieza por ahí**.
+>
+> ### La auditoría de reglas escondidas, y lo que queda
+> Se cruzaron los **78 módulos** que importan los 45 checks contra las 8 rutas y
+> los 30 hooks. Resultado:
+> - **Los 30 hooks están limpios.** `useChronicle` (168 líneas de quests) no
+>   tiene ni una regla; `useInitiative` delega en `lib/combate`,
+>   `useInventarioVivo` en `lib/derive`. La forma correcta ya estaba.
+> - `descanso` y `dm/character` ya importaban sus reglas. Modelo a seguir.
+> - **Lo único que queda sin dueño**: `slice(-21)` y `slice(-2)` en
+>   `app/api/ia/route.ts` —cuánta conversación se le manda al modelo—. Números
+>   mágicos, riesgo bajo, sin tocar.
+>
+> ### ⚠️ EL SQL DE `schema_v16:26` NO ERA UNA TAREA
+> Se citó como PRUEBA de por qué un PNJ con `public = false` desaparece, y se
+> ejecutó por error dando `42710: policy already exists` —inofensivo, la política
+> ya estaba—. **No hay nada que ejecutar en Supabase.** El error confirmó el
+> diagnóstico: `using (public or is_dm())` está activa, así que una fila con
+> `public = false` no le llega al jugador.
+>
+> ### El «solo salía Cora», diagnosticado y a falta de confirmar
+> **Es `public = false`, y `poi_name` queda DESCARTADO.** En `npcsDeNodo`
+> (`lib/nodos.ts:236`) la rama de un nodo `sub:` filtra **solo** por
+> `venue === nodo.id`: dentro del edificio `poi_name` no se mira. Un `poi_name`
+> mal escrito rompería la plaza, nunca el interior. Como no salían en ninguno de
+> los dos, solo lo explica la RLS escondiendo la fila entera.
+>
+> Falta que el usuario confirme cómo estaban los cuatro **antes** de tocarlos.
+>
+> ### ⚠️ EL CHECKBOX NO SE LLAMA «PÚBLICO»
+> En Panel DM › PNJs pone **«Visible para los jugadores»**
+> (`app/dm/NpcsPanel.tsx:128`). Y hay que pulsar **«Guardar» en cada tarjeta**:
+> es un botón por PNJ, no uno global.
+>
+> ### Abrir pueblos al viaje: es el OJO del Mapa, y no hay nada que programar
+> `Viajar` → `destinosDesde` (`lib/viaje.ts:97`) → `poi_state.revealed`. El
+> interruptor es el ojo por POI de `app/dm/MapaPanel.tsx:305`, y **abre el
+> destino para todos los jugadores**, no solo pinta el pin. Tres reglas que
+> ahorran sustos: solo se viaja **desde la plaza** de un pueblo; **falla
+> cerrado** (sin fila en `poi_state`, oculto); y **donde está el grupo se ofrece
+> siempre**, revelado o no (la regla anti-ratonera).
+
+## 🚦 Antes de eso (2026-08-25, la tanda de misiones)
 
 > **LAS MISIONES YA EXISTEN DE VERDAD, Y LA APP AVISA.** Ocho merges sin
 > registrar desde la entrada anterior —dos del 8 por la tarde, seis del 9 y uno
