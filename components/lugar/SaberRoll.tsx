@@ -5,7 +5,8 @@ import { loadActiveCharacter, saveCharacter, type CharacterData } from "@/lib/ch
 import { derive } from "@/lib/derive";
 import { rollVisual, RESULTADO_MS } from "@/lib/diceBox";
 import { roll as rollFallback } from "@/lib/dice";
-import { loadLoreRoll, saveLoreRoll, unlockCount } from "@/lib/loreRolls";
+import { loadLoreRoll, saveLoreRoll } from "@/lib/loreRolls";
+import { unlockCount, CDS_SABER } from "@/lib/saber";
 import { avisar } from "@/components/Avisos";
 import { SABER, saberById } from "@/data/saber";
 
@@ -96,7 +97,9 @@ export default function SaberRoll({ poiName, regionSlug, continent }: { poiName:
         ) : (
           <>
             <p className="font-ui text-[12px]" style={{ color: "var(--color-muted)" }}>
-              Una sola tirada por lugar. Cuanto más saques, más recuerdas (10, 15 y 20).
+              {/* Las CD salen de `TRAMOS_SABER`, no escritas a mano: estaban
+                  copiadas aquí y un cambio de tramo dejaba esta frase mintiendo. */}
+              Una sola tirada por lugar. Cuanto más saques, más recuerdas ({CDS_SABER.slice(0, -1).join(", ")} y {CDS_SABER[CDS_SABER.length - 1]}).
             </p>
             <div className="flex flex-wrap gap-2">
               {SABER_SKILLS.map((name) => {

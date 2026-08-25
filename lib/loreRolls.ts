@@ -22,10 +22,7 @@ export async function saveLoreRoll(characterId: string, poiName: string, total: 
     .upsert({ character_id: characterId, poi_name: poiName, total, updated_at: new Date().toISOString() });
 }
 
-// Tramos: cuántas entradas se desbloquean según el total de la tirada.
-export function unlockCount(total: number): number {
-  if (total >= 20) return 3;
-  if (total >= 15) return 2;
-  if (total >= 10) return 1;
-  return 0;
-}
+// ⚠️ Los TRAMOS ya no están aquí: son `unlockCount` y `TRAMOS_SABER` en
+// `lib/saber.ts`. Este módulo lleva `"use client"` y abre Supabase, así que
+// ningún `scripts/check-*.ts` puede importarlo — la regla de cuánto se recuerda
+// vivía donde no la miraba nadie. Aquí se queda solo el ir y venir a la tabla.

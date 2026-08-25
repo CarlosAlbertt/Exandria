@@ -1,7 +1,9 @@
 // Comprobación manual de la lore de continentes y de la fusión del atlas.
 // Uso: npx tsx scripts/check-lore.ts
 import { SABER, PLACES, PLACE_ACCENT, CATEGORIES, continentBySlug, HABITADOS } from "../data/saber";
-import { knows, type SaberCtx } from "../lib/saber";
+import { knows, unlockCount, TRAMOS_SABER, CDS_SABER, type SaberCtx } from "../lib/saber";
+import fs from "node:fs";
+import path from "node:path";
 import { CONTINENT_LORE } from "../data/continentes";
 import { CALAMIDAD_RELATO, CALAMIDAD_LORE } from "../data/calamidad";
 import { SUSURRADO_LORE } from "../data/susurrado";
@@ -259,6 +261,44 @@ for (const e of FIGURAS_LORE) {
   check(`"${e.id}" no nombra a ningún héroe${citados.length ? ` (cita: ${citados.join(", ")})` : ""}`,
     citados.length === 0);
 }
+
+/* ------------------ LOS TRAMOS DE LA TIRADA DE SABER ------------------- */
+// La regla de cuánto se recuerda vivía en `lib/loreRolls.ts`, que lleva
+// `"use client"` y abre Supabase: ningún check podía importarla. Y la pantalla
+// tenía los números OTRA VEZ, escritos en la frase.
+
+// Escritos a mano, no salidos de TRAMOS_SABER (si no, verde por construcción).
+check("saber: por debajo de 10 no se recuerda nada", unlockCount(9) === 0);
+check("saber: 10 desbloquea una entrada", unlockCount(10) === 1);
+check("saber: 14 sigue en una", unlockCount(14) === 1);
+check("saber: 15 desbloquea dos", unlockCount(15) === 2);
+check("saber: 19 sigue en dos", unlockCount(19) === 2);
+check("saber: 20 desbloquea tres", unlockCount(20) === 3);
+check("saber: un total altísimo no pasa de tres", unlockCount(45) === 3);
+// Un natural 1 con modificador negativo: no puede devolver algo raro.
+check("saber: un total negativo no desbloquea nada", unlockCount(-3) === 0);
+
+// ⚠️ El ORDEN descendente es lo que hace correcto el primer acierto. Si alguien
+// reordena la lista, el 20 caería en el tramo del 10 sin que falle nada más.
+for (let i = 1; i < TRAMOS_SABER.length; i++) {
+  check(`los tramos van de mayor a menor (${TRAMOS_SABER[i - 1].cd} > ${TRAMOS_SABER[i].cd})`,
+    TRAMOS_SABER[i - 1].cd > TRAMOS_SABER[i].cd);
+  check(`a más CD, más entradas (${TRAMOS_SABER[i - 1].entradas} > ${TRAMOS_SABER[i].entradas})`,
+    TRAMOS_SABER[i - 1].entradas > TRAMOS_SABER[i].entradas);
+}
+check("todo tramo desbloquea algo", TRAMOS_SABER.every((t) => t.entradas > 0));
+check("CDS_SABER es la misma lista, al revés",
+  CDS_SABER.length === TRAMOS_SABER.length && CDS_SABER[0] === TRAMOS_SABER[TRAMOS_SABER.length - 1].cd);
+
+// Y que la pantalla NO se los vuelva a escribir a mano.
+const saberRoll = fs.readFileSync(
+  path.join(process.cwd(), "components", "lugar", "SaberRoll.tsx"), "utf8");
+check("SaberRoll compone las CD desde CDS_SABER", saberRoll.includes("CDS_SABER"));
+check("SaberRoll ya no lleva las CD escritas en la frase",
+  !/más recuerdas \(\d+/.test(saberRoll));
+check("la regla ya no vive en lib/loreRolls.ts",
+  !/export function unlockCount/.test(
+    fs.readFileSync(path.join(process.cwd(), "lib", "loreRolls.ts"), "utf8")));
 
 console.log(failures ? `\n${failures} comprobación(es) fallida(s)` : "\nTodo en verde");
 process.exit(failures ? 1 : 0);
