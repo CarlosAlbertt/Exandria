@@ -2,7 +2,95 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-08, el corazón)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-25)
+
+> **LAS MISIONES YA EXISTEN DE VERDAD, Y LA APP AVISA.** Ocho merges sin
+> registrar desde la entrada anterior —dos del 8 por la tarde, seis del 9 y uno
+> del 25—. Todo en `master` y desplegado. **Sin ninguna migración.** Último
+> commit: `merge: el catalogo de misiones, visible y abrible desde el Panel DM`.
+>
+> ### ⚠️ EL GATE SON 44, NO 43
+> Se sumó `scripts/check-avisos.ts`. Si algún documento dice 43, está viejo.
+>
+> ### Lo que hay ahora, en una tabla
+> | Qué | Dónde vive |
+> |---|---|
+> | **15 misiones preparadas** con escenas, combates medidos y `body` para pegar | `data/misiones/` |
+> | El **Panel DM › Catálogo**: verlas y abrirlas de un clic | `app/dm/CatalogoPanel.tsx` |
+> | **17 figuras históricas** (Zan, los Drassig, Errevon, el Cónclave, Piedrablanca, el Consejo) | `data/figuras.ts` (prefijo `fig:`) |
+> | **10 árboles de diálogo** con las 15 misiones repartidas | `data/dialogos.ts` |
+> | Aceptar un encargo hablando **crea la fila** en `quests` | `app/api/mision-dialogo/route.ts` |
+> | **Avisos (SILEO)**: qué se dice / cómo se pinta | `lib/avisos.ts` + `components/Avisos.tsx` |
+> | Probador de avisos, DM-only | `app/dm/AvisosPanel.tsx` |
+>
+> ### ⚠️ EL REPARTO DE BYRODEN ES REAL, Y ANTES NO LO ERA
+> `npcTemplates.ts` tenía **once PNJ inventados** —Mirna, Vell, Brannoc, Harn…—
+> que **no existen en la partida**, y se escribieron once árboles de diálogo
+> colgando de ellos. Se tiró todo y se rehízo con los CINCO de verdad, dictados
+> por el usuario: **Silas Trumble** (alcalde, en negación), **Garrick Vance**
+> (comandante, cicatriz de Thordak), **Elara Teje-Raíces** (sacerdotisa),
+> **Cora Mano de Malta** (tabernera) y el **Viejo Yorick** (sepulturero). Más
+> cinco nuevos para lo secundario: Nessa, Maela, Bram, Ashwen y el Guardián.
+>
+> **La lección: `data/` no es la partida.** Antes de escribir para un PNJ, mirar
+> `location_npcs`, no las plantillas.
+>
+> ### ⚠️ ELARA ES LA LÍDER DEL CULTO AL SUSURRADO
+> Y **no se la puede destapar hablando**: ninguna tirada, ningún «casi» (decisión
+> del usuario). `check-dialogos` lo vigila por dos lados — una lista de palabras
+> que nunca puede decir (`PALABRAS_PROHIBIDAS_ELARA`) y que **ninguna** de sus
+> opciones lleve `chequeo`. Su única misión —el campanario— existe para mandar a
+> los jugadores a la torre y tenerlos lejos del altar.
+>
+> ### La niebla devora-mentes está RESUELTA
+> La cerraron los aventureros. En los diálogos aparece como pasado reciente y
+> **nunca** como amenaza abierta. El pueblo acaba de salir de una y no se ha
+> repuesto, que es distinto.
+>
+> ### Cuatro fallos mudos que se cazaron, y de dónde salieron
+> - **`mision` de diálogo estaba muerto**: `resolver()` lo devolvía y
+>   `DialogoArbol` lo tiraba. Se aceptaba un encargo, el PNJ decía que sí, y no
+>   se creaba ninguna fila. Llevaba así desde que se escribió el campo.
+> - **SILEO iba sin estilos**: la librería publica `sileo/styles.css` y **no la
+>   inyecta sola**. Los toasts salían sin una sola regla y `tsc`, `next build` y
+>   las 43 comprobaciones seguían en verde.
+> - **`theme` de SILEO describe la PÁGINA, no el aviso**: sus rellenos son
+>   `{ light: "#1a1a1a", dark: "#f2f2f2" }`, así que `theme="dark"` daba un aviso
+>   BLANCO. El color va explícito: `options={{ fill: "#131b25" }}`.
+> - **`check-lugares` contaba CABEZAS** («cada sitio trae DOS»), calco del
+>   reparto inventado. Ahora comprueba que esté QUIEN tiene que estar, por
+>   nombre.
+>
+> ### `npcsDeNodo` es EXCLUYENTE, y explica el «solo sale Cora»
+> **Sin `venue` se ve en la plaza; con `venue`, solo dentro del edificio.** No
+> existe «en los dos». `seedNpcs` le ponía `venue` a todo lo que sembraba, así
+> que los cinco quedaban escondidos cada uno en su edificio. Se añadió
+> `NpcTemplate.enLaPlaza` (los cinco importantes en la plaza, los secundarios
+> dentro) y el gate lo vigila.
+>
+> ### ⚠️ LO QUE TIENE QUE HACER EL USUARIO A MANO
+> 1. **Panel DM › PNJs**, para Silas, Garrick, Elara, Cora y Yorick: sitio → «En
+>    Byroden (el pueblo entero)», árbol → su clave (`silas`, `garrick`, `elara`,
+>    `cora`, `yorick`), y **Público** marcado. Sus filas ya existían y
+>    `puedeSembrar` no siembra encima, así que esto no se puede automatizar.
+> 2. **Sigue sin explicarse** por qué los otros cuatro no aparecían **ni dentro
+>    de su edificio**. Apunta a `public: false` o a un `poi_name` que no sea
+>    exactamente `Byroden`. Se ve de un vistazo en ese panel.
+> 3. Las de siempre: **abrir pueblos al viaje** (ojo del Mapa) y **cabeceras
+>    16:9**.
+>
+> ### ⚠️ NO SE PUEDE CONSULTAR SUPABASE DESDE EL REPO
+> La `SUPABASE_SERVICE_ROLE_KEY` de `.env.local` devuelve **«Invalid API key»**
+> (es de julio). Cualquier duda sobre qué hay en las tablas se resuelve mirando
+> el Panel DM, no con un script.
+>
+> ### Lo que falta de la tanda
+> **Pieza 4: pistas y tiradas.** Que algunas misiones se descubran con
+> Percepción, Perspicacia o Supervivencia en vez de dándolas un PNJ, enganchado a
+> `useClues`. Yorick y el cementerio son el gancho natural. Las otras cuatro
+> piezas están hechas.
+
+## 🚦 Antes de eso (2026-08-08, el corazón)
 
 > **EL CORAZÓN DEL BOSQUE YA TIENE MONSTRUOS.** Dos merges, los dos en `master`
 > y desplegados. **Sin migración.** Último commit: `merge: el corazon del bosque
