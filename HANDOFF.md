@@ -73,6 +73,44 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > ejercitar las rutas desde el repo. Si en mesa algo va raro con una misión de
 > grupo o con una entrega, **empieza por ahí**.
 >
+> ### Y una tercera, que salió al ampliar la auditoría a los COMPONENTES
+> `unlockCount` —cuánto saber desbloquea cada total: **10, 15 y 20**— vivía en
+> `lib/loreRolls.ts`, que lleva `"use client"` y abre Supabase. **Ningún
+> `check-*.ts` puede importar eso**, así que la regla no la miraba nadie. Se fue
+> a `lib/saber.ts`, que es puro y que `check-lore` ya leía.
+>
+> ⚠️ **Y había una SEGUNDA copia que no se veía venir**: la pantalla le dice al
+> jugador cuáles son los tramos y los tenía escritos **en la frase** («…más
+> recuerdas (10, 15 y 20)»). Se cambia el tramo, el texto sigue prometiendo el
+> viejo, y no falla nada. Ahora la frase se compone desde `CDS_SABER` y el gate
+> comprueba que no vuelvan a escribirse a mano.
+>
+> Los tramos van en orden **descendente** a propósito: es lo que hace correcto el
+> primer acierto de `unlockCount`. Reordenarlos metería el 20 en el tramo del 10.
+> Hay check para eso. Mismos valores que antes: sin cambio de comportamiento.
+>
+> ### 🎯 LO SIGUIENTE: LOS 18 BOCETOS DEL BOSQUE
+> **Hay 18 monstruos escritos en las tablas de encuentros que NO se pueden
+> jugar**, porque no tienen statblock: `jugablesDe` los descarta en silencio.
+> Están listados en `PENDIENTES` de `data/bosque.ts`.
+>
+> | Franja | Jugables | Escritos | Faltan |
+> |---|---|---|---|
+> | linde | 12 | 15 | **3** — Hongo Chillón, Oso Pardo, Araña Gigante |
+> | **espesura** | **6** | **21** | **15** — el grueso del trabajo |
+> | corazón | 10 | 10 | ninguno (se cerró el 08-08) |
+>
+> La espesura es la que está de verdad rota: **6 jugables de 21 escritos**. Pasa
+> el gate porque el mínimo son 5.
+>
+> **El trabajo es el mismo que el `lote-10`**: extraer del Manual y escribir el
+> lote. Y el aviso que ya costó una vez: **las estadísticas son HECHOS y salen
+> del libro; los nombres en español y los blurbs los pone quien extrae**. La capa
+> OCR interleava las dos columnas y ya dio un CR falso (el Cíclope). Se usa para
+> LOCALIZAR (`grep "XP N"`), y la verdad es **la página renderizada**:
+> `py` + `pypdfium2` a escala 2.5 → PNG → leer visualmente. Verificado que
+> `py` 3.14.6 y `pypdfium2` 5.11.0 siguen instalados y el PDF está en su sitio.
+>
 > ### La auditoría de reglas escondidas, y lo que queda
 > Se cruzaron los **78 módulos** que importan los 45 checks contra las 8 rutas y
 > los 30 hooks. Resultado:
