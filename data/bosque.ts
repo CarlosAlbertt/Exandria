@@ -156,7 +156,10 @@ export const PENDIENTES: string[] = [
   // Los que pide un bosque feérico y salen de cruzar el censo con el hábitat
   // "Forest" del apéndice B.
   "Dríade", "Sátiro Juerguista", "Duende", "Duende Prodigioso",
-  "Oso Lechuza", "Ettercap", "Worg",
+  // «Worg» salió de aquí el 2026-08-25 sin extraer nada: NUNCA le faltó la
+  // ficha. Estaba en la tabla con el nombre INGLÉS y la ficha se llama
+  // «Huargo», así que `jugablesDe` no las cruzaba. Un boceto que no lo era.
+  "Oso Lechuza", "Ettercap",
   "Grick", "Arpía", "Peryton", "Hongo Chillón",
   // Los DIEZ del corazón salieron de aquí el 2026-08-08: están extraídos en
   // `data/bestiary/lote-10.ts` y la franja pasó de 0 a 10 jugables.
@@ -212,7 +215,10 @@ export const ENCUENTROS_VERDANTE: EncuentroBosque[] = [
   { name: "Montículo Reptante", franja: "espesura", nota: "El suelo del bosque cuando el bosque decide moverse." },
   { name: "Ser del Agua", franja: "espesura", nota: "Los arroyos de la espesura llevan más años que Syngorn." },
   { name: "Lobo Huargo", franja: "espesura", nota: "El lobo de la linde, pero grande y sin miedo al fuego." },
-  { name: "Worg", franja: "espesura", nota: "Habla, y sirve a quien le conviene. Suele venir con goblinoides encima." },
+  // ⚠️ «Huargo», no «Worg»: la ficha existe desde hace lotes, y `jugablesDe`
+  // cruza por nombre EXACTO. Escrito en inglés no casaba con nada y el bicho
+  // salía en la tabla sin poder jugarse, como si le faltara el statblock.
+  { name: "Huargo", franja: "espesura", nota: "Habla, y sirve a quien le conviene. Suele venir con goblinoides encima." },
   { name: "Jabalí Gigante", franja: "espesura", nota: "Arrasa el sotobosque a su paso; se le oye antes de verlo." },
   // El Oso Pardo y la Araña Gigante se han ido al LINDE. No están duplicados
   // aquí a propósito: un bicho en dos franjas deja de decir dónde estás.
