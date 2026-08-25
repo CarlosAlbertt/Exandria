@@ -3,6 +3,40 @@
 
 import type { SaberEntry } from "@/data/saber";
 
+/* ------------------------- LOS TRAMOS DE LA TIRADA ------------------------ */
+
+/**
+ * Cuánto se recuerda según lo que saque el dado, in situ (`schema_v19`).
+ *
+ * ⚠️ **Vivía en `lib/loreRolls.ts`, que lleva `"use client"` y abre Supabase**,
+ * así que ningún check podía importarlo: la regla de cuánto saber se desbloquea
+ * no la miraba nadie. Aquí sí, porque este módulo es puro —entra el contexto,
+ * sale la respuesta— y `check-lore` ya lo lee.
+ *
+ * Va como LISTA y no como tres `if` sueltos por una razón concreta: la pantalla
+ * le dice al jugador cuáles son los tramos, y los tenía **escritos a mano en la
+ * frase** («…más recuerdas (10, 15 y 20)»). Dos copias de un número que sí se
+ * puede cambiar: se toca el tramo, el texto sigue prometiendo el viejo, y no
+ * falla nada. Ahora la frase se compone desde aquí y no puede mentir.
+ *
+ * ⚠️ **En orden DESCENDENTE**, que es lo que hace correcto el primer acierto de
+ * `unlockCount`. Si alguien la reordena, el 20 caería en el tramo del 10.
+ */
+export const TRAMOS_SABER: readonly { cd: number; entradas: number }[] = [
+  { cd: 20, entradas: 3 },
+  { cd: 15, entradas: 2 },
+  { cd: 10, entradas: 1 },
+];
+
+/** Las CD de menor a mayor, para escribirlas en pantalla. */
+export const CDS_SABER: readonly number[] = [...TRAMOS_SABER].map((t) => t.cd).reverse();
+
+/** Cuántas entradas de saber desbloquea este total. Por debajo del primer tramo, ninguna. */
+export function unlockCount(total: number): number {
+  for (const t of TRAMOS_SABER) if (total >= t.cd) return t.entradas;
+  return 0;
+}
+
 export type SaberCtx = {
   isDm: boolean;
   originContinent: string | null;
