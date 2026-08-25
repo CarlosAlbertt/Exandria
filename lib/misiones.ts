@@ -52,6 +52,34 @@ export function esIndividual(q: MisionMin): boolean {
   return q.assigned_character_id !== null;
 }
 
+/* ------------------------------- ACEPTAR -------------------------------- */
+
+/**
+ * Al aceptar una OFERTA del tablón, ¿se le asigna a la ficha de quien acepta?
+ *
+ * Asignarla la vuelve individual y la RLS de la `schema_v24` la esconde del
+ * resto; dejarla sin asignar la deja siendo del grupo. La marca es el `npc_id`:
+ * una oferta con PNJ se sacó hablando con alguien y es de quien habló; una de
+ * tablón no tiene PNJ y sigue siendo de todos. Sin ficha en juego no se asigna
+ * nada — el DM no tiene ficha, y quien dejó la creación a medias tampoco.
+ *
+ * ⚠️ **No es la misma regla que `esDelGrupo`, y no puede serlo.** Aquella mira
+ * el `tamano` del CATÁLOGO; esta mira una fila de `quests` que **no tiene
+ * columna `tamano`** (ver `schema_v12` y `schema_v24`): la escribió el DM a
+ * mano y el catálogo no existe ahí. Son dos preguntas con dos entradas
+ * distintas, y por eso viven separadas en vez de unificadas a la fuerza. Si
+ * algún día `quests` guarda el tamaño, esto se replantea; hasta entonces,
+ * juntarlas sería inventarse un dato que no está.
+ *
+ * Vivía dentro de `app/api/aceptar-encargo/route.ts`, donde ningún gate la veía.
+ */
+export function seAsignaAlAceptar(
+  q: Pick<MisionMin, "npc_id">,
+  tieneFichaEnJuego: boolean,
+): boolean {
+  return q.npc_id !== null && tieneFichaEnJuego;
+}
+
 /* ------------------------------- OPCIONES ------------------------------- */
 
 /** Una opción de diálogo. `accion` la distingue de las que propone la IA. */

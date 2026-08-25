@@ -149,9 +149,22 @@ export function poiDeNodo(id: string): string | null {
   return null; // las franjas no son de ningún pueblo
 }
 
+/**
+ * ¿Este id es una franja del bosque y no un pin del mapa?
+ *
+ * El prefijo se comparaba a mano en cada sitio que lo necesitaba, y una de esas
+ * copias estaba DENTRO de `app/api/mision-dialogo/route.ts`, decidiendo si la
+ * misión guarda `poi_name`. Aquí lo mira el gate; allí no lo miraba nadie.
+ *
+ * No usa `franjaDeNodo` a propósito: aquella VALIDA el nombre y devuelve `null`
+ * ante `franja:inventada`, que para esta pregunta sería la respuesta contraria
+ * a la buena — daría por bueno un `poi_name` que el mapa no sabe pintar.
+ */
+export const esFranja = (id: string) => id.startsWith("franja:");
+
 /** ¿Se está al aire libre? Decide si se pinta el clima. */
 export function alAireLibre(id: string): boolean {
-  return id.startsWith("poi:") || id.startsWith("franja:");
+  return id.startsWith("poi:") || esFranja(id);
 }
 
 /* ---------------------------- LA SEMILLA ------------------------------ */

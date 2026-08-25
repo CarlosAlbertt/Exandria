@@ -9,6 +9,7 @@
 //   · 3 legendarias, letales      (`legendarias.ts`)
 
 import type { Mision, Tamano } from "./types";
+import { esFranja } from "../lugares";
 import { ZIGURAT_LINDE } from "./zigurat";
 import { MENORES } from "./menores";
 import { TRIOS } from "./trios";
@@ -46,5 +47,21 @@ export function misionesPara(jugadores: number, nivel: number): Mision[] {
   );
 }
 
+/**
+ * El `poi_name` con el que se abre la fila de `quests`, o `null`.
+ *
+ * ⚠️ **Una franja del bosque no es un pin del mapa.** Guardar `franja:linde` en
+ * `poi_name` deja la misión apuntando a algo que el mapa no sabe pintar, y eso
+ * no da error en ninguna parte: simplemente la Crónica enseña un lugar que no se
+ * puede abrir.
+ *
+ * Vivía dentro de `app/api/mision-dialogo/route.ts` como un `startsWith`
+ * suelto — la cuarta copia del prefijo en el repo. El dueño del prefijo es
+ * `data/lugares.ts`, que es quien lo compone con `idFranja`.
+ */
+export function poiDeMision(lugar: string): string | null {
+  return esFranja(lugar) ? null : lugar;
+}
+
 export type { Mision, Tamano, Encuentro, Escena } from "./types";
-export { TAMANO_LABEL, TAMANOS } from "./types";
+export { TAMANO_LABEL, TAMANOS, TAMANOS_DE_GRUPO, esDelGrupo } from "./types";

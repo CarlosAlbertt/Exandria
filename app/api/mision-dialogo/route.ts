@@ -1,5 +1,5 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { getMision } from "@/data/misiones";
+import { getMision, esDelGrupo, poiDeMision } from "@/data/misiones";
 
 export const runtime = "nodejs";
 
@@ -57,7 +57,10 @@ export async function POST(req: Request) {
 
   // Las de grupo y las legendarias NO se asignan a una ficha: son del grupo, y
   // asignarlas las escondería del resto por la RLS de la v24. Las demás sí.
-  const delGrupo = mision.tamano === "grupo" || mision.tamano === "legendaria";
+  //
+  // ⚠️ La regla vive en `data/misiones`, no aquí: escrita en esta línea no la
+  // miraba ningún gate, y es la que decide quién ve la misión.
+  const delGrupo = esDelGrupo(mision.tamano);
 
   const { data: creada, error } = await admin.from("quests").insert({
     title: mision.titulo,
@@ -66,7 +69,7 @@ export async function POST(req: Request) {
     status: "activa",
     // El lugar solo si es un POI del mapa: una franja del bosque no es un pin y
     // dejaría `poi_name` apuntando a algo que el mapa no sabe pintar.
-    poi_name: mision.lugar.startsWith("franja:") ? null : mision.lugar,
+    poi_name: poiDeMision(mision.lugar),
     assigned_character_id: delGrupo ? null : char.id,
     npc_id: typeof body.npcId === "number" ? body.npcId : null,
   }).select("id").single();
