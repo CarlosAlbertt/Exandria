@@ -9,8 +9,9 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > del 25—. Todo en `master` y desplegado. **Sin ninguna migración.** Último
 > commit: `merge: el catalogo de misiones, visible y abrible desde el Panel DM`.
 >
-> ### ⚠️ EL GATE SON 44, NO 43
-> Se sumó `scripts/check-avisos.ts`. Si algún documento dice 43, está viejo.
+> ### ⚠️ EL GATE SON 45, NO 43
+> Se sumaron `scripts/check-avisos.ts` y `scripts/check-rastreo.ts`. Si algún
+> documento dice 43 o 44, está viejo.
 >
 > ### Lo que hay ahora, en una tabla
 > | Qué | Dónde vive |
@@ -84,11 +85,30 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > (es de julio). Cualquier duda sobre qué hay en las tablas se resuelve mirando
 > el Panel DM, no con un script.
 >
-> ### Lo que falta de la tanda
-> **Pieza 4: pistas y tiradas.** Que algunas misiones se descubran con
-> Percepción, Perspicacia o Supervivencia en vez de dándolas un PNJ, enganchado a
-> `useClues`. Yorick y el cementerio son el gancho natural. Las otras cuatro
-> piezas están hechas.
+> ### La tanda está COMPLETA: las cinco piezas
+> 1. Aceptar un encargo hablando crea la fila en `quests`.
+> 2. Avisos con SILEO, con color por materia y negritas.
+> 3. Diez árboles de diálogo con las quince misiones repartidas.
+> 4. **Buscarse la vida**: seis misiones se encuentran mirando.
+> 5. Panel DM › Catálogo: verlas y abrirlas de un clic.
+>
+> ### Buscarse la vida (`lib/rastreo.ts` + `RastreoSection`)
+> **Seis de las quince** llevan `descubrimiento` —pericia, CD y el texto de lo
+> que se ve— y se encuentran con **Percepción, Perspicacia o Supervivencia** sin
+> que nadie las encargue. Las otras nueve siguen necesitando un PNJ, y eso es lo
+> que mantiene a los PNJ en el centro: si todas fueran descubribles, hablar sería
+> opcional.
+>
+> ⚠️ **No es `SaberRoll`.** Aquella es Historia/Arcanos/Religión y devuelve lo
+> que tu personaje RECUERDA; esta devuelve lo que hay AHÍ DELANTE. El gate exige
+> que la pericia sea de las tres de buscar, justo para que no se confundan.
+>
+> Cuatro decisiones que parecen detalles y no lo son: un `sub:` **hereda** lo de
+> su pueblo (si no, entrar en la taberna hacía desaparecer lo que se ve desde la
+> plaza); la sección **se enseña siempre**, haya algo o no (si solo saliera
+> cuando queda algo, su presencia sería el spoiler); **una tirada por pericia y
+> sitio**, guardada en `play_state`; y los rastros se calculan **después** de
+> tirar, o dos pestañas encuentran lo mismo dos veces.
 
 ## 🚦 Antes de eso (2026-08-08, el corazón)
 
