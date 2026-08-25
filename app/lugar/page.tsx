@@ -19,6 +19,7 @@ import ShopSection from "@/components/lugar/ShopSection";
 import PosadaSection from "@/components/lugar/PosadaSection";
 import NpcSection from "@/components/lugar/NpcSection";
 import TablonSection from "@/components/lugar/TablonSection";
+import RastreoSection from "@/components/lugar/RastreoSection";
 import SaberRoll from "@/components/lugar/SaberRoll";
 import ClimaEfectos from "@/components/lugar/ClimaEfectos";
 import Salidas from "@/components/lugar/Salidas";
@@ -350,6 +351,14 @@ export default function LugarPage() {
 
           <ErrorBoundary fallback={(m) => <SeccionRota que="la gente del lugar" mensaje={m} />}>
             <NpcSection nodo={nodo} ambient={ambient} />
+          </ErrorBoundary>
+
+          {/* Mirar alrededor: va DENTRO del pergamino y en cualquier nodo (pueblo,
+              sub-lugar o franja del bosque), porque buscarse la vida no depende
+              de que el sitio tenga tienda ni tablon. Cuatro de los seis rastros
+              escritos estan en el bosque. */}
+          <ErrorBoundary fallback={(m) => <SeccionRota que="la busqueda" mensaje={m} />}>
+            <RastreoSection nodoId={nodo.id} />
           </ErrorBoundary>
         </div>
       </div>

@@ -231,6 +231,18 @@ export const ZIGURAT_LINDE: Mision = {
     "el zigurat esté abierto cuando el grupo vuelva es un final perfectamente válido, y mucho " +
     "peor que perder una pelea.",
 
+  // Se encuentra sola si alguien mira los árboles al entrar: no hacen falta ni
+  // el alguacil ni el temblor. Es la más fácil de las seis a propósito — es la
+  // que arrastra la campaña, y no puede depender de que el grupo pase por el
+  // ayuntamiento.
+  descubrimiento: {
+    pericia: "Percepción", cd: 12,
+    texto:
+      "Los árboles del claro no están talados: están tumbados hacia fuera, en círculo, " +
+      "empujados desde el centro. Y desde donde estáis se ve algo gris entre las copas que " +
+      "no debería estar a esa altura.",
+  },
+
   body:
     "El alguacil de Byroden paga por saber qué ha salido del suelo en la linde del bosque, al " +
     "norte del pueblo. Lo que se sabe: hubo un temblor de madrugada, el agua de los pozos sabe " +
