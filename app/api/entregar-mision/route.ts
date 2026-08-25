@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { motivoNoEntregable, RESPUESTA_NO_ENTREGABLE } from "@/lib/misiones";
 
 export const runtime = "nodejs";
 
@@ -35,9 +36,14 @@ export async function POST(req: Request) {
   const { data: quest } = await admin.from("quests")
     .select("id, status, npc_id, assigned_character_id, unlock_lore").eq("id", id).maybeSingle();
   if (!quest) return Response.json({ error: "Esa misión ya no existe." }, { status: 404 });
-  if (quest.status !== "activa") return Response.json({ error: "Esa misión ya no está en curso." }, { status: 409 });
-  if (quest.npc_id !== npcId) return Response.json({ error: "Esa misión no es de este personaje." }, { status: 409 });
-  if (quest.assigned_character_id !== char.id) return Response.json({ error: "Esa misión no es tuya." }, { status: 403 });
+
+  //    ⚠️ Las tres condiciones ya NO se escriben aquí: son `motivoNoEntregable`
+  //    en `lib/misiones.ts`, el mismo criterio con el que `opcionesDeMision`
+  //    decide si enseñar la opción. Antes eran dos copias y solo una la miraba
+  //    el gate, así que podían separarse en silencio y dejar al jugador viendo
+  //    una opción que el servidor le negaba.
+  const motivo = motivoNoEntregable(quest, npcId, char.id);
+  if (motivo) return Response.json({ error: RESPUESTA_NO_ENTREGABLE[motivo].error }, { status: RESPUESTA_NO_ENTREGABLE[motivo].status });
 
   // 3. Activa → completada. El `eq("status", "activa")` del propio update es el
   //    anti-abuso: dos pulsaciones seguidas no la completan dos veces.
