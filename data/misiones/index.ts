@@ -47,4 +47,4 @@ export function misionesPara(jugadores: number, nivel: number): Mision[] {
 }
 
 export type { Mision, Tamano, Encuentro, Escena } from "./types";
-export { TAMANO_LABEL } from "./types";
+export { TAMANO_LABEL, TAMANOS } from "./types";
