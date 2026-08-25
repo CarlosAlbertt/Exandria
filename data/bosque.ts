@@ -151,8 +151,10 @@ export type EncuentroBosque = {
 export const PENDIENTES: string[] = [
   // De los que pidió el DM.
   "Montículo Reptante", "Ser del Agua", "Lobo Huargo",
-  "Oso Pardo",
-  "Araña Gigante", "Osgo Acechador",
+  "Osgo Acechador",
+  // El Oso Pardo, la Araña Gigante y el Hongo Chillón salieron de aquí el
+  // 2026-08-26 en `data/bestiary/lote-11.ts`: eran los tres bocetos de la
+  // LINDE, que con ellos queda completa (15 de 15).
   // ⚠️ **«Jabalí Gigante» NO TIENE FUENTE.** No existe en el Manual 2024: no
   // está en el índice y la sección de bestias va Boar → Brown Bear sin nada en
   // medio. Se queda aquí **a propósito** —decisión del usuario el 2026-08-25—
@@ -171,7 +173,7 @@ export const PENDIENTES: string[] = [
   // ficha. Estaba en la tabla con el nombre INGLÉS y la ficha se llama
   // «Huargo», así que `jugablesDe` no las cruzaba. Un boceto que no lo era.
   "Oso Lechuza", "Ettercap",
-  "Grick", "Arpía", "Peryton", "Hongo Chillón",
+  "Grick", "Arpía", "Peryton",
   // Los DIEZ del corazón salieron de aquí el 2026-08-08: están extraídos en
   // `data/bestiary/lote-10.ts` y la franja pasó de 0 a 10 jugables.
   //

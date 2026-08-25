@@ -59,11 +59,24 @@ for (const m of ALL_MONSTERS) {
     check(`${tag}: ${key} en rango 1-30 (${v})`, v >= 1 && v <= 30);
   }
 
-  // xp coincide con la tabla CR_XP para su cr
+  // xp coincide con la tabla CR_XP para su cr.
+  //
+  // ⚠️ **CR 0 es el único con DOS valores buenos, y es cosa del libro.** El
+  // Manual 2024 reparte 10 XP a casi todo lo de CR 0, pero a lo que no puede
+  // matar a nadie le pone **XP 0** — el Hongo Chillón dice literalmente «CR 0
+  // (XP 0; PB +2)», comprobado en la página renderizada y a zoom.
+  //
+  // La regla estricta obligaba a escribir 10 donde el libro pone 0, que es
+  // falsificar un hecho para contentar al gate. Se abre la puerta SOLO en CR 0 y
+  // SOLO a esos dos valores: cualquier otro número sigue fallando, y en el resto
+  // de CR la comprobación es exactamente igual de dura que antes.
   const expectedXp = CR_XP.find((c) => c.cr === m.cr)?.xp;
+  const xpValida = m.cr === "0"
+    ? m.xp === 0 || m.xp === expectedXp
+    : m.xp === expectedXp;
   check(
-    `${tag}: xp (${m.xp}) coincide con CR_XP para CR ${m.cr} (${expectedXp})`,
-    expectedXp !== undefined && m.xp === expectedXp
+    `${tag}: xp (${m.xp}) coincide con CR_XP para CR ${m.cr} (${expectedXp}${m.cr === "0" ? " o 0" : ""})`,
+    expectedXp !== undefined && xpValida
   );
 
   // pb coherente con el CR
@@ -79,8 +92,24 @@ for (const m of ALL_MONSTERS) {
   check(`${tag}: blurb no vacío`, m.blurb.length > 0);
   check(`${tag}: blurb <= 300 caracteres (${m.blurb.length})`, m.blurb.length <= 300);
 
-  // al menos una acción
-  check(`${tag}: tiene al menos 1 acción`, m.actions.length >= 1);
+  // ⚠️ **Antes se exigía al menos una ACCIÓN, y era demasiado fuerte.**
+  //
+  // La intención sigue siendo la buena: una ficha sin nada que hacer en combate
+  // es una extracción a medias, y eso no se ve hasta que alguien la saca en
+  // mesa. Pero en el Manual 2024 hay monstruos legales SIN acciones: el Hongo
+  // Chillón (CR 0) solo tiene una reacción —grita cuando algo se le acerca— y no
+  // hace nada en su turno. Con la regla vieja, extraerlo fielmente rompía el
+  // gate, y la única forma de pasarlo era **inventarle una acción**, que es
+  // falsificar el libro para contentar a una comprobación.
+  //
+  // Así que se pide que la ficha tenga ALGO que aportar en combate, venga por
+  // donde venga. Un statblock sin ninguna de las cuatro cosas sigue fallando,
+  // que era el fallo que se quería cazar.
+  const recursos =
+    m.actions.length + (m.reactions?.length ?? 0) +
+    (m.bonusActions?.length ?? 0) + (m.legendary?.length ?? 0);
+  check(`${tag}: tiene al menos 1 acción, reacción, acción adicional o legendaria`,
+    recursos >= 1);
 }
 
 // --- lib/useBestiary: pbForCr y CR_OPTIONS (comprobaciones puras rápidas) ---
