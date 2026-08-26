@@ -13,8 +13,11 @@ import {
   visionTrasEstudiar, VISION_LABEL,
   FASES_EXTRACCION, FASE_EXTRACCION_LABEL, FASE_EXTRACCION_BLURB,
   manipulacionExtraccion, TOPE,
+  conCadaver, sinCadaver, gastarPiezaDe, cadaveresEn,
 } from "../lib/extraccion";
 import { TOPE as TOPE_TALLER } from "../lib/manipulacion";
+import fs from "node:fs";
+import path from "node:path";
 import { MATERIALES } from "../lib/materiales";
 import { ALL_MONSTERS } from "../data/bestiary";
 
@@ -169,6 +172,50 @@ check("la manipulación no se pasa del tope",
 check("son tres fases, en orden", FASES_EXTRACCION.join(",") === "estudiar,cortar,guardar");
 check("toda fase tiene nombre y explicación",
   FASES_EXTRACCION.every((f) => !!FASE_EXTRACCION_LABEL[f] && !!FASE_EXTRACCION_BLURB[f]));
+
+// --- La lista del DM -------------------------------------------------------
+// Una entrada por CADÁVER, no por monstruo: el mismo bicho puede caer dos veces
+// en dos sitios y son dos saldos distintos.
+const c1 = { id: "a", slug: "aguila", lugar: "poi:Byroden", restantes: 3 };
+const c2 = { id: "b", slug: "aguila", lugar: "franja:linde", restantes: 1 };
+const lista = conCadaver(conCadaver([], c1), c2);
+check("dos cadáveres del MISMO bicho en dos sitios son dos entradas", lista.length === 2);
+check("añadir con un id que ya está reemplaza, no duplica",
+  conCadaver(lista, { ...c1, restantes: 9 }).length === 2);
+check("quitar deja el resto", sinCadaver(lista, "a").length === 1);
+check("cadaveresEn solo trae los de ese sitio",
+  cadaveresEn(lista, "poi:Byroden").length === 1 && cadaveresEn(lista, "poi:Emon").length === 0);
+
+// ⚠️ El barrido del agotado. Si un cadáver a cero siguiera en la lista, el
+// jugador lo abriría, no sacaría nada, y se leería como que el oficio va roto.
+check("gastar una pieza baja el saldo", gastarPiezaDe(lista, "a").find((c) => c.id === "a")?.restantes === 2);
+check("el que se queda a cero DESAPARECE solo",
+  gastarPiezaDe(lista, "b").some((c) => c.id === "b") === false);
+check("gastar de uno no toca a los demás",
+  gastarPiezaDe(lista, "a").find((c) => c.id === "b")?.restantes === 1);
+check("cadaveresEn no ofrece uno agotado",
+  cadaveresEn([{ ...c1, restantes: 0 }], "poi:Byroden").length === 0);
+
+// ⚠️ El hook NO puede tener reglas dentro, y NO puede suscribirse a realtime:
+// `app_config` no está en la publicación y una suscripción ahí no dispara nunca.
+// Es la trampa que ya mordió cuatro veces.
+const hook = fs.readFileSync(path.join(process.cwd(), "lib", "useCadaveres.ts"), "utf8");
+
+// ⚠️ Se miran los comentarios FUERA. La primera versión de esta comprobación
+// buscaba «postgres_changes» en el fichero entero y fallaba por el comentario
+// que explica **por qué no hay que suscribirse** — o sea, castigaba justo la
+// documentación que se quiere conservar. Un gate que penaliza explicar la regla
+// acaba con la explicación borrada.
+const sinComentarios = hook
+  .replace(/\/\*[\s\S]*?\*\//g, "")
+  .replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+check("useCadaveres importa las reglas en vez de escribirlas",
+  hook.includes("from \"@/lib/extraccion\""));
+check("useCadaveres NO se suscribe a realtime sobre app_config",
+  !sinComentarios.includes("postgres_changes") && !sinComentarios.includes(".channel("));
+check("useCadaveres muta en local antes de persistir (optimista)",
+  hook.includes("setCadaveres((prev)"));
 
 // --- Cobertura, informativa ------------------------------------------------
 const cubiertos = Object.keys(DESPIECE).length;

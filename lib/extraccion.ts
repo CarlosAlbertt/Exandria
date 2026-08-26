@@ -128,6 +128,57 @@ export function retirarse(d: Despiece): string[] {
   return d.obtenidos;
 }
 
+/* --------------------------- LA LISTA DEL DM ------------------------------ */
+
+/**
+ * Un cadáver a mano, de los que el DM mantiene.
+ *
+ * ⚠️ **Una entrada por CADÁVER, no por monstruo** (requisito del DM): el mismo
+ * bicho puede caer dos veces en dos sitios y son dos cadáveres distintos, cada
+ * uno con su saldo. Por eso hay `id` y no basta el `slug`.
+ *
+ * ⚠️ **Y hace falta que el DM la mantenga a mano, no que se llene sola.** La
+ * mesa no siempre pasa por la app: muchos combates se juegan en la mesa y
+ * `/combate` no se entera. Llenarla sola es un extra; que el DM pueda escribir
+ * «aquí hay un tal cosa recién muerto» es el requisito.
+ */
+export type Cadaver = {
+  /** Único. El mismo monstruo en dos sitios son dos entradas. */
+  id: string;
+  /** `Monster.slug`, la misma clave que cruza `data/despiece.ts`. */
+  slug: string;
+  /** Nodo donde está: `poi:Byroden`, `sub:Byroden/taberna`, `franja:linde`. */
+  lugar: string;
+  /** Piezas que le quedan. Al llegar a 0 desaparece solo. */
+  restantes: number;
+};
+
+export function conCadaver(lista: readonly Cadaver[], c: Cadaver): Cadaver[] {
+  return [...lista.filter((x) => x.id !== c.id), c];
+}
+
+export function sinCadaver(lista: readonly Cadaver[], id: string): Cadaver[] {
+  return lista.filter((c) => c.id !== id);
+}
+
+/**
+ * Gasta una pieza de un cadáver, y **lo retira si se queda a cero**.
+ *
+ * ⚠️ El barrido va aquí y no en la pantalla: un cadáver agotado que siguiera en
+ * la lista se ofrecería, el jugador lo abriría y no sacaría nada, que se lee
+ * como que el oficio está roto. Y puesto en la pantalla, ningún gate lo miraría.
+ */
+export function gastarPiezaDe(lista: readonly Cadaver[], id: string): Cadaver[] {
+  return lista
+    .map((c) => (c.id === id ? { ...c, restantes: c.restantes - 1 } : c))
+    .filter((c) => c.restantes > 0);
+}
+
+/** Los que hay en este sitio. Un cadáver no se ve desde el pueblo de al lado. */
+export function cadaveresEn(lista: readonly Cadaver[], lugar: string): Cadaver[] {
+  return lista.filter((c) => c.lugar === lugar && c.restantes > 0);
+}
+
 /* ------------------------------ HERRAMIENTAS ------------------------------ */
 
 /**
