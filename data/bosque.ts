@@ -150,8 +150,10 @@ export type EncuentroBosque = {
  */
 export const PENDIENTES: string[] = [
   // De los que pidió el DM.
-  "Montículo Reptante", "Ser del Agua", "Lobo Huargo",
-  "Osgo Acechador",
+  // Once bocetos de la ESPESURA salieron de aquí el 2026-08-26 en
+  // `data/bestiary/lote-12.ts`: Montículo Reptante, Ser del Agua, Lobo Huargo,
+  // Osgo Acechador, Dríade, Sátiro Juerguista, Oso Lechuza, Ettercap, Grick,
+  // Arpía y Peryton. La franja pasó de 8 jugables a 19 de 21.
   // El Oso Pardo, la Araña Gigante y el Hongo Chillón salieron de aquí el
   // 2026-08-26 en `data/bestiary/lote-11.ts`: eran los tres bocetos de la
   // LINDE, que con ellos queda completa (15 de 15).
@@ -168,12 +170,10 @@ export const PENDIENTES: string[] = [
   // «Duende» salió de aquí el 2026-08-25, segundo caso «Worg»: es el Pixie del
   // Manual y su ficha ya existía. «Duende Prodigioso» sí falta — es el **Pixie
   // Wonderbringer** (p. 244) — y sigue aquí hasta decidir cómo se llama en ES.
-  "Dríade", "Sátiro Juerguista", "Duende Prodigioso",
+  "Duende Prodigioso",
   // «Worg» salió de aquí el 2026-08-25 sin extraer nada: NUNCA le faltó la
   // ficha. Estaba en la tabla con el nombre INGLÉS y la ficha se llama
   // «Huargo», así que `jugablesDe` no las cruzaba. Un boceto que no lo era.
-  "Oso Lechuza", "Ettercap",
-  "Grick", "Arpía", "Peryton",
   // Los DIEZ del corazón salieron de aquí el 2026-08-08: están extraídos en
   // `data/bestiary/lote-10.ts` y la franja pasó de 0 a 10 jugables.
   //
