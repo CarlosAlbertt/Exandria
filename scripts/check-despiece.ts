@@ -217,6 +217,43 @@ check("useCadaveres NO se suscribe a realtime sobre app_config",
 check("useCadaveres muta en local antes de persistir (optimista)",
   hook.includes("setCadaveres((prev)"));
 
+// --- Y que las PANTALLAS usen las reglas, no una copia ---------------------
+// Sacar las reglas a un módulo no sirve de nada si la pantalla se queda con su
+// versión: derivarían en silencio y el jugador vería una cosa y el saldo haría
+// otra. Es la misma comprobación de texto que se les hace a las rutas de
+// misiones y al Panel DM.
+const PANTALLAS: { fichero: string; importa: string; prohibido: RegExp; queEra: string }[] = [
+  {
+    fichero: "components/lugar/DespieceSection.tsx",
+    importa: "cdDespiece",
+    prohibido: /const\s+cd\s*=\s*\d+/,
+    queEra: "una CD escrita a mano",
+  },
+  {
+    fichero: "components/lugar/DespieceSection.tsx",
+    importa: "faltanHerramientas",
+    prohibido: /"Cuchillo de Despiece"/,
+    queEra: "la lista de herramientas a mano",
+  },
+  {
+    fichero: "app/dm/CadaveresPanel.tsx",
+    importa: "esDespiezable",
+    prohibido: /restantes:\s*[2-9]\s*}/,
+    queEra: "un número de piezas fijo",
+  },
+];
+for (const p of PANTALLAS) {
+  const src = fs.readFileSync(path.join(process.cwd(), ...p.fichero.split("/")), "utf8");
+  check(`${p.fichero} importa ${p.importa}`, src.includes(p.importa));
+  check(`${p.fichero} ya no lleva dentro ${p.queEra}`, !p.prohibido.test(src));
+}
+
+// El panel del DM solo puede ofrecer monstruos que la tabla empareje: ofrecer
+// uno sin tabla es prometer una pieza que no va a salir nunca.
+check("el panel del DM filtra por esDespiezable",
+  fs.readFileSync(path.join(process.cwd(), "app", "dm", "CadaveresPanel.tsx"), "utf8")
+    .includes("esDespiezable(m.slug)"));
+
 // --- Cobertura, informativa ------------------------------------------------
 const cubiertos = Object.keys(DESPIECE).length;
 console.log(`\n(${cubiertos} de ${ALL_MONSTERS.length} monstruos emparejados; el resto no es despiezable, que es válido)`);

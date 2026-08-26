@@ -20,6 +20,7 @@ import PosadaSection from "@/components/lugar/PosadaSection";
 import NpcSection from "@/components/lugar/NpcSection";
 import TablonSection from "@/components/lugar/TablonSection";
 import RastreoSection from "@/components/lugar/RastreoSection";
+import DespieceSection from "@/components/lugar/DespieceSection";
 import SaberRoll from "@/components/lugar/SaberRoll";
 import ClimaEfectos from "@/components/lugar/ClimaEfectos";
 import Salidas from "@/components/lugar/Salidas";
@@ -359,6 +360,7 @@ export default function LugarPage() {
               escritos estan en el bosque. */}
           <ErrorBoundary fallback={(m) => <SeccionRota que="la busqueda" mensaje={m} />}>
             <RastreoSection nodoId={nodo.id} />
+            <DespieceSection nodoId={nodo.id} />
           </ErrorBoundary>
         </div>
       </div>

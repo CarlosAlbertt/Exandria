@@ -21,13 +21,15 @@ import AvisosPanel from "./AvisosPanel";
 import CronicaPanel from "./CronicaPanel";
 import CatalogoPanel from "./CatalogoPanel";
 import EncuentrosPanel from "./EncuentrosPanel";
+import CadaveresPanel from "./CadaveresPanel";
 import RelojPanel from "./RelojPanel";
 import LugaresPanel from "./LugaresPanel";
 import ResumenPanel from "./ResumenPanel";
 
 type Tab =
   | "resumen" | "narracion" | "grupo" | "baul" | "regiones" | "mapa" | "usuarios"
-  | "dados" | "cronica" | "mesa" | "tiempo" | "arte" | "tiendas" | "pnjs" | "lugares" | "avisos" | "catalogo";
+  | "dados" | "cronica" | "mesa" | "tiempo" | "arte" | "tiendas" | "pnjs" | "lugares" | "avisos" | "catalogo"
+  | "cadaveres";
 
 /**
  * El panel del DM, por FAMILIAS y no por lista.
@@ -59,6 +61,7 @@ const FAMILIAS: { titulo: string; icono: string; tabs: [Tab, string, string, str
       ["narracion", "Narración", "fa-feather-pointed", "Emitir escena a los jugadores"],
       ["dados", "Dados", "fa-dice-d20", "Pedir tiradas y ver las que salen"],
       ["mesa", "Combate", "fa-chess", "Encuentros y el tablero"],
+      ["cadaveres", "Cadáveres", "fa-hand-scissors", "Lo que el grupo puede despiezar"],
       ["tiempo", "Reloj", "fa-clock", "Hora, fecha y descansos"],
       ["avisos", "Avisos", "fa-bell", "Probar como se ven las notificaciones"],
     ],
@@ -149,6 +152,7 @@ export default function DmDashboard() {
           {tab === "cronica" && <CronicaPanel />}
           {tab === "catalogo" && <CatalogoPanel />}
           {tab === "mesa" && <EncuentrosPanel />}
+          {tab === "cadaveres" && <CadaveresPanel />}
           {tab === "tiempo" && <RelojPanel />}
           {tab === "regiones" && <RegionesPanel />}
           {tab === "mapa" && <MapaPanel />}
