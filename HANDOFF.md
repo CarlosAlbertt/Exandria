@@ -89,27 +89,68 @@ Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 > primer acierto de `unlockCount`. Reordenarlos metería el 20 en el tramo del 10.
 > Hay check para eso. Mismos valores que antes: sin cambio de comportamiento.
 >
-> ### 🎯 LO SIGUIENTE: LOS 18 BOCETOS DEL BOSQUE
-> **Hay 18 monstruos escritos en las tablas de encuentros que NO se pueden
-> jugar**, porque no tienen statblock: `jugablesDe` los descarta en silencio.
-> Están listados en `PENDIENTES` de `data/bosque.ts`.
+> ### ✅ EL BOSQUE YA SE PUEDE JUGAR: 44 ENTRADAS DE 46
+> Había **18 monstruos escritos en las tablas de encuentros que no se podían
+> jugar** porque no tenían statblock: `jugablesDe` los descartaba en silencio.
 >
-> | Franja | Jugables | Escritos | Faltan |
-> |---|---|---|---|
-> | linde | 12 | 15 | **3** — Hongo Chillón, Oso Pardo, Araña Gigante |
-> | **espesura** | **6** | **21** | **15** — el grueso del trabajo |
-> | corazón | 10 | 10 | ninguno (se cerró el 08-08) |
+> | Franja | Antes | Ahora |
+> |---|---|---|
+> | linde | 12/15 | **15/15** |
+> | espesura | 6/21 | **19/21** |
+> | corazón | 10/10 | 10/10 |
 >
-> La espesura es la que está de verdad rota: **6 jugables de 21 escritos**. Pasa
-> el gate porque el mínimo son 5.
+> Cobertura del Manual: **161 → 175 de 501**. Lotes `lote-11.ts` (los tres de la
+> linde) y `lote-12.ts` (los once de la espesura).
 >
-> **El trabajo es el mismo que el `lote-10`**: extraer del Manual y escribir el
-> lote. Y el aviso que ya costó una vez: **las estadísticas son HECHOS y salen
-> del libro; los nombres en español y los blurbs los pone quien extrae**. La capa
-> OCR interleava las dos columnas y ya dio un CR falso (el Cíclope). Se usa para
-> LOCALIZAR (`grep "XP N"`), y la verdad es **la página renderizada**:
-> `py` + `pypdfium2` a escala 2.5 → PNG → leer visualmente. Verificado que
-> `py` 3.14.6 y `pypdfium2` 5.11.0 siguen instalados y el PDF está en su sitio.
+> ### ⚠️ DOS DE LOS 18 NO ERAN BOCETOS, Y EXTRAERLOS HABRÍA DUPLICADO EL BICHO
+> Antes de escribir una sola ficha se cruzaron los 18 contra lo ya extraído:
+> - **«Worg»** ya tenía ficha, como **«Huargo»**.
+> - **«Duende»** era el **Pixie**, también extraído.
+>
+> Los dos estaban en la tabla con el nombre INGLÉS mientras la ficha llevaba el
+> español, y `jugablesDe` cruza por nombre EXACTO. Parecían faltar y no faltaban.
+> La espesura subió de 6 a 8 jugables sin extraer nada.
+>
+> El check que faltaba ya está: **ningún `PENDIENTE` puede ser el `nameEn` de un
+> monstruo con ficha**, y el mensaje dice cuál es. Las dos comprobaciones que
+> había miraban el nombre ES, y el problema era justo que la tabla traía el
+> inglés — por eso vivieron ahí meses.
+>
+> ### ⚠️ DOS NOMBRES QUE EL ÍNDICE CORRIGIÓ
+> Se habrían escrito mal de fiarse del sentido común:
+> - **«Sátiro Juerguista» = Satyr REVELMASTER**, no *Satyr Reveler*. Y no es un
+>   sátiro de refuerzo: es **CR 6**, pega tres veces por turno y encanta.
+> - **«Lobo Huargo» = Dire Wolf** (Apéndice A). El índice trae también un **Dire
+>   Worg** (p. 335) y la elección no es obvia; se fue a Dire Wolf porque la nota
+>   de la tabla dice «el lobo de la linde, pero grande» y el Huargo ya está como
+>   entrada aparte. **Si la intención era el Dire Worg, se cambia con la p. 335.**
+>
+> ### El método, que es lo que evita inventarse datos
+> **Las estadísticas son HECHOS y salen del libro; el nombre español y el blurb
+> los pone quien extrae.** La capa OCR interleava las dos columnas y ya dio un CR
+> falso (el Cíclope): se usa para LOCALIZAR, y la verdad es **la página
+> renderizada** — `py` + `pypdfium2` a escala 2.5 → PNG → leer visualmente.
+> **PDF = página del libro + 2.** Verificado con `py` 3.14.6 y `pypdfium2` 5.11.0.
+>
+> ### Dos reglas del gate que se aflojaron, y por qué no es hacer trampa
+> Las dos eran **más duras que el libro**, y la única forma de pasarlas era
+> inventarse datos:
+> 1. **«toda ficha tiene al menos 1 acción».** El Hongo Chillón (CR 0) solo tiene
+>    una REACCIÓN: grita cuando algo se acerca. Ahora vale acción, reacción,
+>    adicional o legendaria; sin ninguna de las cuatro sigue fallando.
+> 2. **«xp coincide con CR_XP».** El Manual pone **«CR 0 (XP 0; PB +2)»** al
+>    Hongo, y la tabla dice 10. Comprobado a zoom antes de tocar la regla.
+>    Abierto **solo en CR 0** y solo a esos dos valores.
+>
+> ### 🎯 LO QUE QUEDA: DOS, Y LOS DOS SON DECISIÓN TUYA
+> - **Jabalí Gigante**: **no existe en el Manual 2024**. No está en el índice y
+>   la sección de bestias va Boar → Brown Bear sin nada en medio. Se queda en
+>   `PENDIENTES` con la razón al lado (decisión del usuario) para que nadie lo
+>   vuelva a añadir sin saberlo. Sacarlo de otro libro rompe la regla de la casa.
+> - **Duende Prodigioso** = **Pixie Wonderbringer (p. 244)**, localizado y sin
+>   extraer: falta decidir cómo se llama en español. Su pariente ya extraído se
+>   llama «Pixie», así que o se castellaniza esa ficha a «Duende» o el nuevo
+>   entra como «Pixie Prodigioso».
 >
 > ### La auditoría de reglas escondidas, y lo que queda
 > Se cruzaron los **78 módulos** que importan los 45 checks contra las 8 rutas y
