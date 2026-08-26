@@ -24,7 +24,19 @@ Las maquetas se dibujan en `.superpowers/brainstorm/`, que está en el
 | `cristalografia-banco.html` | La veta, el cincel y el punto de rotura | Aprobado, **sin construir** |
 | `tatuaje-camilla.html` | La plantilla, el trazo y el portador | Aprobado, **sin construir** |
 | `cocina-fuegos.html` | Dos fuegos a la vez y la cata | Aprobado, **sin construir** |
-| `extraccion-despiece.html` | Estudiar, cortar y guardar el cadáver | Aprobado, **sin construir** |
+| `extraccion-despiece.html` | Estudiar, cortar y guardar el cadáver | **Construido** (2026-08-26): reglas en `lib/extraccion.ts`, Panel DM › Cadáveres y `/lugar` › Despiezar |
+
+> [!warning] Los cuatro de arriba no están parados por falta de código
+> `destilacion`, `cristalografia`, `tatuaje` y `cocina` tienen **catálogo de
+> materiales y nada más**: `data/recetas.ts` trae 32 recetas y **todas son de
+> alquimia**. No hay ni una receta, ni una CD, ni un efecto para esos cuatro, así
+> que construirles la interfaz sería **inventarse la mecánica de la campaña**.
+> Lo que falta lo dicta el DM, no el programador.
+>
+> El despiece se pudo construir precisamente porque era el único que **no
+> necesitaba dictar nada nuevo**: lo que produce ya estaba escrito en los
+> catálogos ajenos, y el emparejamiento monstruo → material vive en
+> `data/despiece.ts`.
 
 ## Lo que NO son
 
