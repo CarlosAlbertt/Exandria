@@ -2,7 +2,85 @@
 
 Estado del proyecto para retomar en una sesión nueva sin todo el historial.
 
-## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-25, por la tarde)
+## 🚦 ARRANQUE RÁPIDO (última actualización 2026-08-26)
+
+> **EXTRACCIÓN DE COMPONENTES YA SE JUEGA: EL SÉPTIMO OFICIO.** Un merge, en
+> `master` y desplegado. **Sin migración** — la lista vive en `app_config`.
+>
+> ### Qué era «los bocetos», y qué no
+> `docs/bocetos/` son las **maquetas aprobadas de los talleres**. Cinco estaban
+> «Aprobado, sin construir». Al mirarlas se vio que **cuatro no se pueden
+> construir todavía**:
+>
+> | Taller | Por qué está parado |
+> |---|---|
+> | cocina, destilación, cristalografía, tatuaje | **Solo tienen catálogo de materiales.** `data/recetas.ts` tiene **32 recetas y todas de alquimia**: no hay ni una receta, ni una CD, ni un efecto para estos cuatro. Construirles la interfaz sería **inventarse la mecánica de la campaña**. |
+> | **despiece** | Sus reglas SÍ estaban completas. **Construido.** |
+>
+> ⚠️ **Lo que bloquea a los cuatro es el DM, no el código**: hacen falta las
+> recetas. Hasta que existan, su pestaña seguirá diciendo «se abrirá más
+> adelante», y eso es correcto.
+>
+> ### El séptimo oficio, y la suposición que rompió
+> `extraccion` entra como **`Oficio` de pleno derecho** (decisión del usuario;
+> la spec avisaba de no resolverlo a ojo). Es el **primero SIN catálogo propio**:
+> no fabrica, **consigue**. Lo que suelta ya está en los catálogos ajenos —88 de
+> los 369 son piezas de monstruo— y quién suelta qué vive en `data/despiece.ts`.
+>
+> Meterlo como `Oficio` hizo que los `Record<Oficio, …>` **obligaran** a
+> rellenarlo: TypeScript cantó los tres sitios exactos que la spec predecía.
+> Ninguno se podía olvidar.
+>
+> Y `catalogoPropio` dice **escrito** quién puede tener cero materiales.
+> Derivarlo de `MATERIALES.length` habría hecho que un catálogo **vaciado por
+> accidente** pasara por «es que este no tiene» — justo el fallo a cazar.
+>
+> ### Las cuatro piezas
+> | Pieza | Dónde |
+> |---|---|
+> | El séptimo `Oficio` + `catalogoPropio` | `lib/materiales.ts` |
+> | Las reglas del bucle (neutras, con gate) | `lib/extraccion.ts` |
+> | La lista de cadáveres, con update optimista | `lib/useCadaveres.ts` |
+> | Panel DM › Cadáveres · `/lugar` › Despiezar | `app/dm/CadaveresPanel.tsx`, `components/lugar/DespieceSection.tsx` |
+>
+> ### ⚠️ LA REGLA QUE SOSTIENE EL OFICIO
+> **Gane o pierda, el cadáver pierde una pieza.** 1d4 se tira **al abrirlo**, no
+> por intento: tirarlo por intento haría que fallar saliera gratis. De ahí sale
+> lo único que ningún otro taller tiene: **un botón de retirarse con lo que
+> llevas**. Lo sacado se queda **en las manos** hasta retirarse — si se guardara
+> pieza a pieza, «retirarme» no significaría nada.
+>
+> ### ⚠️ LA CD ES LO ÚNICO QUE LA SPEC NO FIJÓ
+> Todo lo demás son decisiones cerradas del DM del 2026-08-02. La CD **la puse
+> yo**: `10 + CR/2`, acotada 10–20, en `cdDespiece`. Una CD fija haría que
+> despiezar un Ciervo y un Ent costaran lo mismo. **Está en un solo sitio y es
+> ajustable**: el gate vigila la FORMA —que suba con el CR y no se salga de
+> rango— y no los números, para que ajustarla no sea un fallo.
+>
+> ### ⚠️ `app_config` NO ES REALTIME — la trampa que va por la quinta
+> Una suscripción `postgres_changes` sobre esa tabla **no dispara nunca**. Por
+> eso `useCadaveres` **no se suscribe** y todo es optimista. El gate lo vigila
+> leyendo el fichero — y **con los comentarios fuera**: la primera versión del
+> check fallaba por el comentario que explica por qué no hay que suscribirse, o
+> sea castigaba la documentación que se quiere conservar.
+>
+> ### Cómo se usa, que si no no se encuentra
+> 1. **Panel DM › Cadáveres**: elige qué han matado, dónde y cuántas piezas.
+>    Solo salen los **23 monstruos emparejados** en `data/despiece.ts`.
+> 2. El jugador va a ese sitio y le sale **«Despiezar»** en `/lugar`.
+> 3. Necesita **Cuchillo de Despiece y Frasco de Muestras** en el inventario. Se
+>    exigen disponibles y **no se gastan**.
+>
+> Sin cadáveres la sección **no se pinta**, y es a propósito: lo contrario de
+> «Ponerse en camino». Allí el vacío se explica porque su ausencia parecía un
+> fallo; aquí no haber cadáveres es lo normal y una caja permanente sería ruido.
+>
+> ### Prueba de mutación: seis roturas, seis cazadas
+> Las dos que más importan: **fallar deja de costar una pieza** (el oficio se
+> vuelve un botón) y **la pantalla se escribe su propia CD**. `check-despiece`
+> pasa de 100 a **199** comprobaciones. **El gate sigue siendo 45 scripts.**
+
+## 🚦 Antes de eso (2026-08-25, por la tarde)
 
 > **LAS REGLAS DE LAS MISIONES YA NO VIVEN DENTRO DE LAS RUTAS.** Dos merges,
 > los dos en `master` y desplegados. **Sin ninguna migración** y **sin cambio de
