@@ -24,9 +24,39 @@ import { MATERIALES_CRISTAL } from "@/data/cristalografia";
 import { MATERIALES_TATUAJE } from "@/data/tatuaje";
 import { norm } from "@/lib/slug";
 
+/**
+ * Los SIETE oficios.
+ *
+ * ⚠️ **`extraccion` es el primero SIN catálogo propio, y esa suposición estaba
+ * metida en todo el índice sin estar escrita en ninguna parte.** Los otros seis
+ * reparten los 369 materiales entre ellos; Extracción no aporta ninguno porque
+ * **no fabrica: consigue**. Lo que suelta ya está escrito en los catálogos
+ * ajenos —88 de los 369 son piezas de monstruo— y quién suelta qué vive en
+ * `data/despiece.ts`.
+ *
+ * La decisión de meterlo como `Oficio` de pleno derecho, y no como un tipo
+ * aparte, es del usuario (2026-08-26) y la avisaba la propia spec: así los
+ * `Record<Oficio, …>` obligan a rellenarlo y **TypeScript no deja olvidarse**.
+ * El precio es que los gates que contaban catálogos han tenido que aprender que
+ * un oficio puede tener CERO materiales — ver `catalogoPropio`.
+ */
 export type Oficio =
   | "alquimia" | "cocina" | "forja"
-  | "destilacion" | "cristalografia" | "tatuaje";
+  | "destilacion" | "cristalografia" | "tatuaje"
+  | "extraccion";
+
+/**
+ * ¿Este oficio trae materiales propios al índice?
+ *
+ * Escrito y no derivado de `MATERIALES.length`, a propósito: derivarlo haría
+ * que un catálogo que se quedara vacío por accidente pasara por «es que este no
+ * tiene», que es justo el fallo que se quiere cazar. Con la lista escrita, un
+ * catálogo vacío por error **falla**, y el único exento lo está porque alguien
+ * lo decidió.
+ */
+export function catalogoPropio(o: Oficio): boolean {
+  return o !== "extraccion";
+}
 
 /** El nombre de la pericia de oficio, tal y como está en `data/rules.ts`. */
 export const OFICIO_PERICIA: Record<Oficio, string> = {
@@ -36,6 +66,7 @@ export const OFICIO_PERICIA: Record<Oficio, string> = {
   destilacion: "Destilación Exandriana",
   cristalografia: "Cristalografía Arcana",
   tatuaje: "Tatuaje Rúnico",
+  extraccion: "Extracción de Componentes",
 };
 
 /** Cómo se llama cada taller en la interfaz. */
@@ -46,11 +77,16 @@ export const OFICIO_LABEL: Record<Oficio, string> = {
   destilacion: "Destilación",
   cristalografia: "Cristalografía",
   tatuaje: "Tatuaje",
+  extraccion: "Extracción",
 };
 
 /** El orden en que salen las pestañas del taller y los filtros de `/oficios`. */
 export const OFICIOS_ORDEN: Oficio[] = [
   "alquimia", "cocina", "forja", "destilacion", "cristalografia", "tatuaje",
+  // ⚠️ El séptimo va AL FINAL y no en su sitio alfabético: es el que consigue
+  // materiales, no el que los gasta, y leerlo después de los seis que los
+  // gastan es lo que cuenta de qué va el taller sin tener que explicarlo.
+  "extraccion",
 ];
 
 export type Material = {

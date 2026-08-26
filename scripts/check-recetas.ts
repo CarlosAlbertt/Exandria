@@ -12,7 +12,7 @@
 
 import { RECETAS, CD_POR_RAREZA, RECETAS_CON_CUPO, recetasDe, recetaPorSlug, recetasIniciales, recetasConCupo, produceNombre, produceRareza } from "../data/recetas";
 import { POCIONES } from "../data/pociones";
-import { MATERIALES, materialPorN, materialPorNombre, materialesDe, esMaterial, OFICIOS_ORDEN, OFICIO_PERICIA, type Oficio } from "../lib/materiales";
+import { MATERIALES, materialPorN, materialPorNombre, materialesDe, esMaterial, OFICIOS_ORDEN, OFICIO_PERICIA, catalogoPropio, type Oficio } from "../lib/materiales";
 import { huecosUsados } from "../lib/inventario";
 import { recetasSabidas, recetasDeArena, bolsaDeArena, requisitos, puedePreparar, consumir, anadirProducto, idReceta, slugDeId, cupoLibre, cupoHasta, diasDeCupo } from "../lib/recetario";
 import { modDmValido, MOD_DM_MIN, MOD_DM_MAX } from "../lib/tallerDm";
@@ -42,12 +42,28 @@ const item = (name: string, qty: number): Item => ({ id: `t-${name}-${qty}`, nam
 // lado que ahora depende de él, para que el acoplamiento no quede tácito: si
 // alguien admite un solapamiento, falla aquí y no en silencio.
 check("el índice reúne los 391 materiales", MATERIALES.length === 391);
+// ⚠️ **`extraccion` reparte CERO, y no es un olvido.** Es el séptimo oficio y el
+// primero sin catálogo propio: no fabrica, consigue. Lo que suelta ya está en
+// los catálogos ajenos (88 de los 369 son piezas de monstruo) y quién suelta qué
+// vive en `data/despiece.ts`.
+//
+// Va escrito como 0 y no exento del bucle a propósito: si mañana alguien le
+// añade materiales por error, este check lo canta. Y `catalogoPropio` dice quién
+// puede estar a cero, para que un catálogo vaciado por accidente NO pase por
+// «es que este no tiene».
 const REPARTO: Record<Oficio, number> = {
   alquimia: 77, cocina: 105, forja: 81, destilacion: 50, cristalografia: 50, tatuaje: 28, // +22 piezas de despiece (tanda CR 0)
+  extraccion: 0,
 };
 for (const o of OFICIOS_ORDEN) {
   check(`el índice trae los ${REPARTO[o]} de ${o} (trae ${materialesDe(o).length})`, materialesDe(o).length === REPARTO[o]);
+  check(`"${o}" solo puede repartir cero si es el que no tiene catálogo`,
+    REPARTO[o] > 0 || !catalogoPropio(o));
 }
+// Y al revés: el que NO tiene catálogo propio tiene que ser exactamente uno. Dos
+// exentos sería que alguien ha vaciado un catálogo y lo ha tapado aquí.
+check("solo un oficio se libra de tener catálogo propio",
+  OFICIOS_ORDEN.filter((o) => !catalogoPropio(o)).length === 1);
 const normalizados = MATERIALES.map((m) => norm(m.name));
 check("ningún nombre de material es ambiguo entre los seis catálogos",
   new Set(normalizados).size === normalizados.length);
