@@ -31,6 +31,7 @@ const ICONO: Record<Oficio, string> = {
   destilacion: "fa-wine-bottle",
   cristalografia: "fa-gem",
   tatuaje: "fa-pen-nib",
+  extraccion: "fa-hand-scissors",
 };
 
 /** Lo que será cada taller cuando le toque. Es la promesa, no una descripción. */
@@ -41,6 +42,10 @@ const PROMESA: Record<Oficio, string> = {
   destilacion: "El alambique y sus riesgos.",
   cristalografia: "El tallado, los cinceles y las pinzas.",
   tatuaje: "La plantilla, las agujas y la tinta.",
+  // ⚠️ Este NO se abre aquí, y por eso su promesa apunta a otro sitio: se
+  // despieza **en el sitio, con el cadáver fresco** (decisión del DM del
+  // 2026-08-02). El taller lo lista para que se vea que el oficio existe.
+  extraccion: "El cuchillo y los frascos. Se despieza en el sitio, no aquí.",
 };
 
 export default function TallerPage() {
